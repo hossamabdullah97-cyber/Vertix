@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Trans, useTranslation } from 'react-i18next';
 import { forgotPassword } from '@/lib/client';
 import AuthShell from '@/components/AuthShell';
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -19,34 +21,34 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell
-      title="Reset your password"
-      subtitle="We'll email you a link to set a new password."
-    >
+    <AuthShell title={t('forgot.title')} subtitle={t('forgot.subtitleLong')}>
       {sent ? (
         <div>
           <p className="text-sm">
-            If an account exists for <b>{email}</b>, a reset link is on its way.
+            {/* The address is bolded inside the sentence, so it has to be a Trans. */}
+            <Trans i18nKey="forgot.sentTo" ns="auth" values={{ email }} components={{ 1: <b dir="ltr" /> }}>
+              {'If an account exists for <1>{{email}}</1>, a reset link is on its way.'}
+            </Trans>
           </p>
           <Link href="/login" className="mt-4 inline-block text-sm text-accent">
-            Back to sign in
+            {t('forgot.backToLogin')}
           </Link>
         </div>
       ) : (
         <form onSubmit={submit} className="grid gap-3">
           <input
             type="email"
-            className="input"
-            placeholder="you@company.com"
+            className="v-field"
+            placeholder={t('forgot.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <button className="btn" disabled={busy}>
-            {busy ? 'Sending…' : 'Send reset link'}
+          <button className="v-btn w-full" disabled={busy}>
+            {busy ? t('forgot.sending') : t('forgot.submit')}
           </button>
           <Link href="/login" className="text-center text-sm text-muted">
-            Back to sign in
+            {t('forgot.backToLogin')}
           </Link>
         </form>
       )}

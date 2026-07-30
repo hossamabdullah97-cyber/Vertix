@@ -1,0 +1,52 @@
+{
+  "title": "الاشتراك والفوترة",
+  "subtitle": "رقّ خطتك وراجع حدود استخدام مؤسستك الحالية",
+  "loading": "جارٍ تحميل بيانات الاشتراك…",
+  "successBanner": "تم تحديث الاشتراك بنجاح. شكراً لاختيارك Vertex Connect!",
+  "sandboxBanner": "الفوترة تعمل في بيئة تجريبية محلية — حدود الاشتراك فعّالة لكن الدفع عبر Stripe محاكى.",
+  "current": {
+    "tier": "مستوى الاشتراك الحالي",
+    "planSuffix": "{{name}}",
+    "managePortal": "إدارة بوابة الفوترة"
+  },
+  "usage": {
+    "cards": "البطاقات",
+    "members": "الأعضاء",
+    "nfcTags": "تاجات NFC"
+  },
+  "plans": {
+    "FREE": "الخطة المجانية",
+    "PRO": "الخطة الاحترافية",
+    "BUSINESS": "خطة الأعمال",
+    "ENTERPRISE": "خطة المؤسسات"
+  },
+  "plan": {
+    "active": "نشطة",
+    "custom": "مخصّص",
+    "perMonth": "/شهرياً",
+    "unlimited": "عدد غير محدود من",
+    "currentPlan": "خطتك النشطة حالياً",
+    "redirecting": "جارٍ التحويل…",
+    "upgradeTo": "الترقية إلى {{name}}",
+    "sandboxDisabled": "بيئة تجريبية — الترقية معطّلة",
+    "contactSales": "تواصل مع فريق مبيعات الشركات",
+    "cards_zero": "البطاقات الرقمية",
+    "cards_one": "بطاقة رقمية",
+    "cards_two": "بطاقة رقمية",
+    "cards_few": "بطاقات رقمية",
+    "cards_many": "بطاقة رقمية",
+    "cards_other": "بطاقة رقمية",
+    "members_zero": "الأعضاء",
+    "members_one": "عضو",
+    "members_two": "عضو",
+    "members_few": "أعضاء",
+    "members_many": "عضواً",
+    "members_other": "عضو",
+    "tags_zero": "التاجات القابلة للبرمجة",
+    "tags_one": "تاج قابل للبرمجة",
+    "tags_two": "تاج قابل للبرمجة",
+    "tags_few": "تاجات قابلة للبرمجة",
+    "tags_many": "تاجاً قابلاً للبرمجة",
+    "tags_other": "تاج قابل للبرمجة"
+  }
+}

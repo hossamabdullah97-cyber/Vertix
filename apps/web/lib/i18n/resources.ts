@@ -10,8 +10,10 @@ import type { Resource } from 'i18next';
 import enCommon from '@/locales/en/common.json';
 import enNav from '@/locales/en/nav.json';
 import enAuth from '@/locales/en/auth.json';
+import enLanding from '@/locales/en/landing.json';
 import enDashboard from '@/locales/en/dashboard.json';
 import enCards from '@/locales/en/cards.json';
+import enCardEditor from '@/locales/en/cardEditor.json';
 import enProfiles from '@/locales/en/profiles.json';
 import enSmartIdentity from '@/locales/en/smartIdentity.json';
 import enLinkBuilder from '@/locales/en/linkBuilder.json';
@@ -22,6 +24,7 @@ import enCrm from '@/locales/en/crm.json';
 import enAnalytics from '@/locales/en/analytics.json';
 import enOrganizations from '@/locales/en/organizations.json';
 import enTeams from '@/locales/en/teams.json';
+import enBilling from '@/locales/en/billing.json';
 import enAdmin from '@/locales/en/admin.json';
 import enIntegrations from '@/locales/en/integrations.json';
 import enNotifications from '@/locales/en/notifications.json';
@@ -30,8 +33,10 @@ import enSettings from '@/locales/en/settings.json';
 import arCommon from '@/locales/ar/common.json';
 import arNav from '@/locales/ar/nav.json';
 import arAuth from '@/locales/ar/auth.json';
+import arLanding from '@/locales/ar/landing.json';
 import arDashboard from '@/locales/ar/dashboard.json';
 import arCards from '@/locales/ar/cards.json';
+import arCardEditor from '@/locales/ar/cardEditor.json';
 import arProfiles from '@/locales/ar/profiles.json';
 import arSmartIdentity from '@/locales/ar/smartIdentity.json';
 import arLinkBuilder from '@/locales/ar/linkBuilder.json';
@@ -42,6 +47,7 @@ import arCrm from '@/locales/ar/crm.json';
 import arAnalytics from '@/locales/ar/analytics.json';
 import arOrganizations from '@/locales/ar/organizations.json';
 import arTeams from '@/locales/ar/teams.json';
+import arBilling from '@/locales/ar/billing.json';
 import arAdmin from '@/locales/ar/admin.json';
 import arIntegrations from '@/locales/ar/integrations.json';
 import arNotifications from '@/locales/ar/notifications.json';
@@ -52,8 +58,10 @@ export const resources: Resource = {
     common: enCommon,
     nav: enNav,
     auth: enAuth,
+    landing: enLanding,
     dashboard: enDashboard,
     cards: enCards,
+    cardEditor: enCardEditor,
     profiles: enProfiles,
     smartIdentity: enSmartIdentity,
     linkBuilder: enLinkBuilder,
@@ -64,6 +72,7 @@ export const resources: Resource = {
     analytics: enAnalytics,
     organizations: enOrganizations,
     teams: enTeams,
+    billing: enBilling,
     admin: enAdmin,
     integrations: enIntegrations,
     notifications: enNotifications,
@@ -73,8 +82,10 @@ export const resources: Resource = {
     common: arCommon,
     nav: arNav,
     auth: arAuth,
+    landing: arLanding,
     dashboard: arDashboard,
     cards: arCards,
+    cardEditor: arCardEditor,
     profiles: arProfiles,
     smartIdentity: arSmartIdentity,
     linkBuilder: arLinkBuilder,
@@ -85,6 +96,7 @@ export const resources: Resource = {
     analytics: arAnalytics,
     organizations: arOrganizations,
     teams: arTeams,
+    billing: arBilling,
     admin: arAdmin,
     integrations: arIntegrations,
     notifications: arNotifications,

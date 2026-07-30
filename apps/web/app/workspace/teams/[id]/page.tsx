@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authFetch, getToken } from '@/lib/client';
@@ -24,14 +25,8 @@ type TabId =
   | 'audit'
   | 'settings';
 
-const getHealth = (score: number) => {
-  if (score >= 80) return { label: 'Excellent', badge: 'success', dot: '🟢' };
-  if (score >= 50) return { label: 'Good', badge: 'warning', dot: '🟡' };
-  if (score >= 25) return { label: 'Needs Attention', badge: 'warning', dot: '🟠' };
-  return { label: 'Critical', badge: 'error', dot: '🔴' };
-};
-
 export default function TeamPage({ params }: { params: { id: string } }) {
+  const { t } = useTranslation('teams');
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -134,7 +129,7 @@ export default function TeamPage({ params }: { params: { id: string } }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this team? Members will be unassigned.')) return;
+    if (!confirm(t('teamDetail.confirmDelete'))) return;
     try {
       await authFetch(`/orgs/teams/${params.id}`, { method: 'DELETE' });
       router.replace('/team');
@@ -183,23 +178,23 @@ export default function TeamPage({ params }: { params: { id: string } }) {
       .sort((a, b) => new Date(a.meetingAt!).getTime() - new Date(b.meetingAt!).getTime());
   }, [teamLeads]);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'gauge' },
-    { id: 'members', label: 'Members', icon: 'users' },
-    { id: 'cards', label: 'Cards', icon: 'columns' },
-    { id: 'crm', label: 'CRM', icon: 'inbox' },
-    { id: 'analytics', label: 'Analytics', icon: 'chart-bar' },
-    { id: 'meetings', label: 'Meetings', icon: 'calendar' },
-    { id: 'tasks', label: 'Tasks', icon: 'check-circle' },
-    { id: 'files', label: 'Files', icon: 'file-text' },
-    { id: 'qrnfc', label: 'QR/NFC', icon: 'tag' },
-    { id: 'audit', label: 'Audit', icon: 'clock' },
-    { id: 'settings', label: 'Settings', icon: 'settings' },
-  ] as const;
+  const tabs: { id: TabId; label: string; icon: string }[] = [
+    { id: 'overview', label: t('workspaceTabs.overview'), icon: 'gauge' },
+    { id: 'members', label: t('workspaceTabs.members'), icon: 'users' },
+    { id: 'cards', label: t('workspaceTabs.cards'), icon: 'columns' },
+    { id: 'crm', label: t('workspaceTabs.crm'), icon: 'inbox' },
+    { id: 'analytics', label: t('workspaceTabs.analytics'), icon: 'chart-bar' },
+    { id: 'meetings', label: t('workspaceTabs.meetings'), icon: 'calendar' },
+    { id: 'tasks', label: t('workspaceTabs.tasks'), icon: 'check-circle' },
+    { id: 'files', label: t('workspaceTabs.files'), icon: 'file-text' },
+    { id: 'qrnfc', label: t('workspaceTabs.qrnfc'), icon: 'tag' },
+    { id: 'audit', label: t('workspaceTabs.audit'), icon: 'clock' },
+    { id: 'settings', label: t('workspaceTabs.settings'), icon: 'settings' },
+  ];
 
   if (loading) {
     return (
-      <AppShell title="Loading Team...">
+      <AppShell title={t('teamDetail.loading')}>
         <div className="space-y-6">
           <Skeleton className="h-12 w-64 animate-pulse bg-line" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -215,12 +210,12 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
   if (error || !team) {
     return (
-      <AppShell title="Error">
+      <AppShell title={t('teamDetail.error')}>
         <Alert variant="error" className="mb-6">
-          {error || 'Team not found.'}
+          {error || t('teamDetail.notFound')}
         </Alert>
         <Link href="/team" className="text-accent font-bold hover:underline">
-          ← Back to Workspace Directory
+          <span aria-hidden>←</span> {t('teamDetail.back')}
         </Link>
       </AppShell>
     );
@@ -230,7 +225,7 @@ export default function TeamPage({ params }: { params: { id: string } }) {
   const teamMembers = team.memberships || [];
 
   return (
-    <AppShell title={`${team.name} Team`}>
+    <AppShell title={t('teamDetail.titleSuffix', { name: team.name })}>
       {/* Header Banner */}
       <div className="mb-6 bg-surface border border-line rounded-2xl p-6 shadow-sm flex items-center justify-between gap-4 flex-wrap relative overflow-hidden">
         <div className="absolute top-0 left-0 w-2 h-full" style={{ background: teamColor }} />
@@ -245,7 +240,7 @@ export default function TeamPage({ params }: { params: { id: string } }) {
             </Badge>
           </div>
           <p className="text-xs text-muted font-semibold flex items-center gap-1.5">
-            <span>Team Manager:</span>
+            <span>{t('teamDetail.managerLabel')}</span>
             <span className="text-ink font-bold">{team.manager?.name || team.manager?.email || 'Unassigned'}</span>
           </p>
         </div>
@@ -283,30 +278,30 @@ export default function TeamPage({ params }: { params: { id: string } }) {
               {/* Metrics cards row */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <Card variant="standard" className="p-5 text-center">
-                  <p className="text-[10px] font-bold text-muted uppercase">Active Members</p>
+                  <p className="text-[10px] font-bold text-muted uppercase">{t('teamDetail.activeMembers')}</p>
                   <h3 className="text-2xl font-black text-ink mt-2">{teamMembers.length}</h3>
                 </Card>
                 <Card variant="standard" className="p-5 text-center">
-                  <p className="text-[10px] font-bold text-muted uppercase">Completed tasks</p>
+                  <p className="text-[10px] font-bold text-muted uppercase">{t('teamDetail.completedTasks')}</p>
                   <h3 className="text-2xl font-black text-emerald-500 mt-2">{teamTasks.filter((t) => t.completed).length}</h3>
                 </Card>
                 <Card variant="standard" className="p-5 text-center">
-                  <p className="text-[10px] font-bold text-muted uppercase">Total tasks</p>
+                  <p className="text-[10px] font-bold text-muted uppercase">{t('teamDetail.totalTasks')}</p>
                   <h3 className="text-2xl font-black text-blue-600 mt-2">{teamTasks.length}</h3>
                 </Card>
               </div>
 
               {/* Dynamic activity summaries */}
               <Card variant="standard" className="p-6">
-                <h3 className="text-[14.5px] font-black text-ink tracking-tight mb-4">Interactions & Scans</h3>
+                <h3 className="text-[14.5px] font-black text-ink tracking-tight mb-4">{t('teamDetail.interactions')}</h3>
                 <div className="grid grid-cols-2 gap-4 text-center">
                   <div className="bg-canvas/30 border border-line p-4 rounded-xl">
                     <p className="text-3xl font-black text-ink">{team.views ?? 0}</p>
-                    <p className="text-[10px] text-muted font-bold uppercase mt-1">Profile views</p>
+                    <p className="text-[10px] text-muted font-bold uppercase mt-1">{t('teamDetail.profileViews')}</p>
                   </div>
                   <div className="bg-canvas/30 border border-line p-4 rounded-xl">
                     <p className="text-3xl font-black text-accent">{team.leads ?? 0}</p>
-                    <p className="text-[10px] text-muted font-bold uppercase mt-1">CRM leads</p>
+                    <p className="text-[10px] text-muted font-bold uppercase mt-1">{t('teamDetail.leads')}</p>
                   </div>
                 </div>
               </Card>
@@ -314,14 +309,14 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
             <div className="space-y-6">
               <Card variant="glass" className="p-6">
-                <h3 className="text-[14px] font-bold text-ink tracking-tight mb-3">Deliverables Status</h3>
+                <h3 className="text-[14px] font-bold text-ink tracking-tight mb-3">{t('teamDetail.deliverables')}</h3>
                 <div className="space-y-3.5 text-xs font-semibold text-muted">
                   <div className="flex justify-between border-b border-line pb-1.5">
-                    <span>Total tasks assigned</span>
+                    <span>{t('teamDetail.totalAssigned')}</span>
                     <span className="text-ink font-bold">{teamTasks.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Completed tasks</span>
+                    <span>{t('teamDetail.completedTasks')}</span>
                     <span className="text-emerald-500 font-bold">{teamTasks.filter(t => t.completed).length}</span>
                   </div>
                 </div>
@@ -333,11 +328,11 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'members' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Team Members</h3>
-            <p className="text-[11.5px] text-muted mb-4 font-medium">Assigned users on this workgroup</p>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.members')}</h3>
+            <p className="text-[11.5px] text-muted mb-4 font-medium">{t('teamDetail.membersSub')}</p>
 
             {teamMembers.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No members assigned to this team.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noMembers')}</p>
             ) : (
               <div className="space-y-2">
                 {teamMembers.map((m: any) => (
@@ -361,11 +356,11 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'cards' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Team Profiles</h3>
-            <p className="text-[11.5px] text-muted mb-4 font-medium">Digital business cards published by team members</p>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.profiles')}</h3>
+            <p className="text-[11.5px] text-muted mb-4 font-medium">{t('teamDetail.profilesSub')}</p>
 
             {teamCards.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No cards created by team members yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noCards')}</p>
             ) : (
               <div className="space-y-2">
                 {teamCards.map((c) => (
@@ -386,11 +381,11 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'crm' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">CRM Leads</h3>
-            <p className="text-[11.5px] text-muted mb-4 font-medium">Contacts captured by team card templates</p>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.leads')}</h3>
+            <p className="text-[11.5px] text-muted mb-4 font-medium">{t('teamDetail.leadsSub')}</p>
 
             {teamLeads.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No leads captured yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noLeads')}</p>
             ) : (
               <div className="space-y-2">
                 {teamLeads.map((l) => (
@@ -411,7 +406,7 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'analytics' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Team Analytics</h3>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.analytics')}</h3>
             <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-14 text-center">
               <Icon name="chart-bar" size={22} className="text-faint" />
               <p className="max-w-sm px-6 text-xs font-semibold text-muted">
@@ -423,18 +418,18 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'meetings' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Deliverable Meetings</h3>
-            <p className="text-[11.5px] text-muted mb-4 font-medium">Calendar schedules booked by team leads</p>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.meetings')}</h3>
+            <p className="text-[11.5px] text-muted mb-4 font-medium">{t('teamDetail.meetingsSub')}</p>
 
             {upcomingMeetings.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No meetings scheduled.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noMeetings')}</p>
             ) : (
               <div className="space-y-2">
                 {upcomingMeetings.map((m) => (
                   <div key={m.id} className="p-3 bg-canvas/30 border border-line rounded-xl text-xs font-semibold">
                     <div className="flex justify-between items-center">
                       <span className="text-ink font-bold">{m.name}</span>
-                      <Badge variant="warning" className="text-[9px] uppercase font-black">Booked</Badge>
+                      <Badge variant="warning" className="text-[9px] uppercase font-black">{t('teamDetail.booked')}</Badge>
                     </div>
                     <p className="text-muted mt-1 text-[11px]">
                       📅 {new Date(m.meetingAt!).toLocaleString()}
@@ -448,11 +443,11 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'tasks' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Deliverables checklist</h3>
-            <p className="text-[11.5px] text-muted mb-4 font-medium">Tasks allocated to team seats</p>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.checklist')}</h3>
+            <p className="text-[11.5px] text-muted mb-4 font-medium">{t('teamDetail.deliverablesSub')}</p>
 
             {teamTasks.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No tasks logged.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noTasks')}</p>
             ) : (
               <div className="space-y-2.5">
                 {teamTasks.map((t) => (
@@ -476,11 +471,11 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'files' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Team Shared Templates</h3>
-            <p className="text-[11.5px] text-muted mb-4 font-medium">Files and media templates created by team members</p>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.templates')}</h3>
+            <p className="text-[11.5px] text-muted mb-4 font-medium">{t('teamDetail.templatesSub')}</p>
 
             {teamAssets.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No files uploaded yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noFiles')}</p>
             ) : (
               <div className="space-y-2">
                 {teamAssets.map((a) => (
@@ -501,11 +496,11 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'qrnfc' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">Linked QR & NFC Devices</h3>
-            <p className="text-xs text-muted font-medium mb-4">Tags linked to team active profiles</p>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.tags')}</h3>
+            <p className="text-xs text-muted font-medium mb-4">{t('teamDetail.tagsSub')}</p>
 
             {teamTags.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No linked NFC/QR tags detected on team card assets.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noTags')}</p>
             ) : (
               <div className="space-y-2">
                 {teamTags.map((t) => (
@@ -526,11 +521,11 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'audit' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">Team Audit history</h3>
-            <p className="text-xs text-muted font-medium mb-4">Audit log events specific to this workgroup</p>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('teamDetail.audit')}</h3>
+            <p className="text-xs text-muted font-medium mb-4">{t('teamDetail.auditSub')}</p>
 
             {teamLogs.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No audit trail recorded.</p>
+              <p className="text-xs text-muted text-center py-8">{t('teamDetail.noAudit')}</p>
             ) : (
               <div className="space-y-2.5">
                 {teamLogs.map((log) => (
@@ -551,19 +546,19 @@ export default function TeamPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'settings' && (
           <Card className="p-6 max-w-xl">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-4">Team Settings</h3>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-4">{t('teamDetail.settings')}</h3>
             
             {isEditing ? (
               <form onSubmit={handleUpdateSettings} className="space-y-4">
                 <label className="grid gap-1.5">
-                  <span className="text-[11.5px] font-bold text-muted uppercase">Team Name</span>
+                  <span className="text-[11.5px] font-bold text-muted uppercase">{t('teamDetail.name')}</span>
                   <input className="v-field font-semibold" value={editName} onChange={(e) => setEditName(e.target.value)} required />
                 </label>
 
                 <label className="grid gap-1.5">
-                  <span className="text-[11.5px] font-bold text-muted uppercase">Department</span>
+                  <span className="text-[11.5px] font-bold text-muted uppercase">{t('teamDetail.department')}</span>
                   <select className="v-field font-semibold" value={editDeptId} onChange={(e) => setEditDeptId(e.target.value)}>
-                    <option value="">No Department</option>
+                    <option value="">{t('teamDetail.noDepartment')}</option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
@@ -571,12 +566,12 @@ export default function TeamPage({ params }: { params: { id: string } }) {
                 </label>
 
                 <label className="grid gap-1.5">
-                  <span className="text-[11.5px] font-bold text-muted uppercase">Team Manager ID</span>
-                  <input className="v-field font-semibold" value={editManagerId} onChange={(e) => setEditManagerId(e.target.value)} placeholder="User ID" />
+                  <span className="text-[11.5px] font-bold text-muted uppercase">{t('teamDetail.managerId')}</span>
+                  <input className="v-field font-semibold" value={editManagerId} onChange={(e) => setEditManagerId(e.target.value)} placeholder={t('teamDetail.userIdPlaceholder')} />
                 </label>
 
                 <label className="grid gap-1.5">
-                  <span className="text-[11.5px] font-bold text-muted uppercase">Accent Color</span>
+                  <span className="text-[11.5px] font-bold text-muted uppercase">{t('teamDetail.accentColor')}</span>
                   <div className="flex gap-2 items-center">
                     <input type="color" className="h-8 w-10 rounded border border-line" value={editColor} onChange={(e) => setEditColor(e.target.value)} />
                     <input className="v-field font-semibold flex-1" value={editColor} onChange={(e) => setEditColor(e.target.value)} required />
@@ -595,19 +590,19 @@ export default function TeamPage({ params }: { params: { id: string } }) {
             ) : (
               <div className="space-y-4 font-semibold text-xs text-muted">
                 <div className="flex justify-between border-b border-line pb-2">
-                  <span>Name</span>
+                  <span>{t('teamDetail.name')}</span>
                   <span className="text-ink font-bold">{team.name}</span>
                 </div>
                 <div className="flex justify-between border-b border-line pb-2">
-                  <span>Department</span>
+                  <span>{t('teamDetail.department')}</span>
                   <span className="text-ink font-bold">{team.department?.name || 'None'}</span>
                 </div>
                 <div className="flex justify-between border-b border-line pb-2">
-                  <span>Manager ID</span>
+                  <span>{t('teamDetail.managerIdShort')}</span>
                   <span className="text-ink font-bold font-mono">{team.managerId || 'None'}</span>
                 </div>
                 <div className="flex justify-between border-b border-line pb-2">
-                  <span>Color Theme</span>
+                  <span>{t('teamDetail.colorTheme')}</span>
                   <span className="flex items-center gap-1.5 font-mono text-ink">
                     <span className="h-3.5 w-3.5 rounded" style={{ background: teamColor }} />
                     {teamColor}

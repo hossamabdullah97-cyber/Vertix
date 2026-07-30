@@ -1,6 +1,35 @@
 {
   "title": "Payment Links",
-  "subtitle": "Share external payment links (InstaPay, Vodafone Cash, Fawry, wallets, or custom URLs). Vertex Connect opens your link directly.",
+  "titleCompact": "Payment links",
+  "subtitle": "Share your external payment links (InstaPay, wallets, or a custom URL). Vertex Connect only opens the link — it never processes payments.",
   "addLink": "Add payment link",
-  "emptyState": "No payment links added yet."
+  "emptyState": "No payment links yet. Add one to let visitors pay you through your own external accounts.",
+  "loading": "Loading…",
+  "activeCount": "{{active}}/{{total}} active",
+  "saving": "Saving…",
+  "cancel": "Cancel",
+  "fields": {
+    "method": "Payment Method",
+    "displayName": "Display Name",
+    "url": "Payment Link URL",
+    "description": "Description (optional)"
+  },
+  "placeholders": {
+    "displayName": "InstaPay",
+    "url": "https://ipn.eg/S/username",
+    "description": "e.g. Fastest — instant transfer"
+  },
+  "actions": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "reorder": "Drag to reorder",
+    "active": "Active — visible publicly",
+    "inactive": "Inactive — hidden"
+  },
+  "errors": {
+    "nameRequired": "Display name is required.",
+    "urlRequired": "Payment link is required.",
+    "invalidUrl": "Enter a valid link starting with https://",
+    "saveFailed": "Could not save the payment link. Please try again."
+  }
 }

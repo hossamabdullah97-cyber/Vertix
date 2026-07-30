@@ -1,0 +1,244 @@
+{
+  "shell": {
+    "title": "استوديو تصميم Vertex",
+    "loadingTitle": "منشئ استوديو البطاقات",
+    "loading": "جارٍ تهيئة استوديو البطاقة الرقمية…",
+    "errorTitle": "خطأ في الاستوديو",
+    "version": "استوديو Vertex Connect الإصدار 3"
+  },
+  "commandBar": {
+    "backToCards": "البطاقات",
+    "cardLabel": "البطاقة:",
+    "statusLabel": "الحالة:",
+    "autoSave": "الحفظ التلقائي:",
+    "searchPlaceholder": "ابحث في حقول الاستوديو…",
+    "undo": "تراجع",
+    "redo": "إعادة",
+    "viewProfile": "عرض الملف",
+    "publish": "نشر مباشر",
+    "unpublish": "إلغاء النشر"
+  },
+  "status": {
+    "live": "منشورة",
+    "draft": "مسودة",
+    "saved": "تم الحفظ",
+    "saving": "جارٍ الحفظ…",
+    "offline": "غير متصل"
+  },
+  "tabs": {
+    "heading": "استوديو إنشاء البطاقة",
+    "content": "المحتوى والتخطيط",
+    "design": "استوديو التصميم",
+    "templates": "القوالب",
+    "profiles": "الملفات والروابط",
+    "nfc": "أجهزة NFC",
+    "settings": "إعدادات البطاقة"
+  },
+  "quickNav": {
+    "title": "تنقّل سريع",
+    "profile": "بيانات الملف",
+    "links": "روابط اللمس السريع",
+    "sections": "أقسام المحتوى"
+  },
+  "profile": {
+    "title": "معلومات الملف",
+    "subtitle": "خصّص بيانات العرض الأساسية على بطاقتك.",
+    "fullName": "الاسم الكامل للعرض",
+    "fullNamePlaceholder": "سارة تشين",
+    "jobTitle": "المسمى الوظيفي / الشركة",
+    "jobTitlePlaceholder": "مصمّم منتجات",
+    "phone": "الهاتف الأساسي",
+    "phonePlaceholder": "+201001234567",
+    "email": "البريد الإلكتروني الأساسي",
+    "emailPlaceholder": "sarah@vertex.dev",
+    "avatarLabel": "الصورة الشخصية",
+    "coverLabel": "صورة الغلاف",
+    "save": "حفظ إعدادات الملف"
+  },
+  "quality": {
+    "title": "درجة جودة الملف",
+    "assistant": "مساعد اكتمال الملف",
+    "recommendationsTitle": "توصيات:",
+    "complete": "رائع! اكتمل ملفك الرقمي بنسبة 100%.",
+    "recommendations": {
+      "fullName": "أضف اسمك الكامل للعرض",
+      "phone": "اربط رقم هاتف للتواصل",
+      "email": "أضف بريداً إلكترونياً أساسياً",
+      "sections": "أضف قسم نبذة أو عناصر محتوى",
+      "actions": "أضف روابط لمس مباشرة (واتساب، لينكد إن)"
+    }
+  },
+  "links": {
+    "title": "روابط اللمس المباشرة",
+    "subtitle": "اضبط الروابط القابلة للنقر وعمليات إعادة التوجيه الفورية عبر NFC.",
+    "add": "إضافة رابط أو شبكة تواصل",
+    "emptyTitle": "لا توجد روابط مباشرة بعد",
+    "emptyDesc": "ابدأ ببناء ملفك بإضافة أول إجراء، أو اختر أحد الاختصارات السريعة أدناه.",
+    "addShort": "إضافة رابط",
+    "addFirst": "أضف أول رابط لك",
+    "shortcuts": {
+      "phone": "هاتف",
+      "email": "بريد إلكتروني",
+      "whatsapp": "واتساب",
+      "website": "موقع إلكتروني",
+      "linkedin": "لينكد إن"
+    },
+    "buttonLabel": "نص الزر",
+    "destination": "وجهة الرابط",
+    "destinationFor": "وجهة رابط {{name}}",
+    "targetDestination": "رابط الوجهة المستهدفة",
+    "destinationPlaceholder": "أدخل عنوان الوجهة…",
+    "phoneNumber": "رقم الهاتف",
+    "phonePlaceholder": "+201012345678",
+    "emailAddress": "البريد الإلكتروني",
+    "emailPlaceholder": "name@domain.com",
+    "whatsappPhone": "رقم واتساب",
+    "whatsappMessage": "رسالة محادثة معبّأة مسبقاً",
+    "whatsappMessagePlaceholder": "مرحباً، وصلتني بطاقتك…",
+    "linkedinUrl": "رابط لينكد إن",
+    "linkedinPlaceholder": "https://linkedin.com/in/username",
+    "bookingUrl": "رابط صفحة الحجز",
+    "bookingPlaceholder": "https://calendly.com/your-name",
+    "primaryRedirect": "تعيينه كإجراء إعادة التوجيه الأساسي عند لمس NFC (يُفتح فوراً عند مسح البطاقة)",
+    "quickContact": "إظهاره كزر تواصل سريع (أيقونة دائرية أسفل ترويسة الملف)",
+    "topRow": "الصف العلوي",
+    "bottomGrid": "الشبكة السفلية",
+    "topRowHint": "أزرار دائرية تظهر مباشرة أسفل اسم العرض والمسمى الوظيفي.",
+    "bottomGridHint": "أزرار أيقونات دائرية كبيرة تظهر في شبكة الروابط الرئيسية.",
+    "moveUp": "تحريك لأعلى",
+    "moveDown": "تحريك لأسفل",
+    "duplicate": "تكرار الإجراء",
+    "delete": "حذف الإجراء",
+    "toggleVisibility": "تبديل الظهور"
+  },
+  "platformPicker": {
+    "searchPlaceholder": "ابحث عن منصة… (↑/↓ للتنقل، Enter للإضافة، Esc للإغلاق)",
+    "empty": "لا توجد منصات مطابقة.",
+    "hint": "اختر منصة أو ابحث لإضافة بياناتك إلى البطاقة.",
+    "suggested": "اختصارات مقترحة",
+    "favorite": "إضافة للمفضلة",
+    "unfavorite": "إزالة من المفضلة",
+    "categories": {
+      "favorites": "⭐ المفضلة",
+      "recentlyUsed": "المستخدمة مؤخراً",
+      "quickActions": "⭐ إجراءات سريعة",
+      "socialMedia": "🌐 شبكات التواصل",
+      "business": "💼 الأعمال",
+      "media": "🎥 الوسائط",
+      "custom": "⚙ مخصص"
+    }
+  },
+  "sections": {
+    "title": "أقسام تخطيط الصفحة",
+    "subtitle": "أدر شبكات المحتوى الإضافية (النبذة، معرض الأعمال، وغيرها).",
+    "available": "كتل الأقسام المتاحة",
+    "types": {
+      "BIO": {
+        "label": "نبذة عني",
+        "desc": "كتلة نصية وصفية مخصصة"
+      },
+      "SOCIAL": {
+        "label": "شبكات التواصل",
+        "desc": "شبكة لعرض حسابات التواصل الاجتماعي"
+      },
+      "PORTFOLIO": {
+        "label": "معرض الأعمال",
+        "desc": "كتلة شبكية مرئية للمشاريع"
+      },
+      "BOOKING": {
+        "label": "أداة الحجز",
+        "desc": "تقويم حجز تفاعلي"
+      },
+      "VIDEO": {
+        "label": "مشغل الفيديو",
+        "desc": "تضمين فيديو يوتيوب أو Vimeo"
+      }
+    },
+    "sectionTitle": "عنوان القسم",
+    "sectionHeading": "عنوان رأس القسم",
+    "bioTitle": "تفاصيل النبذة",
+    "bioLabel": "السيرة / التعريف",
+    "bioHelpBefore": "تُستورد بيانات الملف (الاسم والمسمى الوظيفي) تلقائياً. استخدم هذه الكتلة لإضافة نص ",
+    "bioHelpAfter": " إلى بطاقة ملفك.",
+    "bioPlaceholder": "اكتب شيئاً عن نشاطك أو خدماتك…",
+    "bodyContent": "محتوى التفاصيل",
+    "bodyPlaceholder": "صف محتوى هذه الكتلة بالتفصيل…",
+    "subtitleField": "عنوان فرعي / معلومات إضافية",
+    "galleryTitle": "عنوان المعرض",
+    "galleryTitlePlaceholder": "مثال: أعمالي، مشاريعي، معرض أعمالي",
+    "galleryImages": "صور المعرض",
+    "addGalleryImage": "إضافة صورة إلى المعرض",
+    "photoGallery": "معرض صور",
+    "galleryHelpBefore": "ارفع صوراً لعرضها بصيغة ",
+    "galleryHelpAfter": " في ملف بطاقتك. يمكن للزوار تصفّح جميع الصور.",
+    "videoUrl": "رابط الفيديو",
+    "videoPlaceholder": "https://www.youtube.com/watch?v=...",
+    "videoTitlePlaceholder": "مثال: شاهد تعريفي",
+    "servicesPlaceholder": "مثال: خدماتي",
+    "offerPlaceholder": "مثال: ما أقدّمه",
+    "bookingPlaceholder": "احجز موعداً معي",
+    "deleteBlock": "حذف الكتلة"
+  },
+  "design": {
+    "title": "استوديو التصميم",
+    "subtitle": "خصّص مظهر السمة والألوان المميزة والأغلفة.",
+    "accent": "لون اللوحة المميز",
+    "themeMode": "وضع عرض السمة",
+    "lightMode": "الوضع الفاتح",
+    "darkMode": "الوضع الداكن",
+    "lightPreview": "معاينة فاتحة",
+    "darkPreview": "معاينة داكنة",
+    "cover": "نمط خلفية الغلاف",
+    "cardLanguage": "لغة تخطيط البطاقة"
+  },
+  "nfc": {
+    "title": "منتجات NFC الفعلية المرتبطة",
+    "subtitle": "اربط التاجات الذكية أو الملصقات أو الأساور مباشرةً بهذا الملف.",
+    "bound": "مرتبط",
+    "uid": "المعرّف",
+    "hardware": "نوع الجهاز",
+    "scanCount": "عدد المسحات",
+    "empty": "لا توجد تاجات NFC فعلية مرتبطة بهذه البطاقة حالياً."
+  },
+  "settings": {
+    "title": "رابط البطاقة",
+    "subtitle": "أدر رابط بطاقتك وحالة ظهورها.",
+    "slugHint": "يجب أن يكون فريداً. الأحرف المسموحة: حروف إنجليزية صغيرة وأرقام وشرطات.",
+    "visibility": "وضع ظهور البطاقة",
+    "dangerZone": "إجراءات لا يمكن التراجع عنها لهذه البطاقة.",
+    "deleteCard": "حذف بطاقة الأعمال",
+    "cancel": "إلغاء",
+    "confirmDelete": "تأكيد الحذف"
+  },
+  "share": {
+    "title": "المشاركة ورمز QR",
+    "subtitle": "يمكن لأي شخص مسح هذا الرمز لفتح البطاقة — بلا حاجة إلى NFC.",
+    "copyLink": "نسخ الرابط",
+    "open": "فتح"
+  },
+  "upload": {
+    "action": "رفع",
+    "replace": "استبدال",
+    "uploading": "جارٍ الرفع…",
+    "remove": "إزالة",
+    "failed": "فشل الرفع.",
+    "hint": "JPG أو PNG أو WebP أو GIF · حتى 5 ميجابايت · يدعم السحب والإفلات",
+    "notImage": "اختر ملف صورة من فضلك.",
+    "tooLarge": "حجم الصورة أكبر من 5 ميجابايت."
+  },
+  "errors": {
+    "slugMismatch": "أدخل معرّف البطاقة الصحيح لتأكيد الحذف."
+  },
+  "engagement": {
+    "title": "التفاعل",
+    "allTime": "كل الأوقات",
+    "empty": "لا يوجد نشاط بعد. ستظهر الأرقام هنا بمجرد أن يفتح الناس رابط هذه البطاقة.",
+    "metrics": {
+      "VIEW": "مشاهدات الملف",
+      "SAVE": "حفظ جهة الاتصال",
+      "NFC_SCAN": "لمسات NFC",
+      "SHARE": "المشاركات",
+      "CLICK": "نقرات الروابط"
+    }
+  }
+}

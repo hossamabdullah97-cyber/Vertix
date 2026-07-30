@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { uploadImage } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 
@@ -23,6 +24,7 @@ export function ImageUpload({
   shape?: 'circle' | 'wide';
   label?: string;
 }) {
+  const { t } = useTranslation('cardEditor');
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -32,11 +34,11 @@ export function ImageUpload({
     if (!file) return;
     setError('');
     if (!file.type.startsWith('image/')) {
-      setError('Please choose an image file.');
+      setError(t('upload.notImage'));
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError('Image is larger than 5 MB.');
+      setError(t('upload.tooLarge'));
       return;
     }
     setBusy(true);
@@ -44,7 +46,7 @@ export function ImageUpload({
       const url = await uploadImage(file);
       onChange(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed.');
+      setError(e instanceof Error ? e.message : t('upload.failed'));
     } finally {
       setBusy(false);
     }
@@ -93,11 +95,11 @@ export function ImageUpload({
             >
               {busy ? (
                 <>
-                  <Icon name="loader" size={14} className="animate-spin" /> Uploading…
+                  <Icon name="loader" size={14} className="animate-spin" /> {t('upload.uploading')}
                 </>
               ) : (
                 <>
-                  <Icon name="upload" size={14} /> {value ? 'Replace' : 'Upload'}
+                  <Icon name="upload" size={14} /> {value ? t('upload.replace') : t('upload.action')}
                 </>
               )}
             </button>
@@ -111,11 +113,11 @@ export function ImageUpload({
                 disabled={busy}
                 className="v-btn v-btn-ghost h-9 px-3 text-[13px] font-semibold text-red-500 disabled:opacity-60"
               >
-                <Icon name="trash" size={14} /> Remove
+                <Icon name="trash" size={14} /> {t('upload.remove')}
               </button>
             )}
           </div>
-          <p className="text-[11px] text-faint">JPG, PNG, WebP or GIF · up to 5 MB · drag &amp; drop supported</p>
+          <p className="text-[11px] text-faint">{t('upload.hint')}</p>
         </div>
 
         <input

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PAYMENT_PLATFORMS, type PaymentPlatformKey } from '@vertex/shared';
 import { authFetch } from '@/lib/client';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
 import { PaymentBrandLogo } from '@/components/brand/PaymentBrandLogo';
 
@@ -51,6 +52,7 @@ export default function PaymentLinksManager({
   /** Lighter chrome for embedding inside the Smart Identity variant editor. */
   compact?: boolean;
 }) {
+  const { t } = useTranslation('paymentLinks');
   const [links, setLinks] = useState<PaymentLinkRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -97,9 +99,9 @@ export default function PaymentLinksManager({
   }, [cardId, variantId]);
 
   function validate(url: string, displayName: string): string {
-    if (!displayName.trim()) return 'Display name is required.';
-    if (!url.trim()) return 'Payment link is required.';
-    if (!HTTPS_LIKE.test(url.trim())) return 'Enter a valid link starting with https://';
+    if (!displayName.trim()) return t('errors.nameRequired');
+    if (!url.trim()) return t('errors.urlRequired');
+    if (!HTTPS_LIKE.test(url.trim())) return t('errors.invalidUrl');
     return '';
   }
 
@@ -125,7 +127,7 @@ export default function PaymentLinksManager({
       setDraft(blankDraft());
       setAdding(false);
     } catch {
-      setError('Could not save the payment link. Please try again.');
+      setError(t('errors.saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -192,31 +194,28 @@ export default function PaymentLinksManager({
       <div className={`flex items-center justify-between gap-3 ${compact ? '' : 'border-b border-line pb-3.5'}`}>
         <div className="flex items-center gap-3">
           {compact ? (
-            <p className="v-section-label">Payment links</p>
+            <p className="v-section-label">{t('titleCompact')}</p>
           ) : (
             <>
               <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-emerald-500/10 text-emerald-500">
                 <Icon name="link" size={16} />
               </span>
               <div>
-                <h3 className="text-[14px] font-extrabold text-ink tracking-tight">Payment Links</h3>
-                <p className="text-xs text-muted">
-                  Share your external payment links (InstaPay, wallets, or a custom URL). Vertex Connect only opens the link — it
-                  never processes payments.
-                </p>
+                <h3 className="text-[14px] font-extrabold text-ink tracking-tight">{t('title')}</h3>
+                <p className="text-xs text-muted">{t('subtitle')}</p>
               </div>
             </>
           )}
         </div>
         {links.length > 0 && (
           <span className="shrink-0 text-[11px] font-bold text-muted whitespace-nowrap">
-            {activeCount}/{links.length} active
+            {t('activeCount', { active: activeCount, total: links.length })}
           </span>
         )}
       </div>
 
       {loading ? (
-        <p className="text-[11px] text-muted text-center py-4">Loading…</p>
+        <p className="text-[11px] text-muted text-center py-4">{t('loading')}</p>
       ) : (
         <div className="space-y-4">
           <div className="space-y-3">
@@ -235,7 +234,7 @@ export default function PaymentLinksManager({
                   }`}
                 >
                   <div className="flex items-center gap-3 p-3.5">
-                    <span className="cursor-grab text-muted/60 active:cursor-grabbing" title="Drag to reorder">
+                    <span className="cursor-grab text-muted/60 active:cursor-grabbing" title={t('actions.reorder')}>
                       <Icon name="dots" size={15} />
                     </span>
                     <PaymentBrandLogo platform={link.platform} size={36} />
@@ -249,7 +248,7 @@ export default function PaymentLinksManager({
                       className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
                         link.isActive ? 'bg-emerald-500' : 'bg-line-strong'
                       }`}
-                      title={link.isActive ? 'Active — visible publicly' : 'Inactive — hidden'}
+                      title={link.isActive ? t('actions.active') : t('actions.inactive')}
                       aria-pressed={link.isActive}
                     >
                       <span
@@ -262,14 +261,14 @@ export default function PaymentLinksManager({
                     <button
                       onClick={() => setExpanded(open ? null : link.id)}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink"
-                      title="Edit"
+                      title={t('actions.edit')}
                     >
                       <Icon name="settings" size={14} />
                     </button>
                     <button
                       onClick={() => remove(link.id)}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500"
-                      title="Delete"
+                      title={t('actions.delete')}
                     >
                       <Icon name="trash" size={14} />
                     </button>
@@ -277,7 +276,7 @@ export default function PaymentLinksManager({
 
                   {open && (
                     <div className="space-y-3 border-t border-line px-3.5 pb-4 pt-3.5">
-                      <Field label="Payment Method">
+                      <Field label={t('fields.method')}>
                         <select
                           className="v-field"
                           value={link.platform}
@@ -290,7 +289,7 @@ export default function PaymentLinksManager({
                           ))}
                         </select>
                       </Field>
-                      <Field label="Display Name">
+                      <Field label={t('fields.displayName')}>
                         <input
                           className="v-field"
                           defaultValue={link.displayName}
@@ -301,17 +300,17 @@ export default function PaymentLinksManager({
                           }}
                         />
                       </Field>
-                      <Field label="Payment Link URL">
+                      <Field label={t('fields.url')}>
                         <input
                           className="v-field"
                           defaultValue={link.url}
-                          placeholder="https://ipn.eg/S/username"
+                          placeholder={t('placeholders.url')}
                           onBlur={(e) => {
                             const v = e.target.value.trim();
                             if (v === link.url) return;
                             if (!HTTPS_LIKE.test(v)) {
                               e.target.value = link.url;
-                              setError('Enter a valid link starting with https://');
+                              setError(t('errors.invalidUrl'));
                               return;
                             }
                             setError('');
@@ -319,12 +318,12 @@ export default function PaymentLinksManager({
                           }}
                         />
                       </Field>
-                      <Field label="Description (optional)">
+                      <Field label={t('fields.description')}>
                         <input
                           className="v-field"
                           defaultValue={link.description ?? ''}
                           maxLength={160}
-                          placeholder="e.g. Fastest — instant transfer"
+                          placeholder={t('placeholders.description')}
                           onBlur={(e) => {
                             const v = e.target.value.trim();
                             if (v !== (link.description ?? '')) patch(link.id, { description: v || undefined });
@@ -339,14 +338,14 @@ export default function PaymentLinksManager({
 
             {links.length === 0 && !adding && (
               <p className="text-[11px] text-muted text-center py-3 bg-canvas/10 rounded-xl border border-dashed border-line/60">
-                No payment links yet. Add one to let visitors pay you through your own external accounts.
+                {t('emptyState')}
               </p>
             )}
           </div>
 
           {adding ? (
             <div className="space-y-3 rounded-2xl border border-line bg-canvas/20 p-4">
-              <Field label="Payment Method">
+              <Field label={t('fields.method')}>
                 <select
                   className="v-field"
                   value={draft.platform}
@@ -365,30 +364,30 @@ export default function PaymentLinksManager({
                   ))}
                 </select>
               </Field>
-              <Field label="Display Name">
+              <Field label={t('fields.displayName')}>
                 <input
                   className="v-field"
                   value={draft.displayName}
                   maxLength={60}
                   onChange={(e) => setDraft({ ...draft, displayName: e.target.value })}
-                  placeholder="InstaPay"
+                  placeholder={t('placeholders.displayName')}
                 />
               </Field>
-              <Field label="Payment Link URL">
+              <Field label={t('fields.url')}>
                 <input
                   className="v-field"
                   value={draft.url}
                   onChange={(e) => setDraft({ ...draft, url: e.target.value })}
-                  placeholder="https://ipn.eg/S/username"
+                  placeholder={t('placeholders.url')}
                 />
               </Field>
-              <Field label="Description (optional)">
+              <Field label={t('fields.description')}>
                 <input
                   className="v-field"
                   value={draft.description}
                   maxLength={160}
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                  placeholder="e.g. Fastest — instant transfer"
+                  placeholder={t('placeholders.description')}
                 />
               </Field>
               {error && <p className="text-[11px] font-semibold text-red-500">{error}</p>}
@@ -398,7 +397,7 @@ export default function PaymentLinksManager({
                   disabled={busy}
                   className="v-btn-primary h-9 px-4 text-[12px] disabled:opacity-60"
                 >
-                  {busy ? 'Saving…' : 'Add payment link'}
+                  {busy ? t('saving') : t('addLink')}
                 </button>
                 <button
                   onClick={() => {
@@ -408,7 +407,7 @@ export default function PaymentLinksManager({
                   }}
                   className="h-9 px-4 text-[12px] font-semibold text-muted hover:text-ink"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               </div>
             </div>
@@ -422,7 +421,7 @@ export default function PaymentLinksManager({
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line py-3 text-[12px] font-bold text-muted transition-colors hover:border-line-strong hover:text-ink"
               >
-                <Icon name="plus" size={15} /> Add payment link
+                <Icon name="plus" size={15} /> {t('addLink')}
               </button>
             </>
           )}

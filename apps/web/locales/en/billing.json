@@ -1,0 +1,40 @@
+{
+  "title": "Subscription & Billing",
+  "subtitle": "Upgrade your plan and check current organization usage limits",
+  "loading": "Loading subscription context…",
+  "successBanner": "Subscription updated successfully. Thank you for choosing Vertex Connect!",
+  "sandboxBanner": "Billing is running in local Sandbox / Test Mode — subscription limits are active but Stripe checkout is simulated.",
+  "current": {
+    "tier": "Active Subscription tier",
+    "planSuffix": "{{name}} Plan",
+    "managePortal": "Manage billing portal"
+  },
+  "usage": {
+    "cards": "Cards",
+    "members": "Members",
+    "nfcTags": "NFC Tags"
+  },
+  "plans": {
+    "FREE": "Free",
+    "PRO": "Pro",
+    "BUSINESS": "Business",
+    "ENTERPRISE": "Enterprise"
+  },
+  "plan": {
+    "active": "Active",
+    "custom": "Custom",
+    "perMonth": "/mo",
+    "unlimited": "Unlimited",
+    "currentPlan": "Current active plan",
+    "redirecting": "Redirecting…",
+    "upgradeTo": "Upgrade to {{name}}",
+    "sandboxDisabled": "Sandbox — upgrade disabled",
+    "contactSales": "Contact corporate sales",
+    "cards_one": "digital profile card",
+    "cards_other": "digital profile cards",
+    "members_one": "organization member",
+    "members_other": "organization members",
+    "tags_one": "programmable tag",
+    "tags_other": "programmable tags"
+  }
+}

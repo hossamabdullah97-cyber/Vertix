@@ -1,0 +1,244 @@
+{
+  "shell": {
+    "title": "Vertex Design Studio",
+    "loadingTitle": "Card Studio Builder",
+    "loading": "Initializing digital card studio…",
+    "errorTitle": "Studio Error",
+    "version": "Vertex Connect Studio v3"
+  },
+  "commandBar": {
+    "backToCards": "Cards",
+    "cardLabel": "Card:",
+    "statusLabel": "Status:",
+    "autoSave": "Auto-save:",
+    "searchPlaceholder": "Search studio fields...",
+    "undo": "Undo",
+    "redo": "Redo",
+    "viewProfile": "View Profile",
+    "publish": "Publish Live",
+    "unpublish": "Unpublish"
+  },
+  "status": {
+    "live": "Live",
+    "draft": "Draft",
+    "saved": "Saved",
+    "saving": "Saving...",
+    "offline": "Offline"
+  },
+  "tabs": {
+    "heading": "Card Builder Studio",
+    "content": "Content & Layout",
+    "design": "Design Studio",
+    "templates": "Templates",
+    "profiles": "Profiles & Links",
+    "nfc": "NFC Hardware",
+    "settings": "Card Settings"
+  },
+  "quickNav": {
+    "title": "Quick Navigation",
+    "profile": "Profile Details",
+    "links": "Quick Tap Links",
+    "sections": "Content Sections"
+  },
+  "profile": {
+    "title": "Profile Information",
+    "subtitle": "Customize primary display credentials on your card.",
+    "fullName": "Full Display Name",
+    "fullNamePlaceholder": "Sarah Chen",
+    "jobTitle": "Job Title / Company",
+    "jobTitlePlaceholder": "Product Designer",
+    "phone": "Primary Phone",
+    "phonePlaceholder": "+201001234567",
+    "email": "Primary Email",
+    "emailPlaceholder": "sarah@vertex.dev",
+    "avatarLabel": "Profile Avatar Photo",
+    "coverLabel": "Cover Banner Image",
+    "save": "Save Profile Settings"
+  },
+  "quality": {
+    "title": "Profile Quality Score",
+    "assistant": "Profile Completion Assistant",
+    "recommendationsTitle": "Recommendations:",
+    "complete": "Fantastic! Your digital profile card is 100% complete.",
+    "recommendations": {
+      "fullName": "Add your full display name",
+      "phone": "Link a contact phone number",
+      "email": "Provide a primary email address",
+      "sections": "Add an About bio or widgets section",
+      "actions": "Add direct tap actions (WhatsApp, LinkedIn)"
+    }
+  },
+  "links": {
+    "title": "Direct Tap Links",
+    "subtitle": "Configure active clickable links and NFC instant redirects.",
+    "add": "Add Link or Social Media",
+    "emptyTitle": "No Direct Links Yet",
+    "emptyDesc": "Start building your profile by adding your first action or select one of the quick shortcuts below.",
+    "addShort": "Add Link",
+    "addFirst": "Add Your First Link",
+    "shortcuts": {
+      "phone": "Phone",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "website": "Website",
+      "linkedin": "LinkedIn"
+    },
+    "buttonLabel": "Button Label",
+    "destination": "Link Destination",
+    "destinationFor": "{{name}} Link Destination",
+    "targetDestination": "Target Destination Link",
+    "destinationPlaceholder": "Enter link target address...",
+    "phoneNumber": "Phone Number",
+    "phonePlaceholder": "+201012345678",
+    "emailAddress": "Email Address",
+    "emailPlaceholder": "name@domain.com",
+    "whatsappPhone": "WhatsApp Phone",
+    "whatsappMessage": "Pre-filled Chat Message",
+    "whatsappMessagePlaceholder": "Hello, I got your card...",
+    "linkedinUrl": "LinkedIn URL",
+    "linkedinPlaceholder": "https://linkedin.com/in/username",
+    "bookingUrl": "Booking Page URL",
+    "bookingPlaceholder": "https://calendly.com/your-name",
+    "primaryRedirect": "Set as Primary NFC Tap Redirect Action (Opens instantly on card scan)",
+    "quickContact": "Show as Quick Contact button (circular icon below profile header)",
+    "topRow": "Top Row",
+    "bottomGrid": "Bottom Grid",
+    "topRowHint": "Circular buttons shown directly below display name/title.",
+    "bottomGridHint": "Large circular branded icon buttons shown in the main links grid.",
+    "moveUp": "Move Up",
+    "moveDown": "Move Down",
+    "duplicate": "Duplicate action",
+    "delete": "Delete action",
+    "toggleVisibility": "Toggle visibility"
+  },
+  "platformPicker": {
+    "searchPlaceholder": "Search platforms... (↑/↓ to navigate, Enter to add, Esc to close)",
+    "empty": "No matching platforms found.",
+    "hint": "Select a platform or search to add credentials to your card.",
+    "suggested": "Suggested Shortcuts",
+    "favorite": "Favorite",
+    "unfavorite": "Unfavorite",
+    "categories": {
+      "favorites": "⭐ Favorites",
+      "recentlyUsed": "Recently Used",
+      "quickActions": "⭐ Quick Actions",
+      "socialMedia": "🌐 Social Media",
+      "business": "💼 Business",
+      "media": "🎥 Media",
+      "custom": "⚙ Custom"
+    }
+  },
+  "sections": {
+    "title": "Page Layout Sections",
+    "subtitle": "Manage additional content layout grids (Bio, Portfolios, etc.).",
+    "available": "Available Section Blocks",
+    "types": {
+      "BIO": {
+        "label": "About Bio",
+        "desc": "A custom text description block"
+      },
+      "SOCIAL": {
+        "label": "Social Grid",
+        "desc": "Grid layout of social profiles"
+      },
+      "PORTFOLIO": {
+        "label": "Portfolio Gallery",
+        "desc": "Visual grid block of projects"
+      },
+      "BOOKING": {
+        "label": "Booking Widget",
+        "desc": "Interactive booking calendar"
+      },
+      "VIDEO": {
+        "label": "Video Player",
+        "desc": "Embed YouTube or Vimeo video"
+      }
+    },
+    "sectionTitle": "Section Title",
+    "sectionHeading": "Section Title Heading",
+    "bioTitle": "Bio Content Details",
+    "bioLabel": "Biography / Introduction",
+    "bioHelpBefore": "Profile details (name and job role) are automatically imported. Use this block to add a ",
+    "bioHelpAfter": " text segment on your profile card.",
+    "bioPlaceholder": "Write something about your business or services...",
+    "bodyContent": "Body Details Content",
+    "bodyPlaceholder": "Describe the content of this block in details...",
+    "subtitleField": "Subtitle / Extra Info",
+    "galleryTitle": "Gallery Title",
+    "galleryTitlePlaceholder": "e.g. My Work, Projects, Portfolio",
+    "galleryImages": "Gallery Images",
+    "addGalleryImage": "Add image to gallery",
+    "photoGallery": "photo gallery",
+    "galleryHelpBefore": "Upload images to display as a ",
+    "galleryHelpAfter": " on your card profile. Visitors can view all images.",
+    "videoUrl": "Video URL",
+    "videoPlaceholder": "https://www.youtube.com/watch?v=...",
+    "videoTitlePlaceholder": "e.g. Watch My Intro",
+    "servicesPlaceholder": "e.g. My Services",
+    "offerPlaceholder": "e.g. What I offer",
+    "bookingPlaceholder": "Book a meeting with me",
+    "deleteBlock": "Delete block"
+  },
+  "design": {
+    "title": "Design Studio",
+    "subtitle": "Customize the visual theme layout, accent swatches, and covers.",
+    "accent": "Accent Palette Color",
+    "themeMode": "Display Theme Mode",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "lightPreview": "Light Preview",
+    "darkPreview": "Dark Preview",
+    "cover": "Background Cover Style",
+    "cardLanguage": "Card Language Layout"
+  },
+  "nfc": {
+    "title": "Bound Physical NFC Products",
+    "subtitle": "Bind physical smart tags, stickers or wristbands directly to this profile link.",
+    "bound": "Bound",
+    "uid": "UID",
+    "hardware": "Hardware",
+    "scanCount": "Scan count",
+    "empty": "No physical NFC tags bound to this profile card currently."
+  },
+  "settings": {
+    "title": "Card URL Link",
+    "subtitle": "Manage your business card URL link and visibility status.",
+    "slugHint": "Must be unique. Allowed characters: lowercase letters, numbers, and hyphens.",
+    "visibility": "Card Visibility Mode",
+    "dangerZone": "Irreversible actions for this business card.",
+    "deleteCard": "Delete Business Card",
+    "cancel": "Cancel",
+    "confirmDelete": "Confirm Delete"
+  },
+  "share": {
+    "title": "Share & QR",
+    "subtitle": "Anyone can scan this to open the card — no NFC needed.",
+    "copyLink": "Copy link",
+    "open": "Open"
+  },
+  "upload": {
+    "action": "Upload",
+    "replace": "Replace",
+    "uploading": "Uploading…",
+    "remove": "Remove",
+    "failed": "Upload failed.",
+    "hint": "JPG, PNG, WebP or GIF · up to 5 MB · drag & drop supported",
+    "notImage": "Please choose an image file.",
+    "tooLarge": "Image is larger than 5 MB."
+  },
+  "errors": {
+    "slugMismatch": "Please enter the correct card slug to confirm deletion."
+  },
+  "engagement": {
+    "title": "Engagement",
+    "allTime": "All time",
+    "empty": "No activity yet. Numbers appear here once people open this card's link.",
+    "metrics": {
+      "VIEW": "Profile Views",
+      "SAVE": "Contact Saves",
+      "NFC_SCAN": "NFC Taps",
+      "SHARE": "Shares",
+      "CLICK": "Link Clicks"
+    }
+  }
+}

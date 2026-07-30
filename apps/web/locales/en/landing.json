@@ -1,0 +1,77 @@
+{
+  "brand": "Vertex Connect",
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How it works",
+    "signIn": "Sign in",
+    "openDashboard": "Open dashboard"
+  },
+  "hero": {
+    "badge": "Production NFC + CRM platform",
+    "titleLine1": "Turn every tap into a",
+    "titleLine2": "tracked business opportunity.",
+    "subtitle": "NFC smart cards, premium digital profiles, a built-in CRM, and real analytics — one platform to unify and scale your organization's real-world connections.",
+    "trust": {
+      "isolation": "Multi-tenant isolation",
+      "pipeline": "7-stage pipeline",
+      "nfc": "Native NFC programming"
+    }
+  },
+  "features": {
+    "label": "Everything in one platform",
+    "title": "Built to connect and convert",
+    "subtitle": "From the first tap to a closed deal — every capability works on real data, no mock dashboards.",
+    "items": {
+      "nfcCards": {
+        "title": "NFC Smart Cards",
+        "desc": "Register physical NFC chips and bind them to any digital profile. Every tap opens your live card instantly."
+      },
+      "digitalCards": {
+        "title": "Digital Business Cards",
+        "desc": "Build rich profiles with contact actions, social links, and content sections — published live in one click."
+      },
+      "templates": {
+        "title": "Template Marketplace",
+        "desc": "19 premium templates with a live design studio and side-by-side compare view to find your look."
+      },
+      "crm": {
+        "title": "Built-in CRM",
+        "desc": "A 7-stage sales pipeline with board and table views, contacts, companies, tasks, and lead scoring."
+      },
+      "analytics": {
+        "title": "Real Analytics",
+        "desc": "Track profile views, taps, clicks and saves. See top-performing cards and a real conversion funnel."
+      },
+      "teams": {
+        "title": "Teams & Workspaces",
+        "desc": "Multi-tenant organizations with roles, teams, member directory, and per-workspace isolation."
+      }
+    }
+  },
+  "how": {
+    "label": "How it works",
+    "title": "Three steps to your first lead",
+    "steps": {
+      "create": {
+        "title": "Create your card",
+        "desc": "Design a digital profile in the studio — pick a template, add your details and tap actions."
+      },
+      "share": {
+        "title": "Tap or share",
+        "desc": "Link a physical NFC chip or share your QR. One tap opens your live profile on any phone."
+      },
+      "capture": {
+        "title": "Capture leads",
+        "desc": "Every save and interaction lands in your CRM pipeline, ready to convert and track."
+      }
+    }
+  },
+  "cta": {
+    "title": "Ready to connect smarter?",
+    "subtitle": "Open your workspace and build your first NFC-powered digital card in minutes."
+  },
+  "footer": {
+    "tagline": "NFC digital business cards & CRM · Built for teams.",
+    "dashboard": "Dashboard"
+  }
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
@@ -177,6 +178,7 @@ const getActionBrandDetails = (a: { type: string; config: any }) => {
 };
 
 export default function CardBuilderStudio({ params }: { params: { id: string } }) {
+  const { t } = useTranslation('cardEditor');
   const router = useRouter();
   const id = params.id;
 
@@ -456,11 +458,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   const missingRecommendations = useMemo(() => {
     const recs: string[] = [];
-    if (!vcard.fullName) recs.push('Add your full display name');
-    if (!vcard.phone) recs.push('Link a contact phone number');
-    if (!vcard.email) recs.push('Provide a primary email address');
-    if (sections.length === 0) recs.push('Add an About bio or widgets section');
-    if (actions.length === 0) recs.push('Add direct tap actions (WhatsApp, LinkedIn)');
+    if (!vcard.fullName) recs.push('fullName');
+    if (!vcard.phone) recs.push('phone');
+    if (!vcard.email) recs.push('email');
+    if (sections.length === 0) recs.push('sections');
+    if (actions.length === 0) recs.push('actions');
     return recs;
   }, [vcard, sections, actions]);
 
@@ -472,7 +474,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   const handleDeleteCard = async () => {
     if (!card || deleteSlugConfirm !== card.slug) {
-      setError('Please enter the correct card slug to confirm deletion.');
+      setError(t('errors.slugMismatch'));
       return;
     }
     setError('');
@@ -586,19 +588,19 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   if (!card) {
     return (
-      <AppShell title="Card Studio Builder">
+      <AppShell title={t('shell.loadingTitle')}>
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
           <span className="v-loader text-accent">
             <Icon name="loader" size={24} className="animate-spin" />
           </span>
-          <p className="text-sm font-semibold text-muted">{error || 'Initializing digital card studio…'}</p>
+          <p className="text-sm font-semibold text-muted">{error || t('shell.loading')}</p>
         </div>
       </AppShell>
     );
   }
 
   return (
-    <AppShell title="Vertex Design Studio" fluid={true}>
+    <AppShell title={t('shell.title')} fluid={true}>
       {/* 🚀 Top Command Bar */}
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface/80 border border-line rounded-2xl p-4 shadow-sm backdrop-blur-md sticky top-[68px] z-30">
         <div className="flex items-center gap-3">
@@ -606,22 +608,26 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
             href="/cards"
             className="v-btn v-btn-ghost !h-9 text-xs font-bold px-3 hover:bg-canvas/50 active:scale-95 transition-all rounded-lg"
           >
-            ← Cards
+            <span aria-hidden>←</span> {t('commandBar.backToCards')}
           </Link>
           <div className="h-6 w-px bg-line" />
           <div className="space-y-0.5">
             <h2 className="text-sm font-extrabold text-ink tracking-tight flex items-center gap-1.5">
-              <span>Card:</span>
+              <span>{t('commandBar.cardLabel')}</span>
               <span className="font-mono font-bold text-accent">/c/{card.slug}</span>
             </h2>
             <p className="text-[10px] text-muted font-bold uppercase tracking-wider flex items-center gap-2">
-              Status:
+              {t('commandBar.statusLabel')}
               <Badge variant={card.isPublished ? 'success' : 'neutral'} className="!text-[9px] font-black uppercase">
-                {card.isPublished ? 'Live' : 'Draft'}
+                {card.isPublished ? t('status.live') : t('status.draft')}
               </Badge>
-              · Auto-save:{' '}
+              · {t('commandBar.autoSave')}{' '}
               <span className={autoSaveStatus === 'Saved' ? 'text-emerald-500 font-bold' : 'text-amber-500 font-bold'}>
-                {autoSaveStatus}
+                {autoSaveStatus === 'Saved'
+                  ? t('status.saved')
+                  : autoSaveStatus === 'Saving...'
+                    ? t('status.saving')
+                    : t('status.offline')}
               </span>
             </p>
           </div>
@@ -635,7 +641,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
             </span>
             <input
               className="v-field !h-9 !pl-8 text-xs w-44 font-semibold bg-canvas/30"
-              placeholder="Search studio fields..."
+              placeholder={t('commandBar.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -646,7 +652,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               onClick={handleUndo}
               disabled={historyIndex <= 0}
               className="h-8 w-8 flex items-center justify-center text-muted hover:text-ink disabled:opacity-20 active:scale-90 transition-all font-bold"
-              title="Undo"
+              title={t('commandBar.undo')}
             >
               ↶
             </button>
@@ -655,7 +661,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
               className="h-8 w-8 flex items-center justify-center text-muted hover:text-ink disabled:opacity-20 active:scale-90 transition-all font-bold"
-              title="Redo"
+              title={t('commandBar.redo')}
             >
               ↷
             </button>
@@ -667,7 +673,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               target="_blank"
               className="v-btn v-btn-ghost !h-9 text-xs font-bold px-3 rounded-lg hover:shadow-sm active:scale-95 transition-all"
             >
-              View Profile
+              {t('commandBar.viewProfile')}
             </a>
             <Button
               onClick={() =>
@@ -680,14 +686,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               }
               className="!h-9 text-xs font-bold px-3 rounded-lg hover:shadow-md active:scale-95 transition-all"
             >
-              {card.isPublished ? 'Unpublish' : 'Publish Live'}
+              {card.isPublished ? t('commandBar.unpublish') : t('commandBar.publish')}
             </Button>
           </div>
         </div>
       </div>
 
       {error && (
-        <Alert variant="error" title="Studio Error" className="mb-6 rounded-2xl">
+        <Alert variant="error" title={t('shell.errorTitle')} className="mb-6 rounded-2xl">
           {error}
         </Alert>
       )}
@@ -699,7 +705,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
           <Card variant="standard" className="p-4 bg-surface flex flex-col gap-5 h-full overflow-y-auto no-scrollbar">
             <div className="space-y-4">
               <h3 className="text-[11px] font-bold text-ink uppercase tracking-wider border-b border-line pb-2 flex items-center gap-1.5">
-                <Icon name="settings" size={13} /> Card Builder Studio
+                <Icon name="settings" size={13} /> {t('tabs.heading')}
               </h3>
 
               {/* Navigation Tabs */}
@@ -707,37 +713,37 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 <TabButton
                   active={activeTab === 'content'}
                   onClick={() => setActiveTab('content')}
-                  label="Content & Layout"
+                  label={t('tabs.content')}
                   icon="grid"
                 />
                 <TabButton
                   active={activeTab === 'design'}
                   onClick={() => setActiveTab('design')}
-                  label="Design Studio"
+                  label={t('tabs.design')}
                   icon="palette"
                 />
                 <TabButton
                   active={activeTab === 'templates'}
                   onClick={() => setActiveTab('templates')}
-                  label="Templates"
+                  label={t('tabs.templates')}
                   icon="layers"
                 />
                 <TabButton
                   active={activeTab === 'profiles'}
                   onClick={() => setActiveTab('profiles')}
-                  label="Profiles & Links"
+                  label={t('tabs.profiles')}
                   icon="user"
                 />
                 <TabButton
                   active={activeTab === 'nfc'}
                   onClick={() => setActiveTab('nfc')}
-                  label="NFC Hardware"
+                  label={t('tabs.nfc')}
                   icon="tag"
                 />
                 <TabButton
                   active={activeTab === 'settings'}
                   onClick={() => setActiveTab('settings')}
-                  label="Card Settings"
+                  label={t('tabs.settings')}
                   icon="settings"
                 />
               </div>
@@ -745,28 +751,28 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               {/* Scroll Table of Contents for Content Tab */}
               {activeTab === 'content' && (
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase text-faint tracking-wider px-2">Quick Navigation</p>
+                  <p className="text-[10px] font-black uppercase text-faint tracking-wider px-2">{t('quickNav.title')}</p>
                   <div className="flex flex-col gap-0.5">
                     <button
                       onClick={() => document.getElementById('studio-profile')?.scrollIntoView({ behavior: 'smooth' })}
                       className="w-full text-left px-3 py-1.5 rounded-xl text-[12px] font-bold text-muted hover:text-ink hover:bg-canvas/50 transition-all flex items-center gap-2"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                      Profile Details
+                      {t('quickNav.profile')}
                     </button>
                     <button
                       onClick={() => document.getElementById('studio-links')?.scrollIntoView({ behavior: 'smooth' })}
                       className="w-full text-left px-3 py-1.5 rounded-xl text-[12px] font-bold text-muted hover:text-ink hover:bg-canvas/50 transition-all flex items-center gap-2"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      Quick Tap Links
+                      {t('quickNav.links')}
                     </button>
                     <button
                       onClick={() => document.getElementById('studio-sections')?.scrollIntoView({ behavior: 'smooth' })}
                       className="w-full text-left px-3 py-1.5 rounded-xl text-[12px] font-bold text-muted hover:text-ink hover:bg-canvas/50 transition-all flex items-center gap-2"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      Content Sections
+                      {t('quickNav.sections')}
                     </button>
                   </div>
                 </div>
@@ -774,7 +780,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
             </div>
 
             <div className="pt-3 border-t border-line text-[9.5px] text-faint uppercase font-bold text-center">
-              Vertex Connect Studio v3
+              {t('shell.version')}
             </div>
           </Card>
         </div>
@@ -790,8 +796,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   <div className="flex items-center gap-3">
                     <span className="v-icon-tile"><Icon name="user" size={16} /></span>
                     <div>
-                      <h3 className="text-[14px] font-extrabold text-ink tracking-tight">Profile Information</h3>
-                      <p className="text-xs text-muted">Customize primary display credentials on your card.</p>
+                      <h3 className="text-[14px] font-extrabold text-ink tracking-tight">{t('profile.title')}</h3>
+                      <p className="text-xs text-muted">{t('profile.subtitle')}</p>
                     </div>
                   </div>
                 </div>
@@ -800,23 +806,23 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {searchMatch('Full Name') && (
                       <div className="space-y-1.5">
-                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">Full Display Name</label>
+                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">{t('profile.fullName')}</label>
                         <input
                           className="v-field font-semibold"
                           value={vcard.fullName ?? ''}
                           onChange={(e) => setVcard({ ...vcard, fullName: e.target.value })}
-                          placeholder="Sarah Chen"
+                          placeholder={t('profile.fullNamePlaceholder')}
                         />
                       </div>
                     )}
                     {searchMatch('Job Title') && (
                       <div className="space-y-1.5">
-                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">Job Title / Company</label>
+                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">{t('profile.jobTitle')}</label>
                         <input
                           className="v-field font-medium"
                           value={vcard.org ?? ''}
                           onChange={(e) => setVcard({ ...vcard, org: e.target.value })}
-                          placeholder="Product Designer"
+                          placeholder={t('profile.jobTitlePlaceholder')}
                         />
                       </div>
                     )}
@@ -825,23 +831,23 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {searchMatch('Phone') && (
                       <div className="space-y-1.5">
-                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">Primary Phone</label>
+                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">{t('profile.phone')}</label>
                         <input
                           className="v-field font-medium font-mono"
                           value={vcard.phone ?? ''}
                           onChange={(e) => setVcard({ ...vcard, phone: e.target.value })}
-                          placeholder="+201001234567"
+                          placeholder={t('profile.phonePlaceholder')}
                         />
                       </div>
                     )}
                     {searchMatch('Email') && (
                       <div className="space-y-1.5">
-                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">Primary Email</label>
+                        <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">{t('profile.email')}</label>
                         <input
                           className="v-field font-medium"
                           value={vcard.email ?? ''}
                           onChange={(e) => setVcard({ ...vcard, email: e.target.value })}
-                          placeholder="sarah@vertex.dev"
+                          placeholder={t('profile.emailPlaceholder')}
                         />
                       </div>
                     )}
@@ -852,7 +858,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     {searchMatch('Profile Photo') && (
                       <div className="p-4 rounded-xl border border-line bg-canvas/30">
                         <ImageUpload
-                          label="Profile Avatar Photo"
+                          label={t('profile.avatarLabel')}
                           shape="circle"
                           value={vcard.avatar ?? ''}
                           onChange={(url) => setVcard({ ...vcard, avatar: url })}
@@ -862,7 +868,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     {searchMatch('Cover Image') && (
                       <div className="p-4 rounded-xl border border-line bg-canvas/30">
                         <ImageUpload
-                          label="Cover Banner Image"
+                          label={t('profile.coverLabel')}
                           shape="wide"
                           value={vcard.coverImage ?? ''}
                           onChange={(url) => setVcard({ ...vcard, coverImage: url })}
@@ -873,7 +879,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                   <div className="pt-2 flex justify-end">
                     <Button onClick={saveSettings} variant="primary" className="font-bold text-xs hover:shadow-md px-6">
-                      Save Profile Settings
+                      {t('profile.save')}
                     </Button>
                   </div>
                 </div>
@@ -885,8 +891,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-emerald-500/10 text-emerald-500"><Icon name="link" size={16} /></span>
                     <div>
-                      <h3 className="text-[14px] font-extrabold text-ink tracking-tight">Direct Tap Links</h3>
-                      <p className="text-xs text-muted">Configure active clickable links and NFC instant redirects.</p>
+                      <h3 className="text-[14px] font-extrabold text-ink tracking-tight">{t('links.title')}</h3>
+                      <p className="text-xs text-muted">{t('links.subtitle')}</p>
                     </div>
                   </div>
 
@@ -898,7 +904,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     }}
                     className="v-btn v-btn-primary !h-9 text-xs font-bold px-4 rounded-xl flex items-center gap-1.5 shadow-sm hover:shadow-md active:scale-95 transition-all"
                   >
-                    <Icon name="plus" size={14} /> Add Link
+                    <Icon name="plus" size={14} /> {t('links.addShort')}
                   </button>
                 </div>
 
@@ -909,27 +915,27 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       <Icon name="link" size={24} />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-sm font-black text-ink uppercase tracking-wider">No Direct Links Yet</h4>
-                      <p className="text-xs text-muted max-w-sm">Start building your profile by adding your first action or select one of the quick shortcuts below.</p>
+                      <h4 className="text-sm font-black text-ink uppercase tracking-wider">{t('links.emptyTitle')}</h4>
+                      <p className="text-xs text-muted max-w-sm">{t('links.emptyDesc')}</p>
                     </div>
                     
                     {/* Suggested Shortcuts */}
                     <div className="space-y-2.5 w-full max-w-md pt-3.5 border-t border-line/40">
-                      <p className="text-[10px] font-black uppercase text-faint tracking-wider">Suggested Shortcuts</p>
+                      <p className="text-[10px] font-black uppercase text-faint tracking-wider">{t('platformPicker.suggested')}</p>
                       <div className="flex flex-wrap justify-center gap-2">
                         {[
-                          { label: '📞 Phone', type: 'CALL' },
-                          { label: '✉ Email', type: 'EMAIL' },
-                          { label: '💬 WhatsApp', type: 'WHATSAPP' },
-                          { label: '🌍 Website', type: 'WEBSITE' },
-                          { label: '💼 LinkedIn', type: 'LINKEDIN' }
+                          { emoji: '📞', key: 'phone', type: 'CALL' },
+                          { emoji: '✉', key: 'email', type: 'EMAIL' },
+                          { emoji: '💬', key: 'whatsapp', type: 'WHATSAPP' },
+                          { emoji: '🌍', key: 'website', type: 'WEBSITE' },
+                          { emoji: '💼', key: 'linkedin', type: 'LINKEDIN' }
                         ].map((item) => (
                           <button
                             key={item.type}
                             onClick={() => addAction(item.type)}
                             className="px-3.5 py-1.5 rounded-xl border border-line bg-surface hover:border-line-strong hover:bg-elevated active:scale-95 transition-all text-xs font-bold text-ink shadow-sm"
                           >
-                            {item.label}
+                            {item.emoji} {t(`links.shortcuts.${item.key}`)}
                           </button>
                         ))}
                       </div>
@@ -942,7 +948,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       }}
                       className="v-btn v-btn-primary !h-10 text-xs font-bold px-6 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all"
                     >
-                      <Icon name="plus" size={14} /> Add Your First Link
+                      <Icon name="plus" size={14} /> {t('links.addFirst')}
                     </button>
                   </div>
                 ) : (
@@ -953,9 +959,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         <div>
                           <h4 className="text-[12px] font-bold text-ink flex items-center gap-1.5">
                             <span>💬 Quick Actions (Below Photo)</span>
-                            <Badge variant="neutral" className="!text-[9px] px-1.5 py-0.5">Top Row</Badge>
+                            <Badge variant="neutral" className="!text-[9px] px-1.5 py-0.5">{t('links.topRow')}</Badge>
                           </h4>
-                          <p className="text-[10px] text-muted font-medium">Circular buttons shown directly below display name/title.</p>
+                          <p className="text-[10px] text-muted font-medium">{t('links.topRowHint')}</p>
                         </div>
                       </div>
 
@@ -1082,7 +1088,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         <button
                                           onClick={(e) => { e.stopPropagation(); duplicateAction(a); }}
                                           className="h-7 px-2.5 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-[11px] font-bold gap-1"
-                                          title="Duplicate action"
+                                          title={t('links.duplicate')}
                                         >
                                           <Icon name="copy" size={11} /> Duplicate
                                         </button>
@@ -1092,7 +1098,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                             run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' }));
                                           }}
                                           className="h-7 w-7 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
-                                          title="Delete action"
+                                          title={t('links.delete')}
                                         >
                                           <Icon name="trash" size={13} />
                                         </button>
@@ -1118,7 +1124,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         {a.type === 'WHATSAPP' && (
                                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">WhatsApp Phone</label>
+                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappPhone')}</label>
                                               <input
                                                 className="v-field font-mono text-xs !h-8"
                                                 defaultValue={a.config.phone as string ?? ''}
@@ -1126,11 +1132,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                   a.config.phone = e.target.value;
                                                   run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                                 }}
-                                                placeholder="+201012345678"
+                                                placeholder={t('links.phonePlaceholder')}
                                               />
                                             </div>
                                             <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">Pre-filled Chat Message</label>
+                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappMessage')}</label>
                                               <input
                                                 className="v-field text-xs !h-8"
                                                 defaultValue={a.config.text as string ?? ''}
@@ -1138,7 +1144,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                   a.config.text = e.target.value;
                                                   run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                                 }}
-                                                placeholder="Hello, I got your card..."
+                                                placeholder={t('links.whatsappMessagePlaceholder')}
                                               />
                                             </div>
                                           </div>
@@ -1146,7 +1152,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                                         {a.type === 'CALL' && (
                                           <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">Phone Number</label>
+                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.phoneNumber')}</label>
                                             <input
                                               className="v-field font-mono text-xs !h-8"
                                               defaultValue={a.config.phone as string ?? ''}
@@ -1154,14 +1160,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                 a.config.phone = e.target.value;
                                                 run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                               }}
-                                              placeholder="+201012345678"
+                                              placeholder={t('links.phonePlaceholder')}
                                             />
                                           </div>
                                         )}
 
                                         {a.type === 'EMAIL' && (
                                           <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">Email Address</label>
+                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.emailAddress')}</label>
                                             <input
                                               className="v-field font-mono text-xs !h-8"
                                               defaultValue={a.config.email as string ?? ''}
@@ -1169,14 +1175,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                 a.config.email = e.target.value;
                                                 run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                               }}
-                                              placeholder="name@domain.com"
+                                              placeholder={t('links.emailPlaceholder')}
                                             />
                                           </div>
                                         )}
 
                                         {a.type !== 'WHATSAPP' && a.type !== 'LINKEDIN' && a.type !== 'CALL' && a.type !== 'EMAIL' && (
                                           <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">Link Destination</label>
+                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.destination')}</label>
                                             <input
                                               className="v-field font-mono text-xs !h-8"
                                               defaultValue={a.config.url as string ?? ''}
@@ -1184,7 +1190,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                 a.config.url = e.target.value;
                                                 run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                               }}
-                                              placeholder="Enter link target address..."
+                                              placeholder={t('links.destinationPlaceholder')}
                                             />
                                           </div>
                                         )}
@@ -1204,7 +1210,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                               }}
                                               className="rounded border-line text-accent focus:ring-accent-soft h-3.5 w-3.5"
                                             />
-                                            <span>Show as Quick Contact button (circular icon below profile header)</span>
+                                            <span>{t('links.quickContact')}</span>
                                           </label>
                                         </div>
                                       </motion.div>
@@ -1227,9 +1233,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       <div className="border-b border-line/40 pb-2">
                         <h4 className="text-[12px] font-bold text-ink flex items-center gap-1.5">
                           <span>🔗 Links Grid (Page Body)</span>
-                          <Badge variant="neutral" className="!text-[9px] px-1.5 py-0.5">Bottom Grid</Badge>
+                          <Badge variant="neutral" className="!text-[9px] px-1.5 py-0.5">{t('links.bottomGrid')}</Badge>
                         </h4>
-                        <p className="text-[10px] text-muted font-medium">Large circular branded icon buttons shown in the main links grid.</p>
+                        <p className="text-[10px] text-muted font-medium">{t('links.bottomGridHint')}</p>
                       </div>
 
                       <div className="space-y-3">
@@ -1355,7 +1361,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         <button
                                           onClick={(e) => { e.stopPropagation(); duplicateAction(a); }}
                                           className="h-7 px-2.5 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-[11px] font-bold gap-1"
-                                          title="Duplicate action"
+                                          title={t('links.duplicate')}
                                         >
                                           <Icon name="copy" size={11} /> Duplicate
                                         </button>
@@ -1365,7 +1371,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                             run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' }));
                                           }}
                                           className="h-7 w-7 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
-                                          title="Delete action"
+                                          title={t('links.delete')}
                                         >
                                           <Icon name="trash" size={13} />
                                         </button>
@@ -1391,7 +1397,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         {a.type === 'WHATSAPP' && (
                                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">WhatsApp Phone</label>
+                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappPhone')}</label>
                                               <input
                                                 className="v-field font-mono text-xs !h-8"
                                                 defaultValue={a.config.phone as string ?? ''}
@@ -1399,11 +1405,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                   a.config.phone = e.target.value;
                                                   run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                                 }}
-                                                placeholder="+201012345678"
+                                                placeholder={t('links.phonePlaceholder')}
                                               />
                                             </div>
                                             <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">Pre-filled Chat Message</label>
+                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappMessage')}</label>
                                               <input
                                                 className="v-field text-xs !h-8"
                                                 defaultValue={a.config.text as string ?? ''}
@@ -1411,7 +1417,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                   a.config.text = e.target.value;
                                                   run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                                 }}
-                                                placeholder="Hello, I got your card..."
+                                                placeholder={t('links.whatsappMessagePlaceholder')}
                                               />
                                             </div>
                                           </div>
@@ -1419,7 +1425,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                                         {a.type === 'LINKEDIN' && (
                                           <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">LinkedIn URL</label>
+                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.linkedinUrl')}</label>
                                             <input
                                               className="v-field font-mono text-xs !h-8"
                                               defaultValue={a.config.url as string ?? ''}
@@ -1427,14 +1433,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                 a.config.url = e.target.value;
                                                 run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                               }}
-                                              placeholder="https://linkedin.com/in/username"
+                                              placeholder={t('links.linkedinPlaceholder')}
                                             />
                                           </div>
                                         )}
 
                                         {a.type === 'CALL' && (
                                           <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">Phone Number</label>
+                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.phoneNumber')}</label>
                                             <input
                                               className="v-field font-mono text-xs !h-8"
                                               defaultValue={a.config.phone as string ?? ''}
@@ -1442,14 +1448,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                 a.config.phone = e.target.value;
                                                 run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                               }}
-                                              placeholder="+201012345678"
+                                              placeholder={t('links.phonePlaceholder')}
                                             />
                                           </div>
                                         )}
 
                                         {a.type === 'EMAIL' && (
                                           <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">Email Address</label>
+                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.emailAddress')}</label>
                                             <input
                                               className="v-field font-mono text-xs !h-8"
                                               defaultValue={a.config.email as string ?? ''}
@@ -1457,7 +1463,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                 a.config.email = e.target.value;
                                                 run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                               }}
-                                              placeholder="name@domain.com"
+                                              placeholder={t('links.emailPlaceholder')}
                                             />
                                           </div>
                                         )}
@@ -1465,7 +1471,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         {a.type !== 'WHATSAPP' && a.type !== 'LINKEDIN' && a.type !== 'CALL' && a.type !== 'EMAIL' && (
                                           <div className="space-y-1">
                                             <label className="text-[10px] font-bold text-muted uppercase">
-                                              {a.type === 'WEBSITE' ? `${details.label} Link Destination` : 'Target Destination Link'}
+                                              {a.type === 'WEBSITE'
+                                                ? t('links.destinationFor', { name: details.label })
+                                                : t('links.targetDestination')}
                                             </label>
                                             <input
                                               className="v-field font-mono text-xs !h-8"
@@ -1474,7 +1482,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                                 a.config.url = e.target.value;
                                                 run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
                                               }}
-                                              placeholder="Enter link target address..."
+                                              placeholder={t('links.destinationPlaceholder')}
                                             />
                                           </div>
                                         )}
@@ -1490,7 +1498,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                               }}
                                               className="rounded border-line text-accent focus:ring-accent-soft h-3.5 w-3.5"
                                             />
-                                            <span>Set as Primary NFC Tap Redirect Action (Opens instantly on card scan)</span>
+                                            <span>{t('links.primaryRedirect')}</span>
                                           </label>
 
                                           <label className="flex items-center gap-2 text-xs text-muted font-bold select-none cursor-pointer">
@@ -1507,7 +1515,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                               }}
                                               className="rounded border-line text-accent focus:ring-accent-soft h-3.5 w-3.5"
                                             />
-                                            <span>Show as Quick Contact button (circular icon below profile header)</span>
+                                            <span>{t('links.quickContact')}</span>
                                           </label>
                                         </div>
                                       </motion.div>
@@ -1536,8 +1544,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 <div className="border-b border-line pb-3.5 flex items-center gap-3">
                   <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-rose-500/10 text-rose-500"><Icon name="layers" size={16} /></span>
                   <div>
-                    <h3 className="text-[14px] font-extrabold text-ink tracking-tight">Page Layout Sections</h3>
-                    <p className="text-xs text-muted">Manage additional content layout grids (Bio, Portfolios, etc.).</p>
+                    <h3 className="text-[14px] font-extrabold text-ink tracking-tight">{t('sections.title')}</h3>
+                    <p className="text-xs text-muted">{t('sections.subtitle')}</p>
                   </div>
                 </div>
 
@@ -1558,8 +1566,12 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               <Icon name={details?.icon ?? 'layers'} size={18} />
                             </span>
                             <div>
-                              <h4 className="font-extrabold text-sm text-ink">{details?.label ?? s.type}</h4>
-                              <p className="text-[11px] text-muted">{details?.desc}</p>
+                              <h4 className="font-extrabold text-sm text-ink">
+                                {details ? t(`sections.types.${s.type}.label`) : s.type}
+                              </h4>
+                              <p className="text-[11px] text-muted">
+                                {details ? t(`sections.types.${s.type}.desc`) : ''}
+                              </p>
                             </div>
                           </div>
 
@@ -1579,7 +1591,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                   ? 'bg-accent/10 border-accent/25 text-accent shadow-sm'
                                   : 'bg-surface hover:bg-elevated text-muted'
                               }`}
-                              title="Toggle visibility"
+                              title={t('links.toggleVisibility')}
                             >
                               <Icon name={s.isVisible ? 'eye' : 'eye-off'} size={14} />
                             </button>
@@ -1588,14 +1600,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             <button
                               onClick={() => move(sections, i, -1, 'sections')}
                               className="h-8 w-8 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-xs font-bold"
-                              title="Move Up"
+                              title={t('links.moveUp')}
                             >
                               ↑
                             </button>
                             <button
                               onClick={() => move(sections, i, 1, 'sections')}
                               className="h-8 w-8 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-xs font-bold"
-                              title="Move Down"
+                              title={t('links.moveDown')}
                             >
                               ↓
                             </button>
@@ -1606,7 +1618,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                 run(() => authFetch(`/cards/${id}/sections/${s.id}`, { method: 'DELETE' }))
                               }
                               className="h-8 w-8 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
-                              title="Delete block"
+                              title={t('sections.deleteBlock')}
                             >
                               <Icon name="trash" size={14} />
                             </button>
@@ -1618,10 +1630,12 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           {s.type === 'BIO' ? (
                             <>
                               <p className="rounded-xl border border-line/60 bg-canvas/30 p-3 text-[11.5px] leading-relaxed text-muted font-medium">
-                                Profile details (name and job role) are automatically imported. Use this block to add a <strong>Biography / Introduction</strong> text segment on your profile card.
+                                {t('sections.bioHelpBefore')}
+                                <strong>{t('sections.bioLabel')}</strong>
+                                {t('sections.bioHelpAfter')}
                               </p>
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-muted uppercase">Bio Content Details</label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('sections.bioTitle')}</label>
                                 <textarea
                                   className="v-field h-24 py-2 font-medium text-xs leading-relaxed"
                                   defaultValue={s.content.body as string ?? ''}
@@ -1634,7 +1648,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       }),
                                     );
                                   }}
-                                  placeholder="Write something about your business or services..."
+                                  placeholder={t('sections.bioPlaceholder')}
                                 />
                               </div>
                             </>
@@ -1644,7 +1658,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                 Paste a <strong>YouTube</strong> or <strong>Vimeo</strong> video URL. The video will be embedded directly on your public card profile.
                               </p>
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-muted uppercase">Video URL</label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('sections.videoUrl')}</label>
                                 <input
                                   className="v-field font-mono text-xs"
                                   defaultValue={s.content.videoUrl as string ?? ''}
@@ -1657,11 +1671,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       }),
                                     );
                                   }}
-                                  placeholder="https://www.youtube.com/watch?v=..."
+                                  placeholder={t('sections.videoPlaceholder')}
                                 />
                               </div>
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-muted uppercase">Section Title <span className="font-normal text-faint">(optional)</span></label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('sections.sectionTitle')} <span className="font-normal text-faint">(optional)</span></label>
                                 <input
                                   className="v-field text-xs"
                                   defaultValue={s.content.title as string ?? ''}
@@ -1674,7 +1688,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       }),
                                     );
                                   }}
-                                  placeholder="e.g. Watch My Intro"
+                                  placeholder={t('sections.videoTitlePlaceholder')}
                                 />
                               </div>
                               {/* Video preview */}
@@ -1695,10 +1709,12 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           ) : s.type === 'PORTFOLIO' ? (
                             <>
                               <p className="rounded-xl border border-line/60 bg-canvas/30 p-3 text-[11.5px] leading-relaxed text-muted font-medium">
-                                Upload images to display as a <strong>photo gallery</strong> on your card profile. Visitors can view all images.
+                                {t('sections.galleryHelpBefore')}
+                                <strong>{t('sections.photoGallery')}</strong>
+                                {t('sections.galleryHelpAfter')}
                               </p>
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-muted uppercase">Gallery Title <span className="font-normal text-faint">(optional)</span></label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('sections.galleryTitle')} <span className="font-normal text-faint">(optional)</span></label>
                                 <input
                                   className="v-field text-xs"
                                   defaultValue={s.content.title as string ?? ''}
@@ -1711,12 +1727,12 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       }),
                                     );
                                   }}
-                                  placeholder="e.g. My Work, Projects, Portfolio"
+                                  placeholder={t('sections.galleryTitlePlaceholder')}
                                 />
                               </div>
                               {/* Image gallery manager */}
                               <div className="space-y-3">
-                                <label className="text-[11px] font-bold text-muted uppercase">Gallery Images</label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('sections.galleryImages')}</label>
                                 <div className="grid grid-cols-3 gap-2">
                                   {(Array.isArray(s.content.images) ? (s.content.images as string[]) : []).map((imgUrl, imgIdx) => (
                                     <div key={imgIdx} className="relative group rounded-lg overflow-hidden border border-line aspect-square">
@@ -1744,7 +1760,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                 <ImageUpload
                                   value=""
                                   shape="wide"
-                                  label="Add image to gallery"
+                                  label={t('sections.addGalleryImage')}
                                   onChange={(url) => {
                                     if (!url) return;
                                     const images = Array.isArray(s.content.images) ? [...(s.content.images as string[])] : [];
@@ -1766,7 +1782,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                 Connect your <strong>Calendly</strong>, <strong>Cal.com</strong>, or any booking page. An embedded widget or link button will appear on your profile.
                               </p>
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-muted uppercase">Booking Page URL</label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('links.bookingUrl')}</label>
                                 <input
                                   className="v-field font-mono text-xs"
                                   defaultValue={s.content.bookingUrl as string ?? ''}
@@ -1779,11 +1795,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       }),
                                     );
                                   }}
-                                  placeholder="https://calendly.com/your-name"
+                                  placeholder={t('links.bookingPlaceholder')}
                                 />
                               </div>
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-muted uppercase">Button Label <span className="font-normal text-faint">(optional)</span></label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('links.buttonLabel')} <span className="font-normal text-faint">(optional)</span></label>
                                 <input
                                   className="v-field text-xs"
                                   defaultValue={s.content.buttonLabel as string ?? ''}
@@ -1796,7 +1812,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       }),
                                     );
                                   }}
-                                  placeholder="Book a meeting with me"
+                                  placeholder={t('sections.bookingPlaceholder')}
                                 />
                               </div>
                             </>
@@ -1804,7 +1820,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             <>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[11px] font-bold text-muted uppercase">Section Title Heading</label>
+                                  <label className="text-[11px] font-bold text-muted uppercase">{t('sections.sectionHeading')}</label>
                                   <input
                                     className="v-field font-semibold text-xs"
                                     defaultValue={s.content.title as string ?? ''}
@@ -1817,11 +1833,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         }),
                                       );
                                     }}
-                                    placeholder="e.g. My Services"
+                                    placeholder={t('sections.servicesPlaceholder')}
                                   />
                                 </div>
                                 <div className="space-y-1.5">
-                                  <label className="text-[11px] font-bold text-muted uppercase">Subtitle / Extra Info</label>
+                                  <label className="text-[11px] font-bold text-muted uppercase">{t('sections.subtitleField')}</label>
                                   <input
                                     className="v-field font-medium text-xs"
                                     defaultValue={s.content.subtitle as string ?? ''}
@@ -1834,12 +1850,12 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         }),
                                       );
                                     }}
-                                    placeholder="e.g. What I offer"
+                                    placeholder={t('sections.offerPlaceholder')}
                                   />
                                 </div>
                               </div>
                               <div className="space-y-1.5">
-                                <label className="text-[11px] font-bold text-muted uppercase">Body Details Content</label>
+                                <label className="text-[11px] font-bold text-muted uppercase">{t('sections.bodyContent')}</label>
                                 <textarea
                                   className="v-field h-20 py-2 font-medium text-xs leading-relaxed"
                                   defaultValue={s.content.body as string ?? ''}
@@ -1852,7 +1868,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       }),
                                     );
                                   }}
-                                  placeholder="Describe the content of this block in details..."
+                                  placeholder={t('sections.bodyPlaceholder')}
                                 />
                               </div>
                             </>
@@ -1870,7 +1886,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                   {/* Add content section block visual grid selection */}
                   <div className="space-y-3 pt-5 border-t border-line">
-                    <h4 className="text-[11px] font-bold text-muted uppercase tracking-wider">Available Section Blocks</h4>
+                    <h4 className="text-[11px] font-bold text-muted uppercase tracking-wider">{t('sections.available')}</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                       {Object.entries(SECTION_DETAILS).map(([type, details]) => {
                         return (
@@ -1885,7 +1901,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             >
                               <Icon name={details.icon} size={15} />
                             </span>
-                            <span className="text-[11.5px] font-bold text-ink truncate w-full">{details.label}</span>
+                            <span className="text-[11.5px] font-bold text-ink truncate w-full">{t(`sections.types.${type}.label`)}</span>
                           </button>
                         );
                       })}
@@ -1903,13 +1919,13 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 <h3 className="text-sm font-bold text-ink uppercase tracking-wider flex items-center gap-2">
                   <Icon name="palette" size={15} className="text-accent" /> Card Appearance & Styling
                 </h3>
-                <p className="text-xs text-muted">Customize the visual theme layout, accent swatches, and covers.</p>
+                <p className="text-xs text-muted">{t('design.subtitle')}</p>
               </div>
 
               <div className="space-y-6">
                 {/* Accent swatch color palette */}
                 <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">Accent Palette Color</p>
+                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">{t('design.accent')}</p>
                   <div className="flex flex-wrap gap-3.5 p-4 rounded-xl border border-line bg-canvas/30 justify-start">
                     {SWATCHES.map((c) => (
                       <button
@@ -1937,7 +1953,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                 {/* Display Theme mode: Visual choice cards */}
                 <div className="space-y-2.5">
-                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">Display Theme Mode</p>
+                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">{t('design.themeMode')}</p>
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       type="button"
@@ -1955,9 +1971,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       }`}
                     >
                       <div className="w-full h-14 rounded bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 border border-slate-200/80">
-                        Light Preview
+                        {t('design.lightPreview')}
                       </div>
-                      <span className="text-[11.5px] font-extrabold text-slate-800">Light Mode</span>
+                      <span className="text-[11.5px] font-extrabold text-slate-800">{t('design.lightMode')}</span>
                     </button>
                     <button
                       type="button"
@@ -1975,16 +1991,16 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       }`}
                     >
                       <div className="w-full h-14 rounded bg-slate-900 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-slate-800">
-                        Dark Preview
+                        {t('design.darkPreview')}
                       </div>
-                      <span className="text-[11.5px] font-extrabold text-slate-200">Dark Mode</span>
+                      <span className="text-[11.5px] font-extrabold text-slate-200">{t('design.darkMode')}</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Background cover style visual cards selection */}
                 <div className="space-y-2.5">
-                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">Background Cover Style</p>
+                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">{t('design.cover')}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {([
                       ['solid', 'Solid Color', 'bg-slate-300 dark:bg-slate-700'],
@@ -2022,7 +2038,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                 {/* Segmented language controller */}
                 <div className="space-y-2 border-t border-line/60 pt-4">
-                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">Card Language Layout</p>
+                  <p className="text-[11px] font-bold text-muted uppercase tracking-wider">{t('design.cardLanguage')}</p>
                   <div className="flex rounded-xl border border-line bg-canvas/40 p-0.5 max-w-xs shadow-inner">
                     {([
                       ['en', 'English'],
@@ -2079,35 +2095,35 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 <h3 className="text-sm font-bold text-ink uppercase tracking-wider flex items-center gap-2">
                   <Icon name="tag" size={15} className="text-accent" /> NFC Hardware Provisioning
                 </h3>
-                <p className="text-xs text-muted">Bind physical smart tags, stickers or wristbands directly to this profile link.</p>
+                <p className="text-xs text-muted">{t('nfc.subtitle')}</p>
               </div>
 
               <div className="space-y-4">
                 <div className="bg-canvas border border-line p-4 rounded-2xl space-y-1.5">
-                  <h4 className="text-[12.5px] font-extrabold text-ink">Bound Physical NFC Products</h4>
+                  <h4 className="text-[12.5px] font-extrabold text-ink">{t('nfc.title')}</h4>
                   <p className="text-xs text-muted leading-relaxed font-medium">
                     When you link a physical product to this digital profile card, tapping it on a mobile device will instantly load this URL.
                   </p>
                 </div>
 
                 <div className="divide-y divide-line border border-line rounded-2xl overflow-hidden bg-canvas/30 shadow-inner">
-                  {tags.filter((t) => t.cardId === id).map((t) => (
+                  {tags.filter((tag) => tag.cardId === id).map((tag) => (
                     <div
-                      key={t.id}
+                      key={tag.id}
                       className="p-4 flex items-center justify-between gap-3 text-xs font-semibold text-muted bg-surface/50 hover:bg-surface transition-colors"
                     >
                       <div className="space-y-1">
-                        <p className="text-ink font-bold font-mono text-[12.5px]">UID: {t.uid.slice(0, 16)}...</p>
+                        <p className="text-ink font-bold font-mono text-[12.5px]" dir="ltr">{t('nfc.uid')}: {tag.uid.slice(0, 16)}...</p>
                         <p className="text-[10px] text-muted uppercase font-bold tracking-wider">
-                          Hardware: {t.hardwareType} · Scan count: {t.activationCount}
+                          {t('nfc.hardware')}: {tag.hardwareType} · {t('nfc.scanCount')}: {tag.activationCount}
                         </p>
                       </div>
-                      <Badge variant="success" className="uppercase !text-[9px] font-black tracking-wide">Bound</Badge>
+                      <Badge variant="success" className="uppercase !text-[9px] font-black tracking-wide">{t('nfc.bound')}</Badge>
                     </div>
                   ))}
-                  {tags.filter((t) => t.cardId === id).length === 0 && (
+                  {tags.filter((tag) => tag.cardId === id).length === 0 && (
                     <p className="p-6 text-xs text-muted font-bold text-center">
-                      No physical NFC tags bound to this profile card currently.
+                      {t('nfc.empty')}
                     </p>
                   )}
                 </div>
@@ -2124,12 +2140,12 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   <h3 className="text-sm font-bold text-ink uppercase tracking-wider flex items-center gap-2">
                     <Icon name="settings" size={15} className="text-accent" /> General Settings
                   </h3>
-                  <p className="text-xs text-muted">Manage your business card URL link and visibility status.</p>
+                  <p className="text-xs text-muted">{t('settings.subtitle')}</p>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">Card URL Link</label>
+                    <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">{t('settings.title')}</label>
                     <div className="relative flex items-center max-w-md">
                       <span className="absolute left-3 text-[13px] text-faint font-semibold font-mono">/c/</span>
                       <input
@@ -2138,11 +2154,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
                       />
                     </div>
-                    <p className="text-[10.5px] text-faint font-medium">Must be unique. Allowed characters: lowercase letters, numbers, and hyphens.</p>
+                    <p className="text-[10.5px] text-faint font-medium">{t('settings.slugHint')}</p>
                   </div>
 
                   <div className="space-y-2 border-t border-line/60 pt-4">
-                    <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">Card Visibility Mode</label>
+                    <label className="text-[11.5px] font-bold text-muted uppercase tracking-wider">{t('settings.visibility')}</label>
                     <div className="flex gap-3 max-w-sm">
                       <Button
                         variant={card.isPublished ? 'success' : 'outline'}
@@ -2169,7 +2185,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   <h3 className="text-sm font-bold text-red-600 uppercase tracking-wider flex items-center gap-2">
                     ⚠️ Danger Zone
                   </h3>
-                  <p className="text-xs text-red-500/75 font-medium">Irreversible actions for this business card.</p>
+                  <p className="text-xs text-red-500/75 font-medium">{t('settings.dangerZone')}</p>
                 </div>
 
                 <div className="space-y-4">
@@ -2183,7 +2199,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       onClick={() => setShowDeleteConfirm(true)}
                       className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl active:scale-95 transition-all shadow-sm"
                     >
-                      Delete Business Card
+                      {t('settings.deleteCard')}
                     </button>
                   ) : (
                     <div className="p-4 rounded-xl border border-red-500/25 bg-red-500/10 space-y-4">
@@ -2206,14 +2222,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             }}
                             className="px-4 py-1.5 border border-line bg-surface hover:bg-elevated text-xs font-bold rounded-lg text-ink transition-colors"
                           >
-                            Cancel
+                            {t('settings.cancel')}
                           </button>
                           <button
                             onClick={handleDeleteCard}
                             disabled={deleteSlugConfirm !== card.slug}
                             className="px-4 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors"
                           >
-                            Confirm Delete
+                            {t('settings.confirmDelete')}
                           </button>
                         </div>
                       </div>
@@ -2249,9 +2265,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
           <ShareCard slug={card.slug} />
 
           {/* Profile Completion Quality Analyzer */}
-          <Card variant="standard" className="p-5 bg-surface space-y-4 shadow-sm text-center md:text-left">
+          <Card variant="standard" className="p-5 bg-surface space-y-4 shadow-sm text-center md:text-start">
             <h3 className="text-xs font-bold text-ink tracking-tight uppercase flex items-center justify-center md:justify-start gap-1.5">
-              🎯 Profile Completion Assistant
+              🎯 {t('quality.assistant')}
             </h3>
             <div className="flex items-center gap-4">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent text-sm font-extrabold border-2 border-accent">
@@ -2259,24 +2275,24 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               </span>
               <div className="flex-1 space-y-1">
                 <div className="flex justify-between text-[10.5px] font-bold text-muted uppercase">
-                  <span>Profile Quality Score</span>
+                  <span>{t('quality.title')}</span>
                 </div>
                 <ProgressBar value={profileScore} />
               </div>
             </div>
             {missingRecommendations.length > 0 && (
-              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-1 text-xs text-amber-600 font-semibold text-left">
-                <p className="font-bold border-b border-amber-500/15 pb-1">💡 Recommendations:</p>
+              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-1 text-xs text-amber-600 font-semibold text-start">
+                <p className="font-bold border-b border-amber-500/15 pb-1">💡 {t('quality.recommendationsTitle')}</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[10.5px] font-medium leading-relaxed">
-                  {missingRecommendations.map((r, idx) => (
-                    <li key={idx}>{r}</li>
+                  {missingRecommendations.map((r) => (
+                    <li key={r}>{t(`quality.recommendations.${r}`)}</li>
                   ))}
                 </ul>
               </div>
             )}
             {missingRecommendations.length === 0 && (
               <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-center text-xs text-emerald-600 font-bold">
-                ✓ Fantastic! Your digital profile card is 100% complete.
+                ✓ {t('quality.complete')}
               </div>
             )}
           </Card>
@@ -2303,8 +2319,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b border-line">
                 <div>
-                  <h3 className="text-base font-extrabold text-ink">Add Link or Social Media</h3>
-                  <p className="text-[11px] text-muted font-medium">Select a platform or search to add credentials to your card.</p>
+                  <h3 className="text-base font-extrabold text-ink">{t('links.add')}</h3>
+                  <p className="text-[11px] text-muted font-medium">{t('platformPicker.hint')}</p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
@@ -2322,7 +2338,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Search platforms... (↑/↓ to navigate, Enter to add, Esc to close)"
+                  placeholder={t('platformPicker.searchPlaceholder')}
                   className="v-field !pl-9 text-xs"
                   value={platformSearch}
                   onChange={(e) => setPlatformSearch(e.target.value)}
@@ -2375,7 +2391,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             <button
                               onClick={(e) => handleToggleFav(e, plat.key)}
                               className="text-amber-500 hover:scale-110 active:scale-90 transition-all p-1"
-                              title="Unfavorite"
+                              title={t('platformPicker.unfavorite')}
                             >
                               <Icon name="sparkle" size={13} />
                             </button>
@@ -2432,7 +2448,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               className={`transition-all p-1 hover:scale-110 ${
                                 isFav ? 'text-amber-500' : 'text-faint hover:text-amber-500 opacity-0 group-hover/item:opacity-100'
                               }`}
-                              title={isFav ? 'Unfavorite' : 'Favorite'}
+                              title={isFav ? t('platformPicker.unfavorite') : t('platformPicker.favorite')}
                             >
                               <Icon name="sparkle" size={13} />
                             </button>
@@ -2496,7 +2512,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                 className={`transition-all p-1 hover:scale-110 ${
                                   isFav ? 'text-amber-500' : 'text-faint hover:text-amber-500 opacity-0 group-hover/item:opacity-100'
                                 }`}
-                                title={isFav ? 'Unfavorite' : 'Favorite'}
+                                title={isFav ? t('platformPicker.unfavorite') : t('platformPicker.favorite')}
                               >
                                 <Icon name="sparkle" size={13} />
                               </button>
@@ -2510,7 +2526,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                 {/* No Results Fallback */}
                 {visiblePlatforms.length === 0 && (
-                  <p className="text-xs text-muted text-center py-6">No matching platforms found.</p>
+                  <p className="text-xs text-muted text-center py-6">{t('platformPicker.empty')}</p>
                 )}
               </div>
             </motion.div>

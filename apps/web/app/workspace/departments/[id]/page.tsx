@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authFetch, getToken } from '@/lib/client';
@@ -24,14 +25,8 @@ type TabId =
   | 'settings'
   | 'activity';
 
-const getHealth = (score: number) => {
-  if (score >= 80) return { label: 'Excellent', badge: 'success', dot: '🟢' };
-  if (score >= 50) return { label: 'Good', badge: 'warning', dot: '🟡' };
-  if (score >= 25) return { label: 'Needs Attention', badge: 'warning', dot: '🟠' };
-  return { label: 'Critical', badge: 'error', dot: '🔴' };
-};
-
 export default function DepartmentPage({ params }: { params: { id: string } }) {
+  const { t } = useTranslation('teams');
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -121,7 +116,7 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this department? Teams and members will be unassigned.')) return;
+    if (!confirm(t('deptDetail.confirmDelete'))) return;
     try {
       await authFetch(`/orgs/departments/${params.id}`, { method: 'DELETE' });
       router.replace('/team');
@@ -162,23 +157,23 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
       .sort((a, b) => new Date(a.meetingAt!).getTime() - new Date(b.meetingAt!).getTime());
   }, [departmentLeads]);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'gauge' },
-    { id: 'teams', label: 'Teams', icon: 'grid' },
-    { id: 'members', label: 'Members', icon: 'users' },
-    { id: 'cards', label: 'Cards', icon: 'columns' },
-    { id: 'crm', label: 'CRM', icon: 'inbox' },
-    { id: 'analytics', label: 'Analytics', icon: 'chart-bar' },
-    { id: 'meetings', label: 'Meetings', icon: 'calendar' },
-    { id: 'tasks', label: 'Tasks', icon: 'check-circle' },
-    { id: 'files', label: 'Files', icon: 'file-text' },
-    { id: 'settings', label: 'Settings', icon: 'settings' },
-    { id: 'activity', label: 'Activity', icon: 'clock' },
-  ] as const;
+  const tabs: { id: TabId; label: string; icon: string }[] = [
+    { id: 'overview', label: t('workspaceTabs.overview'), icon: 'gauge' },
+    { id: 'teams', label: t('workspaceTabs.teams'), icon: 'grid' },
+    { id: 'members', label: t('workspaceTabs.members'), icon: 'users' },
+    { id: 'cards', label: t('workspaceTabs.cards'), icon: 'columns' },
+    { id: 'crm', label: t('workspaceTabs.crm'), icon: 'inbox' },
+    { id: 'analytics', label: t('workspaceTabs.analytics'), icon: 'chart-bar' },
+    { id: 'meetings', label: t('workspaceTabs.meetings'), icon: 'calendar' },
+    { id: 'tasks', label: t('workspaceTabs.tasks'), icon: 'check-circle' },
+    { id: 'files', label: t('workspaceTabs.files'), icon: 'file-text' },
+    { id: 'settings', label: t('workspaceTabs.settings'), icon: 'settings' },
+    { id: 'activity', label: t('workspaceTabs.activity'), icon: 'clock' },
+  ];
 
   if (loading) {
     return (
-      <AppShell title="Loading Department...">
+      <AppShell title={t('deptDetail.loading')}>
         <div className="space-y-6">
           <Skeleton className="h-12 w-64 animate-pulse bg-line" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -194,12 +189,12 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
   if (error || !dept) {
     return (
-      <AppShell title="Error">
+      <AppShell title={t('deptDetail.error')}>
         <Alert variant="error" className="mb-6">
-          {error || 'Department not found.'}
+          {error || t('deptDetail.notFound')}
         </Alert>
         <Link href="/team" className="text-accent font-bold hover:underline">
-          ← Back to Workspace Directory
+          <span aria-hidden>←</span> {t('deptDetail.back')}
         </Link>
       </AppShell>
     );
@@ -208,7 +203,7 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
   const deptColor = dept.color || '#2563eb';
 
   return (
-    <AppShell title={`${dept.name} Department`}>
+    <AppShell title={t('deptDetail.titleSuffix', { name: dept.name })}>
       {/* Header Info */}
       <div className="mb-6 bg-surface border border-line rounded-2xl p-6 shadow-sm flex items-center justify-between gap-4 flex-wrap relative overflow-hidden">
         <div className="absolute top-0 left-0 w-2 h-full" style={{ background: deptColor }} />
@@ -220,7 +215,7 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
             </Badge>
           </div>
           <p className="text-xs text-muted font-semibold flex items-center gap-1.5">
-            <span>Department Head:</span>
+            <span>{t('deptDetail.headLabel')}</span>
             <span className="text-ink font-bold">{dept.manager?.name || dept.manager?.email || 'Unassigned'}</span>
           </p>
         </div>
@@ -257,22 +252,22 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
             <div className="md:col-span-2 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <Card variant="standard" className="p-5 text-center">
-                  <p className="text-[10px] font-bold text-muted uppercase">Teams affiliated</p>
+                  <p className="text-[10px] font-bold text-muted uppercase">{t('deptDetail.teamsAffiliated')}</p>
                   <h3 className="text-2xl font-black text-ink mt-2">{dept.teams?.length ?? 0}</h3>
                 </Card>
                 <Card variant="standard" className="p-5 text-center">
-                  <p className="text-[10px] font-bold text-muted uppercase">Department seats</p>
+                  <p className="text-[10px] font-bold text-muted uppercase">{t('deptDetail.seats')}</p>
                   <h3 className="text-2xl font-black text-ink mt-2">{dept.memberships?.length ?? 0}</h3>
                 </Card>
                 <Card variant="standard" className="p-5 text-center">
-                  <p className="text-[10px] font-bold text-muted uppercase">Members</p>
+                  <p className="text-[10px] font-bold text-muted uppercase">{t('deptDetail.members')}</p>
                   <h3 className="text-2xl font-black text-ink mt-2">{dept.memberships?.length ?? 0}</h3>
                 </Card>
               </div>
 
               {/* Department Overview Details */}
               <Card variant="standard" className="p-6">
-                <h3 className="text-[14.5px] font-black text-ink tracking-tight mb-3">Department Summary</h3>
+                <h3 className="text-[14.5px] font-black text-ink tracking-tight mb-3">{t('deptDetail.summary')}</h3>
                 <p className="text-xs text-muted leading-relaxed font-semibold">
                   The {dept.name} department groups {dept.teams?.length ?? 0} {(dept.teams?.length ?? 0) === 1 ? 'team' : 'teams'} and {dept.memberships?.length ?? 0} {(dept.memberships?.length ?? 0) === 1 ? 'member' : 'members'} in this workspace. Managers can assign members to teams and CRM pipelines.
                 </p>
@@ -282,7 +277,7 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
             {/* Right Column: Manager Detail */}
             <div className="space-y-6">
               <Card variant="glass" className="p-6">
-                <h3 className="text-[14px] font-bold text-ink tracking-tight mb-3">Department Head</h3>
+                <h3 className="text-[14px] font-bold text-ink tracking-tight mb-3">{t('deptDetail.head')}</h3>
                 <div className="flex items-center gap-3">
                   {dept.manager ? (
                     <Avatar user={dept.manager} size={40} />
@@ -303,11 +298,11 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'teams' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Affiliated Teams</h3>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.teams')}</h3>
             <p className="text-[11.5px] text-muted mb-4 font-medium">Workgroups belonging to the {dept.name} department</p>
 
             {(!dept.teams || dept.teams.length === 0) ? (
-              <p className="text-xs text-muted text-center py-8">No teams associated with this department yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noTeams')}</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {dept.teams.map((t: any) => (
@@ -328,11 +323,11 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'members' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Affiliated Members</h3>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.affiliatedMembers')}</h3>
             <p className="text-[11.5px] text-muted mb-4 font-medium">Team members assigned to the {dept.name} department</p>
 
             {(!dept.memberships || dept.memberships.length === 0) ? (
-              <p className="text-xs text-muted text-center py-8">No members assigned to this department yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noMembers')}</p>
             ) : (
               <div className="space-y-2">
                 {dept.memberships.map((m: any) => (
@@ -356,11 +351,11 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'cards' && (
           <Card className="p-6">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">Department NFC Cards</h3>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.cards')}</h3>
             <p className="text-[11.5px] text-muted mb-4 font-medium">Digital card profiles assigned to managers and employees within this department.</p>
 
             {departmentCards.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No cards created by department members yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noCards')}</p>
             ) : (
               <div className="space-y-2">
                 {departmentCards.map((c) => (
@@ -381,11 +376,11 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'crm' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">CRM Leads Pipeline</h3>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.leads')}</h3>
             <p className="text-xs text-muted font-medium mb-4">Leads captured by members of the {dept.name} department</p>
 
             {departmentLeads.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No leads captured yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noLeads')}</p>
             ) : (
               <div className="space-y-2">
                 {departmentLeads.map((l) => (
@@ -406,7 +401,7 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'analytics' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">Department Analytics</h3>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.analytics')}</h3>
             <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-14 text-center">
               <Icon name="chart-bar" size={22} className="text-faint" />
               <p className="max-w-sm px-6 text-xs font-semibold text-muted">
@@ -418,18 +413,18 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'meetings' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">Scheduled Meetings</h3>
-            <p className="text-xs text-muted font-medium mb-4">Meetings booked through department profile links</p>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.meetings')}</h3>
+            <p className="text-xs text-muted font-medium mb-4">{t('deptDetail.meetingsSub')}</p>
 
             {upcomingMeetings.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No upcoming meetings scheduled.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noMeetings')}</p>
             ) : (
               <div className="space-y-2">
                 {upcomingMeetings.map((m) => (
                   <div key={m.id} className="p-3 bg-canvas/30 border border-line rounded-xl text-xs font-semibold">
                     <div className="flex justify-between items-center">
                       <span className="text-ink font-bold">{m.name}</span>
-                      <Badge variant="warning" className="text-[9px] uppercase font-black">Booked</Badge>
+                      <Badge variant="warning" className="text-[9px] uppercase font-black">{t('deptDetail.booked')}</Badge>
                     </div>
                     <p className="text-muted mt-1 text-[11px]">
                       📅 {new Date(m.meetingAt!).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
@@ -443,11 +438,11 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'tasks' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">Deliverables & Progress</h3>
-            <p className="text-xs text-muted font-medium mb-4">Checklist tasks assigned to department seats</p>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.deliverables')}</h3>
+            <p className="text-xs text-muted font-medium mb-4">{t('deptDetail.deliverablesSub')}</p>
 
             {departmentTasks.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No tasks recorded.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noTasks')}</p>
             ) : (
               <div className="space-y-2.5">
                 {departmentTasks.map((t) => (
@@ -471,11 +466,11 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'files' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">Department Shared Files</h3>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.files')}</h3>
             <p className="text-xs text-muted font-medium mb-4 font-semibold text-muted">Media assets, corporate templates, and files uploaded by department members</p>
 
             {departmentAssets.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No files uploaded yet.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noFiles')}</p>
             ) : (
               <div className="space-y-2">
                 {departmentAssets.map((a) => (
@@ -496,11 +491,11 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'activity' && (
           <Card className="p-6">
-            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">Department Activity Logs</h3>
-            <p className="text-xs text-muted font-medium mb-4">Audit history trails specific to this department</p>
+            <h3 className="text-[14.5px] font-bold text-ink tracking-tight mb-1">{t('deptDetail.logs')}</h3>
+            <p className="text-xs text-muted font-medium mb-4">{t('deptDetail.logsSub')}</p>
 
             {departmentLogs.length === 0 ? (
-              <p className="text-xs text-muted text-center py-8">No recent events logged for this department.</p>
+              <p className="text-xs text-muted text-center py-8">{t('deptDetail.noLogs')}</p>
             ) : (
               <div className="space-y-2.5">
                 {departmentLogs.map((log) => (
@@ -521,20 +516,20 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
 
         {activeTab === 'settings' && (
           <Card className="p-6 max-w-xl">
-            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-4">Department Settings</h3>
+            <h3 className="text-[14px] font-bold text-ink tracking-tight mb-4">{t('deptDetail.settings')}</h3>
             
             {isEditing ? (
               <form onSubmit={handleUpdateSettings} className="space-y-4">
                 <label className="grid gap-1.5">
-                  <span className="text-[11.5px] font-bold text-muted uppercase">Department Name</span>
+                  <span className="text-[11.5px] font-bold text-muted uppercase">{t('deptDetail.name')}</span>
                   <input className="v-field font-semibold" value={editName} onChange={(e) => setEditName(e.target.value)} required />
                 </label>
                 <label className="grid gap-1.5">
-                  <span className="text-[11.5px] font-bold text-muted uppercase">Department Manager / Head ID</span>
-                  <input className="v-field font-semibold" value={editManagerId} onChange={(e) => setEditManagerId(e.target.value)} placeholder="User ID" />
+                  <span className="text-[11.5px] font-bold text-muted uppercase">{t('deptDetail.managerId')}</span>
+                  <input className="v-field font-semibold" value={editManagerId} onChange={(e) => setEditManagerId(e.target.value)} placeholder={t('deptDetail.userIdPlaceholder')} />
                 </label>
                 <label className="grid gap-1.5">
-                  <span className="text-[11.5px] font-bold text-muted uppercase">Accent Color</span>
+                  <span className="text-[11.5px] font-bold text-muted uppercase">{t('deptDetail.accentColor')}</span>
                   <div className="flex gap-2 items-center">
                     <input type="color" className="h-8 w-10 rounded border border-line" value={editColor} onChange={(e) => setEditColor(e.target.value)} />
                     <input className="v-field font-semibold flex-1" value={editColor} onChange={(e) => setEditColor(e.target.value)} required />
@@ -552,15 +547,15 @@ export default function DepartmentPage({ params }: { params: { id: string } }) {
             ) : (
               <div className="space-y-4 font-semibold text-xs text-muted">
                 <div className="flex justify-between border-b border-line pb-2">
-                  <span>Name</span>
+                  <span>{t('deptDetail.name')}</span>
                   <span className="text-ink font-bold">{dept.name}</span>
                 </div>
                 <div className="flex justify-between border-b border-line pb-2">
-                  <span>Manager / Head ID</span>
+                  <span>{t('deptDetail.managerIdShort')}</span>
                   <span className="text-ink font-bold font-mono">{dept.managerId || 'Not assigned'}</span>
                 </div>
                 <div className="flex justify-between border-b border-line pb-2">
-                  <span>Color Theme</span>
+                  <span>{t('deptDetail.colorTheme')}</span>
                   <span className="flex items-center gap-1.5 font-mono text-ink">
                     <span className="h-3.5 w-3.5 rounded" style={{ background: deptColor }} />
                     {deptColor}
