@@ -1,0 +1,31 @@
+{
+  "title": "التكاملات والأتمتة",
+  "subtitle": "ربط Vertex Connect بأنظمة CRM والـ Webhooks وأدوات سير العمل.",
+  "addWebhook": "إضافة Webhook",
+  "searchPlaceholder": "البحث في التكاملات والـ Webhooks…",
+  "tabs": {
+    "overview": "نظرة عامة",
+    "marketplace": "سوق التطبيقات",
+    "automations": "الأتمتة",
+    "webhooks": "الـ Webhooks",
+    "keys": "مفاتيح API"
+  },
+  "stats": {
+    "deliveries7d": "عمليات التسليم (7 أيام)",
+    "successRate": "نسبة النجاح",
+    "failed": "المخفوقات",
+    "activeKeys": "مفاتيح API النشطة"
+  },
+  "sections": {
+    "deliveriesPerDay": "عمليات التسليم اليومية",
+    "noDeliveries": "لا توجد عمليات تسليم في الـ 7 أيام الماضية.",
+    "byEvent": "بحسب الحدث",
+    "noEvents": "لم يتم توجيه أي أحداث بعد.",
+    "endpointHealth": "حالة جاهزية نقاط النهاية (Endpoints)",
+    "noWebhooks": "لا توجد نقاط نهاية Webhook لمراقبتها حالياً."
+  },
+  "status": {
+    "connected": "متصل",
+    "disconnected": "غير متصل"
+  }
+}

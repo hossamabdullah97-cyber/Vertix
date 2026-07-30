@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Vertex Connect",
+    "slug": "vertex-connect",
+    "scheme": "vertexconnect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.vertex.connect",
+      "infoPlist": {
+        "NFCReaderUsageDescription": "Vertex Connect uses NFC to program and read your smart business cards."
+      }
+    },
+    "android": {
+      "package": "dev.vertex.connect",
+      "permissions": ["android.permission.NFC"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Vertex Connect uses NFC to program and read your smart business cards.",
+          "selectIdentifiers": ["A0000002471001"],
+          "includeNdefEntitlement": true
+        }
+      ]
+    ]
+  }
+}

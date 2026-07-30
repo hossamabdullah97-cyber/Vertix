@@ -1,0 +1,6 @@
+{
+  "title": "Payment Links",
+  "subtitle": "Share external payment links (InstaPay, Vodafone Cash, Fawry, wallets, or custom URLs). Vertex Connect opens your link directly.",
+  "addLink": "Add payment link",
+  "emptyState": "No payment links added yet."
+}

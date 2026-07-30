@@ -1,0 +1,24 @@
+{
+  "groups": {
+    "overview": "نظرة عامة",
+    "workspace": "مساحة العمل",
+    "organization": "المؤسسة",
+    "administration": "الإدارة"
+  },
+  "items": {
+    "dashboard": "لوحة التحكم",
+    "analytics": "التحليلات",
+    "cards": "البطاقات",
+    "leads": "العملاء المحتملون",
+    "tags": "بطاقات NFC",
+    "team": "الفريق",
+    "integrations": "التكاملات",
+    "adminConsole": "وحدة تحكم الإدارة"
+  },
+  "searchWorkspace": "بحث في مساحة العمل…",
+  "darkMode": "الوضع الداكن",
+  "lightMode": "الوضع الفاتح",
+  "toggleTheme": "تبديل مظهر الألوان",
+  "signOut": "تسجيل الخروج",
+  "notifications": "الإشعارات"
+}

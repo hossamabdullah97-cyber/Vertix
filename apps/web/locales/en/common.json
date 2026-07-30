@@ -1,0 +1,47 @@
+{
+  "appName": "Vertex Connect",
+  "actions": {
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "remove": "Remove",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "copy": "Copy",
+    "copied": "Copied",
+    "share": "Share",
+    "download": "Download",
+    "upload": "Upload",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "viewAll": "View all",
+    "learnMore": "Learn more"
+  },
+  "states": {
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "error": "Something went wrong",
+    "noResults": "No results found",
+    "comingSoon": "Coming soon"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "language": "Language",
+  "toggleLanguage": "Change language"
+}

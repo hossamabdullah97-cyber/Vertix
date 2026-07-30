@@ -1,0 +1,978 @@
+// ============================================================================
+//  Vertex Connect — Prisma Schema (Production)
+//  SaaS platform for NFC-powered digital business cards
+//
+//  Architecture: Multi-tenant (Shared DB + organizationId on every tenant table)
+//  Extra isolation: enable Row-Level Security in PostgreSQL on every orgId table
+//  Identifiers: cuid()  |  Timestamps: createdAt / updatedAt on every table
+//
+//  Soft Delete: main entity tables carry deletedAt (recovery + referential safety).
+//    Log tables (events, lead_activities, audit_logs, visitors) do NOT use soft
+//    delete — append-only to preserve audit and analytics integrity.
+//    Apply the { deletedAt: null } filter via a Prisma Client Extension (query middleware).
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+//  (1) IDENTITY & TENANCY
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  passwordHash  String?   // null for OAuth-only sign-in
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // Soft delete
+  isSuperAdmin  Boolean   @default(false)
+
+  memberships   Membership[]
+  ownedCards    Card[]       @relation("CardOwner")
+  managedTeams  Team[]       @relation("TeamManager")
+  assignedLeads Lead[]       @relation("LeadAssignee")
+  auditLogs     AuditLog[]   @relation("AuditActor")
+  assignedTasks Task[]       @relation("TaskAssignee")
+  uploadedAssets Asset[]     @relation("AssetUploader")
+  notifications  Notification[] @relation("NotificationRecipient")
+  actedNotifications Notification[] @relation("NotificationActor")
+  notificationPrefs NotificationPreference[] @relation("NotificationPrefs")
+  managedDepartments Department[]   @relation("DepartmentManager")
+  requestedApprovals ApprovalRequest[] @relation("ApprovalRequester")
+  resolvedApprovals  ApprovalRequest[] @relation("ApprovalResolver")
+  personalTokens     PersonalAccessToken[] @relation("PatOwner")
+  createdApiKeys     ApiKey[]              @relation("ApiKeyCreator")
+  createdWebhooks    WebhookEndpoint[]     @relation("WebhookCreator")
+  userIntegrations   IntegrationConnection[] @relation("IntegrationConnector")
+
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Organization {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  plan      Plan      @default(FREE)
+  isActive  Boolean   @default(true)
+  branding  Json?     // colors, logo, fonts — the organization's visual identity
+  settings  Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  memberships    Membership[]
+  teams          Team[]
+  cards          Card[]
+  nfcTags        NfcTag[]
+  leads          Lead[]
+  pipelineStages PipelineStage[]
+  scoringRules   ScoringRule[]
+  events         Event[]
+  subscription   Subscription?
+  auditLogs      AuditLog[]
+  tasks          Task[]
+  assets         Asset[]
+  notifications  Notification[]
+  departments    Department[]
+  approvals      ApprovalRequest[]
+  integrations      IntegrationConnection[]
+  webhookEndpoints  WebhookEndpoint[]
+  webhookDeliveries WebhookDelivery[]
+  apiKeys           ApiKey[]
+  automations       Automation[]
+  automationRuns    AutomationRun[]
+  oauthApps         IntegrationOAuthApp[]
+  crmSyncRecords    CrmSyncRecord[]
+
+  @@index([deletedAt])
+  @@map("organizations")
+}
+
+model Membership {
+  id           String       @id @default(cuid())
+  userId       String
+  orgId        String
+  teamId       String?
+  departmentId String?
+  role         Role         @default(EMPLOYEE)
+  status       MemberStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?    // Soft delete
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  team       Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  department Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+  @@index([teamId])
+  @@index([departmentId])
+  @@map("memberships")
+}
+
+model Team {
+  id           String    @id @default(cuid())
+  orgId        String
+  departmentId String?
+  name         String
+  managerId    String?
+  color        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime? // Soft delete
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  manager     User?        @relation("TeamManager", fields: [managerId], references: [id], onDelete: SetNull)
+  department  Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  memberships Membership[]
+
+  @@index([orgId])
+  @@index([departmentId])
+  @@map("teams")
+}
+
+// ============================================================================
+//  (2) CARDS & NFC
+// ============================================================================
+
+model Card {
+  id          String    @id @default(cuid())
+  orgId       String
+  ownerId     String
+  slug        String    @unique // used in the public URL /c/[slug]
+  templateId  String    // one of the 17 templates
+  theme       Json?     // colors, fonts, background
+  vcardData   Json?     // vCard data for download
+  isPublished Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft delete
+
+  org      Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  owner    User          @relation("CardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  sections CardSection[]
+  actions  CardAction[]
+  variants CardVariant[]
+  nfcTags  NfcTag[]
+  leads    Lead[]
+  events   Event[]
+  paymentLinks PaymentLink[]
+
+  @@index([orgId])
+  @@index([ownerId])
+  @@index([deletedAt])
+  @@map("cards")
+}
+
+model CardSection {
+  id        String      @id @default(cuid())
+  cardId    String
+  variantId String?     // null = card's default profile; set = belongs to a variant
+  type      SectionType
+  order     Int         @default(0)
+  isVisible Boolean     @default(true)
+  content   Json        // section content (bio, links, portfolio, booking, video)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  deletedAt DateTime?   // Soft delete
+
+  card    Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  variant CardVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([variantId])
+  @@map("card_sections")
+}
+
+model CardAction {
+  id        String     @id @default(cuid())
+  cardId    String
+  variantId String?    // null = card's default profile; set = belongs to a variant
+  type      ActionType // one of the 10 direct actions
+  order     Int        @default(0)
+  isActive  Boolean    @default(true)
+  config    Json       // action settings (WhatsApp number, link, etc.)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  deletedAt DateTime?  // Soft delete
+
+  card    Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  variant CardVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([variantId])
+  @@map("card_actions")
+}
+
+/// A targeted profile variant of a card. One public link (card.slug) can serve
+/// multiple profiles; a resolver picks the active one per request from these
+/// rules. The card's own vcardData/theme/sections/actions are the implicit
+/// "default" profile shown when no variant matches.
+model CardVariant {
+  id         String @id @default(cuid())
+  cardId     String
+  name       String
+  order      Int    @default(0) // resolution priority (lower first)
+
+  // Content overrides — the profile's look + info
+  templateId String
+  theme      Json?
+  vcardData  Json?
+
+  // Targeting rules
+  accessKey     String?   // /c/[slug]?p=<accessKey> forces this variant (specific people)
+  passcode      String?   // optional PIN gate before the variant is revealed
+  scheduleStart DateTime? // time window start (auto-active from)
+  scheduleEnd   DateTime? // time window end   (auto-active until)
+  manualActive  Boolean   @default(false) // owner "activate now" for an occasion
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  card     Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  sections CardSection[]
+  actions  CardAction[]
+  paymentLinks PaymentLink[]
+
+  @@unique([cardId, accessKey])
+  @@index([cardId])
+  @@map("card_variants")
+}
+
+model NfcTag {
+  id              String       @id @default(cuid())
+  orgId           String
+  cardId          String?
+  uid             String       @unique // the tag's physical identifier
+  status          TagStatus    @default(UNASSIGNED)
+  hardwareType    HardwareType @default(CARD) // physical hardware type
+  batchId         String?      // manufacturing batch from the factory
+  activationCount Int          @default(0)
+  lastScanAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  deletedAt       DateTime?    // Soft delete
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  card Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([cardId])
+  @@index([batchId])
+  @@map("nfc_tags")
+}
+
+// ============================================================================
+//  (3) CRM
+// ============================================================================
+
+model PipelineStage {
+  id        String    @id @default(cuid())
+  orgId     String
+  name      String
+  order     Int       @default(0) // 7 sequential stages
+  color     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  leads Lead[]
+
+  @@index([orgId])
+  @@map("pipeline_stages")
+}
+
+model Lead {
+  id          String      @id @default(cuid())
+  orgId       String
+  cardId      String?     // the card that generated this lead
+  assignedTo  String?     // the assigned employee
+  stageId     String?
+  name        String?
+  email       String?
+  phone       String?
+  company     String?
+  score       Int         @default(0)
+  value       Int         @default(0) // estimated deal value (whole currency units)
+  temperature Temperature @default(COLD)
+  source      String?     // lead source (nfc_scan, share, ...)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?   // Soft delete
+
+  org        Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  card       Card?          @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  assignee   User?          @relation("LeadAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+  stage      PipelineStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  activities LeadActivity[]
+  tasks      Task[]
+
+  @@index([orgId])
+  @@index([cardId])
+  @@index([stageId])
+  @@index([assignedTo])
+  @@index([deletedAt])
+  @@map("leads")
+}
+
+model LeadActivity {
+  id        String       @id @default(cuid())
+  leadId    String
+  type      ActivityType
+  metadata  Json?
+  createdAt DateTime     @default(now())
+  // append-only — no soft delete
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@map("lead_activities")
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  orgId       String
+  leadId      String? // optional link to a lead
+  assignedTo  String? // optional assignee
+  title       String
+  notes       String?
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  completed   Boolean      @default(false)
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime? // Soft delete
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  lead     Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  assignee User?        @relation("TaskAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([leadId])
+  @@index([assignedTo])
+  @@index([completed])
+  @@index([deletedAt])
+  @@map("tasks")
+}
+
+model Asset {
+  id         String    @id @default(cuid())
+  orgId      String
+  uploadedBy String?
+  name       String
+  url        String
+  mimeType   String?
+  size       Int       @default(0) // bytes
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime? // Soft delete
+
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  uploader User?        @relation("AssetUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([deletedAt])
+  @@map("assets")
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String // recipient
+  orgId      String? // workspace context (null = personal)
+  actorId    String? // who triggered it
+  type       String // e.g. lead.captured, member.added
+  category   String // CRM | ORGANIZATION | SECURITY | BILLING | SYSTEM | ...
+  priority   String    @default("MEDIUM") // CRITICAL | HIGH | MEDIUM | LOW | INFO
+  title      String
+  body       String?
+  metadata   Json?
+  readAt     DateTime?
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user  User          @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actor User?         @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  category  String // CRM | ORGANIZATION | SECURITY | BILLING | SYSTEM | ...
+  inApp     Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  user User @relation("NotificationPrefs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+model ScoringRule {
+  id        String    @id @default(cuid())
+  orgId     String
+  eventType String    // the event type that grants points
+  points    Int       @default(0)
+  condition Json?     // additional conditions for applying the rule
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("scoring_rules")
+}
+
+// ============================================================================
+//  (4) ANALYTICS & OPS
+//  (log tables are append-only — no soft delete)
+// ============================================================================
+
+model Visitor {
+  id          String   @id @default(cuid())
+  anonymousId String   @unique
+  geo         Json?
+  device      Json?
+  firstSeen   DateTime @default(now())
+  lastSeen    DateTime @updatedAt
+
+  events Event[]
+
+  @@map("visitors")
+}
+
+model Event {
+  id        String    @id @default(cuid())
+  orgId     String
+  cardId    String?
+  visitorId String?
+  type      EventType
+  geo       Json?
+  device    Json?
+  referrer  String?
+  metadata  Json?     // extra click context (e.g. payment platform, variantId) — never financial data
+  createdAt DateTime  @default(now())
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  card    Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  visitor Visitor?     @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+
+  // time-series indexing: dashboard reports query by (orgId, createdAt)
+  @@index([orgId, createdAt])
+  @@index([cardId, createdAt])
+  @@index([orgId, type, createdAt])
+  @@index([visitorId])
+  @@map("events")
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  orgId            String    @unique
+  stripeCustomerId String?
+  stripeSubId      String?   @unique
+  plan             Plan      @default(FREE)
+  status           SubStatus @default(ACTIVE)
+  currentPeriodEnd DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime? // Soft delete
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  orgId      String
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  // append-only — no soft delete (immutable audit log)
+
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actor User?        @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, createdAt])
+  @@map("audit_logs")
+}
+
+// One-time tokens for invitations and password resets.
+// The raw token is emailed; only its hash is stored. append-only (consumed via usedAt).
+model Token {
+  id        String    @id @default(cuid())
+  type      TokenType
+  tokenHash String    @unique
+  email     String
+  userId    String?
+  orgId     String?
+  role      Role?
+  teamId    String?
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+  @@map("tokens")
+}
+
+// ============================================================================
+//  ENUMS
+// ============================================================================
+
+enum TokenType {
+  INVITE
+  PASSWORD_RESET
+}
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+enum SectionType {
+  BIO
+  SOCIAL
+  PORTFOLIO
+  BOOKING
+  VIDEO
+}
+
+enum ActionType {
+  SAVE_CONTACT
+  WHATSAPP
+  LINKEDIN
+  BOOK_MEETING
+  REQUEST_QUOTE
+  CALL
+  EMAIL
+  MAPS
+  WEBSITE
+  FILE
+}
+
+enum TagStatus {
+  UNASSIGNED
+  ACTIVE
+  DISABLED
+}
+
+enum HardwareType {
+  CARD     // card
+  STICKER  // sticker
+  KEYCHAIN // keychain
+  WRISTBAND // wristband
+  OTHER
+}
+
+enum Temperature {
+  COLD
+  WARM
+  HOT
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ActivityType {
+  NOTE
+  CALL
+  EMAIL
+  MEETING
+  STAGE_CHANGE
+  SCORE_CHANGE
+  SCAN
+}
+
+enum EventType {
+  VIEW
+  CLICK
+  SAVE
+  SHARE
+  NFC_SCAN
+}
+
+enum SubStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+model Department {
+  id          String    @id @default(cuid())
+  orgId       String
+  name        String
+  managerId   String?
+  color       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  manager     User?        @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  teams       Team[]
+  memberships Membership[]
+
+  @@index([orgId])
+  @@index([deletedAt])
+  @@map("departments")
+}
+
+model ApprovalRequest {
+  id          String    @id @default(cuid())
+  orgId       String
+  requesterId String
+  type        String    // e.g. CARD_PUBLISHING, TEMPLATE_PUBLISHING, BRAND_UPDATE, ROLE_REQUEST, etc.
+  status      String    // PENDING, APPROVED, REJECTED
+  title       String
+  description String?
+  metadata    Json?     // additional data (e.g. cardId, role requested, templateId)
+  comment     String?   // admin comment
+  resolverId  String?   // resolver admin user id
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  resolvedAt  DateTime?
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  requester   User         @relation("ApprovalRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  resolver    User?        @relation("ApprovalResolver", fields: [resolverId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@map("approval_requests")
+}
+
+// ===========================================================================
+//  Enterprise Integration Hub
+// ===========================================================================
+
+/// A connection between this workspace (or one user) and an external provider.
+/// Credentials are stored encrypted at rest — never in plaintext, never sent to
+/// the client. `provider` keys into the code-side integration registry.
+model IntegrationConnection {
+  id                  String            @id @default(cuid())
+  orgId               String
+  provider            String            // registry key, e.g. "slack", "hubspot"
+  scope               IntegrationScope  @default(ORG)
+  /// Set only for user-level connections (scope = USER); their data stays private.
+  userId              String?
+  status              IntegrationStatus @default(DISCONNECTED)
+  /// AES-256-GCM ciphertext of the provider credentials (tokens / API keys).
+  credentials         String?
+  /// Non-secret connection config (sync direction, field mappings, enabled rules).
+  config              Json?
+  /// Human-readable label for the connected external account (e.g. an email).
+  externalAccountId   String?
+  externalAccountName String?
+  lastSyncAt          DateTime?
+  lastError           String?
+  /// When an OAuth access token needs refreshing; drives REQUIRES_REAUTH.
+  tokenExpiresAt      DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User?        @relation("IntegrationConnector", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([orgId, provider, userId])
+  @@index([orgId])
+  @@index([status])
+  @@map("integration_connections")
+}
+
+/// An external URL subscribed to workspace events. Every delivery is HMAC-signed
+/// with `secret` (stored encrypted) so the receiver can verify authenticity.
+model WebhookEndpoint {
+  id          String    @id @default(cuid())
+  orgId       String
+  url         String
+  description String?
+  /// Encrypted signing secret. Only a short prefix is ever shown to the user.
+  secret      String
+  secretHint  String    // last 4 chars, for the user to identify the secret
+  /// Event types this endpoint receives, e.g. ["lead.created", "nfc.tapped"].
+  events      String[]
+  enabled     Boolean   @default(true)
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  org       Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator   User?             @relation("WebhookCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  deliveries WebhookDelivery[]
+
+  @@index([orgId])
+  @@map("webhook_endpoints")
+}
+
+/// A single attempt-tracked delivery of one event to one endpoint. This is the
+/// persistent job record: retries and backoff are driven off `nextAttemptAt`,
+/// so pending work survives a server restart (append-only, never soft-deleted).
+model WebhookDelivery {
+  id             String                @id @default(cuid())
+  orgId          String
+  endpointId     String
+  event          String
+  /// The signed payload body, kept for replay and the delivery log.
+  payload        Json
+  /// Idempotency key — a receiver can dedupe retries of the same event.
+  eventId        String
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  maxAttempts    Int                   @default(6)
+  nextAttemptAt  DateTime?
+  responseStatus Int?
+  responseBody   String?               // truncated; never contains our secrets
+  error          String?
+  durationMs     Int?
+  createdAt      DateTime              @default(now())
+  deliveredAt    DateTime?
+
+  org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([status, nextAttemptAt])
+  @@index([endpointId])
+  @@map("webhook_deliveries")
+}
+
+/// A workspace-scoped API key. Only the sha-256 hash is stored; the raw key is
+/// shown once at creation and never again. `prefix` identifies it in listings.
+model ApiKey {
+  id         String    @id @default(cuid())
+  orgId      String
+  name       String
+  hashedKey  String    @unique
+  prefix     String    // e.g. "vxk_live_ab12" — safe to display
+  scopes     String[]
+  createdBy  String?
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator User?        @relation("ApiKeyCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@map("api_keys")
+}
+
+/// A personal access token, scoped to one user across all their workspaces.
+/// Like ApiKey, only the hash is stored. Not tenant-scoped by design — it
+/// belongs to the person, mirroring how User spans organizations.
+model PersonalAccessToken {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  hashedKey  String    @unique
+  prefix     String
+  scopes     String[]
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+
+  user User @relation("PatOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("personal_access_tokens")
+}
+
+enum IntegrationScope {
+  ORG
+  USER
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  SYNCING
+  REQUIRES_REAUTH
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+
+/// A no-code rule: WHEN an event fires, IF its conditions match, THEN run the
+/// actions (sections 24–25). Triggers are the same domain events the webhook
+/// engine fans out; actions are executed server-side.
+model Automation {
+  id          String    @id @default(cuid())
+  orgId       String
+  name        String
+  description String?
+  enabled     Boolean   @default(true)
+  /// The domain event that triggers this rule, e.g. "lead.created".
+  trigger     String
+  /// How conditions combine: ALL (and) or ANY (or).
+  matchType   String    @default("ALL")
+  /// [{ field, operator, value }] evaluated against the event payload.
+  conditions  Json      @default("[]")
+  /// [{ type, config }] executed in order when the rule matches.
+  actions     Json      @default("[]")
+  runCount    Int       @default(0)
+  lastRunAt   DateTime?
+  createdBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  org  Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  runs AutomationRun[]
+
+  @@index([orgId, trigger, enabled])
+  @@map("automations")
+}
+
+/// One execution of an automation — the persistent run log (append-only).
+model AutomationRun {
+  id           String   @id @default(cuid())
+  orgId        String
+  automationId String
+  event        String
+  /// SKIPPED (conditions did not match), SUCCESS, PARTIAL, or FAILED.
+  status       String
+  matched      Boolean  @default(false)
+  actionsRun   Int      @default(0)
+  /// Per-action outcomes, for the activity log. Never contains secrets.
+  results      Json?
+  error        String?
+  createdAt    DateTime @default(now())
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  automation Automation   @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([automationId])
+  @@map("automation_runs")
+}
+
+
+/// A single organization's OWN OAuth app credentials for a provider (BYO app).
+/// Each org registers its own client_id/secret so it connects the provider
+/// independently and in isolation — one org's credentials never touch another's
+/// connection. The client secret is encrypted at rest.
+model IntegrationOAuthApp {
+  id           String    @id @default(cuid())
+  orgId        String
+  provider     String
+  clientId     String
+  /// AES-256-GCM ciphertext of the client secret. Never returned to the client.
+  clientSecret String
+  createdBy    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, provider])
+  @@index([orgId])
+  @@map("integration_oauth_apps")
+}
+
+
+/// One synced entity (a Vertex lead) mapped to its record in an external CRM.
+/// The unique (org, provider, entity) key gives idempotency — a lead maps to
+/// exactly one external contact, so re-syncing updates rather than duplicates.
+model CrmSyncRecord {
+  id         String   @id @default(cuid())
+  orgId      String
+  provider   String
+  entityType String   // e.g. "lead"
+  entityId   String   // the Vertex entity id
+  externalId String?  // the id of the created object in the external CRM
+  status     String   // SYNCED | FAILED
+  direction  String   @default("push")
+  error      String?
+  syncedAt   DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, provider, entityType, entityId])
+  @@index([orgId, provider])
+  @@map("crm_sync_records")
+}
+
+
+/// An external payment link the profile owner shares (InstaPay, e-wallets, …).
+/// Link-sharing only — Vertex Connect never processes payments or stores any
+/// financial credential; it stores the URL and display metadata, nothing more.
+/// Scoped by variantId to a Smart Identity like CardSection/CardAction, so one
+/// public link can show different payment options per resolved identity.
+model PaymentLink {
+  id          String    @id @default(cuid())
+  cardId      String
+  variantId   String?   // null = card's default profile; set = belongs to a variant
+  platform    String    // instapay | vodafone_cash | orange_cash | etisalat_cash | we_pay | custom
+  displayName String
+  url         String    // the external payment URL, stored exactly as provided
+  description String?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  card    Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  variant CardVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([variantId])
+  @@map("payment_links")
+}

@@ -1,0 +1,56 @@
+{
+  "title": "NFC Hardware Management",
+  "subtitle": "Register, configure, and bind physical NFC chips to digital business cards.",
+  "singleTitle": "Single Tag Registration",
+  "singleSub": "Register a single physical chip manually",
+  "uidLabel": "Physical Tag UID",
+  "hardwareLabel": "Hardware Type",
+  "batchLabel": "Batch ID (Optional)",
+  "registerSingleBtn": "Register single chip",
+  "batchTitle": "Batch Factory Import",
+  "batchSub": "Register multiple tags at once from manufacturer data",
+  "batchUidsLabel": "List of UIDs (One per line)",
+  "batchIdLabel": "Batch ID",
+  "importBatchBtn": "Import Batch",
+  "listTitle": "Registered Chips list",
+  "listSub": "Link tags to profile cards below",
+  "allStatuses": "All statuses",
+  "allBatches": "All batches",
+  "filterBatchPlaceholder": "Filter by Batch ID",
+  "emptyStateFilter": "No registered NFC tags match the current filter criteria.",
+  "stats": {
+    "total": "Total Tags",
+    "active": "Active",
+    "unassigned": "Unassigned",
+    "disabled": "Disabled",
+    "totalScans": "Total Scans"
+  },
+  "status": {
+    "active": "Active",
+    "unassigned": "Unassigned",
+    "disabled": "Disabled"
+  },
+  "hardwareType": {
+    "card": "Card",
+    "sticker": "Sticker",
+    "keychain": "Keychain",
+    "wristband": "Wristband",
+    "other": "Other"
+  },
+  "batchSuccess": "Batch: {{created}}/{{requested}} tags created successfully.",
+  "tagRow": {
+    "type": "Type:",
+    "batch": "Batch:",
+    "scans": "scans",
+    "last": "Last:",
+    "copyUrl": "Copy tap URL",
+    "copy": "Copy",
+    "simulateTitle": "Simulate NFC Tap (Open redirect in new tab)",
+    "simulateTap": "Simulate Tap",
+    "linkCard": "— Link business card —",
+    "enable": "Enable Tag",
+    "disable": "Disable Tag",
+    "delete": "Delete"
+  },
+  "emptyState": "No NFC tags registered yet."
+}

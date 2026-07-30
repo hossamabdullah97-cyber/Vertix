@@ -1,0 +1,19 @@
+{
+  "title": "Platform Administration Console",
+  "subtitle": "Super admin controls for organization management, system KPIs, feature flags, and audit logs.",
+  "createOrg": "Create Organization",
+  "createUser": "Create User",
+  "searchPlaceholder": "Search organizations, users, or audit logs…",
+  "sections": {
+    "kpis": "Platform KPIs",
+    "organizations": "Organizations",
+    "users": "Users",
+    "auditLogs": "Audit Logs",
+    "featureFlags": "Feature Flags"
+  },
+  "status": {
+    "active": "Active",
+    "suspended": "Suspended",
+    "pending": "Pending"
+  }
+}

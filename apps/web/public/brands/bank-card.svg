@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <rect width="120" height="120" rx="28" fill="#0F172A"/>
+  <!-- Card icon with Visa & Mastercard style marks -->
+  <rect x="20" y="32" width="80" height="52" rx="8" fill="#1E293B" stroke="#475569" stroke-width="2"/>
+  <rect x="20" y="44" width="80" height="12" fill="#334155"/>
+  <!-- Mastercard circles -->
+  <circle cx="76" cy="68" r="9" fill="#EB001B"/>
+  <circle cx="86" cy="68" r="9" fill="#F79E1B" fill-opacity="0.85"/>
+  <!-- Visa text -->
+  <text x="32" y="73" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-style="italic" font-size="14" fill="#FFFFFF">VISA</text>
+</svg>

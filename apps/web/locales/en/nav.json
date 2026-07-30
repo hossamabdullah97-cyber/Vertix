@@ -1,0 +1,24 @@
+{
+  "groups": {
+    "overview": "Overview",
+    "workspace": "Workspace",
+    "organization": "Organization",
+    "administration": "Administration"
+  },
+  "items": {
+    "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "cards": "Cards",
+    "leads": "Leads",
+    "tags": "NFC Tags",
+    "team": "Team",
+    "integrations": "Integrations",
+    "adminConsole": "Admin Console"
+  },
+  "searchWorkspace": "Search workspace…",
+  "darkMode": "Dark mode",
+  "lightMode": "Light mode",
+  "toggleTheme": "Toggle color theme",
+  "signOut": "Sign out",
+  "notifications": "Notifications"
+}

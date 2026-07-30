@@ -1,0 +1,56 @@
+{
+  "title": "إدارة أجهزة وشرائح NFC",
+  "subtitle": "تسجيل وتهيئة وربط شرائح NFC المادية بالبطاقات الرقمية.",
+  "singleTitle": "تسجيل شريحة فردية",
+  "singleSub": "تسجيل شريحة مادية واحدة يدوياً",
+  "uidLabel": "رمز الشريحة المادية UID",
+  "hardwareLabel": "نوع الجهاز",
+  "batchLabel": "معرّف الدفعة (اختياري)",
+  "registerSingleBtn": "تسجيل الشريحة",
+  "batchTitle": "استيراد دفعة المصنع",
+  "batchSub": "تسجيل شرائح متعددة دفعة واحدة من بيانات المصنع",
+  "batchUidsLabel": "قائمة رموز UIDs (رمز بكل سطر)",
+  "batchIdLabel": "معرّف الدفعة",
+  "importBatchBtn": "استيراد الدفعة",
+  "listTitle": "قائمة الشرائح المسجلة",
+  "listSub": "ربط الشرائح ببطاقات الملف الشخصي أدناه",
+  "allStatuses": "جميع الحالات",
+  "allBatches": "جميع الدفعات",
+  "filterBatchPlaceholder": "تصفية بحسب معرّف الدفعة",
+  "emptyStateFilter": "لا توجد شرائح NFC مسجلة تطابق معايير التصفية المحددة.",
+  "stats": {
+    "total": "إجمالي الشرائح",
+    "active": "نشطة",
+    "unassigned": "غير معينة",
+    "disabled": "معطلة",
+    "totalScans": "إجمالي القراءات"
+  },
+  "status": {
+    "active": "نشط",
+    "unassigned": "غير معين",
+    "disabled": "معطل"
+  },
+  "hardwareType": {
+    "card": "بطاقة",
+    "sticker": "ملصق",
+    "keychain": "ميدالية مفاتيح",
+    "wristband": "سوار معصم",
+    "other": "أخرى"
+  },
+  "batchSuccess": "الدفعة: تم إنشاء {{created}}/{{requested}} شريحة بنجاح.",
+  "tagRow": {
+    "type": "النوع:",
+    "batch": "الدفعة:",
+    "scans": "قراءات",
+    "last": "آخر قراءة:",
+    "copyUrl": "نسخ رابط اللمس",
+    "copy": "نسخ",
+    "simulateTitle": "محاكاة لمسة NFC (فتح التحويل في تبويب جديد)",
+    "simulateTap": "محاكاة اللمس",
+    "linkCard": "— ربط ببطاقة عمل —",
+    "enable": "تفعيل الشريحة",
+    "disable": "تعطيل الشريحة",
+    "delete": "حذف"
+  },
+  "emptyState": "لم يتم تسجيل أي شرائح NFC بعد."
+}

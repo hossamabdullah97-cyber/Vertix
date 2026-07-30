@@ -1,0 +1,31 @@
+{
+  "title": "Integrations & Automations",
+  "subtitle": "Connect Vertex Connect to CRMs, webhooks, and third-party workflow tools.",
+  "addWebhook": "Add Webhook",
+  "searchPlaceholder": "Search integrations and webhooks…",
+  "tabs": {
+    "overview": "Overview",
+    "marketplace": "Marketplace",
+    "automations": "Automations",
+    "webhooks": "Webhooks",
+    "keys": "API Keys"
+  },
+  "stats": {
+    "deliveries7d": "Deliveries (7d)",
+    "successRate": "Success Rate",
+    "failed": "Failed",
+    "activeKeys": "Active API Keys"
+  },
+  "sections": {
+    "deliveriesPerDay": "Deliveries Per Day",
+    "noDeliveries": "No deliveries in the last 7 days.",
+    "byEvent": "By Event",
+    "noEvents": "No events forwarded yet.",
+    "endpointHealth": "Endpoint Health",
+    "noWebhooks": "No webhook endpoints to monitor yet."
+  },
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  }
+}

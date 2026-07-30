@@ -1,0 +1,300 @@
+{
+  "title": "إدارة العملاء المحتملين والـ CRM",
+  "subtitle": "تتبع وتقييم وتحويل العملاء المُلتقَطين عبر جميع البطاقات الرقمية ولمسات NFC.",
+  "export": "تصدير CSV",
+  "addLead": "إضافة عميل محتمل",
+  "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني أو الشركة…",
+  "tabs": {
+    "overview": "لوحة المعلومات",
+    "board": "عرض اللوحة",
+    "table": "عرض الجدول",
+    "contacts": "جهات الاتصال",
+    "companies": "الشركات",
+    "timeline": "الجدول الزمني",
+    "meetings": "الاجتماعات",
+    "tasks": "المهام",
+    "notes": "الملاحظات",
+    "reports": "التحليلات"
+  },
+  "emptyStateTitle": "لا يوجد عملاء محتملون بعد",
+  "emptyStateDesc": "في كل مرة يحفظ فيها شخص جهة اتصالك، أو يلمس بطاقة NFC، أو يرسل نموذجاً من ملفك الرقمي، يظهر هنا تلقائياً.",
+  "openCards": "فتح بطاقاتي",
+  "viewAnalytics": "عرض التحليلات",
+  "stats": {
+    "totalLeads": "إجمالي العملاء",
+    "hotLeads": "العملاء المهتمون جداً",
+    "pipelineValue": "مراحل المسار",
+    "conversionRate": "المسار النشط"
+  },
+  "stages": {
+    "new": "جديد",
+    "contacted": "تم التواصل",
+    "qualified": "مؤهل",
+    "proposal": "تقديم عرض",
+    "negotiation": "تفاوض",
+    "won": "تم الصفقة",
+    "lost": "مفقود"
+  },
+  "temperature": {
+    "hot": "مرتفع الاهتمام",
+    "warm": "متوسط الاهتمام",
+    "cold": "منخفض الاهتمام"
+  },
+  "emptyState": "لم يتم التقاط عملاء محتملين بعد. سيظهر العملاء تلقائياً عند تفاعل الزوار مع بطاقاتك.",
+  "toasts": {
+    "taskAdded": "تمت إضافة المهمة",
+    "leadUpdated": "تم تحديث العميل",
+    "movedTo": "نُقل إلى {{stage}}"
+  },
+  "board": {
+    "releaseToDrop": "أفلت للإسقاط",
+    "noLeads": "لا عملاء"
+  },
+  "table": {
+    "lead": "العميل",
+    "company": "الشركة",
+    "stage": "المرحلة",
+    "priority": "الأولوية",
+    "score": "النقاط",
+    "source": "المصدر",
+    "contact": "التواصل",
+    "unknownLead": "عميل غير معروف",
+    "noMatch": "لا عملاء يطابقون معايير التصفية."
+  },
+  "dash": {
+    "totalLeads": "إجمالي العملاء",
+    "pipelineValue": "قيمة المسار",
+    "wonDeals": "الصفقات الرابحة",
+    "lostDeals": "الصفقات المفقودة",
+    "conversion": "معدل التحويل",
+    "avgDeal": "متوسط حجم الصفقة",
+    "openTasks": "المهام المفتوحة",
+    "dueToday": "المستحقة اليوم",
+    "pipelineOverview": "نظرة عامة على المسار",
+    "leadSources": "مصادر العملاء",
+    "noSources": "لا مصادر بعد",
+    "newLeads7d": "عملاء جدد · آخر 7 أيام",
+    "recentCaptures": "أحدث الالتقاطات",
+    "noCaptures": "لم يُلتقط أي عميل بعد",
+    "todaysTasks": "مهام اليوم",
+    "nothingDue": "لا شيء مستحق — أنت مُحدَّث بالكامل",
+    "markComplete": "وضع علامة مكتمل",
+    "markIncomplete": "وضع علامة غير مكتمل"
+  },
+  "contacts": {
+    "headers": {
+      "contact": "جهة الاتصال",
+      "companyTitle": "الشركة والمسمّى",
+      "phoneEmail": "الهاتف والبريد",
+      "source": "المصدر",
+      "status": "الحالة",
+      "pipelineValue": "قيمة المسار",
+      "lastSeen": "آخر ظهور"
+    },
+    "unknownContact": "جهة اتصال غير معروفة",
+    "card": "البطاقة:",
+    "emptyTitle": "لا جهات اتصال مطابقة",
+    "emptyDesc": "تُنشأ جهات الاتصال من كل عميل يُلتقَط عبر بطاقاتك ولمسات NFC ورموز QR والنماذج."
+  },
+  "companies": {
+    "pipelineValue": "قيمة المسار",
+    "noCompany": "بدون شركة",
+    "individualLeads": "عملاء أفراد",
+    "wonSummary": "{{won}} رابحة · {{contacts}}",
+    "contact_one": "جهة اتصال {{count}}",
+    "contact_other": "{{count}} جهات اتصال",
+    "emptyTitle": "لا شركات بعد",
+    "emptyDesc": "تظهر الشركات تلقائياً بمجرد أن يتضمّن العملاء الملتقَطون اسم شركة."
+  },
+  "meetings": {
+    "roadmap": "خارطة الطريق",
+    "title": "الاجتماعات",
+    "desc": "يحتاج جدولة الاجتماعات وتسجيل نتائجها إلى خلفية برمجية للحفظ. بدلاً من نموذج ينسى كل شيء عند إعادة التحميل، تبقى هذه الصفحة عنصراً نائباً حتى تتوفّر واجهة الاجتماعات.",
+    "whatNeeds": "ما يلزم لذلك",
+    "whatNeedsDesc": "نموذج اجتماع ونقاط CRUD (إنشاء، إعادة جدولة، تسجيل نتيجة)، يُفضَّل ربطها بالعملاء وتقويم خارجي. عندها تظهر الاجتماعات المحجوزة من البطاقات العامة هنا تلقائياً.",
+    "pipelineBefore": "لديك حالياً",
+    "pipelineAfter": "عملاء في المسار يمكن حجز اجتماعات معهم عند إطلاق الميزة."
+  },
+  "leadCard": {
+    "unreadActivity": "سجل نشاط غير مقروء",
+    "estimatedValue": "القيمة التقديرية للصفقة",
+    "leadScore": "نقاط العميل",
+    "scheduleMeeting": "جدولة اجتماع"
+  },
+  "filters": {
+    "smartFilters": "تصفية ذكية",
+    "dashboard": "لوحة التصفية",
+    "priority": "الأولوية",
+    "allPriorities": "كل الأولويات",
+    "captureSource": "مصدر الالتقاط",
+    "allSources": "كل المصادر",
+    "minDealValue": "أدنى قيمة صفقة",
+    "valuePlaceholder": "مثال: 5000",
+    "clearValue": "مسح تصفية القيمة",
+    "savedFilters": "التصفيات المحفوظة",
+    "nameFilter": "اسم لهذه التصفية…",
+    "save": "حفظ",
+    "clearAll": "مسح كل التصفيات"
+  },
+  "drawer": {
+    "ariaLabel": "تفاصيل العميل",
+    "close": "إغلاق",
+    "unassigned": "غير مُعيّن",
+    "tabs": {
+      "info": "معلومات",
+      "timeline": "المسار الزمني",
+      "tasks": "المهام",
+      "notes": "الملاحظات",
+      "engagement": "التفاعل"
+    },
+    "stageLabel": "مرحلة مسار المبيعات",
+    "tempLabel": "درجة الأولوية",
+    "dealValue": "قيمة الصفقة (دولار)",
+    "estimated": "تقديري",
+    "contactDetails": "تفاصيل الاتصال (تحرير مباشر)",
+    "email": "البريد",
+    "phone": "الهاتف",
+    "company": "الشركة",
+    "leadScore": "نقاط العميل",
+    "sourceLink": "رابط المصدر",
+    "tagsLabel": "وسوم العميل",
+    "addTagPlaceholder": "اضغط Enter لإضافة وسم…",
+    "emailPlaceholder": "email@address.com",
+    "phonePlaceholder": "+1 (555) 000-0000",
+    "companyPlaceholder": "اسم الشركة",
+    "addActivity": "أضف {{type}}…",
+    "saving": "جارٍ الحفظ…",
+    "log": "تسجيل",
+    "leadCreated": "أُنشئ العميل",
+    "createdVia": "عبر {{source}} · {{date}}",
+    "addTaskPlaceholder": "أضف مهمة لهذا العميل…",
+    "addTask": "إضافة مهمة",
+    "noTasks": "لا مهام مُسندة لهذا العميل",
+    "internalNotes": "ملاحظات داخلية عن العميل",
+    "notesPlaceholder": "اكتب ملاحظات/تفاصيل خاصة عن حساب هذا العميل…",
+    "saveNote": "حفظ الملاحظة",
+    "engagement": {
+      "roadmap": "خارطة الطريق",
+      "title": "تفاعل البطاقة",
+      "desc": "تفاعل كل عميل على حدة — كم مرة مسح هذا العميل تحديداً رمز QR، أو لمس بطاقة NFC، أو شاهد ملفاً — غير متاح بعد. تُسجَّل الزيارات لزوّار مجهولين، والعملاء غير مرتبطين بزائر، لذا فإن نسب التفاعل إلى عميل واحد سيكون تخميناً.",
+      "whatNeeds": "ما يلزم لذلك",
+      "whatNeedsDesc": "ربط العملاء المُلتقَطين بجلسة الزائر التي ولّدتهم، حتى تُنسَب مسحاتهم ولمساتهم ومشاهداتهم الحقيقية وتُعرَض هنا.",
+      "useTimeline": "حالياً، يعرض تبويب المسار الزمني النشاط الفعلي المُسجَّل لهذا العميل."
+    }
+  },
+  "notes": {
+    "heading": "الملاحظات",
+    "new": "جديدة",
+    "newTitle": "إنشاء ملاحظة فارغة جديدة",
+    "searchPlaceholder": "ابحث في محتوى الملاحظات…",
+    "untitled": "ملاحظة بلا عنوان",
+    "emptyBody": "محتوى فارغ…",
+    "pinned": "ملاحظة مثبّتة",
+    "noNotes": "لا ملاحظات",
+    "unpin": "إلغاء التثبيت",
+    "pin": "تثبيت الملاحظة",
+    "editEditor": "المحرّر",
+    "previewMd": "معاينة Markdown",
+    "templates": "قوالب:",
+    "delete": "حذف الملاحظة",
+    "noContent": "لم يُكتب محتوى بعد.",
+    "titlePlaceholder": "عنوان الملاحظة…",
+    "contentPlaceholder": "اكتب أي شيء بصيغة Markdown (## عنوان، - [ ] قائمة مهام، * نقاط)…",
+    "noneSelected": "لم تُحدَّد ملاحظة",
+    "noneSelectedDesc": "اختر ملاحظة موجودة من الشريط الجانبي أو أنشئ واحدة جديدة من القوالب.",
+    "categoryAll": "الكل",
+    "categoryTemplate": "قالب",
+    "categoryDraft": "مسودة",
+    "templateNames": {
+      "general": "عام",
+      "discovery": "استكشاف",
+      "proposal": "عرض"
+    },
+    "templateTitles": {
+      "general": "محضر اجتماع عام",
+      "discovery": "ملاحظات مكالمة استكشاف العميل",
+      "proposal": "ملاحظات العرض والتفاوض"
+    }
+  },
+  "tasks": {
+    "title": "مدير المهام",
+    "subtitle": "نظّم المتابعات وتذكيرات الصفقات وأهداف المبيعات",
+    "add": "إضافة مهمة",
+    "searchPlaceholder": "ابحث بعنوان المهمة أو جهة الاتصال…",
+    "tabs": {
+      "pending": "معلّقة",
+      "completed": "مكتملة",
+      "all": "الكل"
+    },
+    "filter": {
+      "allPriorities": "كل الأولويات",
+      "high": "أولوية عالية",
+      "medium": "أولوية متوسطة",
+      "low": "أولوية منخفضة"
+    },
+    "emptyTitle": "لا مهام تطابق تصفيتك",
+    "emptyDesc": "جرّب مسح نص البحث أو تحقّق من التبويب النشط.",
+    "priorityTitle": "أولوية {{priority}}",
+    "create": "إنشاء مهمة جديدة",
+    "description": "وصف المهمة",
+    "descPlaceholder": "مثال: اتصل بالعميل للتحقّق من قالب الفاتورة",
+    "linkToLead": "ربط بعميل",
+    "noLink": "بدون ربط (مهمة داخلية)",
+    "unknown": "غير معروف",
+    "noCompany": "بدون شركة",
+    "priority": "الأولوية",
+    "dueDate": "تاريخ الاستحقاق",
+    "cancel": "إلغاء",
+    "priorityOptions": {
+      "low": "منخفضة",
+      "medium": "متوسطة",
+      "high": "عالية"
+    }
+  },
+  "activity": {
+    "title": "الجدول الزمني العام",
+    "subtitle": "بثّ مباشر للتفاعل عبر جميع البطاقات والملفات الرقمية",
+    "all": "كل الأنشطة",
+    "noMatch": "لا أنشطة مطابقة",
+    "noMatchDesc": "جرّب تغيير مُرشّح النشاط أو تفاعل مع جهات اتصالك.",
+    "fallback": "نشاط",
+    "capturedVia": "التُقط عبر {{source}}",
+    "dealValue": " · قيمة الصفقة {{value}}",
+    "types": {
+      "NOTE": "ملاحظة",
+      "CALL": "مكالمة",
+      "EMAIL": "بريد",
+      "MEETING": "اجتماع",
+      "STAGE_CHANGE": "تغيير مرحلة",
+      "SCAN": "مسح"
+    }
+  },
+  "reports": {
+    "title": "التحليلات والتقارير",
+    "subtitle": "قمع التحويل والنمو وأداء المصادر — محسوبة من مسارك الفعلي",
+    "totalLeads": "إجمالي العملاء",
+    "pipelineValue": "قيمة المسار",
+    "wonDeals": "الصفقات الرابحة",
+    "conversion": "التحويل",
+    "growth6m": "نمو العملاء · آخر 6 أشهر",
+    "funnel": "قمع تحويل الصفقات",
+    "sourcePerformance": "أداء المصادر",
+    "noSources": "لا مصادر عملاء مسجّلة بعد."
+  },
+  "search": {
+    "button": "بحث CRM…",
+    "placeholder": "ابحث عن عميل أو شركة أو بريد أو وسم أو ملاحظة…",
+    "jumpToView": "الانتقال إلى عرض",
+    "noResults": "لا نتائج تطابق \"{{query}}\"",
+    "leadIn": "عميل في {{company}} · {{priority}}",
+    "directCapture": "التقاط مباشر",
+    "taskDue": "مهمة · تستحق: {{date}}",
+    "noDate": "بلا تاريخ",
+    "jump": {
+      "board": "لوحة المسار",
+      "contacts": "قاعدة جهات الاتصال",
+      "companies": "نظرة عامة على الشركات",
+      "reports": "تقارير التحليلات"
+    }
+  }
+}

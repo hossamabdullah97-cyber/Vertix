@@ -1,0 +1,175 @@
+{
+  "title": "Real-Time Enterprise Analytics",
+  "subtitle": "Track engagement, profile views, card taps, and conversion funnel metrics across your organization.",
+  "exportReport": "Export Analytics Report",
+  "tabs": {
+    "overview": "Executive Dashboard",
+    "cards": "Card Performance",
+    "profile": "Profile Interaction",
+    "qr": "QR Analytics",
+    "nfc": "NFC Intelligence",
+    "leads": "Lead Funnel",
+    "audience": "Audience Demographics",
+    "devices": "Devices & Tech",
+    "geography": "Geographic Map",
+    "traffic": "Traffic Sources",
+    "ai": "AI Diagnostics",
+    "reports": "Reports Scheduler"
+  },
+  "compareMode": "Compare Mode",
+  "comparingOn": "Comparing ON",
+  "period": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last7days": "Last 7 Days",
+    "last30days": "Last 30 Days",
+    "last90days": "Last 90 Days",
+    "thisYear": "This Year",
+    "yearToDate": "Year to Date"
+  },
+  "metrics": {
+    "views": "Profile Views",
+    "unique": "Unique Visitors",
+    "scans": "NFC & QR Scans",
+    "clicks": "Link Clicks",
+    "saves": "Contact Saves",
+    "shares": "Shares",
+    "leads": "Generated Leads",
+    "conversion": "Conversion Rate"
+  },
+  "sections": {
+    "topCards": "Top Performing Cards",
+    "topCardsSub": "Ranked by total tracked interactions",
+    "interactionMix": "Interaction Mix",
+    "interactionMixSub": "Share of total tracked events"
+  },
+  "exec": {
+    "noInteractions": "No interactions recorded in this period yet.",
+    "events": "events",
+    "noEvents": "No events tracked yet.",
+    "totalEvents": "Total tracked events"
+  },
+  "cardPerf": {
+    "totalViews": "Total Views",
+    "ctr": "Click-through Rate",
+    "saveRate": "Save Rate",
+    "rankedCards": "Ranked Cards",
+    "title": "Card Performance",
+    "subtitle": "Cards ranked by total tracked interactions",
+    "empty": "No card interactions recorded in this period yet.",
+    "thCard": "Card",
+    "thEvents": "Events",
+    "thShare": "Share",
+    "thDistribution": "Distribution"
+  },
+  "profilePerf": {
+    "pctOfInteractions": "% of interactions",
+    "title": "Interaction Timeline",
+    "subtitle": "Daily profile interactions by type",
+    "empty": "No profile interactions recorded in this period yet."
+  },
+  "nfcPerf": {
+    "totalScans": "Total NFC / QR Scans",
+    "activeDays": "Active Days",
+    "peakDay": "Peak Day",
+    "title": "Scan Timeline",
+    "subtitle": "Daily NFC tap & QR scan volume",
+    "empty": "No NFC taps or QR scans recorded in this period yet.",
+    "scans": "Scans",
+    "note": "NFC taps and QR scans currently share a single tracked signal, so they're reported together above. Splitting them into separate metrics requires distinct event types on the tracking endpoint — on the roadmap."
+  },
+  "traffic": {
+    "directNfc": "Direct / NFC Taps",
+    "title": "Acquisition Referrers",
+    "subtitle": "Where profile traffic actually originated",
+    "empty": "No referrer data recorded in this period yet. Referrers are captured automatically when your public cards are visited."
+  },
+  "leadFunnel": {
+    "totalLeads": "Total Leads",
+    "hotLeads": "Hot Leads",
+    "pipelineValue": "Pipeline Value",
+    "meetingsBooked": "Meetings Booked",
+    "funnelTitle": "Conversion Funnel",
+    "funnelSubtitle": "From tracked profile views to booked meetings",
+    "funnelEmpty": "No leads or tracked interactions in this period yet.",
+    "tempTitle": "Lead Temperature",
+    "tempSubtitle": "Distribution by qualification",
+    "tempEmpty": "No leads captured yet.",
+    "sourcesTitle": "Lead Sources",
+    "sourcesSubtitle": "Where leads came from",
+    "sourcesEmpty": "No lead sources recorded yet.",
+    "temp": { "hot": "Hot", "warm": "Warm", "cold": "Cold" },
+    "stages": {
+      "views": "Profile Views",
+      "clicks": "Link Clicks",
+      "saves": "Contact Saves",
+      "leads": "Leads Created",
+      "meetings": "Meetings Booked"
+    },
+    "stageLabels": {
+      "traffic": "Traffic",
+      "engagement": "Engagement",
+      "interest": "Interest",
+      "prospects": "Prospects",
+      "meetings": "Meetings"
+    }
+  },
+  "reports2": {
+    "exportTitle": "Export Reports",
+    "exportSubtitle": "Download your real analytics for offline BI",
+    "exportCsv": "Export CSV",
+    "exportCsvDesc": "Current metrics from real tracked data",
+    "printPdf": "Print / Save as PDF",
+    "printPdfDesc": "Uses your browser's print dialog",
+    "includedInExport": "Included in export",
+    "csvMetric": "Metric",
+    "csvValue": "Value",
+    "scheduledSoon": "Scheduled email reports — coming soon",
+    "scheduledDesc": "Automated daily/weekly summaries to your inbox need a backend scheduler and mailer, which aren't wired up yet. For now, export on demand above."
+  },
+  "ai": {
+    "badge": "Rule-based · from your data",
+    "title": "Automated Signals",
+    "subtitle": "Plain-language observations computed directly from your real analytics. Not a predictive model — every line is a fact about your tracked data.",
+    "empty": "Not enough tracked data yet to surface signals. Once your cards gather views and leads, observations will appear here.",
+    "tags": {
+      "trend": "Trend",
+      "engagement": "Engagement",
+      "conversion": "Conversion",
+      "channels": "Channels",
+      "pipeline": "Pipeline"
+    },
+    "viewsUp": "Profile views are up {{pct}}% in the second half of this period versus the first.",
+    "viewsDown": "Profile views are down {{pct}}% in the second half of this period versus the first.",
+    "ctr": "Click-through rate is {{ctr}}% ({{clicks}} clicks across {{views}} views).",
+    "saveRate": "{{rate}}% of visitors saved your contact ({{saves}} of {{views}}).",
+    "scanShare": "NFC & QR scans make up {{share}}% of all tracked interactions.",
+    "noScans": "No NFC or QR scans recorded yet — physical taps aren't contributing to traffic in this period.",
+    "pipeline": "{{hot}} of {{total}} leads are marked hot ({{pct}}%), with {{value}} in total pipeline value."
+  },
+  "notTracked": {
+    "roadmap": "Roadmap",
+    "whatNeeds": "What this needs",
+    "qr": {
+      "title": "QR Analytics",
+      "reason": "QR scans aren't tracked as a distinct signal yet — they're recorded together with NFC taps under one scan event. A QR-only breakdown would require separating the two, so we report them jointly under NFC Intelligence instead of inventing QR-specific numbers.",
+      "requirement": "Introduce a dedicated QR scan event type on the tracking endpoint so QR and NFC can be measured independently. This tab will then show QR-specific timelines and placements."
+    },
+    "audience": {
+      "title": "Audience Demographics",
+      "reason": "Demographic signals — language, new vs returning, interests — aren't captured yet. Only anonymous visitor ids and interaction events are recorded, so there is no real demographic data to display.",
+      "requirement": "Persist visitor language/locale on capture and derive new-vs-returning from the Visitor table, then expose an /analytics/audience aggregation. This tab will populate automatically once those signals are collected."
+    },
+    "devices": {
+      "title": "Devices & Technology",
+      "reason": "Each event already stores the visitor's user-agent, but there is no aggregation endpoint yet — so parsing it into device, OS and browser breakdowns client-side would be guesswork. We'd rather show nothing than fabricated splits.",
+      "requirement": "Add an /analytics/devices endpoint that parses the stored Event.device user-agent server-side into device class / OS / browser buckets. The real breakdown will render here once that endpoint exists."
+    },
+    "geography": {
+      "title": "Geographic Insights",
+      "reason": "Location-level analytics aren't available yet. The event pipeline has a geo field but does not resolve visitor location on capture, so there is no real geographic data to show — and we won't render fabricated maps.",
+      "requirement": "Enable IP-to-geo resolution on the tracking endpoint (populate Event.geo), then expose an /analytics/geo aggregation. Country and city breakdowns will appear here once real location data lands."
+    }
+  },
+  "emptyState": "No analytics data available for the selected period."
+}

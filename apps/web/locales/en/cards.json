@@ -1,0 +1,58 @@
+{
+  "title": "Digital Business Cards",
+  "subtitle": "Create, design, and manage your NFC & QR digital contact cards.",
+  "createCard": "Create Card",
+  "digitalCard": "Digital Business Card",
+  "searchPlaceholder": "Search by card name or slug…",
+  "stats": {
+    "total": "Total Cards",
+    "allProfiles": "all profiles",
+    "live": "Live Cards",
+    "published": "published",
+    "draft": "Draft Cards",
+    "unpublished": "unpublished"
+  },
+  "statusFilter": {
+    "all": "All",
+    "live": "Live",
+    "draft": "Draft"
+  },
+  "sortOptions": {
+    "newest": "Newest First",
+    "oldest": "Oldest First",
+    "nameAsc": "Name (A-Z)",
+    "nameDesc": "Name (Z-A)"
+  },
+  "view": {
+    "grid": "Grid view",
+    "list": "List view"
+  },
+  "actions": {
+    "edit": "Edit",
+    "view": "View",
+    "copy": "Copy",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "cancel": "Cancel",
+    "copyLink": "Copy Link",
+    "previewCard": "Preview Card",
+    "editCard": "Edit Card",
+    "deleteCard": "Delete Card"
+  },
+  "cardStatus": {
+    "live": "Live",
+    "draft": "Draft"
+  },
+  "noActiveLinks": "No active links",
+  "confirmDelete": "Are you sure you want to delete this card? This action is permanent.",
+  "empty": {
+    "title": "No business cards yet",
+    "desc": "Create your first premium NFC business card. You can configure your profile details, links, and styling in the studio.",
+    "filtered": "No cards match your filter criteria."
+  },
+  "toasts": {
+    "deleted": "Card deleted successfully",
+    "linkCopied": "Public link copied!",
+    "copyFailed": "Failed to copy link"
+  }
+}

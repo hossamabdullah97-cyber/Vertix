@@ -1,0 +1,300 @@
+{
+  "title": "Lead Management & CRM",
+  "subtitle": "Track, score, and convert leads captured across all digital profiles and NFC taps.",
+  "export": "Export CSV",
+  "addLead": "Add Lead",
+  "searchPlaceholder": "Search leads by name, email, or company…",
+  "tabs": {
+    "overview": "Dashboard",
+    "board": "Board View",
+    "table": "Table View",
+    "contacts": "Contacts",
+    "companies": "Companies",
+    "timeline": "Timeline",
+    "meetings": "Meetings",
+    "tasks": "Tasks",
+    "notes": "Notes",
+    "reports": "Analytics"
+  },
+  "emptyStateTitle": "No leads yet",
+  "emptyStateDesc": "Every time someone saves your contact, taps your NFC card, or submits a form on your public profile, they land here automatically.",
+  "openCards": "Open my cards",
+  "viewAnalytics": "View analytics",
+  "stats": {
+    "totalLeads": "Total Leads",
+    "hotLeads": "Hot Leads",
+    "pipelineValue": "Pipeline Stages",
+    "conversionRate": "Active Pipeline"
+  },
+  "stages": {
+    "new": "New",
+    "contacted": "Contacted",
+    "qualified": "Qualified",
+    "proposal": "Proposal",
+    "negotiation": "Negotiation",
+    "won": "Won",
+    "lost": "Lost"
+  },
+  "temperature": {
+    "hot": "Hot",
+    "warm": "Warm",
+    "cold": "Cold"
+  },
+  "emptyState": "No leads captured yet. Leads will appear automatically when visitors interact with your cards.",
+  "toasts": {
+    "taskAdded": "Task added",
+    "leadUpdated": "Lead updated",
+    "movedTo": "Moved to {{stage}}"
+  },
+  "board": {
+    "releaseToDrop": "Release to drop",
+    "noLeads": "No leads"
+  },
+  "table": {
+    "lead": "Lead",
+    "company": "Company",
+    "stage": "Stage",
+    "priority": "Priority",
+    "score": "Score",
+    "source": "Source",
+    "contact": "Contact",
+    "unknownLead": "Unknown lead",
+    "noMatch": "No leads match your filters."
+  },
+  "dash": {
+    "totalLeads": "Total leads",
+    "pipelineValue": "Pipeline value",
+    "wonDeals": "Won deals",
+    "lostDeals": "Lost deals",
+    "conversion": "Conversion",
+    "avgDeal": "Avg deal size",
+    "openTasks": "Open tasks",
+    "dueToday": "Due today",
+    "pipelineOverview": "Pipeline overview",
+    "leadSources": "Lead sources",
+    "noSources": "No sources yet",
+    "newLeads7d": "New leads · last 7 days",
+    "recentCaptures": "Recent captures",
+    "noCaptures": "No leads captured yet",
+    "todaysTasks": "Today's tasks",
+    "nothingDue": "Nothing due — you're all caught up",
+    "markComplete": "Mark complete",
+    "markIncomplete": "Mark incomplete"
+  },
+  "contacts": {
+    "headers": {
+      "contact": "Contact",
+      "companyTitle": "Company & Title",
+      "phoneEmail": "Phone & Email",
+      "source": "Source",
+      "status": "Status",
+      "pipelineValue": "Pipeline Value",
+      "lastSeen": "Last seen"
+    },
+    "unknownContact": "Unknown contact",
+    "card": "Card:",
+    "emptyTitle": "No contacts match",
+    "emptyDesc": "Contacts are created from every lead captured through your cards, NFC taps, QR codes, and forms."
+  },
+  "companies": {
+    "pipelineValue": "Pipeline value",
+    "noCompany": "No company",
+    "individualLeads": "Individual leads",
+    "wonSummary": "{{won}} won · {{contacts}}",
+    "contact_one": "{{count}} contact",
+    "contact_other": "{{count}} contacts",
+    "emptyTitle": "No companies yet",
+    "emptyDesc": "Companies appear automatically once your captured leads include a company name."
+  },
+  "meetings": {
+    "roadmap": "Roadmap",
+    "title": "Meetings",
+    "desc": "Scheduling and meeting outcomes need a backend to persist. Rather than a form that forgets everything on reload, this stays a placeholder until the meetings API lands.",
+    "whatNeeds": "What this needs",
+    "whatNeedsDesc": "A Meeting model and CRUD endpoints (create, reschedule, log outcome), ideally linked to leads and an external calendar. Booked meetings captured from public cards can then surface here automatically.",
+    "pipelineBefore": "You currently have",
+    "pipelineAfter": "leads in the pipeline that could be booked once meetings ship."
+  },
+  "leadCard": {
+    "unreadActivity": "Unread Activity Feed",
+    "estimatedValue": "Estimated deal value",
+    "leadScore": "Lead score",
+    "scheduleMeeting": "Schedule Meeting"
+  },
+  "filters": {
+    "smartFilters": "Smart Filters",
+    "dashboard": "Filter Dashboard",
+    "priority": "Priority",
+    "allPriorities": "All Priorities",
+    "captureSource": "Capture Source",
+    "allSources": "All Sources",
+    "minDealValue": "Min Deal Value",
+    "valuePlaceholder": "e.g. 5000",
+    "clearValue": "Clear value filter",
+    "savedFilters": "Saved Filters",
+    "nameFilter": "Name this filter view…",
+    "save": "Save",
+    "clearAll": "Clear all filters"
+  },
+  "drawer": {
+    "ariaLabel": "Lead details",
+    "close": "Close",
+    "unassigned": "Unassigned",
+    "tabs": {
+      "info": "info",
+      "timeline": "timeline",
+      "tasks": "tasks",
+      "notes": "notes",
+      "engagement": "engagement"
+    },
+    "stageLabel": "Sales Pipeline Stage",
+    "tempLabel": "Priority temperature",
+    "dealValue": "Deal Value (USD)",
+    "estimated": "estimated",
+    "contactDetails": "Contact details (Inline editing)",
+    "email": "Email",
+    "phone": "Phone",
+    "company": "Company",
+    "leadScore": "Lead Score",
+    "sourceLink": "Source Link",
+    "tagsLabel": "Lead tag indicators",
+    "addTagPlaceholder": "Press enter to add tag…",
+    "emailPlaceholder": "email@address.com",
+    "phonePlaceholder": "+1 (555) 000-0000",
+    "companyPlaceholder": "Company name",
+    "addActivity": "Add a {{type}}…",
+    "saving": "Saving…",
+    "log": "Log",
+    "leadCreated": "Lead created",
+    "createdVia": "via {{source}} · {{date}}",
+    "addTaskPlaceholder": "Add a task for this lead…",
+    "addTask": "Add Task",
+    "noTasks": "No tasks assigned to this lead",
+    "internalNotes": "Internal Lead Notes",
+    "notesPlaceholder": "Write private notes/details about this lead account…",
+    "saveNote": "Save Note",
+    "engagement": {
+      "roadmap": "Roadmap",
+      "title": "Card engagement",
+      "desc": "Per-lead engagement — how often this specific lead scanned a QR, tapped an NFC card, or viewed a profile — isn't available yet. Visits are recorded against anonymous visitors, and leads aren't linked to a visitor, so attributing engagement to one lead would be a guess.",
+      "whatNeeds": "What this needs",
+      "whatNeedsDesc": "Linking captured leads to the visitor session that generated them, so their real scans, taps, and profile views can be attributed and shown here.",
+      "useTimeline": "For now, the Timeline tab shows this lead's real logged activity."
+    }
+  },
+  "notes": {
+    "heading": "Notes",
+    "new": "New",
+    "newTitle": "Create new empty note",
+    "searchPlaceholder": "Search notes content…",
+    "untitled": "Untitled Note",
+    "emptyBody": "Empty body…",
+    "pinned": "Pinned Note",
+    "noNotes": "No notes found",
+    "unpin": "Unpin Note",
+    "pin": "Pin Note",
+    "editEditor": "Edit Editor",
+    "previewMd": "Preview MD",
+    "templates": "Templates:",
+    "delete": "Delete Note",
+    "noContent": "No content written yet.",
+    "titlePlaceholder": "Note Title…",
+    "contentPlaceholder": "Write anything in markdown (## Header, - [ ] Checklist, * bullet points)…",
+    "noneSelected": "No note selected",
+    "noneSelectedDesc": "Select an existing note from the sidebar panel or write a new one from templates.",
+    "categoryAll": "ALL",
+    "categoryTemplate": "Template",
+    "categoryDraft": "Draft",
+    "templateNames": {
+      "general": "general",
+      "discovery": "discovery",
+      "proposal": "proposal"
+    },
+    "templateTitles": {
+      "general": "General Meeting Minutes",
+      "discovery": "Lead Discovery Call notes",
+      "proposal": "Proposal & Negotiation notes"
+    }
+  },
+  "tasks": {
+    "title": "Tasks Manager",
+    "subtitle": "Organize followups, deal reminders, and sales objectives",
+    "add": "Add Task",
+    "searchPlaceholder": "Search task title or contact…",
+    "tabs": {
+      "pending": "pending",
+      "completed": "completed",
+      "all": "all"
+    },
+    "filter": {
+      "allPriorities": "All Priorities",
+      "high": "High Priority",
+      "medium": "Medium Priority",
+      "low": "Low Priority"
+    },
+    "emptyTitle": "No tasks match your filters",
+    "emptyDesc": "Try clearing search text or check your active tab.",
+    "priorityTitle": "{{priority}} priority",
+    "create": "Create New Task",
+    "description": "Task Description",
+    "descPlaceholder": "e.g. Call client to verify invoice template",
+    "linkToLead": "Link to Lead",
+    "noLink": "Do not link (Internal Task)",
+    "unknown": "Unknown",
+    "noCompany": "No Company",
+    "priority": "Priority",
+    "dueDate": "Due Date",
+    "cancel": "Cancel",
+    "priorityOptions": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
+  },
+  "activity": {
+    "title": "Global Timeline",
+    "subtitle": "A live stream of engagement across all cards and digital profiles",
+    "all": "All Activities",
+    "noMatch": "No matching activities",
+    "noMatchDesc": "Try changing your activity filter or engage with your contacts.",
+    "fallback": "Activity",
+    "capturedVia": "Captured via {{source}}",
+    "dealValue": " · deal value {{value}}",
+    "types": {
+      "NOTE": "Note",
+      "CALL": "Call",
+      "EMAIL": "Email",
+      "MEETING": "Meeting",
+      "STAGE_CHANGE": "Stage change",
+      "SCAN": "Scan"
+    }
+  },
+  "reports": {
+    "title": "Analytics & Reports",
+    "subtitle": "Conversion funnel, growth and source performance — computed from your real pipeline",
+    "totalLeads": "Total Leads",
+    "pipelineValue": "Pipeline Value",
+    "wonDeals": "Won Deals",
+    "conversion": "Conversion",
+    "growth6m": "Lead Growth · last 6 months",
+    "funnel": "Deal Conversion Funnel",
+    "sourcePerformance": "Source Performance",
+    "noSources": "No lead sources recorded yet."
+  },
+  "search": {
+    "button": "Search CRM…",
+    "placeholder": "Search lead, company, email, tag or note…",
+    "jumpToView": "Jump to View",
+    "noResults": "No results match \"{{query}}\"",
+    "leadIn": "Lead in {{company}} · {{priority}}",
+    "directCapture": "Direct capture",
+    "taskDue": "Task · Due: {{date}}",
+    "noDate": "No date",
+    "jump": {
+      "board": "Pipeline Board",
+      "contacts": "Contacts database",
+      "companies": "Companies overview",
+      "reports": "Analytics Reports"
+    }
+  }
+}

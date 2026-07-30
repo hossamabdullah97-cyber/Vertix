@@ -1,0 +1,47 @@
+{
+  "appName": "Vertex Connect",
+  "actions": {
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "saved": "تم الحفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "add": "إضافة",
+    "remove": "إزالة",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "search": "بحث",
+    "filter": "تصفية",
+    "copy": "نسخ",
+    "copied": "تم النسخ",
+    "share": "مشاركة",
+    "download": "تنزيل",
+    "upload": "رفع",
+    "retry": "إعادة المحاولة",
+    "refresh": "تحديث",
+    "viewAll": "عرض الكل",
+    "learnMore": "اعرف المزيد"
+  },
+  "states": {
+    "loading": "جارٍ التحميل…",
+    "empty": "لا يوجد شيء بعد",
+    "error": "حدث خطأ ما",
+    "noResults": "لا توجد نتائج",
+    "comingSoon": "قريباً"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "enabled": "مُفعّل",
+    "disabled": "مُعطّل",
+    "published": "منشور",
+    "draft": "مسودة"
+  },
+  "language": "اللغة",
+  "toggleLanguage": "تغيير اللغة"
+}

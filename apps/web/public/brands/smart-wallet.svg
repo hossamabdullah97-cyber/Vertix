@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <rect width="120" height="120" rx="28" fill="#1E3A8A"/>
+  <!-- Smart Wallet phone & cards emblem -->
+  <rect x="42" y="24" width="36" height="66" rx="8" fill="#0F172A" stroke="#38BDF8" stroke-width="3"/>
+  <rect x="48" y="32" width="24" height="42" rx="4" fill="#0284C7"/>
+  <path d="M 52 46 L 68 46 M 52 54 L 64 54" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="60" cy="82" r="3" fill="#38BDF8"/>
+  <text x="60" y="106" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="11" fill="#93C5FD" text-anchor="middle">SMART WALLET</text>
+</svg>

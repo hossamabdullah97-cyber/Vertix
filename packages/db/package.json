@@ -1,0 +1,31 @@
+{
+  "name": "@vertex/db",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "generate": "node ../../scripts/prisma-env.mjs generate --schema prisma/schema.prisma",
+    "migrate": "node ../../scripts/prisma-env.mjs migrate dev --schema prisma/schema.prisma",
+    "migrate:deploy": "node ../../scripts/prisma-env.mjs migrate deploy --schema prisma/schema.prisma",
+    "studio": "node ../../scripts/prisma-env.mjs studio --schema prisma/schema.prisma",
+    "seed": "node ../../scripts/prisma-env.mjs db seed",
+    "lint": "echo \"(db) no lint\"",
+    "build": "node ../../scripts/prisma-env.mjs generate --schema prisma/schema.prisma && tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.2",
+    "bcryptjs": "^2.4.3",
+    "prisma": "^6.1.0",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8"
+  }
+}
