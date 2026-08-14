@@ -52,12 +52,38 @@ export class MembersService {
   }
 
   /**
-   * Invites a member by email. Existing users are added immediately and notified.
-   * New users get an invitation email with a one-time link to set their password.
+   * Invites a member by email. Users who already hold an account are added
+   * immediately and notified. Everyone else — a new address, or a placeholder
+   * left by an invitation that was never accepted — gets a one-time link and
+   * chooses their own password. Re-inviting resends that link.
    */
   async invite(tenant: TenantContext, input: InviteMemberInput) {
-    await this.limits.assertWithin(tenant.orgId, 'members');
     if (input.teamId) await this.assertTeamInOrg(input.teamId);
+
+    const existingUser = await this.db.user.findFirst({
+      where: { email: input.email },
+      select: { id: true, passwordHash: true },
+    });
+
+    // An account only counts as real once its owner has set a password. A row
+    // with no passwordHash is a placeholder from an earlier invitation, so it
+    // gets invited again rather than being treated as a joinable account —
+    // otherwise it would land as ACTIVE with no way to ever sign in.
+    const pendingMembership =
+      existingUser && !existingUser.passwordHash
+        ? await this.db.membership.findFirst({
+            where: { userId: existingUser.id },
+            select: { id: true },
+          })
+        : null;
+
+    // Resending an invitation reuses the seat that invitation already holds,
+    // so it must not be charged against the plan a second time.
+    await this.limits.assertWithin(
+      tenant.orgId,
+      'members',
+      pendingMembership ? 0 : 1,
+    );
 
     const org = await this.db.organization.findUnique({
       where: { id: tenant.orgId },
@@ -66,24 +92,16 @@ export class MembersService {
     const orgName = org?.name ?? 'your organization';
     const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
 
-    const existingUser = await this.db.user.findFirst({
-      where: { email: input.email },
-    });
-
-    if (existingUser) {
+    if (existingUser?.passwordHash) {
       const already = await this.db.membership.findFirst({
         where: { userId: existingUser.id },
       });
       if (already) throw new ConflictException('This user is already a member');
 
-      await this.db.membership.create({
-        data: {
-          orgId: tenant.orgId,
-          userId: existingUser.id,
-          role: input.role,
-          teamId: input.teamId,
-          status: 'ACTIVE',
-        },
+      await this.attachMembership(tenant, existingUser.id, {
+        role: input.role,
+        teamId: input.teamId,
+        status: 'ACTIVE',
       });
       await this.mail.sendAddedNotice(input.email, orgName);
       await this.audit.log(tenant, 'member.added', { targetType: 'user', targetId: existingUser.id, metadata: { email: input.email, role: input.role } });
@@ -108,19 +126,40 @@ export class MembersService {
       return { status: 'added' as const, email: input.email };
     }
 
-    // New user: create a pending account + INVITED membership, then email a link.
-    const user = await this.db.user.create({
-      data: { email: input.email, name: input.name },
-    });
-    await this.db.membership.create({
-      data: {
-        orgId: tenant.orgId,
-        userId: user.id,
+    // Pending invitee: reuse the placeholder account if one exists, otherwise
+    // create it. Either way the membership stays INVITED and the employee sets
+    // their own password through the emailed link.
+    const user = existingUser
+      ? await this.db.user.update({
+          where: { id: existingUser.id },
+          data: { ...(input.name ? { name: input.name } : {}) },
+          select: { id: true },
+        })
+      : await this.db.user.create({
+          data: { email: input.email, name: input.name },
+          select: { id: true },
+        });
+
+    if (pendingMembership) {
+      // Re-inviting: refresh the role/team the invitation grants.
+      await this.db.membership.update({
+        where: { id: pendingMembership.id },
+        data: {
+          role: input.role,
+          ...(input.teamId !== undefined ? { teamId: input.teamId } : {}),
+          status: 'INVITED',
+        },
+      });
+      // A new link supersedes the old one, so retire any still-live invitation.
+      await this.tokens.revokePending('INVITE', user.id);
+    } else {
+      await this.attachMembership(tenant, user.id, {
         role: input.role,
         teamId: input.teamId,
         status: 'INVITED',
-      },
-    });
+      });
+    }
+
     const token = await this.tokens.create({
       type: 'INVITE',
       email: input.email,
@@ -222,6 +261,43 @@ export class MembersService {
       metadata: { role: target.role, email: removed?.email },
     });
     return { id, removed: true };
+  }
+
+  /**
+   * Attaches a member, reviving whatever an earlier removal left behind. The
+   * (userId, orgId) pair stays unique in the table even after a soft delete, so
+   * a plain create would collide with that tombstone.
+   */
+  private async attachMembership(
+    tenant: TenantContext,
+    userId: string,
+    data: {
+      role: InviteMemberInput['role'];
+      teamId?: string;
+      status: 'ACTIVE' | 'INVITED';
+    },
+  ) {
+    const removed = await this.db.membership.findFirst({
+      where: { userId, deletedAt: { not: null } },
+      select: { id: true },
+    });
+    if (!removed) {
+      return this.db.membership.create({
+        data: { orgId: tenant.orgId, userId, ...data },
+      });
+    }
+    // The revived row starts clean: the old team and department belonged to the
+    // membership that was removed, not to this new invitation.
+    return this.db.membership.update({
+      where: { id: removed.id },
+      data: {
+        role: data.role,
+        teamId: data.teamId ?? null,
+        departmentId: null,
+        status: data.status,
+        deletedAt: null,
+      },
+    });
   }
 
   private async assertNotLastOwner() {

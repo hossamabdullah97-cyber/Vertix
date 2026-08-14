@@ -69,4 +69,15 @@ export class TokensService {
       data: { usedAt: new Date() },
     });
   }
+
+  /**
+   * Burns a user's outstanding tokens of one type. Used when a fresh invitation
+   * supersedes an earlier one, so only the newest link stays live.
+   */
+  async revokePending(type: TokenType, userId: string): Promise<void> {
+    await this.db.token.updateMany({
+      where: { type: type as never, userId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+  }
 }

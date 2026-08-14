@@ -468,6 +468,25 @@ describe('AuthService.acceptInvite', () => {
     expect(access(signed).role).toBe('EMPLOYEE');
   });
 
+  it('stores the password the invitee chose, which no one else ever supplies', async () => {
+    // The inviter picks the email and the role; the password enters the system
+    // for the first time here, from the person accepting.
+    const userUpdate = jest.fn().mockResolvedValue({});
+    const { service, tokens } = makeService({ user: { update: userUpdate } });
+    (tokens.verify as unknown as jest.Mock).mockResolvedValue({
+      id: 't1',
+      userId: 'u1',
+      orgId: 'org_acme',
+      email: 'a@b.co',
+    });
+
+    await service.acceptInvite('t', 'ChosenByTheEmployee1!');
+
+    const stored = userUpdate.mock.calls[0][0].data.passwordHash;
+    expect(stored).not.toBe('ChosenByTheEmployee1!'); // hashed, never at rest
+    await expect(bcrypt.compare('ChosenByTheEmployee1!', stored)).resolves.toBe(true);
+  });
+
   it('does not overwrite an existing name when none is supplied', async () => {
     const userUpdate = jest.fn().mockResolvedValue({});
     const { service, tokens } = makeService({ user: { update: userUpdate } });
