@@ -14,6 +14,10 @@ const pg = new EmbeddedPostgres({
   password: 'vertex',
   port: 5432,
   persistent: true,
+  // initdb inherits the host locale, which on a Windows machine gives a WIN1252
+  // cluster — every Arabic write then fails with "no equivalent in encoding
+  // WIN1252". Pin UTF8 so local data matches the Docker/production cluster.
+  initdbFlags: ['--encoding=UTF8', '--locale=C'],
 });
 
 async function main() {

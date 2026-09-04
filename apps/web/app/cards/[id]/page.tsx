@@ -12,6 +12,8 @@ import type { Template } from '@/lib/templates';
 import { TemplateMarketplace } from '@/components/TemplateMarketplace';
 import { CardProfiles } from '@/components/CardProfiles';
 import PaymentLinksManager, { type PaymentLinkRow } from '@/components/cards/PaymentLinksManager';
+import ActionCard, { isQuickAction } from '@/components/cards/ActionCard';
+import QuickStart from '@/components/cards/QuickStart';
 import AppShell from '@/components/AppShell';
 import nextDynamic from 'next/dynamic';
 // The live-preview simulator (device frames, 3D NFC, QR, heavy motion) loads on
@@ -218,6 +220,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [applyingId, setApplyingId] = useState<string | null>(null);
 
+  // Guided quick-start. `null` until the first load decides, so the studio never
+  // flashes before we know whether the card is empty.
+  const [guided, setGuided] = useState<boolean | null>(null);
+
   // Deletion confirm states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteSlugConfirm, setDeleteSlugConfirm] = useState('');
@@ -284,6 +290,15 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       applyCard(c);
       setTags(tg);
       pushHistory(JSON.stringify({ c, sections: c.sections, actions: c.actions }));
+
+      // Decide the guided path only on the very first load, so finishing it (or
+      // skipping) is never undone by a later refetch.
+      if (!loadedRef.current) {
+        const vc = (c.vcardData as Record<string, string>) ?? {};
+        const untouched =
+          !vc.fullName && (c.actions?.length ?? 0) === 0 && (c.sections?.length ?? 0) === 0;
+        setGuided(untouched);
+      }
       loadedRef.current = true;
     } catch (e) {
       setError((e as Error).message);
@@ -595,6 +610,24 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
           </span>
           <p className="text-sm font-semibold text-muted">{error || t('shell.loading')}</p>
         </div>
+      </AppShell>
+    );
+  }
+
+  // A card with nothing on it opens in the guided path instead of the full
+  // studio — the studio is one click away and the choice is remembered.
+  if (guided) {
+    return (
+      <AppShell title={t('shell.title')} fluid={true}>
+        <QuickStart
+          cardId={id}
+          card={card}
+          onDone={() => {
+            setGuided(false);
+            void load();
+          }}
+          onSkip={() => setGuided(false)}
+        />
       </AppShell>
     );
   }
@@ -953,585 +986,80 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {/* --- Upper Part: Quick Contact Actions --- */}
-                    <div className="space-y-3.5">
-                      <div className="border-b border-line/40 pb-2 flex items-center justify-between">
-                        <div>
-                          <h4 className="text-[12px] font-bold text-ink flex items-center gap-1.5">
-                            <span>💬 Quick Actions (Below Photo)</span>
-                            <Badge variant="neutral" className="!text-[9px] px-1.5 py-0.5">{t('links.topRow')}</Badge>
-                          </h4>
-                          <p className="text-[10px] text-muted font-medium">{t('links.topRowHint')}</p>
+                    {/* Both placements render the same ActionCard; the group only
+                        says where the action shows up on the public card. */}
+                    {([
+                      { key: 'quick', inGroup: (a: CardAction) => isQuickAction(a) },
+                      { key: 'grid',  inGroup: (a: CardAction) => !isQuickAction(a) },
+                    ] as const).map(({ key, inGroup }) => {
+                      const list = actions.filter(inGroup);
+                      return (
+                        <div key={key} className="space-y-3">
+                          <div className="flex items-baseline justify-between gap-3 border-b border-line/40 pb-2">
+                            <h4 className="text-[12px] font-bold text-ink">{t(`links.group.${key}`)}</h4>
+                            <span className="text-[10px] text-muted font-medium">{t(`links.group.${key}Hint`)}</span>
+                          </div>
+
+                          {list.length > 0 ? (
+                            <div className="space-y-3">
+                              {list.map((a) => (
+                                <ActionCard
+                                  key={a.id}
+                                  action={a}
+                                  details={getActionBrandDetails(a)}
+                                  expanded={expandedActionId === a.id}
+                                  dragOver={dragOverActionId === a.id}
+                                  onToggleExpand={() => setExpandedActionId(expandedActionId === a.id ? null : a.id)}
+                                  onToggleActive={() =>
+                                    run(() =>
+                                      authFetch(`/cards/${id}/actions/${a.id}`, {
+                                        method: 'PATCH',
+                                        body: JSON.stringify({ isActive: !a.isActive }),
+                                      }),
+                                    )
+                                  }
+                                  onPatchConfig={(config) =>
+                                    run(() =>
+                                      authFetch(`/cards/${id}/actions/${a.id}`, {
+                                        method: 'PATCH',
+                                        body: JSON.stringify({ config }),
+                                      }),
+                                    )
+                                  }
+                                  onDuplicate={() => duplicateAction(a)}
+                                  onDelete={() =>
+                                    run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' }))
+                                  }
+                                  onDragStart={(e) => {
+                                    setDraggedActionId(a.id);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    if (draggedActionId && draggedActionId !== a.id) setDragOverActionId(a.id);
+                                  }}
+                                  onDragLeave={() => setDragOverActionId(null)}
+                                  onDragEnd={() => {
+                                    setDraggedActionId(null);
+                                    setDragOverActionId(null);
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (draggedActionId && draggedActionId !== a.id) handleDragDrop(draggedActionId, a.id);
+                                    setDraggedActionId(null);
+                                    setDragOverActionId(null);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-muted text-center py-3 bg-canvas/10 rounded-xl border border-dashed border-line/60">
+                              {t(`links.group.${key}Empty`)}
+                            </p>
+                          )}
                         </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        {(() => {
-                          const list = actions.filter((a) => {
-                            if (typeof a.config.isQuick === 'boolean') return a.config.isQuick;
-                            return ['CALL', 'EMAIL', 'WHATSAPP'].includes(a.type);
-                          });
-                          return list.length > 0 ? (
-                            list.map((a, i) => {
-                              const details = getActionBrandDetails(a);
-                              const isExpanded = expandedActionId === a.id;
-                              const summaryText = (((a.config as any).phone || (a.config as any).email || (a.config as any).url || '') as string);
-
-                              // Soft background status badge
-                              let statusText = 'Draft';
-                              let statusClass = 'bg-line/40 text-muted border-line/60';
-                              if (a.isActive) {
-                                statusText = 'Active';
-                                statusClass = 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25';
-                              } else if (summaryText) {
-                                statusText = 'Hidden';
-                                statusClass = 'bg-amber-500/10 text-amber-600 border-amber-500/25';
-                              } else {
-                                statusText = 'Draft';
-                                statusClass = 'bg-canvas/50 text-faint border-line/50';
-                              }
-
-                              return (
-                                <div
-                                  key={a.id}
-                                  id={`action-card-${a.id}`}
-                                  draggable={true}
-                                  onDragStart={(e) => {
-                                    setDraggedActionId(a.id);
-                                    e.dataTransfer.effectAllowed = 'move';
-                                  }}
-                                  onDragOver={(e) => {
-                                    e.preventDefault();
-                                    if (draggedActionId && draggedActionId !== a.id) {
-                                      setDragOverActionId(a.id);
-                                    }
-                                  }}
-                                  onDragLeave={() => setDragOverActionId(null)}
-                                  onDragEnd={() => {
-                                    setDraggedActionId(null);
-                                    setDragOverActionId(null);
-                                  }}
-                                  onDrop={(e) => {
-                                    e.preventDefault();
-                                    if (draggedActionId && draggedActionId !== a.id) {
-                                      handleDragDrop(draggedActionId, a.id);
-                                    }
-                                    setDraggedActionId(null);
-                                    setDragOverActionId(null);
-                                  }}
-                                  className={`p-3.5 rounded-2xl border transition-all duration-200 relative group flex flex-col ${
-                                    isExpanded
-                                      ? 'border-accent bg-canvas/30 shadow-sm ring-1 ring-accent-soft'
-                                      : 'border-line/75 bg-canvas/15 hover:border-line hover:bg-canvas/20'
-                                  } ${dragOverActionId === a.id ? 'border-dashed border-accent/80 bg-accent/5' : ''}`}
-                                >
-                                  {/* Accordion Header */}
-                                  <div
-                                    onClick={() => setExpandedActionId(isExpanded ? null : a.id)}
-                                    className="flex items-center justify-between gap-3 cursor-pointer select-none"
-                                  >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      {/* Drag Handle */}
-                                      <span className="cursor-grab text-faint hover:text-muted transition-colors shrink-0 p-1 active:cursor-grabbing">
-                                        <Icon name="grid" size={13} />
-                                      </span>
-
-                                      <span
-                                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm transition-transform group-hover:scale-105"
-                                        style={{ background: details?.color ?? '#2563eb' }}
-                                      >
-                                        <Icon name={details.icon} size={16} />
-                                      </span>
-                                      <div className="min-w-0">
-                                        <h4 className="font-extrabold text-xs text-ink flex items-center gap-2 flex-wrap leading-tight">
-                                          <span>{details?.label ?? a.type}</span>
-                                          {summaryText && (
-                                            <span className="font-mono text-[10px] text-muted font-normal truncate max-w-[150px] sm:max-w-[200px]">
-                                              {summaryText}
-                                            </span>
-                                          )}
-                                        </h4>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      {/* Visual status badge */}
-                                      <span className={`text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusClass}`}>
-                                        {statusText}
-                                      </span>
-
-                                      {/* Active Switch */}
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          run(() =>
-                                            authFetch(`/cards/${id}/actions/${a.id}`, {
-                                              method: 'PATCH',
-                                              body: JSON.stringify({ isActive: !a.isActive }),
-                                            }),
-                                          );
-                                        }}
-                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                          a.isActive ? 'bg-accent' : 'bg-line-strong'
-                                        }`}
-                                        style={a.isActive ? { backgroundColor: 'var(--v-accent)' } : {}}
-                                      >
-                                        <span
-                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                            a.isActive ? 'translate-x-4' : 'translate-x-0'
-                                          }`}
-                                        />
-                                      </button>
-
-                                      {/* Hover utilities actions bar */}
-                                      <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 pl-1.5 border-l border-line/60">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); duplicateAction(a); }}
-                                          className="h-7 px-2.5 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-[11px] font-bold gap-1"
-                                          title={t('links.duplicate')}
-                                        >
-                                          <Icon name="copy" size={11} /> Duplicate
-                                        </button>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' }));
-                                          }}
-                                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
-                                          title={t('links.delete')}
-                                        >
-                                          <Icon name="trash" size={13} />
-                                        </button>
-                                      </div>
-
-                                      {/* Expand Indicator */}
-                                      <span className="text-[10px] text-muted font-black w-4 text-center">
-                                        {isExpanded ? '▲' : '▼'}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Accordion Body */}
-                                  <AnimatePresence initial={false}>
-                                    {isExpanded && (
-                                      <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.22, ease: 'easeOut' }}
-                                        className="grid gap-3 pt-3.5 mt-3.5 border-t border-line/50 overflow-hidden"
-                                      >
-                                        {a.type === 'WHATSAPP' && (
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappPhone')}</label>
-                                              <input
-                                                className="v-field font-mono text-xs !h-8"
-                                                defaultValue={a.config.phone as string ?? ''}
-                                                onBlur={(e) => {
-                                                  a.config.phone = e.target.value;
-                                                  run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                                }}
-                                                placeholder={t('links.phonePlaceholder')}
-                                              />
-                                            </div>
-                                            <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappMessage')}</label>
-                                              <input
-                                                className="v-field text-xs !h-8"
-                                                defaultValue={a.config.text as string ?? ''}
-                                                onBlur={(e) => {
-                                                  a.config.text = e.target.value;
-                                                  run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                                }}
-                                                placeholder={t('links.whatsappMessagePlaceholder')}
-                                              />
-                                            </div>
-                                          </div>
-                                        )}
-
-                                        {a.type === 'CALL' && (
-                                          <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.phoneNumber')}</label>
-                                            <input
-                                              className="v-field font-mono text-xs !h-8"
-                                              defaultValue={a.config.phone as string ?? ''}
-                                              onBlur={(e) => {
-                                                a.config.phone = e.target.value;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              placeholder={t('links.phonePlaceholder')}
-                                            />
-                                          </div>
-                                        )}
-
-                                        {a.type === 'EMAIL' && (
-                                          <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.emailAddress')}</label>
-                                            <input
-                                              className="v-field font-mono text-xs !h-8"
-                                              defaultValue={a.config.email as string ?? ''}
-                                              onBlur={(e) => {
-                                                a.config.email = e.target.value;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              placeholder={t('links.emailPlaceholder')}
-                                            />
-                                          </div>
-                                        )}
-
-                                        {a.type !== 'WHATSAPP' && a.type !== 'LINKEDIN' && a.type !== 'CALL' && a.type !== 'EMAIL' && (
-                                          <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.destination')}</label>
-                                            <input
-                                              className="v-field font-mono text-xs !h-8"
-                                              defaultValue={a.config.url as string ?? ''}
-                                              onBlur={(e) => {
-                                                a.config.url = e.target.value;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              placeholder={t('links.destinationPlaceholder')}
-                                            />
-                                          </div>
-                                        )}
-
-                                        <div className="flex flex-col gap-2 pt-1">
-                                          <label className="flex items-center gap-2 text-xs text-muted font-bold select-none cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              defaultChecked={
-                                                typeof a.config.isQuick === 'boolean'
-                                                  ? a.config.isQuick
-                                                  : ['CALL', 'EMAIL', 'WHATSAPP'].includes(a.type)
-                                              }
-                                              onChange={(e) => {
-                                                a.config.isQuick = e.target.checked;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              className="rounded border-line text-accent focus:ring-accent-soft h-3.5 w-3.5"
-                                            />
-                                            <span>{t('links.quickContact')}</span>
-                                          </label>
-                                        </div>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <p className="text-[11px] text-muted text-center py-3 bg-canvas/10 rounded-xl border border-dashed border-line/60">
-                              No quick contact actions enabled. Toggle on below or add templates.
-                            </p>
-                          );
-                        })()}
-                      </div>
-                    </div>
-
-                    {/* --- Lower Part: Grid / Body Links --- */}
-                    <div className="space-y-3.5 pt-4 border-t border-line/50">
-                      <div className="border-b border-line/40 pb-2">
-                        <h4 className="text-[12px] font-bold text-ink flex items-center gap-1.5">
-                          <span>🔗 Links Grid (Page Body)</span>
-                          <Badge variant="neutral" className="!text-[9px] px-1.5 py-0.5">{t('links.bottomGrid')}</Badge>
-                        </h4>
-                        <p className="text-[10px] text-muted font-medium">{t('links.bottomGridHint')}</p>
-                      </div>
-
-                      <div className="space-y-3">
-                        {(() => {
-                          const list = actions.filter((a) => {
-                            if (typeof a.config.isQuick === 'boolean') return !a.config.isQuick;
-                            return !['CALL', 'EMAIL', 'WHATSAPP'].includes(a.type);
-                          });
-                          return list.length > 0 ? (
-                            list.map((a, i) => {
-                              const details = getActionBrandDetails(a);
-                              const isExpanded = expandedActionId === a.id;
-                              const summaryText = (((a.config as any).phone || (a.config as any).email || (a.config as any).url || '') as string);
-
-                              // Soft background status badge
-                              let statusText = 'Draft';
-                              let statusClass = 'bg-line/40 text-muted border-line/60';
-                              if (a.isActive) {
-                                statusText = 'Active';
-                                statusClass = 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25';
-                              } else if (summaryText) {
-                                statusText = 'Hidden';
-                                statusClass = 'bg-amber-500/10 text-amber-600 border-amber-500/25';
-                              } else {
-                                statusText = 'Draft';
-                                statusClass = 'bg-canvas/50 text-faint border-line/50';
-                              }
-
-                              return (
-                                <div
-                                  key={a.id}
-                                  id={`action-card-${a.id}`}
-                                  draggable={true}
-                                  onDragStart={(e) => {
-                                    setDraggedActionId(a.id);
-                                    e.dataTransfer.effectAllowed = 'move';
-                                  }}
-                                  onDragOver={(e) => {
-                                    e.preventDefault();
-                                    if (draggedActionId && draggedActionId !== a.id) {
-                                      setDragOverActionId(a.id);
-                                    }
-                                  }}
-                                  onDragLeave={() => setDragOverActionId(null)}
-                                  onDragEnd={() => {
-                                    setDraggedActionId(null);
-                                    setDragOverActionId(null);
-                                  }}
-                                  onDrop={(e) => {
-                                    e.preventDefault();
-                                    if (draggedActionId && draggedActionId !== a.id) {
-                                      handleDragDrop(draggedActionId, a.id);
-                                    }
-                                    setDraggedActionId(null);
-                                    setDragOverActionId(null);
-                                  }}
-                                  className={`p-3.5 rounded-2xl border transition-all duration-200 relative group flex flex-col ${
-                                    isExpanded
-                                      ? 'border-accent bg-canvas/30 shadow-sm ring-1 ring-accent-soft'
-                                      : 'border-line/75 bg-canvas/15 hover:border-line hover:bg-canvas/20'
-                                  } ${dragOverActionId === a.id ? 'border-dashed border-accent/80 bg-accent/5' : ''}`}
-                                >
-                                  {/* Accordion Header */}
-                                  <div
-                                    onClick={() => setExpandedActionId(isExpanded ? null : a.id)}
-                                    className="flex items-center justify-between gap-3 cursor-pointer select-none"
-                                  >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                      {/* Drag Handle */}
-                                      <span className="cursor-grab text-faint hover:text-muted transition-colors shrink-0 p-1 active:cursor-grabbing">
-                                        <Icon name="grid" size={13} />
-                                      </span>
-
-                                      <span
-                                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm transition-transform group-hover:scale-105"
-                                        style={{ background: details?.color ?? '#2563eb' }}
-                                      >
-                                        <Icon name={details.icon} size={16} />
-                                      </span>
-                                      <div className="min-w-0">
-                                        <h4 className="font-extrabold text-xs text-ink flex items-center gap-2 flex-wrap leading-tight">
-                                          <span>{details?.label ?? a.type}</span>
-                                          {summaryText && (
-                                            <span className="font-mono text-[10px] text-muted font-normal truncate max-w-[150px] sm:max-w-[200px]">
-                                              {summaryText}
-                                            </span>
-                                          )}
-                                        </h4>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      {/* Visual status badge */}
-                                      <span className={`text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${statusClass}`}>
-                                        {statusText}
-                                      </span>
-
-                                      {/* Active Switch */}
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          run(() =>
-                                            authFetch(`/cards/${id}/actions/${a.id}`, {
-                                              method: 'PATCH',
-                                              body: JSON.stringify({ isActive: !a.isActive }),
-                                            }),
-                                          );
-                                        }}
-                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                          a.isActive ? 'bg-accent' : 'bg-line-strong'
-                                        }`}
-                                        style={a.isActive ? { backgroundColor: 'var(--v-accent)' } : {}}
-                                      >
-                                        <span
-                                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                            a.isActive ? 'translate-x-4' : 'translate-x-0'
-                                          }`}
-                                        />
-                                      </button>
-
-                                      {/* Hover utilities actions bar */}
-                                      <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 pl-1.5 border-l border-line/60">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); duplicateAction(a); }}
-                                          className="h-7 px-2.5 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-[11px] font-bold gap-1"
-                                          title={t('links.duplicate')}
-                                        >
-                                          <Icon name="copy" size={11} /> Duplicate
-                                        </button>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' }));
-                                          }}
-                                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
-                                          title={t('links.delete')}
-                                        >
-                                          <Icon name="trash" size={13} />
-                                        </button>
-                                      </div>
-
-                                      {/* Expand Indicator */}
-                                      <span className="text-[10px] text-muted font-black w-4 text-center">
-                                        {isExpanded ? '▲' : '▼'}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Accordion Body */}
-                                  <AnimatePresence initial={false}>
-                                    {isExpanded && (
-                                      <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.22, ease: 'easeOut' }}
-                                        className="grid gap-3 pt-3.5 mt-3.5 border-t border-line/50 overflow-hidden"
-                                      >
-                                        {a.type === 'WHATSAPP' && (
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappPhone')}</label>
-                                              <input
-                                                className="v-field font-mono text-xs !h-8"
-                                                defaultValue={a.config.phone as string ?? ''}
-                                                onBlur={(e) => {
-                                                  a.config.phone = e.target.value;
-                                                  run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                                }}
-                                                placeholder={t('links.phonePlaceholder')}
-                                              />
-                                            </div>
-                                            <div className="space-y-1">
-                                              <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappMessage')}</label>
-                                              <input
-                                                className="v-field text-xs !h-8"
-                                                defaultValue={a.config.text as string ?? ''}
-                                                onBlur={(e) => {
-                                                  a.config.text = e.target.value;
-                                                  run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                                }}
-                                                placeholder={t('links.whatsappMessagePlaceholder')}
-                                              />
-                                            </div>
-                                          </div>
-                                        )}
-
-                                        {a.type === 'LINKEDIN' && (
-                                          <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.linkedinUrl')}</label>
-                                            <input
-                                              className="v-field font-mono text-xs !h-8"
-                                              defaultValue={a.config.url as string ?? ''}
-                                              onBlur={(e) => {
-                                                a.config.url = e.target.value;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              placeholder={t('links.linkedinPlaceholder')}
-                                            />
-                                          </div>
-                                        )}
-
-                                        {a.type === 'CALL' && (
-                                          <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.phoneNumber')}</label>
-                                            <input
-                                              className="v-field font-mono text-xs !h-8"
-                                              defaultValue={a.config.phone as string ?? ''}
-                                              onBlur={(e) => {
-                                                a.config.phone = e.target.value;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              placeholder={t('links.phonePlaceholder')}
-                                            />
-                                          </div>
-                                        )}
-
-                                        {a.type === 'EMAIL' && (
-                                          <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">{t('links.emailAddress')}</label>
-                                            <input
-                                              className="v-field font-mono text-xs !h-8"
-                                              defaultValue={a.config.email as string ?? ''}
-                                              onBlur={(e) => {
-                                                a.config.email = e.target.value;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              placeholder={t('links.emailPlaceholder')}
-                                            />
-                                          </div>
-                                        )}
-
-                                        {a.type !== 'WHATSAPP' && a.type !== 'LINKEDIN' && a.type !== 'CALL' && a.type !== 'EMAIL' && (
-                                          <div className="space-y-1">
-                                            <label className="text-[10px] font-bold text-muted uppercase">
-                                              {a.type === 'WEBSITE'
-                                                ? t('links.destinationFor', { name: details.label })
-                                                : t('links.targetDestination')}
-                                            </label>
-                                            <input
-                                              className="v-field font-mono text-xs !h-8"
-                                              defaultValue={a.config.url as string ?? ''}
-                                              onBlur={(e) => {
-                                                a.config.url = e.target.value;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              placeholder={t('links.destinationPlaceholder')}
-                                            />
-                                          </div>
-                                        )}
-
-                                        <div className="flex flex-col gap-2 pt-1">
-                                          <label className="flex items-center gap-2 text-xs text-muted font-bold select-none cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              defaultChecked={a.config.isPrimary === true}
-                                              onChange={(e) => {
-                                                a.config.isPrimary = e.target.checked;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              className="rounded border-line text-accent focus:ring-accent-soft h-3.5 w-3.5"
-                                            />
-                                            <span>{t('links.primaryRedirect')}</span>
-                                          </label>
-
-                                          <label className="flex items-center gap-2 text-xs text-muted font-bold select-none cursor-pointer">
-                                            <input
-                                              type="checkbox"
-                                              defaultChecked={
-                                                typeof a.config.isQuick === 'boolean'
-                                                  ? a.config.isQuick
-                                                  : ['CALL', 'EMAIL', 'WHATSAPP'].includes(a.type)
-                                              }
-                                              onChange={(e) => {
-                                                a.config.isQuick = e.target.checked;
-                                                run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ config: a.config }) }));
-                                              }}
-                                              className="rounded border-line text-accent focus:ring-accent-soft h-3.5 w-3.5"
-                                            />
-                                            <span>{t('links.quickContact')}</span>
-                                          </label>
-                                        </div>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <p className="text-[11px] text-muted text-center py-3 bg-canvas/10 rounded-xl border border-dashed border-line/60">
-                              No grid links added yet. Click templates below to add.
-                            </p>
-                          );
-                        })()}
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

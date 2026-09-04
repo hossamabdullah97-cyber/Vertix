@@ -109,7 +109,20 @@
     "moveDown": "تحريك لأسفل",
     "duplicate": "تكرار الإجراء",
     "delete": "حذف الإجراء",
-    "toggleVisibility": "تبديل الظهور"
+    "toggleVisibility": "تبديل الظهور",
+    "status": {
+      "draft": "مسودة",
+      "active": "ظاهر",
+      "hidden": "مخفي"
+    },
+    "group": {
+      "quick": "أزرار التواصل السريع",
+      "quickHint": "تظهر أسفل اسمك",
+      "quickEmpty": "لا توجد أزرار تواصل سريع بعد.",
+      "grid": "شبكة الروابط",
+      "gridHint": "تظهر في متن الصفحة",
+      "gridEmpty": "لم تُضف روابط بعد."
+    }
   },
   "platformPicker": {
     "searchPlaceholder": "ابحث عن منصة… (↑/↓ للتنقل، Enter للإضافة، Esc للإغلاق)",
@@ -240,5 +253,43 @@
       "SHARE": "المشاركات",
       "CLICK": "نقرات الروابط"
     }
+  },
+  "quickStart": {
+    "steps": {
+      "identity": "من أنت",
+      "channels": "التواصل",
+      "look": "الشكل"
+    },
+    "identity": {
+      "title": "لنبدأ باسمك",
+      "subtitle": "هذا أول ما يراه الناس عند فتح بطاقتك."
+    },
+    "channels": {
+      "title": "كيف يتواصل معك الناس؟",
+      "subtitle": "املأ ما تستخدمه فقط، واترك الباقي فارغاً — يمكنك الإضافة لاحقاً.",
+      "hint": "كل خانة تملؤها تصبح زراً بلمسة واحدة على بطاقتك.",
+      "whatsapp": "واتساب",
+      "whatsappPlaceholder": "+201001234567",
+      "call": "هاتف",
+      "callPlaceholder": "+201001234567",
+      "email": "بريد إلكتروني",
+      "emailPlaceholder": "name@company.com",
+      "linkedin": "لينكد إن",
+      "linkedinPlaceholder": "https://linkedin.com/in/username",
+      "website": "موقع إلكتروني",
+      "websitePlaceholder": "https://yoursite.com"
+    },
+    "look": {
+      "title": "اختر شكل بطاقتك",
+      "subtitle": "يمكنك تغييره في أي وقت، وهناك المزيد في تبويب القوالب."
+    },
+    "preview": "معاينة حيّة",
+    "previewName": "اسمك",
+    "previewRole": "مسمّاك الوظيفي",
+    "back": "رجوع",
+    "next": "متابعة",
+    "finish": "أنشئ بطاقتي",
+    "saving": "جارٍ الإنشاء…",
+    "skip": "تخطَّ إلى المحرر الكامل"
   }
 }

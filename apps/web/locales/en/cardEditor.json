@@ -109,7 +109,20 @@
     "moveDown": "Move Down",
     "duplicate": "Duplicate action",
     "delete": "Delete action",
-    "toggleVisibility": "Toggle visibility"
+    "toggleVisibility": "Toggle visibility",
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "hidden": "Hidden"
+    },
+    "group": {
+      "quick": "Quick contact buttons",
+      "quickHint": "Shown under your name",
+      "quickEmpty": "No quick contact buttons yet.",
+      "grid": "Links grid",
+      "gridHint": "Shown in the page body",
+      "gridEmpty": "No links added yet."
+    }
   },
   "platformPicker": {
     "searchPlaceholder": "Search platforms... (↑/↓ to navigate, Enter to add, Esc to close)",
@@ -240,5 +253,43 @@
       "SHARE": "Shares",
       "CLICK": "Link Clicks"
     }
+  },
+  "quickStart": {
+    "steps": {
+      "identity": "About you",
+      "channels": "Contact",
+      "look": "Style"
+    },
+    "identity": {
+      "title": "Let's start with your name",
+      "subtitle": "This is what people see first when they open your card."
+    },
+    "channels": {
+      "title": "How should people reach you?",
+      "subtitle": "Fill in what you use. Leave the rest empty — you can add more later.",
+      "hint": "Anything you fill in becomes a one-tap button on your card.",
+      "whatsapp": "WhatsApp",
+      "whatsappPlaceholder": "+201001234567",
+      "call": "Phone",
+      "callPlaceholder": "+201001234567",
+      "email": "Email",
+      "emailPlaceholder": "name@company.com",
+      "linkedin": "LinkedIn",
+      "linkedinPlaceholder": "https://linkedin.com/in/username",
+      "website": "Website",
+      "websitePlaceholder": "https://yoursite.com"
+    },
+    "look": {
+      "title": "Pick a style",
+      "subtitle": "You can change this any time, and there are more in the Templates tab."
+    },
+    "preview": "Live preview",
+    "previewName": "Your name",
+    "previewRole": "Your job title",
+    "back": "Back",
+    "next": "Continue",
+    "finish": "Create my card",
+    "saving": "Creating…",
+    "skip": "Skip to the full studio"
   }
 }
