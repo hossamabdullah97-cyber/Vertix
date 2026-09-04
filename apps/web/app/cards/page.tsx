@@ -5,12 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getToken, type Card } from '@/lib/client';
+import { authFetch, createBlankCard, getToken, type Card } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate } from '@/lib/format';
 import { Icon, actionIcon } from '@/components/Icon';
 import AppShell from '@/components/AppShell';
-import NewCardModal from '@/components/NewCardModal';
 
 const BRANDS_COLORS: Record<string, string> = {
   SAVE_CONTACT: '#1d4ed8',
@@ -30,7 +29,19 @@ export default function CardsPage() {
   const { t } = useTranslation('cards');
   const { locale } = useLocale();
   const [cards, setCards] = useState<Card[] | null>(null);
-  const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  /** Straight into the guided start — no questions before the card exists. */
+  const startNewCard = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const card = await createBlankCard();
+      router.push(`/cards/${card.id}`);
+    } catch {
+      setCreating(false);
+    }
+  };
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -129,7 +140,8 @@ export default function CardsPage() {
       title={t('title', 'Digital Business Cards')}
       action={
         <button
-          onClick={() => setOpen(true)}
+          onClick={startNewCard}
+          disabled={creating}
           className="v-btn flex items-center gap-2 px-5 !h-10 text-sm font-semibold"
         >
           <Icon name="plus" size={16} />
@@ -137,7 +149,6 @@ export default function CardsPage() {
         </button>
       }
     >
-      <NewCardModal open={open} onClose={() => setOpen(false)} onCreated={(id) => router.push(`/cards/${id}`)} />
 
       {error && (
         <div className="mb-6 p-4 rounded-xl border border-red-500/10 bg-red-500/5 text-red-500 text-sm font-medium flex items-center gap-2">
@@ -287,7 +298,8 @@ export default function CardsPage() {
             </p>
           </div>
           <button
-            onClick={() => setOpen(true)}
+            onClick={startNewCard}
+          disabled={creating}
             className="v-btn mt-2 flex items-center gap-2 !h-10 px-5 text-sm"
           >
             <Icon name="plus" size={16} /> {t('createCard')}
