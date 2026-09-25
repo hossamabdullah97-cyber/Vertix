@@ -83,15 +83,32 @@ interface FeatureFlag {
   targeting: string;
 }
 
+/** A real unit of background work: a webhook delivery or an automation run. */
 interface QueueJob {
   id: string;
   name: string;
   status: 'RUNNING' | 'QUEUED' | 'COMPLETED' | 'FAILED';
   progress: number;
-  duration: string;
+  /** "3/6" for deliveries, or the action count for automation runs. */
+  attempts: string;
+  durationMs: number | null;
   worker: string;
   startedAt: string;
   error?: string;
+  /** Only a failed webhook delivery can be re-queued. */
+  retryable: boolean;
+}
+
+interface NfcTagAdmin {
+  id: string;
+  uid: string;
+  status: string;
+  hardwareType: string;
+  batchId: string | null;
+  activationCount: number;
+  lastScanAt: string | null;
+  orgName: string;
+  assigned: boolean;
 }
 
 interface AuditLogEntry {
@@ -119,6 +136,7 @@ export default function AdminConsole() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [jobs, setJobs] = useState<QueueJob[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [nfcTags, setNfcTags] = useState<NfcTagAdmin[]>([]);
 
   // Search/Filters
   const [userSearch, setUserSearch] = useState('');
@@ -192,13 +210,14 @@ export default function AdminConsole() {
       }
 
       // 2. Fetch admin datasets
-      const [kpiRes, usersRes, orgsRes, flagsRes, jobsRes, logsRes] = await Promise.all([
+      const [kpiRes, usersRes, orgsRes, flagsRes, jobsRes, logsRes, tagsRes] = await Promise.all([
         authFetch<KPIOverview>('/admin/kpis'),
         authFetch<UserAdmin[]>('/admin/users'),
         authFetch<OrgAdmin[]>('/admin/organizations'),
         authFetch<FeatureFlag[]>('/admin/feature-flags'),
         authFetch<QueueJob[]>('/admin/queue-jobs'),
         authFetch<AuditLogEntry[]>('/admin/audit-logs'),
+        authFetch<NfcTagAdmin[]>('/admin/nfc-tags'),
       ]);
 
       setKpi(kpiRes);
@@ -207,6 +226,7 @@ export default function AdminConsole() {
       setFlags(flagsRes);
       setJobs(jobsRes);
       setAuditLogs(logsRes);
+      setNfcTags(tagsRes);
     } catch (e) {
       setErrorMessage((e as Error).message);
     } finally {
@@ -1151,15 +1171,11 @@ export default function AdminConsole() {
                         </tr>
                       </thead>
                       <tbody>
-                        {orgs.flatMap(o => o.slug === 'demo' ? [
-                          { uid: '04:AA:BB:CC:DD:EE:11', status: 'ACTIVE', type: 'CARD', count: 12 },
-                          { uid: '04:AA:BB:CC:DD:EE:12', status: 'UNASSIGNED', type: 'STICKER', count: 0 },
-                          { uid: '04:AA:BB:CC:DD:EE:13', status: 'DISABLED', type: 'KEYCHAIN', count: 3 }
-                        ] : []).map((tag, idx) => (
-                          <tr key={idx} className="border-b border-line hover:bg-surface/30">
+                        {nfcTags.map((tag) => (
+                          <tr key={tag.id} className="border-b border-line hover:bg-surface/30">
                             <td className="p-3 font-mono text-ink" dir="ltr">{tag.uid}</td>
                             <td className="p-3">
-                              <Badge variant="neutral" className="text-[9px]">{tag.type}</Badge>
+                              <Badge variant="neutral" className="text-[9px]">{tag.hardwareType}</Badge>
                             </td>
                             <td className="p-3">
                               <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${
@@ -1168,7 +1184,7 @@ export default function AdminConsole() {
                                 ● {tag.status}
                               </span>
                             </td>
-                            <td className="p-3 font-bold text-ink">{tag.count} {t('nfc.scans')}</td>
+                            <td className="p-3 font-bold text-ink">{tag.activationCount} {t('nfc.scans')}</td>
                             <td className="p-3 text-right">
                               <Button size="sm" variant="outline" className="text-[10px] px-2 py-1" onClick={() => alert('Status update trigger')}>
                                 {t('flags.toggleState')}
@@ -1189,15 +1205,12 @@ export default function AdminConsole() {
             <div className="space-y-6">
               {/* Controls bar */}
               <div className="flex justify-between items-center bg-surface p-4 rounded-xl border border-line">
-                <div className="flex gap-2">
-                  <Button variant="outline" className="text-[12px]" onClick={() => alert('Worker scale options')}>
-                    {t('jobs.scaleWorkers')}
-                  </Button>
-                  <Button variant="danger" className="text-[12px]" onClick={() => alert('Queue cleared')}>
-                    {t('jobs.purge')}
-                  </Button>
-                </div>
-                <Badge variant="success" className="text-[11px] animate-pulse">● 4 {t('jobs.workersConnected')}</Badge>
+                {/* "Scale workers" and "Purge queues" only ever fired an
+                    alert — the second one claimed the queue was cleared. There
+                    is no worker pool to scale and no queue to purge, so both
+                    are gone rather than lying about what they do. */}
+                <p className="text-[11.5px] text-muted">{t('jobs.sources')}</p>
+                <Badge variant="neutral" className="text-[11px]">{jobs.length} {t('jobs.recent')}</Badge>
               </div>
 
               {/* Jobs table */}
@@ -1211,7 +1224,7 @@ export default function AdminConsole() {
                       <tr className="border-b border-line bg-surface/50 font-extrabold text-muted text-[11px] uppercase tracking-wider">
                         <th className="p-4">{t('jobs.details')}</th>
                         <th className="p-4">{t('jobs.status')}</th>
-                        <th className="p-4">{t('jobs.progress')}</th>
+                        <th className="p-4">{t('jobs.attempts')}</th>
                         <th className="p-4">{t('jobs.worker')}</th>
                         <th className="p-4">{t('jobs.startTime')}</th>
                         <th className="p-4 text-right">{t('users.actions')}</th>
@@ -1234,34 +1247,25 @@ export default function AdminConsole() {
                               {job.status}
                             </Badge>
                           </td>
-                          <td className="p-4">
-                            <div className="w-32 space-y-1">
-                              <ProgressBar value={job.progress} color={job.status === 'FAILED' ? 'var(--v-danger)' : 'var(--v-accent)'} />
-                              <span className="text-[10px] text-muted block text-right">{job.progress}%</span>
-                            </div>
+                          {/* A delivery either lands or it doesn't, so attempts
+                              say more here than a synthetic percentage would. */}
+                          <td className="p-4 text-muted" dir="ltr">
+                            {job.attempts}
+                            {job.durationMs !== null && (
+                              <span className="ms-2 text-[10px] text-faint">{job.durationMs}ms</span>
+                            )}
                           </td>
-                          <td className="p-4 text-muted">{job.worker}</td>
+                          <td className="p-4 text-muted" dir="ltr">{job.worker}</td>
                           <td className="p-4 text-muted">{new Date(job.startedAt).toLocaleTimeString()}</td>
                           <td className="p-4 text-right">
+                            {/* Re-queueing a failed delivery is the only action
+                                the platform can actually carry out. Pause,
+                                cancel and resume had no implementation behind
+                                them — they reported success and did nothing. */}
                             <div className="flex gap-2 justify-end">
-                              {job.status === 'FAILED' && (
+                              {job.retryable && (
                                 <Button size="sm" variant="outline" className="text-[11px]" onClick={() => handleJobAction(job.id, 'RETRY')}>
                                   {t('jobs.retry')}
-                                </Button>
-                              )}
-                              {job.status === 'RUNNING' && (
-                                <>
-                                  <Button size="sm" variant="secondary" className="text-[11px]" onClick={() => handleJobAction(job.id, 'PAUSE')}>
-                                    {t('jobs.pause')}
-                                  </Button>
-                                  <Button size="sm" variant="danger" className="text-[11px]" onClick={() => handleJobAction(job.id, 'CANCEL')}>
-                                    {t('jobs.cancel')}
-                                  </Button>
-                                </>
-                              )}
-                              {job.status === 'QUEUED' && (
-                                <Button size="sm" variant="primary" className="text-[11px]" onClick={() => handleJobAction(job.id, 'RESUME')}>
-                                  {t('jobs.start')}
                                 </Button>
                               )}
                             </div>
@@ -1339,6 +1343,14 @@ export default function AdminConsole() {
                           </td>
                         </tr>
                       ))}
+                      {flags.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="p-8 text-center">
+                            <p className="text-[13px] font-bold text-ink">{t('flags.emptyTitle')}</p>
+                            <p className="mt-1 text-[12px] text-muted">{t('flags.emptyBody')}</p>
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </CardBody>
@@ -1355,6 +1367,12 @@ export default function AdminConsole() {
                   <span className="text-[13.5px] font-extrabold text-ink">{t('security.addIp')}</span>
                 </CardHeader>
                 <CardBody className="p-6">
+                  {/* This list lives in component state only — nothing is sent
+                      to the API and no request is actually blocked. Say so
+                      rather than let an admin believe the platform is filtering. */}
+                  <p className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-[11.5px] font-medium leading-relaxed text-amber-600">
+                    {t('security.notEnforced')}
+                  </p>
                   <form onSubmit={handleBlockIP} className="space-y-4">
                     <div>
                       <label className="block text-[11px] font-extrabold uppercase tracking-wider text-muted mb-1.5">{t('security.subnet')}</label>

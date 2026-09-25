@@ -136,6 +136,11 @@ export class AdminController {
     return this.adminService.triggerJobAction(jobId, action, actor.sub);
   }
 
+  @Get('nfc-tags')
+  getNfcTags() {
+    return this.adminService.getNfcTags();
+  }
+
   @Get('audit-logs')
   getAuditLogs(@Query('search') search?: string) {
     return this.adminService.getAuditLogs(search || '');
