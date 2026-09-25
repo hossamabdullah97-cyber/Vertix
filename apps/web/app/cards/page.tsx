@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,6 +42,19 @@ export default function CardsPage() {
       setCreating(false);
     }
   };
+
+  // `?new=1` starts a card straight away — the dashboard checklist links here so
+  // "Create your card" actually creates one instead of opening the list.
+  // `replace` drops the ?new=1 entry, so going back never creates a second card.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStarted.current || !getToken()) return;
+    if (new URLSearchParams(window.location.search).get('new') !== '1') return;
+    autoStarted.current = true;
+    createBlankCard()
+      .then((card) => router.replace(`/cards/${card.id}`))
+      .catch(() => router.replace('/cards'));
+  }, [router]);
   const [error, setError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
