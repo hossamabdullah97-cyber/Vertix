@@ -31,8 +31,6 @@ export class CardsService {
     if (ownerId !== tenant.userId && !isManager(tenant.role)) {
       throw new ForbiddenException('You cannot create a card for another user');
     }
-    await this.limits.assertWithin(tenant.orgId, 'cards');
-
     const theme = (input.theme ?? undefined) as Prisma.InputJsonValue;
     // Seed the bio + vCard when a name is provided, so the card is useful immediately.
     const vcardData = input.fullName
@@ -61,10 +59,17 @@ export class CardsService {
       ...(sections ? { sections } : {}),
     });
 
+    // Each attempt re-checks the plan limit inside the same transaction as the
+    // insert, so concurrent creates cannot all slip past the same stale count.
+    const createGuarded = (slug: string) =>
+      this.limits.guard(tenant.orgId, 'cards', (tx) =>
+        tx.card.create({ data: build(slug) }),
+      );
+
     // Explicit slug: honour it (conflict is a real error).
     if (input.slug) {
       try {
-        return await this.db.card.create({ data: build(input.slug) });
+        return await createGuarded(input.slug);
       } catch (err) {
         throw this.mapSlugConflict(err);
       }
@@ -75,7 +80,7 @@ export class CardsService {
     for (let attempt = 0; attempt < 8; attempt++) {
       const candidate = attempt === 0 ? base : `${base}-${this.randomToken(4)}`;
       try {
-        return await this.db.card.create({ data: build(candidate) });
+        return await createGuarded(candidate);
       } catch (err) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
           continue;

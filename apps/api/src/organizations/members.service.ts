@@ -58,6 +58,11 @@ export class MembersService {
    * chooses their own password. Re-inviting resends that link.
    */
   async invite(tenant: TenantContext, input: InviteMemberInput) {
+    // Ownership can only be handed out by an owner — otherwise an ADMIN could
+    // mint a second OWNER by invitation and escalate through it.
+    if (input.role === 'OWNER' && tenant.role !== 'OWNER') {
+      throw new ForbiddenException('Only an owner can grant the owner role');
+    }
     if (input.teamId) await this.assertTeamInOrg(input.teamId);
 
     const existingUser = await this.db.user.findFirst({
@@ -103,8 +108,8 @@ export class MembersService {
         teamId: input.teamId,
         status: 'ACTIVE',
       });
-      await this.mail.sendAddedNotice(input.email, orgName);
-      await this.audit.log(tenant, 'member.added', { targetType: 'user', targetId: existingUser.id, metadata: { email: input.email, role: input.role } });
+      const emailSent = await this.mail.sendAddedNotice(input.email, orgName);
+      await this.audit.log(tenant, 'member.added', { targetType: 'user', targetId: existingUser.id, metadata: { email: input.email, role: input.role, emailSent } });
       await this.notifications.notify({
         userId: existingUser.id,
         orgId: tenant.orgId,
@@ -123,7 +128,7 @@ export class MembersService {
           role: input.role,
         })
         .catch(() => undefined);
-      return { status: 'added' as const, email: input.email };
+      return { status: 'added' as const, email: input.email, emailSent };
     }
 
     // Pending invitee: reuse the placeholder account if one exists, otherwise
@@ -169,14 +174,19 @@ export class MembersService {
       teamId: input.teamId,
       ttlMs: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-    await this.mail.sendInvite(
+    // The membership and token above are already committed: whatever happens
+    // to the email, the invitation itself exists and its link is usable. A
+    // delivery failure is reported to the caller, never thrown, so the Owner
+    // can be told plainly to resend rather than seeing a false success or a
+    // crashed request.
+    const emailSent = await this.mail.sendInvite(
       input.email,
       `${appUrl}/accept-invite?token=${token}`,
       orgName,
       input.role,
     );
-    await this.audit.log(tenant, 'member.invited', { targetType: 'user', targetId: user.id, metadata: { email: input.email, role: input.role } });
-    return { status: 'invited' as const, email: input.email };
+    await this.audit.log(tenant, 'member.invited', { targetType: 'user', targetId: user.id, metadata: { email: input.email, role: input.role, emailSent } });
+    return { status: 'invited' as const, email: input.email, emailSent };
   }
 
   async update(tenant: TenantContext, id: string, input: UpdateMemberInput) {
@@ -186,6 +196,14 @@ export class MembersService {
     // Only an OWNER can modify another OWNER.
     if (target.role === 'OWNER' && tenant.role !== 'OWNER') {
       throw new ForbiddenException('Only an owner can modify an owner');
+    }
+
+    // Only an OWNER can hand out ownership. Without this the guard above is
+    // one-sided: it protects an existing owner from being edited, but says
+    // nothing about the role being granted, so an ADMIN could promote itself
+    // (target.role is ADMIN, so the check passes) and then remove the founder.
+    if (input.role === 'OWNER' && tenant.role !== 'OWNER') {
+      throw new ForbiddenException('Only an owner can grant the owner role');
     }
 
     // Prevent demoting the last owner.
@@ -277,26 +295,32 @@ export class MembersService {
       status: 'ACTIVE' | 'INVITED';
     },
   ) {
-    const removed = await this.db.membership.findFirst({
-      where: { userId, deletedAt: { not: null } },
-      select: { id: true },
-    });
-    if (!removed) {
-      return this.db.membership.create({
-        data: { orgId: tenant.orgId, userId, ...data },
+    // Every path through here consumes a seat (a fresh row, or reviving a
+    // removed one), so the seat check runs inside the same transaction as the
+    // write — otherwise concurrent invites all pass the same stale count.
+    // The resend path never reaches this method: it reuses its existing seat.
+    return this.limits.guard(tenant.orgId, 'members', async (tx) => {
+      const removed = await tx.membership.findFirst({
+        where: { userId, deletedAt: { not: null } },
+        select: { id: true },
       });
-    }
-    // The revived row starts clean: the old team and department belonged to the
-    // membership that was removed, not to this new invitation.
-    return this.db.membership.update({
-      where: { id: removed.id },
-      data: {
-        role: data.role,
-        teamId: data.teamId ?? null,
-        departmentId: null,
-        status: data.status,
-        deletedAt: null,
-      },
+      if (!removed) {
+        return tx.membership.create({
+          data: { orgId: tenant.orgId, userId, ...data },
+        });
+      }
+      // The revived row starts clean: the old team and department belonged to
+      // the membership that was removed, not to this new invitation.
+      return tx.membership.update({
+        where: { id: removed.id },
+        data: {
+          role: data.role,
+          teamId: data.teamId ?? null,
+          departmentId: null,
+          status: data.status,
+          deletedAt: null,
+        },
+      });
     });
   }
 

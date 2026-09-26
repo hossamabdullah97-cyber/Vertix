@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { OrgId } from '../auth/decorators/tenant.decorator';
+import { RequireScopes } from '../access/scopes.decorator';
 
 /** Parses a from/to range, defaulting to the last 30 days. */
 function range(from?: string, to?: string) {
@@ -10,6 +11,7 @@ function range(from?: string, to?: string) {
   return { f, t };
 }
 
+@RequireScopes('analytics:read')
 @UseGuards(RequireTenantGuard)
 @Controller('analytics')
 export class AnalyticsController {

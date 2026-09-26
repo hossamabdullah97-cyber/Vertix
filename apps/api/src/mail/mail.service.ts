@@ -24,25 +24,71 @@ export class MailService {
     );
   }
 
-  async send({ to, subject, html }: SendArgs): Promise<void> {
+  /**
+   * Returns whether the message was actually handed to a provider. Never
+   * throws: a one-time invite/reset link is only ever generated here — the
+   * token store keeps just its hash — so a delivery failure must be reported
+   * back to the caller, not crash it, or a link that already exists in the
+   * database (membership created, token issued) becomes unrecoverable. The
+   * caller decides what to tell the end user; this layer never leaks
+   * provider/network detail beyond its own logs.
+   */
+  async send({ to, subject, html }: SendArgs): Promise<boolean> {
     const key = this.config.get<string>('RESEND_API_KEY');
     if (!key) {
       this.logger.log(`[DEV EMAIL] to=${to} | ${subject}`);
-      const link = html.match(/href="([^"]+)"/)?.[1];
-      if (link) this.logger.log(`[DEV EMAIL] link: ${link}`);
-      return;
+      this.logLink('DEV EMAIL', to, html);
+      return true; // no provider configured is a deliberate local-dev state, not a failure
     }
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ from: this.from, to, subject, html }),
-    });
-    if (!res.ok) {
-      this.logger.error(`Email send failed (${res.status}): ${await res.text()}`);
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ from: this.from, to, subject, html }),
+      });
+      if (!res.ok) {
+        this.logger.error(`Email send failed (${res.status}): ${await res.text()}`);
+        this.logLink('UNDELIVERED EMAIL', to, html);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      this.logger.error(`Email send threw for ${to}: ${this.describeFetchError(err)}`);
+      this.logLink('UNDELIVERED EMAIL', to, html);
+      return false;
     }
+  }
+
+  /** Recovers the actionable link from an email that was never delivered. */
+  private logLink(tag: string, to: string, html: string): void {
+    const link = html.match(/href="([^"]+)"/)?.[1];
+    if (link) this.logger.log(`[${tag}] to=${to} | link: ${link}`);
+  }
+
+  /**
+   * `fetch()` collapses every network-layer failure (DNS, TCP refusal, TLS
+   * handshake failure/timeout, proxy interception) into the same generic
+   * "fetch failed", with the actual reason nested one level down in Node's
+   * underlying `cause` (a libuv/OpenSSL error carrying `code`/`errno`/
+   * `syscall`). Surfacing that here — server-side log only, never returned
+   * to a caller — is the difference between "fetch failed" and something
+   * diagnosable like ETIMEDOUT vs ECONNRESET vs a TLS alert code.
+   */
+  private describeFetchError(err: unknown): string {
+    if (!(err instanceof Error)) return String(err);
+    const parts = [`name=${err.name}`, `message=${err.message}`];
+    const cause = (err as { cause?: unknown }).cause;
+    if (cause && typeof cause === 'object') {
+      const c = cause as Record<string, unknown>;
+      if (c.code) parts.push(`cause.code=${c.code}`);
+      if (c.errno !== undefined) parts.push(`cause.errno=${c.errno}`);
+      if (c.syscall) parts.push(`cause.syscall=${c.syscall}`);
+      if (c.message) parts.push(`cause.message=${c.message}`);
+    }
+    return parts.join(' | ');
   }
 
   sendInvite(to: string, link: string, orgName: string, role: string) {

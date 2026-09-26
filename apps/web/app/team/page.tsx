@@ -8,6 +8,7 @@ import {
   authFetch,
   getToken,
   getActiveOrgId,
+  inviteMember,
   type Member,
   type Team,
   type Me,
@@ -89,6 +90,7 @@ export default function TeamPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [warning, setWarning] = useState('');
 
   // Personal Workspace States
   const [personalCards, setPersonalCards] = useState<Card[]>([]);
@@ -191,6 +193,7 @@ export default function TeamPortal() {
   const runAction = async (fn: () => Promise<unknown>, successMsg?: string) => {
     setError('');
     setNotice('');
+    setWarning('');
     try {
       await fn();
       if (successMsg) setNotice(successMsg);
@@ -201,15 +204,23 @@ export default function TeamPortal() {
   };
 
   // Administrative mutations
-  const handleInvite = (email: string, name: string, role: Role, teamId: string) => {
-    runAction(
-      async () =>
-        authFetch('/orgs/members/invite', {
-          method: 'POST',
-          body: JSON.stringify({ email, name: name || undefined, role, teamId: teamId || undefined }),
-        }),
-      t('toasts.inviteSent', { email })
-    );
+  const handleInvite = async (email: string, name: string, role: Role, teamId: string) => {
+    setError('');
+    setNotice('');
+    setWarning('');
+    try {
+      const result = await inviteMember({ email, name: name || undefined, role, teamId: teamId || undefined });
+      if (result.emailSent) {
+        setNotice(t('toasts.inviteSent', { email }));
+      } else {
+        // The membership (and, for a new invite, its link) already exist —
+        // only the email failed, so this is a warning to retry, not an error.
+        setWarning(t('toasts.inviteEmailFailed', { email }));
+      }
+      await load();
+    } catch (e) {
+      setError((e as Error).message);
+    }
   };
 
   const handleUpdateRole = (id: string, role: Role) => {
@@ -719,6 +730,11 @@ export default function TeamPortal() {
       {notice && (
         <div className="mb-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-sm font-semibold flex items-center gap-2">
           <span>✓</span> {notice}
+        </div>
+      )}
+      {warning && (
+        <div className="mb-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 text-sm font-semibold flex items-center gap-2">
+          <span>⚠️</span> {warning}
         </div>
       )}
       {error && (

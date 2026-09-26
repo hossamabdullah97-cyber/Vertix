@@ -58,8 +58,8 @@ function makeService(d: Deps = {}) {
   } as unknown as TokensService;
 
   const mail = {
-    sendInvite: jest.fn(),
-    sendAddedNotice: jest.fn(),
+    sendInvite: jest.fn().mockResolvedValue(true),
+    sendAddedNotice: jest.fn().mockResolvedValue(true),
   } as unknown as MailService;
 
   const limits = { assertWithin: jest.fn() } as unknown as LimitsService;
@@ -99,7 +99,7 @@ describe('MembersService.invite — a brand-new address', () => {
     const { service, prisma, tokens, mail } = makeService();
 
     await expect(service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' })).resolves.toEqual(
-      { status: 'invited', email: 'a@b.co' },
+      { status: 'invited', email: 'a@b.co', emailSent: true },
     );
 
     expect(membershipWrites(prisma)[0]).toMatchObject({ status: 'INVITED' });
@@ -131,7 +131,7 @@ describe('MembersService.invite — an account that was never activated', () => 
     });
 
     await expect(service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' })).resolves.toEqual(
-      { status: 'invited', email: 'a@b.co' },
+      { status: 'invited', email: 'a@b.co', emailSent: true },
     );
     expect(tokens.create).toHaveBeenCalled();
     expect(mail.sendInvite).toHaveBeenCalled();
@@ -216,7 +216,7 @@ describe('MembersService.invite — an already-activated account', () => {
     const { service, prisma, mail, tokens } = makeService(activeUser);
 
     await expect(service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' })).resolves.toEqual(
-      { status: 'added', email: 'a@b.co' },
+      { status: 'added', email: 'a@b.co', emailSent: true },
     );
 
     expect(membershipWrites(prisma)[0]).toMatchObject({ status: 'ACTIVE' });
@@ -233,5 +233,49 @@ describe('MembersService.invite — an already-activated account', () => {
     await expect(
       service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' }),
     ).rejects.toThrow(ConflictException);
+  });
+});
+
+describe('MembersService.invite — the email fails to send', () => {
+  /**
+   * A delivery failure must never be reported as if the invite were fully
+   * successful, and it must never crash the request either: the membership
+   * and (for a new invite) its token are already committed by this point,
+   * so the only honest response is "created, but not delivered."
+   */
+
+  it('still creates the membership, and tells the caller the email did not go out', async () => {
+    const { service, prisma, mail } = makeService();
+    (mail.sendInvite as unknown as jest.Mock).mockResolvedValue(false);
+
+    const result = await service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' });
+
+    expect(result).toEqual({ status: 'invited', email: 'a@b.co', emailSent: false });
+    expect(membershipWrites(prisma)[0]).toMatchObject({ status: 'INVITED' });
+  });
+
+  it('records the delivery outcome in the audit trail', async () => {
+    const { service, audit, mail } = makeService();
+    (mail.sendInvite as unknown as jest.Mock).mockResolvedValue(false);
+
+    await service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' });
+
+    expect(audit.log).toHaveBeenCalledWith(
+      TENANT,
+      'member.invited',
+      expect.objectContaining({ metadata: expect.objectContaining({ emailSent: false }) }),
+    );
+  });
+
+  it('reports the same outcome when an existing user is added directly', async () => {
+    const activeUser = {
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'u_real', passwordHash: '$2a$hash' }) },
+    };
+    const { service, mail } = makeService(activeUser);
+    (mail.sendAddedNotice as unknown as jest.Mock).mockResolvedValue(false);
+
+    const result = await service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' });
+
+    expect(result).toEqual({ status: 'added', email: 'a@b.co', emailSent: false });
   });
 });

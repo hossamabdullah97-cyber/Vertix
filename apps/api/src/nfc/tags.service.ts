@@ -28,16 +28,19 @@ export class TagsService {
   }
 
   async create(tenant: TenantContext, input: CreateTagInput) {
-    await this.limits.assertWithin(tenant.orgId, 'nfcTags');
     try {
-      return await this.db.nfcTag.create({
-        data: {
-          orgId: tenant.orgId,
-          uid: input.uid,
-          hardwareType: input.hardwareType ?? 'CARD',
-          batchId: input.batchId,
-        },
-      });
+      // Check and insert share a transaction so concurrent registrations
+      // cannot all pass the same stale count (see LimitsService.guard).
+      return await this.limits.guard(tenant.orgId, 'nfcTags', (tx) =>
+        tx.nfcTag.create({
+          data: {
+            orgId: tenant.orgId,
+            uid: input.uid,
+            hardwareType: input.hardwareType ?? 'CARD',
+            batchId: input.batchId,
+          },
+        }),
+      );
     } catch (err) {
       throw this.mapUidConflict(err);
     }
@@ -45,17 +48,18 @@ export class TagsService {
 
   /** Factory batch registration — bulk insert, skipping UIDs that already exist. */
   async createBatch(tenant: TenantContext, input: CreateTagsBatchInput) {
-    await this.limits.assertWithin(tenant.orgId, 'nfcTags', input.uids.length);
     const rows = input.uids.map((uid) => ({
       orgId: tenant.orgId,
       uid,
       hardwareType: input.hardwareType ?? 'CARD',
       batchId: input.batchId,
     }));
-    const result = await this.db.nfcTag.createMany({
-      data: rows,
-      skipDuplicates: true,
-    });
+    const result = await this.limits.guard(
+      tenant.orgId,
+      'nfcTags',
+      (tx) => tx.nfcTag.createMany({ data: rows, skipDuplicates: true }),
+      rows.length,
+    );
     return { requested: rows.length, created: result.count };
   }
 
@@ -102,9 +106,24 @@ export class TagsService {
     });
   }
 
+  /**
+   * Permanently removes a tag, freeing its UID for re-registration.
+   *
+   * Nothing holds a foreign key to NfcTag — scan events are recorded against
+   * the card, not the tag — so the tag's own counters are the only surviving
+   * record that it was ever used. A scanned tag therefore carries history a
+   * delete would silently destroy, and is refused instead; related data is
+   * never removed on the caller's behalf.
+   */
   async remove(tenant: TenantContext, id: string) {
-    await this.findOne(tenant, id);
-    await this.db.nfcTag.softDelete({ id });
+    const tag = await this.findOne(tenant, id);
+    if (tag.activationCount > 0) {
+      throw new ConflictException(
+        `Cannot delete this tag: it has ${tag.activationCount} recorded scan(s). ` +
+          'Disable it instead — that stops it resolving while keeping its history.',
+      );
+    }
+    await this.db.nfcTag.delete({ where: { id } });
     return { id, deleted: true };
   }
 

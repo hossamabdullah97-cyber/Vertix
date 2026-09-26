@@ -17,6 +17,7 @@ import { LeadsService } from './leads.service';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
+import { RequireScopes } from '../access/scopes.decorator';
 
 @Controller('leads')
 export class LeadsController {
@@ -31,12 +32,14 @@ export class LeadsController {
     return this.leads.capture(body);
   }
 
+  @RequireScopes('crm:read')
   @UseGuards(RequireTenantGuard)
   @Get()
   list() {
     return this.leads.list();
   }
 
+  @RequireScopes('crm:read')
   @UseGuards(RequireTenantGuard)
   @Get('stages')
   stages() {
@@ -44,12 +47,14 @@ export class LeadsController {
   }
 
   // Note: this dynamic route must stay AFTER the static 'stages' route above.
+  @RequireScopes('crm:read')
   @UseGuards(RequireTenantGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.leads.findOne(id);
   }
 
+  @RequireScopes('crm:write')
   @UseGuards(RequireTenantGuard)
   @Post(':id/activities')
   addActivity(
@@ -59,6 +64,7 @@ export class LeadsController {
     return this.leads.addActivity(id, body);
   }
 
+  @RequireScopes('crm:write')
   @UseGuards(RequireTenantGuard)
   @Patch(':id')
   update(

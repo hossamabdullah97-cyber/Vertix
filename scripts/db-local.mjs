@@ -14,6 +14,12 @@ const pg = new EmbeddedPostgres({
   password: 'vertex',
   port: 5432,
   persistent: true,
+  // Match the Docker/production database (postgres:16-alpine defaults to UTF8).
+  // Without this, initdb inherits the host's locale — on a Windows machine that
+  // is WIN1252, which cannot store Arabic, CJK or emoji and makes any such
+  // write fail. Only applies when the data directory is created; an existing
+  // .pgdata keeps whatever encoding it was initialised with.
+  initdbFlags: ['--encoding=UTF8', '--locale=C'],
 });
 
 async function main() {

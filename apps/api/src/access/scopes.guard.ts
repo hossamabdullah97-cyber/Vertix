@@ -33,15 +33,24 @@ export class ScopesGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
+    const req = context.switchToHttp().getRequest();
+    const apiAuth = req.apiAuth as ApiAuth | undefined;
+    if (!apiAuth) return true; // human caller — RolesGuard governs them
+
     const required = this.reflector.getAllAndOverride<string[]>(SCOPES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!required || required.length === 0) return true;
 
-    const req = context.switchToHttp().getRequest();
-    const apiAuth = req.apiAuth as ApiAuth | undefined;
-    if (!apiAuth) return true; // human caller — RolesGuard governs them
+    // Deny by default for machine callers. A route that declares no scope is
+    // not part of the credential-accessible surface, so a key must not reach
+    // it — a machine principal is granted role OWNER by TenantGuard, so
+    // falling through here would hand a narrow key full owner authority.
+    if (!required || required.length === 0) {
+      throw new ForbiddenException(
+        'This credential cannot be used on this endpoint.',
+      );
+    }
 
     if (!hasAllScopes(apiAuth.scopes, required)) {
       throw new ForbiddenException(

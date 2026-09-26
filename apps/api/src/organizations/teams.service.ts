@@ -175,6 +175,7 @@ export class TeamsService {
   }
 
   async create(tenant: TenantContext, input: CreateTeamInput) {
+    if (input.managerId) await this.assertManagerInOrg(input.managerId);
     const team = await this.db.team.create({
       data: {
         orgId: tenant.orgId,
@@ -199,7 +200,8 @@ export class TeamsService {
   async update(tenant: TenantContext, id: string, input: UpdateTeamInput) {
     const team = await this.db.team.findFirst({ where: { id } });
     if (!team) throw new NotFoundException('Team not found');
-    
+    if (input.managerId) await this.assertManagerInOrg(input.managerId);
+
     const updated = await this.db.team.update({
       where: { id },
       data: {
@@ -227,5 +229,20 @@ export class TeamsService {
       metadata: { name: team.name },
     });
     return { id, removed: true };
+  }
+
+  /**
+   * A team manager must be a member of the active organization. Checking the
+   * membership (not the user) is what keeps this tenant-safe: the tenant
+   * extension scopes Membership by orgId, whereas User is global — so a raw
+   * user lookup would happily accept someone from another organization and
+   * expose their identity through the team's `manager` relation.
+   */
+  private async assertManagerInOrg(managerId: string) {
+    const membership = await this.db.membership.findFirst({
+      where: { userId: managerId },
+      select: { id: true },
+    });
+    if (!membership) throw new NotFoundException('Manager is not a member of this organization');
   }
 }
