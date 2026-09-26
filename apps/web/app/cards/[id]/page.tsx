@@ -14,6 +14,7 @@ import { CardProfiles } from '@/components/CardProfiles';
 import PaymentLinksManager, { type PaymentLinkRow } from '@/components/cards/PaymentLinksManager';
 import ActionCard, { isQuickAction } from '@/components/cards/ActionCard';
 import QuickStart from '@/components/cards/QuickStart';
+import NfcProgrammer from '@/components/nfc/NfcProgrammer';
 import AppShell from '@/components/AppShell';
 import nextDynamic from 'next/dynamic';
 // The live-preview simulator (device frames, 3D NFC, QR, heavy motion) loads on
@@ -1621,10 +1622,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
             <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-5">
               <div className="border-b border-line pb-3.5">
                 <h3 className="text-sm font-bold text-ink uppercase tracking-wider flex items-center gap-2">
-                  <Icon name="tag" size={15} className="text-accent" /> NFC Hardware Provisioning
+                  <Icon name="tag" size={15} className="text-accent" /> {t('nfc.provisioning')}
                 </h3>
                 <p className="text-xs text-muted">{t('nfc.subtitle')}</p>
               </div>
+
+              {/* Write a blank tag from this phone — Chromium on Android only,
+                  and the component says so itself everywhere else. */}
+              <NfcProgrammer cardId={id} onProgrammed={() => void load()} />
 
               <div className="space-y-4">
                 <div className="bg-canvas border border-line p-4 rounded-2xl space-y-1.5">

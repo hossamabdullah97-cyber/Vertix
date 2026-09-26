@@ -211,7 +211,8 @@
     "uid": "UID",
     "hardware": "Hardware",
     "scanCount": "Scan count",
-    "empty": "No physical NFC tags bound to this profile card currently."
+    "empty": "No physical NFC tags bound to this profile card currently.",
+    "provisioning": "NFC Hardware Provisioning"
   },
   "settings": {
     "title": "Card URL Link",
@@ -291,5 +292,25 @@
     "finish": "Create my card",
     "saving": "Creating…",
     "skip": "Skip to the full studio"
+  },
+  "nfcProgram": {
+    "title": "Program a tag from this phone",
+    "idle": "Tap the button, then hold a blank NFC tag against your phone. The tag is written and linked to this card automatically.",
+    "start": "Program tag",
+    "again": "Program another tag",
+    "cancel": "Cancel",
+    "holdTag": "Hold the tag against your phone…",
+    "keepHolding": "Keep it in place…",
+    "waiting": "Waiting for a tag.",
+    "writing": "Writing the link to the tag…",
+    "linking": "Linking the tag to this card…",
+    "done": "Done. Tapping this tag now opens this card.",
+    "unsupported": "Your browser cannot write NFC tags. This works in Chrome on Android; iPhone does not give NFC to any browser, so use the mobile app or a pre-encoded tag.",
+    "insecure": "NFC writing needs a secure (HTTPS) connection. Open this page over HTTPS and try again.",
+    "errors": {
+      "read": "Could not read the tag. Move it away and try again.",
+      "register": "The tag was written but could not be registered.",
+      "cancelled": "Cancelled."
+    }
   }
 }
