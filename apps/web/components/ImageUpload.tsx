@@ -136,7 +136,7 @@ export function ImageUpload({
         className="v-field text-[13px]"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="…or paste an image URL"
+        placeholder={t('upload.urlPlaceholder')}
       />
 
       {error && <p className="text-[12px] font-medium text-red-500">{error}</p>}

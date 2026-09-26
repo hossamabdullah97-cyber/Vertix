@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import {
   authFetch,
+  createBlankCard,
   getToken,
   getActiveOrgId,
   inviteMember,
@@ -22,7 +23,6 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { ProfilePhotoCard } from '@/components/ProfilePhotoCard';
 import { isPaidPlan, type Plan } from '@vertex/shared';
-import NewCardModal from '@/components/NewCardModal';
 
 // Import organization subviews
 import dynamic from 'next/dynamic';
@@ -96,7 +96,19 @@ export default function TeamPortal() {
   const [personalCards, setPersonalCards] = useState<Card[]>([]);
   const [personalLeads, setPersonalLeads] = useState<any[]>([]);
   const [personalNfc, setPersonalNfc] = useState<any[]>([]);
-  const [cardModalOpen, setCardModalOpen] = useState(false);
+  const [creatingCard, setCreatingCard] = useState(false);
+
+  /** Same single onboarding path the Cards page uses. */
+  const startNewCard = async () => {
+    if (creatingCard) return;
+    setCreatingCard(true);
+    try {
+      const card = await createBlankCard();
+      router.push(`/cards/${card.id}`);
+    } catch {
+      setCreatingCard(false);
+    }
+  };
 
   // Subview Details Routing States (Dynamic pages)
   const [subView, setSubView] = useState<{ type: 'department' | 'team'; id: string } | null>(null);
@@ -322,7 +334,6 @@ export default function TeamPortal() {
   if (!loading && !activeOrgId) {
     return (
       <AppShell title={t('personal.title')}>
-        <NewCardModal open={cardModalOpen} onClose={() => setCardModalOpen(false)} onCreated={(id) => router.push(`/cards/${id}`)} />
         <div className="space-y-6">
           {/* Header summary card */}
           <div className="bg-surface border border-line p-6 rounded-2xl shadow-sm flex items-center gap-4 flex-wrap sm:flex-nowrap">
@@ -334,7 +345,8 @@ export default function TeamPortal() {
               </p>
             </div>
             <button
-              onClick={() => setCardModalOpen(true)}
+              onClick={startNewCard}
+              disabled={creatingCard}
               className="v-btn flex items-center gap-2 px-4.5 !h-9 text-xs font-bold rounded-xl bg-accent text-white shrink-0 hover:shadow-md transition-all"
             >
               <Icon name="plus" size={14} /> {t('personal.createCard')}

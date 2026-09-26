@@ -183,17 +183,13 @@
     "title": "Active Background Jobs Queue",
     "details": "Job Details",
     "status": "Execution Status",
-    "progress": "Progress",
     "worker": "Assigned Worker",
     "startTime": "Start Time",
     "actions": "Actions",
-    "scaleWorkers": "Scale Worker Pool",
-    "purge": "Purge Queues",
     "retry": "Retry",
-    "pause": "Pause",
-    "cancel": "Cancel",
-    "start": "Start",
-    "workersConnected": "Workers Connected"
+    "recent": "recent",
+    "attempts": "Attempts",
+    "sources": "Webhook deliveries and automation runs."
   },
   "flags": {
     "title": "Feature Gate Configurations",
@@ -213,7 +209,9 @@
     "allUsers": "All Users",
     "enterpriseOnly": "Enterprise Plans Only",
     "betaOptIns": "Beta Program Opt-ins",
-    "rolloutSuffix": "rollout"
+    "rolloutSuffix": "rollout",
+    "emptyTitle": "No feature flags configured",
+    "emptyBody": "Flags are not wired to product behaviour yet, so there is nothing to list here."
   },
   "security": {
     "firewallTitle": "Platform Firewall Block List",
@@ -232,7 +230,8 @@
     "grantSuperAdmin": "Grant Super Admin access",
     "grantHint": "Gives global read/write administrative access",
     "failedSignins": "Failed sign-in pattern matching / spam prevention",
-    "blockedIps": "Blocked IPs"
+    "blockedIps": "Blocked IPs",
+    "notEnforced": "Not enforced yet. This list is kept in your browser only — it is not saved and no traffic is blocked."
   },
   "logs": {
     "filterPlaceholder": "Filter logs by action key...",

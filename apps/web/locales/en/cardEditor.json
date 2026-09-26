@@ -109,7 +109,20 @@
     "moveDown": "Move Down",
     "duplicate": "Duplicate action",
     "delete": "Delete action",
-    "toggleVisibility": "Toggle visibility"
+    "toggleVisibility": "Toggle visibility",
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "hidden": "Hidden"
+    },
+    "group": {
+      "quick": "Quick contact buttons",
+      "quickHint": "Shown under your name",
+      "quickEmpty": "No quick contact buttons yet.",
+      "grid": "Links grid",
+      "gridHint": "Shown in the page body",
+      "gridEmpty": "No links added yet."
+    }
   },
   "platformPicker": {
     "searchPlaceholder": "Search platforms... (↑/↓ to navigate, Enter to add, Esc to close)",
@@ -198,7 +211,8 @@
     "uid": "UID",
     "hardware": "Hardware",
     "scanCount": "Scan count",
-    "empty": "No physical NFC tags bound to this profile card currently."
+    "empty": "No physical NFC tags bound to this profile card currently.",
+    "provisioning": "NFC Hardware Provisioning"
   },
   "settings": {
     "title": "Card URL Link",
@@ -224,7 +238,8 @@
     "failed": "Upload failed.",
     "hint": "JPG, PNG, WebP or GIF · up to 5 MB · drag & drop supported",
     "notImage": "Please choose an image file.",
-    "tooLarge": "Image is larger than 5 MB."
+    "tooLarge": "Image is larger than 5 MB.",
+    "urlPlaceholder": "…or paste an image URL"
   },
   "errors": {
     "slugMismatch": "Please enter the correct card slug to confirm deletion."
@@ -239,6 +254,64 @@
       "NFC_SCAN": "NFC Taps",
       "SHARE": "Shares",
       "CLICK": "Link Clicks"
+    }
+  },
+  "quickStart": {
+    "steps": {
+      "identity": "About you",
+      "channels": "Contact",
+      "look": "Style"
+    },
+    "identity": {
+      "title": "Let's start with your name",
+      "subtitle": "This is what people see first when they open your card."
+    },
+    "channels": {
+      "title": "How should people reach you?",
+      "subtitle": "Fill in what you use. Leave the rest empty — you can add more later.",
+      "hint": "Anything you fill in becomes a one-tap button on your card.",
+      "whatsapp": "WhatsApp",
+      "whatsappPlaceholder": "+201001234567",
+      "call": "Phone",
+      "callPlaceholder": "+201001234567",
+      "email": "Email",
+      "emailPlaceholder": "name@company.com",
+      "linkedin": "LinkedIn",
+      "linkedinPlaceholder": "https://linkedin.com/in/username",
+      "website": "Website",
+      "websitePlaceholder": "https://yoursite.com"
+    },
+    "look": {
+      "title": "Pick a style",
+      "subtitle": "You can change this any time, and there are more in the Templates tab."
+    },
+    "preview": "Live preview",
+    "previewName": "Your name",
+    "previewRole": "Your job title",
+    "back": "Back",
+    "next": "Continue",
+    "finish": "Create my card",
+    "saving": "Creating…",
+    "skip": "Skip to the full studio"
+  },
+  "nfcProgram": {
+    "title": "Program a tag from this phone",
+    "idle": "Tap the button, then hold a blank NFC tag against your phone. The tag is written and linked to this card automatically.",
+    "start": "Program tag",
+    "again": "Program another tag",
+    "cancel": "Cancel",
+    "holdTag": "Hold the tag against your phone…",
+    "keepHolding": "Keep it in place…",
+    "waiting": "Waiting for a tag.",
+    "writing": "Writing the link to the tag…",
+    "linking": "Linking the tag to this card…",
+    "done": "Done. Tapping this tag now opens this card.",
+    "unsupported": "Your browser cannot write NFC tags. This works in Chrome on Android; iPhone does not give NFC to any browser, so use the mobile app or a pre-encoded tag.",
+    "insecure": "NFC writing needs a secure (HTTPS) connection. Open this page over HTTPS and try again.",
+    "errors": {
+      "read": "Could not read the tag. Move it away and try again.",
+      "register": "The tag was written but could not be registered.",
+      "cancelled": "Cancelled."
     }
   }
 }

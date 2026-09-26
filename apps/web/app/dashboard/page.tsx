@@ -130,7 +130,7 @@ export default function CommandCenter() {
         label: t('onboarding.steps.createCard.label'),
         desc: t('onboarding.steps.createCard.desc'),
         completed: hasCard,
-        link: '/cards',
+        link: '/cards?new=1',
         linkText: t('onboarding.steps.createCard.link'),
       },
       {
@@ -375,7 +375,7 @@ export default function CommandCenter() {
           <OnboardingWizard
             steps={onboardingSteps}
             progress={onboardingProgress}
-            visible={showOnboarding}
+            visible={showOnboarding && onboardingProgress < 100}
             onToggle={toggleOnboarding}
             t={t}
           />
@@ -608,7 +608,7 @@ export default function CommandCenter() {
       <OnboardingWizard
         steps={onboardingSteps}
         progress={onboardingProgress}
-        visible={showOnboarding}
+        visible={showOnboarding && onboardingProgress < 100}
         onToggle={toggleOnboarding}
         t={t}
       />

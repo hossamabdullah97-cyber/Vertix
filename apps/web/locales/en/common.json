@@ -43,5 +43,10 @@
     "draft": "Draft"
   },
   "language": "Language",
-  "toggleLanguage": "Change language"
+  "toggleLanguage": "Change language",
+  "notFound": {
+    "title": "Page not found",
+    "body": "The link may be wrong, or the page has moved.",
+    "home": "Go to dashboard"
+  }
 }

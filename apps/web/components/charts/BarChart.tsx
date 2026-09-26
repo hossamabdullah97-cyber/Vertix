@@ -44,8 +44,10 @@ export function BarChart({
   const gap = totalItems > 0 ? (w / totalItems) * 0.3 : 10;
 
   return (
-    <div ref={ref} className="w-full relative">
-      <svg width={w} height={height} viewBox={`0 0 ${w} ${height}`} aria-hidden="true">
+    // Percent width so the chart fits its container rather than setting it —
+    // see the note in AreaChart for what a pixel width did on small screens.
+    <div ref={ref} className="w-full min-w-0 relative">
+      <svg width="100%" height={height} viewBox={`0 0 ${w} ${height}`} aria-hidden="true">
         {/* Horizontal grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((p, i) => {
           const y = paddingTop + innerH * (1 - p);

@@ -13,20 +13,22 @@ function asPlatformAdmin<T>(actorId: string, fn: () => Promise<T>): Promise<T> {
   return runWithTenant({ orgId: 'admin', userId: actorId, role: 'OWNER' }, fn);
 }
 
-// Memory store for dynamic feature flags & jobs for the demo.
-let featureFlags = [
-  { id: '1', name: 'NFC Lead Capture Direct Link', status: true, rollout: 100, targeting: 'All Users' },
-  { id: '2', name: 'AI Business Insights Dashboard', status: true, rollout: 50, targeting: 'Pro & Enterprise' },
-  { id: '3', name: 'Dynamic VCF Real-time Syncing', status: false, rollout: 0, targeting: 'Beta Group' },
-  { id: '4', name: 'Premium Stripe Billing Portal', status: true, rollout: 100, targeting: 'All Users' },
-];
+/** Delivery states mapped onto the queue vocabulary the console renders. */
+const WEBHOOK_STATUS: Record<string, string> = {
+  PENDING: 'QUEUED',
+  SUCCESS: 'COMPLETED',
+  FAILED: 'FAILED',
+};
 
-let backgroundJobs = [
-  { id: 'job_101', name: 'NFC Batch Generation (Batch B-2026)', status: 'COMPLETED', progress: 100, duration: '45s', worker: 'Worker #1', startedAt: new Date(Date.now() - 3600000).toISOString() },
-  { id: 'job_102', name: 'Weekly Enterprise Analytics Aggregator', status: 'RUNNING', progress: 68, duration: '12m', worker: 'Worker #3', startedAt: new Date(Date.now() - 600000).toISOString() },
-  { id: 'job_103', name: 'Stripe Webhook Sync (Failed Invoices)', status: 'FAILED', progress: 15, duration: '1.2s', worker: 'Worker #2', startedAt: new Date(Date.now() - 120000).toISOString(), error: 'Gateway timeout from Stripe API' },
-  { id: 'job_104', name: 'Send Outbound Welcome Invitations', status: 'QUEUED', progress: 0, duration: '0s', worker: 'Pending', startedAt: new Date().toISOString() },
-];
+/** The endpoint host is enough to identify a delivery target in a list. */
+function hostOf(url?: string | null): string {
+  if (!url) return '—';
+  try {
+    return new URL(url).host;
+  } catch {
+    return url.slice(0, 40);
+  }
+}
 
 @Injectable()
 export class AdminService {
@@ -172,6 +174,12 @@ export class AdminService {
     }
     const arr = mrr * 12;
 
+    // Queue depth from the only real queue the platform runs: webhook delivery.
+    const [activeJobs, failedJobs] = await Promise.all([
+      this.prisma.client.webhookDelivery.count({ where: { status: 'PENDING' } }),
+      this.prisma.client.webhookDelivery.count({ where: { status: 'FAILED' } }),
+    ]);
+
     // Physical database size; null when the query is unavailable.
     let dbSize: string | null = null;
     try {
@@ -204,8 +212,9 @@ export class AdminService {
         // tracked anywhere yet, so they are absent rather than invented.
         uptimeSeconds: Math.round(process.uptime()),
         memoryMb: Math.round(process.memoryUsage().rss / 1_048_576),
-        activeJobs: backgroundJobs.filter((j) => j.status === 'RUNNING').length,
-        failedJobs: backgroundJobs.filter((j) => j.status === 'FAILED').length,
+        // Real queue depth: deliveries still owed a send, and ones that gave up.
+        activeJobs,
+        failedJobs,
       }
     };
   }
@@ -507,41 +516,125 @@ export class AdminService {
     return { success: true };
   }
 
+  /**
+   * Feature flags have no store and gate no behaviour anywhere in the product,
+   * so there is nothing truthful to list. Returning an empty set lets the
+   * console say so plainly instead of showing invented rows whose toggles
+   * change nothing.
+   */
   async getFeatureFlags() {
-    return featureFlags;
+    return [];
   }
 
-  async toggleFeatureFlag(flagId: string, actorId: string) {
-    const flag = featureFlags.find((f) => f.id === flagId);
-    if (!flag) throw new NotFoundException('Flag not found');
-
-    flag.status = !flag.status;
-    await this.logAdminAction(actorId, `TOGGLE_FEATURE_FLAG_${flag.name.toUpperCase().replace(/\s+/g, '_')}`, 'FeatureFlag', flagId, { status: flag.status });
-    return flag;
+  async toggleFeatureFlag(flagId: string, _actorId: string) {
+    throw new NotFoundException(`Feature flag ${flagId} not found`);
   }
 
+  /**
+   * Real background work, newest first. The platform's actual queues are
+   * webhook deliveries (retried by WebhookDispatcher) and automation runs;
+   * both are persisted, so the console reports them rather than a fixture.
+   */
   async getQueueJobs() {
-    return backgroundJobs;
+    const [deliveries, runs] = await Promise.all([
+      this.prisma.client.webhookDelivery.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 25,
+        include: { endpoint: { select: { url: true } } },
+      }),
+      this.prisma.client.automationRun.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 25,
+        include: { automation: { select: { name: true } } },
+      }),
+    ]);
+
+    const jobs = [
+      ...deliveries.map((d) => ({
+        id: `webhook:${d.id}`,
+        name: `Webhook · ${d.event}`,
+        status: WEBHOOK_STATUS[d.status] ?? 'QUEUED',
+        // A delivery is all-or-nothing; attempts are the only progress it has.
+        progress: d.status === 'SUCCESS' ? 100 : 0,
+        attempts: `${d.attempts}/${d.maxAttempts}`,
+        durationMs: d.durationMs,
+        worker: hostOf(d.endpoint?.url),
+        startedAt: d.createdAt.toISOString(),
+        error: d.error ?? undefined,
+        /** Only failed deliveries can be re-queued. */
+        retryable: d.status === 'FAILED',
+      })),
+      ...runs.map((r) => ({
+        id: `automation:${r.id}`,
+        name: `Automation · ${r.automation?.name ?? r.event}`,
+        status: r.status === 'SUCCESS' ? 'COMPLETED' : r.status === 'FAILED' ? 'FAILED' : 'COMPLETED',
+        progress: 100,
+        attempts: `${r.actionsRun}`,
+        durationMs: null,
+        worker: r.event,
+        startedAt: r.createdAt.toISOString(),
+        error: r.error ?? undefined,
+        retryable: false,
+      })),
+    ];
+
+    return jobs
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+      .slice(0, 25);
   }
 
+  /**
+   * Re-queues a failed webhook delivery. Everything else is a historical record
+   * with nothing to act on, so it is refused rather than acknowledged — the
+   * previous version reported success for actions it never performed.
+   */
   async triggerJobAction(jobId: string, action: string, actorId: string) {
-    const job = backgroundJobs.find((j) => j.id === jobId);
-    if (!job) throw new NotFoundException('Job not found');
+    const [kind, id] = jobId.split(':');
 
-    if (action === 'RETRY') {
-      job.status = 'RUNNING';
-      job.progress = 5;
-    } else if (action === 'CANCEL') {
-      job.status = 'FAILED';
-      job.error = 'Canceled by Administrator';
-    } else if (action === 'PAUSE') {
-      job.status = 'QUEUED';
-    } else if (action === 'RESUME') {
-      job.status = 'RUNNING';
+    if (kind !== 'webhook' || action !== 'RETRY') {
+      throw new ConflictException(
+        'Only a failed webhook delivery can be retried; automation runs are a historical record.',
+      );
     }
 
-    await this.logAdminAction(actorId, `QUEUE_JOB_${action}_${jobId}`, 'BackgroundJob', jobId, { status: job.status });
-    return job;
+    const delivery = await this.prisma.client.webhookDelivery.findUnique({ where: { id } });
+    if (!delivery) throw new NotFoundException('Delivery not found');
+    if (delivery.status !== 'FAILED') {
+      throw new ConflictException('Only a failed delivery can be retried.');
+    }
+
+    // The dispatcher picks up anything PENDING whose nextAttemptAt has passed.
+    const updated = await this.prisma.client.webhookDelivery.update({
+      where: { id },
+      data: { status: 'PENDING', nextAttemptAt: new Date(), error: null },
+    });
+
+    await this.logAdminAction(actorId, `WEBHOOK_DELIVERY_RETRY`, 'WebhookDelivery', id, {
+      event: updated.event,
+    });
+    return { id: jobId, status: 'QUEUED' };
+  }
+
+  /** Platform-wide NFC stock, newest first, with the org each tag belongs to. */
+  async getNfcTags() {
+    const tags = await this.prisma.client.nfcTag.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: { org: { select: { name: true } } },
+    });
+
+    return tags.map((tag) => ({
+      id: tag.id,
+      uid: tag.uid,
+      status: tag.status,
+      hardwareType: tag.hardwareType,
+      batchId: tag.batchId,
+      activationCount: tag.activationCount,
+      lastScanAt: tag.lastScanAt?.toISOString() ?? null,
+      orgName: tag.org?.name ?? '—',
+      assigned: tag.cardId !== null,
+    }));
   }
 
   async getAuditLogs(search = '') {

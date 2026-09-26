@@ -118,6 +118,18 @@ export async function uploadImage(file: File): Promise<string> {
   return (data as { url: string }).url;
 }
 
+/**
+ * Creates an empty card and hands back its id. Nothing is asked for up front —
+ * the editor's guided start collects the name, contact channels, and style, so
+ * there is one place that onboards a card rather than two.
+ */
+export async function createBlankCard(): Promise<Card> {
+  return authFetch<Card>('/cards', {
+    method: 'POST',
+    body: JSON.stringify({ templateId: 'swiss-blue' }),
+  });
+}
+
 export async function login(email: string, password: string) {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',

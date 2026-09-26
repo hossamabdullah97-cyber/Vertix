@@ -54,5 +54,10 @@
     "deleted": "Card deleted successfully",
     "linkCopied": "Public link copied!",
     "copyFailed": "Failed to copy link"
+  },
+  "notFound": {
+    "title": "Card not found",
+    "body": "This card may be unpublished, or the link is incorrect.",
+    "hint": "If someone shared this link with you, ask them to publish the card."
   }
 }
