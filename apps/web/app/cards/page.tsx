@@ -171,41 +171,36 @@ export default function CardsPage() {
       )}
 
       {/* 1. Statistics Cards Section */}
+      {/* Three columns at phone width squeezed each label into ~45px, so the
+          titles wrapped over three lines. On a phone these read as rows. */}
       {cards !== null && (
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="v-stat">
-            <div className="flex items-center justify-between">
-              <span className="v-stat-label">{t('stats.total', 'Total Cards')}</span>
-              <span className="v-icon-tile !h-8 !w-8"><Icon name="layers" size={15} /></span>
-            </div>
-            <p className="v-stat-value mt-3">{stats.total}</p>
-            <p className="mt-1 text-[11px] font-semibold text-faint">{t('stats.allProfiles', 'all profiles')}</p>
-          </div>
-
-          <div className="v-stat">
-            <div className="flex items-center justify-between">
-              <span className="v-stat-label">{t('stats.live', 'Live Cards')}</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-emerald-500/10 text-emerald-500">
-                <Icon name="globe" size={15} />
-              </span>
-            </div>
-            <p className="v-stat-value mt-3">{stats.live}</p>
-            <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-faint">
-              {stats.live > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
-              {t('stats.published', 'published')}
-            </p>
-          </div>
-
-          <div className="v-stat">
-            <div className="flex items-center justify-between">
-              <span className="v-stat-label">{t('stats.draft', 'Draft Cards')}</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-amber-500/10 text-amber-500">
-                <Icon name="quote" size={15} />
-              </span>
-            </div>
-            <p className="v-stat-value mt-3">{stats.draft}</p>
-            <p className="mt-1 text-[11px] font-semibold text-faint">{t('stats.unpublished', 'unpublished')}</p>
-          </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 mb-8">
+          <StatTile
+            icon="layers"
+            tone="v-icon-tile"
+            label={t('stats.total', 'Total Cards')}
+            value={stats.total}
+            sub={t('stats.allProfiles', 'all profiles')}
+          />
+          <StatTile
+            icon="globe"
+            tone="bg-emerald-500/10 text-emerald-500"
+            label={t('stats.live', 'Live Cards')}
+            value={stats.live}
+            sub={
+              <>
+                {stats.live > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+                {t('stats.published', 'published')}
+              </>
+            }
+          />
+          <StatTile
+            icon="quote"
+            tone="bg-amber-500/10 text-amber-500"
+            label={t('stats.draft', 'Draft Cards')}
+            value={stats.draft}
+            sub={t('stats.unpublished', 'unpublished')}
+          />
         </div>
       )}
 
@@ -242,7 +237,7 @@ export default function CardsPage() {
                 <button
                   key={filter}
                   onClick={() => setStatusFilter(filter)}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  className="px-3.5 py-3.5 sm:py-1.5 rounded-lg text-xs font-bold transition-all"
                   style={
                     statusFilter === filter
                       ? { background: 'var(--v-gradient-brand)', color: '#fff', boxShadow: 'var(--v-shadow-accent)' }
@@ -261,7 +256,7 @@ export default function CardsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 border border-line rounded-xl bg-surface text-xs font-bold text-ink focus:outline-none focus:border-accent"
+              className="px-3 py-3.5 sm:py-2 border border-line rounded-xl bg-surface text-xs font-bold text-ink focus:outline-none focus:border-accent"
             >
               <option value="newest">{t('sortOptions.newest', 'Newest First')}</option>
               <option value="oldest">{t('sortOptions.oldest', 'Oldest First')}</option>
@@ -273,7 +268,7 @@ export default function CardsPage() {
             <div className="inline-flex rounded-xl border border-line p-0.5 bg-canvas/30">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'text-white' : 'text-muted hover:text-ink'}`}
+                className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-all sm:min-h-0 sm:min-w-0 sm:p-1.5 ${viewMode === 'grid' ? 'text-white' : 'text-muted hover:text-ink'}`}
                 style={viewMode === 'grid' ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : undefined}
                 title={t('view.grid')}
               >
@@ -281,7 +276,7 @@ export default function CardsPage() {
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'text-white' : 'text-muted hover:text-ink'}`}
+                className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-all sm:min-h-0 sm:min-w-0 sm:p-1.5 ${viewMode === 'list' ? 'text-white' : 'text-muted hover:text-ink'}`}
                 style={viewMode === 'list' ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : undefined}
                 title={t('view.list')}
               >
@@ -484,7 +479,7 @@ export default function CardsPage() {
                   <div className="flex border-t border-line divide-x divide-line bg-canvas/30 shrink-0 text-center select-none">
                     <Link
                       href={`/cards/${card.id}`}
-                      className="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
+                      className="flex-1 flex items-center justify-center gap-1 py-3.5 sm:py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
                       title={t('actions.edit', 'Edit')}
                     >
                       <Icon name="settings" size={12} />
@@ -494,7 +489,7 @@ export default function CardsPage() {
                       href={`/c/${card.slug}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
+                      className="flex-1 flex items-center justify-center gap-1 py-3.5 sm:py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
                       title={t('actions.view', 'View')}
                     >
                       <Icon name="external-link" size={12} />
@@ -502,7 +497,7 @@ export default function CardsPage() {
                     </a>
                     <button
                       onClick={(e) => copyToClipboard(e, card.slug)}
-                      className="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
+                      className="flex-1 flex items-center justify-center gap-1 py-3.5 sm:py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
                       title={t('actions.copy', 'Copy')}
                     >
                       <Icon name="copy" size={12} />
@@ -715,5 +710,41 @@ export default function CardsPage() {
         )}
       </AnimatePresence>
     </AppShell>
+  );
+}
+
+/**
+ * One headline number. A row on a phone (icon and label leading, figure
+ * trailing) and the usual stacked tile from `sm` up.
+ */
+function StatTile({
+  icon,
+  tone,
+  label,
+  value,
+  sub,
+}: {
+  icon: string;
+  /** Utility classes for the icon chip's colour. */
+  tone: string;
+  label: string;
+  value: number;
+  sub: React.ReactNode;
+}) {
+  return (
+    <div className="v-stat flex items-center justify-between gap-3 sm:block">
+      <div className="flex min-w-0 items-center gap-2.5 sm:justify-between">
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${tone}`}>
+          <Icon name={icon} size={15} />
+        </span>
+        <span className="v-stat-label truncate sm:whitespace-normal">{label}</span>
+      </div>
+      <div className="shrink-0 text-end sm:text-start">
+        <p className="v-stat-value sm:mt-3">{value}</p>
+        <p className="mt-0.5 flex items-center justify-end gap-1.5 text-[11px] font-semibold text-faint sm:mt-1 sm:justify-start">
+          {sub}
+        </p>
+      </div>
+    </div>
   );
 }
