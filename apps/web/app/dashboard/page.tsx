@@ -587,7 +587,7 @@ export default function CommandCenter() {
             </div>
             <Link
               href="/cards"
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-bold text-[#1d4ed8] shadow-sm transition-transform hover:-translate-y-0.5"
+              className="inline-flex h-11 sm:h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-bold text-[#1d4ed8] shadow-sm transition-transform hover:-translate-y-0.5"
             >
               <Icon name="plus" size={15} /> {t('org.newCard')}
             </Link>
@@ -932,7 +932,7 @@ function OnboardingWizard({
         </div>
         <button
           onClick={onToggle}
-          className="text-[11px] font-extrabold text-muted hover:text-ink transition-colors px-2.5 py-1 border border-line rounded-lg bg-canvas/40 hover:bg-canvas"
+          className="py-3.5 sm:py-0 text-[11px] font-extrabold text-muted hover:text-ink transition-colors px-2.5 py-1 border border-line rounded-lg bg-canvas/40 hover:bg-canvas"
         >
           {t('onboarding.hide')}
         </button>
@@ -982,7 +982,7 @@ function OnboardingWizard({
             {!step.completed && (
               <Link
                 href={step.link}
-                className="v-btn !h-8 px-3 text-[11px] font-bold mt-4 bg-accent text-white hover:shadow-sm rounded-lg text-center flex items-center justify-center"
+                className="v-btn !h-11 sm:!h-8 px-3 text-[11px] font-bold mt-4 bg-accent text-white hover:shadow-sm rounded-lg text-center flex items-center justify-center"
               >
                 {step.linkText}
               </Link>

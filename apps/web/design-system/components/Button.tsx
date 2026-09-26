@@ -45,9 +45,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'bg-[hsl(var(--ds-success-accent))] text-[var(--ds-accent-contrast)] border border-black/10 shadow-sm hover:brightness-105 active:brightness-95',
     };
 
+    // Phones get at least a 44px tap target; the tighter desktop scale is
+    // restored from `sm` up so no existing layout shifts on a wide screen.
     const sizes = {
-      sm: 'h-8 px-3 text-[12.5px] rounded-ds-sm gap-1.5',
-      md: 'h-10 px-4 text-[13.5px] rounded-ds-md gap-2',
+      sm: 'h-11 sm:h-8 px-3 text-[12.5px] rounded-ds-sm gap-1.5',
+      md: 'h-11 sm:h-10 px-4 text-[13.5px] rounded-ds-md gap-2',
       lg: 'h-12 px-6 text-[15px] rounded-ds-lg gap-2.5',
     };
 

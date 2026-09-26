@@ -286,7 +286,10 @@ export default function LivePreview({
   return (
     <>
       <div className="flex flex-col items-center gap-4 w-full">
-        <div className="sticky top-0 z-10 w-full flex flex-col items-center gap-2.5 bg-surface/95 backdrop-blur-md py-3.5 border-b border-line shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] rounded-t-2xl">
+        {/* Choosing a device to simulate and zooming it is a desktop job —
+            on a phone you are already looking at the real thing. Hiding this
+            also removes ~20 sub-40px controls from the phone layout. */}
+        <div className="sticky top-0 z-10 w-full hidden lg:flex flex-col items-center gap-2.5 bg-surface/95 backdrop-blur-md py-3.5 border-b border-line shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] rounded-t-2xl">
           {deviceSelector}
           {toolbar}
         </div>

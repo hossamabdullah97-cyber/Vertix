@@ -161,7 +161,9 @@ body {
 /* --- Controls ---------------------------------------------------------- */
 .v-field {
   width: 100%;
-  height: 2.5rem;
+  /* 44px on touch-sized screens so fields clear the minimum tap target;
+     back to the tighter 40px desktop rhythm from `sm` up. */
+  height: 2.75rem;
   padding-inline: 0.85rem;
   font-size: 0.875rem;
   color: hsl(var(--v-fg));
@@ -171,6 +173,12 @@ body {
   outline: none;
   box-shadow: var(--v-shadow-sm);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .v-field {
+    height: 2.5rem;
+  }
 }
 
 .v-field::placeholder {
@@ -192,7 +200,8 @@ textarea.v-field {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  height: 2.5rem;
+  /* 44px tap target on phones; the tighter desktop height returns at sm. */
+  height: 2.75rem;
   padding-inline: 1.15rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -205,6 +214,12 @@ textarea.v-field {
   border: 1px solid rgba(29, 78, 216, 0.55);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .v-btn {
+    height: 2.5rem;
+  }
 }
 
 .v-btn:hover {

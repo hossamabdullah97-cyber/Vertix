@@ -228,7 +228,7 @@ export default function NotificationsPage() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-[10px] px-3.5 py-2 text-[12.5px] font-bold transition-all ${
+              className={`flex shrink-0 items-center gap-1.5 rounded-[10px] px-3.5 py-3.5 sm:py-2 text-[12.5px] font-bold transition-all ${
                 active ? 'text-white' : 'text-muted hover:text-ink hover:bg-ink/5'
               }`}
               style={active ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : undefined}

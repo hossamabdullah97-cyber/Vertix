@@ -91,7 +91,7 @@ export function ImageUpload({
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={busy}
-              className="v-btn v-btn-ghost h-9 px-3 text-[13px] font-semibold disabled:opacity-60"
+              className="v-btn v-btn-ghost h-11 sm:h-9 px-3 text-[13px] font-semibold disabled:opacity-60"
             >
               {busy ? (
                 <>
@@ -111,7 +111,7 @@ export function ImageUpload({
                   setError('');
                 }}
                 disabled={busy}
-                className="v-btn v-btn-ghost h-9 px-3 text-[13px] font-semibold text-red-500 disabled:opacity-60"
+                className="v-btn v-btn-ghost h-11 sm:h-9 px-3 text-[13px] font-semibold text-red-500 disabled:opacity-60"
               >
                 <Icon name="trash" size={14} /> {t('upload.remove')}
               </button>

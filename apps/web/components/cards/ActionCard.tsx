@@ -140,14 +140,16 @@ export default function ActionCard({
             }}
             aria-label={t('links.toggleVisibility')}
             title={t('links.toggleVisibility')}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            // The track is 24px by design; `before` stretches the hit area to
+            // 44px on a phone without changing how the switch looks.
+            className={`relative inline-flex h-6 w-11 sm:h-5 sm:w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent before:absolute before:-inset-y-2.5 before:inset-x-0 before:content-[''] sm:before:hidden ${
               action.isActive ? 'bg-accent' : 'bg-line-strong'
             }`}
             style={action.isActive ? { backgroundColor: 'var(--v-accent)' } : {}}
           >
             <span
-              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                action.isActive ? 'translate-x-4' : 'translate-x-0'
+              className={`pointer-events-none inline-block h-5 w-5 sm:h-4 sm:w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                action.isActive ? 'translate-x-5 sm:translate-x-4' : 'translate-x-0'
               }`}
             />
           </button>
@@ -155,14 +157,14 @@ export default function ActionCard({
           <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 pl-1.5 border-l border-line/60">
             <button
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-              className="h-7 px-2.5 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-[11px] font-bold gap-1"
+              className="h-11 sm:h-7 px-2.5 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-[11px] font-bold gap-1"
               title={t('links.duplicate')}
             >
               <Icon name="copy" size={11} /> {t('links.duplicate')}
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="h-7 w-7 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
+              className="h-11 w-11 sm:h-7 sm:w-7 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
               title={t('links.delete')}
             >
               <Icon name="trash" size={13} />
@@ -191,7 +193,7 @@ export default function ActionCard({
                   <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappPhone')}</label>
                   <input
                     dir="ltr"
-                    className="v-field font-mono text-xs !h-8"
+                    className="v-field font-mono text-xs !h-11 sm:!h-8"
                     defaultValue={(action.config.phone as string) ?? ''}
                     onBlur={(e) => patch('phone', e.target.value)}
                     placeholder={t('links.phonePlaceholder')}
@@ -200,7 +202,7 @@ export default function ActionCard({
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-muted uppercase">{t('links.whatsappMessage')}</label>
                   <input
-                    className="v-field text-xs !h-8"
+                    className="v-field text-xs !h-11 sm:!h-8"
                     defaultValue={(action.config.text as string) ?? ''}
                     onBlur={(e) => patch('text', e.target.value)}
                     placeholder={t('links.whatsappMessagePlaceholder')}
@@ -214,7 +216,7 @@ export default function ActionCard({
                 <label className="text-[10px] font-bold text-muted uppercase">{t('links.phoneNumber')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono text-xs !h-8"
+                  className="v-field font-mono text-xs !h-11 sm:!h-8"
                   defaultValue={(action.config.phone as string) ?? ''}
                   onBlur={(e) => patch('phone', e.target.value)}
                   placeholder={t('links.phonePlaceholder')}
@@ -227,7 +229,7 @@ export default function ActionCard({
                 <label className="text-[10px] font-bold text-muted uppercase">{t('links.emailAddress')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono text-xs !h-8"
+                  className="v-field font-mono text-xs !h-11 sm:!h-8"
                   defaultValue={(action.config.email as string) ?? ''}
                   onBlur={(e) => patch('email', e.target.value)}
                   placeholder={t('links.emailPlaceholder')}
@@ -240,7 +242,7 @@ export default function ActionCard({
                 <label className="text-[10px] font-bold text-muted uppercase">{t('links.linkedinUrl')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono text-xs !h-8"
+                  className="v-field font-mono text-xs !h-11 sm:!h-8"
                   defaultValue={(action.config.url as string) ?? ''}
                   onBlur={(e) => patch('url', e.target.value)}
                   placeholder={t('links.linkedinPlaceholder')}
@@ -253,7 +255,7 @@ export default function ActionCard({
                 <label className="text-[10px] font-bold text-muted uppercase">{t('links.destination')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono text-xs !h-8"
+                  className="v-field font-mono text-xs !h-11 sm:!h-8"
                   defaultValue={(action.config.url as string) ?? ''}
                   onBlur={(e) => patch('url', e.target.value)}
                   placeholder={t('links.destinationPlaceholder')}

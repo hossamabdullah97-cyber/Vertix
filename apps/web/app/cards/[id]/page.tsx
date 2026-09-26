@@ -947,7 +947,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       setPlatformSearch('');
                       setIsModalOpen(true);
                     }}
-                    className="v-btn v-btn-primary !h-9 text-xs font-bold px-4 rounded-xl flex items-center gap-1.5 shadow-sm hover:shadow-md active:scale-95 transition-all"
+                    className="v-btn v-btn-primary !h-11 sm:!h-9 text-xs font-bold px-4 rounded-xl flex items-center gap-1.5 shadow-sm hover:shadow-md active:scale-95 transition-all"
                   >
                     <Icon name="plus" size={14} /> {t('links.addShort')}
                   </button>
@@ -978,7 +978,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           <button
                             key={item.type}
                             onClick={() => addAction(item.type)}
-                            className="px-3.5 py-1.5 rounded-xl border border-line bg-surface hover:border-line-strong hover:bg-elevated active:scale-95 transition-all text-xs font-bold text-ink shadow-sm"
+                            className="px-3.5 py-3 sm:py-1.5 rounded-xl border border-line bg-surface hover:border-line-strong hover:bg-elevated active:scale-95 transition-all text-xs font-bold text-ink shadow-sm"
                           >
                             {item.emoji} {t(`links.shortcuts.${item.key}`)}
                           </button>
@@ -991,7 +991,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         setPlatformSearch('');
                         setIsModalOpen(true);
                       }}
-                      className="v-btn v-btn-primary !h-10 text-xs font-bold px-6 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all"
+                      className="v-btn v-btn-primary !h-11 sm:!h-10 text-xs font-bold px-6 rounded-xl flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all"
                     >
                       <Icon name="plus" size={14} /> {t('links.addFirst')}
                     </button>

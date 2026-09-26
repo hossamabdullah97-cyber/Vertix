@@ -222,7 +222,7 @@ function BillingInner() {
                   <button
                     onClick={() => upgrade(key)}
                     disabled={!enabled || busy === key}
-                    className="v-btn w-full !h-10 text-[13.5px] font-bold shadow-md disabled:opacity-50"
+                    className="v-btn w-full !h-11 sm:!h-10 text-[13.5px] font-bold shadow-md disabled:opacity-50"
                   >
                     {busy === key
                       ? t('plan.redirecting')
@@ -231,7 +231,7 @@ function BillingInner() {
                         : t('plan.sandboxDisabled')}
                   </button>
                 ) : key === 'ENTERPRISE' ? (
-                  <a href="mailto:sales@vertex.dev" className="v-btn v-btn-ghost w-full !h-10 text-[13.5px] font-bold shadow-sm">
+                  <a href="mailto:sales@vertex.dev" className="v-btn v-btn-ghost w-full !h-11 sm:!h-10 text-[13.5px] font-bold shadow-sm">
                     {t('plan.contactSales')}
                   </a>
                 ) : (

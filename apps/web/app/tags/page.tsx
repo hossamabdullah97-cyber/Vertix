@@ -217,14 +217,14 @@ export default function TagsPage() {
           <p className="text-[12px] text-muted font-medium">{t('listSub', 'Link tags to profile cards below')}</p>
         </div>
         <div className="flex items-center gap-3">
-          <select className="v-field !h-9 w-auto !text-[12.5px] font-bold" value={filterStatus}
+          <select className="v-field !h-11 sm:!h-9 w-auto !text-[12.5px] font-bold" value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}>
             <option value="">{t('allStatuses', 'All statuses')}</option>
             <option value="UNASSIGNED">{t('status.unassigned', 'Unassigned')}</option>
             <option value="ACTIVE">{t('status.active', 'Active')}</option>
             <option value="DISABLED">{t('status.disabled', 'Disabled')}</option>
           </select>
-          <input className="v-field !h-9 w-44 !text-[12.5px]" placeholder={t('filterBatchPlaceholder', 'Filter by Batch ID')}
+          <input className="v-field !h-11 sm:!h-9 w-44 !text-[12.5px]" placeholder={t('filterBatchPlaceholder', 'Filter by Batch ID')}
             value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)} />
         </div>
       </div>
