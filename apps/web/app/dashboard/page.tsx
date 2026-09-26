@@ -547,8 +547,11 @@ export default function CommandCenter() {
   // --------------------------------------------------------------------------
   // (B) ORGANIZATION WORKSPACE VIEW
   // --------------------------------------------------------------------------
-  const orgName = org?.name ?? 'Corporate Hub';
-  const orgPlan = org?.plan ?? 'PRO';
+  // No placeholder brand/plan names here: if org is null after loading, that
+  // means the fetch actually failed (see `error`), so invented-looking data
+  // must never stand in for it.
+  const orgName = org?.name ?? '—';
+  const orgPlan = org?.plan ?? 'FREE';
 
   // Dynamic filter for approvals
   const pendingApprovals = approvals.filter(a => a.status === 'PENDING');

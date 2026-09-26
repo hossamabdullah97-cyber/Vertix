@@ -24,15 +24,18 @@ export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+const ACTIVE_ORG_KEY = 'vertex_org_id';
+
 export function logout() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
+  // Otherwise the next account to sign in on this browser inherits a
+  // "selected organization" that belongs to whoever was signed in before.
+  localStorage.removeItem(ACTIVE_ORG_KEY);
   if (typeof document !== 'undefined') {
     document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
   }
 }
-
-const ACTIVE_ORG_KEY = 'vertex_org_id';
 
 export function getActiveOrgId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -136,6 +139,9 @@ export async function login(email: string, password: string) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Invalid credentials');
   saveTokens(data);
+  // A stale x-organization-id from whoever was signed in before this account
+  // would otherwise override the org this JWT actually belongs to.
+  setActiveOrgId(null);
   return data as AuthTokens;
 }
 
@@ -159,6 +165,7 @@ export async function register(input: {
     );
   }
   saveTokens(data);
+  setActiveOrgId(null);
   return data as AuthTokens;
 }
 
@@ -189,6 +196,7 @@ export async function acceptInvite(token: string, password: string, name?: strin
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Could not accept invitation');
   saveTokens(data);
+  setActiveOrgId(null);
   return data as AuthTokens;
 }
 
@@ -224,6 +232,27 @@ export interface CardAction {
 }
 
 export type Role = 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+
+export interface InviteMemberResult {
+  status: 'invited' | 'added';
+  email: string;
+  /** False means the invite/notice email could not be delivered — the
+   * membership and (for a new invite) its link still exist, so the caller
+   * should tell the Owner to try sending again rather than report failure. */
+  emailSent: boolean;
+}
+
+export function inviteMember(input: {
+  email: string;
+  name?: string;
+  role: Role;
+  teamId?: string;
+}): Promise<InviteMemberResult> {
+  return authFetch<InviteMemberResult>('/orgs/members/invite', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
 
 export interface Member {
   id: string;

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { runWithTenant } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { PLAN_LIMITS, type Plan, type Role } from '@vertex/shared';
@@ -32,28 +32,42 @@ function hostOf(url?: string | null): string {
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
-  async logAdminAction(actorId: string, action: string, targetType: string, targetId: string, metadata: any) {
+  /**
+   * Records a platform-admin action.
+   *
+   * `orgId` must be the organization the action actually affected. Previously
+   * this method resolved the non-null orgId FK with `findFirst()`, which wrote
+   * every platform action into whichever organization happened to come back
+   * first — an unrelated customer. That both corrupted the affected org's
+   * trail (it got no record) and leaked platform activity into a tenant's own
+   * audit view. A platform-wide action that belongs to no single organization
+   * is recorded in the server log instead of being attributed to a tenant at
+   * random; giving those a real home needs a nullable orgId (schema change).
+   */
+  async logAdminAction(
+    actorId: string,
+    action: string,
+    targetType: string,
+    targetId: string,
+    metadata: any,
+    orgId?: string,
+  ) {
+    if (!orgId) {
+      this.logger.log(
+        `[platform-admin] actor=${actorId} action=${action} target=${targetType}:${targetId} metadata=${JSON.stringify(metadata)}`,
+      );
+      return;
+    }
     try {
-      // Find default organization for audit log tenant constraints
-      const defaultOrg = await this.prisma.client.organization.findFirst({
-        select: { id: true }
+      await this.prisma.client.auditLog.create({
+        data: { orgId, actorId, action, targetType, targetId, metadata },
       });
-      if (defaultOrg) {
-        await this.prisma.client.auditLog.create({
-          data: {
-            orgId: defaultOrg.id,
-            actorId,
-            action,
-            targetType,
-            targetId,
-            metadata,
-          }
-        });
-      }
     } catch (e) {
-      console.error('Failed to log admin action:', e);
+      this.logger.error(`Failed to log admin action: ${(e as Error).message}`);
     }
   }
 
@@ -389,7 +403,7 @@ export class AdminService {
     await this.logAdminAction(actorId, 'CREATE_ORGANIZATION', 'Organization', org.id, {
       name: org.name,
       ownerEmail: user.email,
-    });
+    }, org.id);
     return org;
   }
 
@@ -404,7 +418,7 @@ export class AdminService {
 
     await this.logAdminAction(actorId, `UPDATE_ORG_STATUS_${isActive ? 'ACTIVE' : 'INACTIVE'}`, 'Organization', orgId, {
       previous: org.isActive,
-    });
+    }, orgId);
     return { success: true };
   }
 
@@ -417,7 +431,7 @@ export class AdminService {
       data: { deletedAt: new Date() },
     });
 
-    await this.logAdminAction(actorId, 'DELETE_ORGANIZATION', 'Organization', orgId, { name: org.name });
+    await this.logAdminAction(actorId, 'DELETE_ORGANIZATION', 'Organization', orgId, { name: org.name }, orgId);
     return { success: true };
   }
 
@@ -479,7 +493,7 @@ export class AdminService {
 
     await this.logAdminAction(actorId, 'UPDATE_ORGANIZATION_OWNER', 'Organization', orgId, {
       ownerEmail: user.email,
-    });
+    }, orgId);
     return { success: true };
   }
 
@@ -498,7 +512,7 @@ export class AdminService {
       data: { plan: plan as any }
     });
 
-    await this.logAdminAction(actorId, `UPGRADE_ORG_PLAN_${plan}`, 'Organization', orgId, { oldPlan: org.plan });
+    await this.logAdminAction(actorId, `UPGRADE_ORG_PLAN_${plan}`, 'Organization', orgId, { oldPlan: org.plan }, orgId);
     return { success: true };
   }
 

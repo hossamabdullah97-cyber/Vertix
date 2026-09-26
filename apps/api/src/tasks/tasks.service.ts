@@ -30,7 +30,12 @@ export class TasksService {
     });
   }
 
-  create(orgId: string, input: CreateTaskInput) {
+  async create(orgId: string, input: CreateTaskInput) {
+    // A caller-supplied leadId must belong to the active org. The tenant
+    // extension scopes this lookup, so a lead from another organization simply
+    // is not found — without the check the FK would be stored and the lead's
+    // name would surface through the `lead` relation on list().
+    if (input.leadId) await this.assertLeadInOrg(input.leadId);
     return this.db.task.create({
       data: {
         orgId,
@@ -65,5 +70,11 @@ export class TasksService {
     if (!task) throw new NotFoundException('Task not found');
     await this.db.task.update({ where: { id }, data: { deletedAt: new Date() } });
     return { id, deleted: true };
+  }
+
+  /** The lead must exist inside the active tenant (extension-scoped lookup). */
+  private async assertLeadInOrg(leadId: string) {
+    const lead = await this.db.lead.findFirst({ where: { id: leadId }, select: { id: true } });
+    if (!lead) throw new NotFoundException('Lead not found');
   }
 }

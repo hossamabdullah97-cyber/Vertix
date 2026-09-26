@@ -199,6 +199,16 @@ export class LeadsService {
     const lead = await this.db.lead.findFirst({ where: { id }, select: { id: true, stageId: true, orgId: true } });
     if (!lead) throw new NotFoundException('Lead not found');
 
+    // A caller-supplied stageId must belong to the active org's pipeline —
+    // otherwise a lead could be parked in another tenant's stage.
+    if (input.stageId) {
+      const stage = await this.db.pipelineStage.findFirst({
+        where: { id: input.stageId },
+        select: { id: true },
+      });
+      if (!stage) throw new NotFoundException('Pipeline stage not found');
+    }
+
     const updated = await this.db.lead.update({
       where: { id },
       data: {

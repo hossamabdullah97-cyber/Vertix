@@ -137,6 +137,7 @@
     "teamDeleted": "Team deleted.",
     "teamManagerUpdated": "Team manager updated successfully.",
     "inviteSent": "Invitation sent successfully to {{email}}.",
+    "inviteEmailFailed": "{{email}} was added to the organization, but the invitation email could not be delivered. Use Send Invite again to resend it.",
     "roleUpdated": "Role updated successfully.",
     "teamAssignmentUpdated": "Member workgroup assignment updated.",
     "brandSaved": "Brand settings saved.",

@@ -25,6 +25,7 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { RequireScopes } from '../access/scopes.decorator';
 
 @UseGuards(RequireTenantGuard)
 @Roles('OWNER', 'ADMIN', 'MANAGER')
@@ -49,6 +50,7 @@ export class TagsController {
     return this.tags.createBatch(tenant, body);
   }
 
+  @RequireScopes('nfc:read')
   @Get()
   list(
     @Tenant() tenant: TenantContext,
@@ -58,6 +60,7 @@ export class TagsController {
     return this.tags.list(tenant, { batchId, status });
   }
 
+  @RequireScopes('nfc:read')
   @Get(':id')
   findOne(@Tenant() tenant: TenantContext, @Param('id') id: string) {
     return this.tags.findOne(tenant, id);
