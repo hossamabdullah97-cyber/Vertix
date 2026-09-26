@@ -640,15 +640,17 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
         <div className="flex items-center gap-3">
           <Link
             href="/cards"
-            className="v-btn v-btn-ghost !h-9 text-xs font-bold px-3 hover:bg-canvas/50 active:scale-95 transition-all rounded-lg"
+            className="v-btn v-btn-ghost !h-11 sm:!h-9 text-xs font-bold px-3 hover:bg-canvas/50 active:scale-95 transition-all rounded-lg"
           >
             <span aria-hidden>←</span> {t('commandBar.backToCards')}
           </Link>
           <div className="h-6 w-px bg-line" />
-          <div className="space-y-0.5">
-            <h2 className="text-sm font-extrabold text-ink tracking-tight flex items-center gap-1.5">
-              <span>{t('commandBar.cardLabel')}</span>
-              <span className="font-mono font-bold text-accent">/c/{card.slug}</span>
+          <div className="min-w-0 space-y-0.5">
+            {/* The slug broke over three lines on a phone; keep it on one and
+                let it truncate, with the label hidden where space is tight. */}
+            <h2 className="flex min-w-0 items-center gap-1.5 text-sm font-extrabold tracking-tight text-ink">
+              <span className="hidden sm:inline">{t('commandBar.cardLabel')}</span>
+              <span dir="ltr" className="truncate font-mono font-bold text-accent">/c/{card.slug}</span>
             </h2>
             <p className="text-[10px] text-muted font-bold uppercase tracking-wider flex items-center gap-2">
               {t('commandBar.statusLabel')}
@@ -685,7 +687,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
             <button
               onClick={handleUndo}
               disabled={historyIndex <= 0}
-              className="h-8 w-8 flex items-center justify-center text-muted hover:text-ink disabled:opacity-20 active:scale-90 transition-all font-bold"
+              className="h-11 w-11 sm:h-8 sm:w-8 flex items-center justify-center text-muted hover:text-ink disabled:opacity-20 active:scale-90 transition-all font-bold"
               title={t('commandBar.undo')}
             >
               ↶
@@ -694,7 +696,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
             <button
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
-              className="h-8 w-8 flex items-center justify-center text-muted hover:text-ink disabled:opacity-20 active:scale-90 transition-all font-bold"
+              className="h-11 w-11 sm:h-8 sm:w-8 flex items-center justify-center text-muted hover:text-ink disabled:opacity-20 active:scale-90 transition-all font-bold"
               title={t('commandBar.redo')}
             >
               ↷
@@ -705,7 +707,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
             <a
               href={`/c/${card.slug}`}
               target="_blank"
-              className="v-btn v-btn-ghost !h-9 text-xs font-bold px-3 rounded-lg hover:shadow-sm active:scale-95 transition-all"
+              className="v-btn v-btn-ghost !h-11 sm:!h-9 text-xs font-bold px-3 rounded-lg hover:shadow-sm active:scale-95 transition-all"
             >
               {t('commandBar.viewProfile')}
             </a>
@@ -718,7 +720,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   }),
                 )
               }
-              className="!h-9 text-xs font-bold px-3 rounded-lg hover:shadow-md active:scale-95 transition-all"
+              className="!h-11 sm:!h-9 text-xs font-bold px-3 rounded-lg hover:shadow-md active:scale-95 transition-all"
             >
               {card.isPublished ? t('commandBar.unpublish') : t('commandBar.publish')}
             </Button>
@@ -734,16 +736,24 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
       {/* Workspace Grid Structure */}
       <div className="grid gap-6 lg:grid-cols-[250px_1fr_360px]">
-        {/* 1. LEFT PANEL — Structure & Navigation */}
-        <div className="h-[calc(100vh-180px)] sticky top-[156px] flex flex-col justify-between">
-          <Card variant="standard" className="p-4 bg-surface flex flex-col gap-5 h-full overflow-y-auto no-scrollbar">
-            <div className="space-y-4">
-              <h3 className="text-[11px] font-bold text-ink uppercase tracking-wider border-b border-line pb-2 flex items-center gap-1.5">
+        {/* 1. LEFT PANEL — Structure & Navigation.
+            Stacked on a phone this column came first and filled the whole
+            screen, so the editor was a scroll away. Below lg it collapses to a
+            horizontal tab strip and the panel chrome disappears. */}
+        {/* min-w-0 all the way down, or the scrollable tab strip stretches its
+            flex ancestors instead of scrolling and the page overflows. */}
+        <div className="min-w-0 lg:h-[calc(100vh-180px)] lg:sticky lg:top-[156px] flex flex-col justify-between">
+          <Card
+            variant="standard"
+            className="min-w-0 bg-surface flex flex-col gap-5 h-full overflow-y-auto no-scrollbar !border-0 !bg-transparent !p-0 !shadow-none lg:!border lg:!bg-surface lg:!p-4 lg:!shadow-sm"
+          >
+            <div className="min-w-0 space-y-4">
+              <h3 className="hidden lg:flex text-[11px] font-bold text-ink uppercase tracking-wider border-b border-line pb-2 items-center gap-1.5">
                 <Icon name="settings" size={13} /> {t('tabs.heading')}
               </h3>
 
               {/* Navigation Tabs */}
-              <div className="flex flex-col gap-1 border-b border-line pb-4">
+              <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:border-b lg:border-line lg:px-0 lg:pb-4">
                 <TabButton
                   active={activeTab === 'content'}
                   onClick={() => setActiveTab('content')}
@@ -782,9 +792,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 />
               </div>
 
-              {/* Scroll Table of Contents for Content Tab */}
+              {/* Scroll-to shortcuts: sidebar chrome that would only push the
+                  editor further down a phone screen. */}
               {activeTab === 'content' && (
-                <div className="space-y-2">
+                <div className="hidden lg:block space-y-2">
                   <p className="text-[10px] font-black uppercase text-faint tracking-wider px-2">{t('quickNav.title')}</p>
                   <div className="flex flex-col gap-0.5">
                     <button
@@ -813,7 +824,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               )}
             </div>
 
-            <div className="pt-3 border-t border-line text-[9.5px] text-faint uppercase font-bold text-center">
+            <div className="hidden lg:block pt-3 border-t border-line text-[9.5px] text-faint uppercase font-bold text-center">
               {t('shell.version')}
             </div>
           </Card>
@@ -2086,10 +2097,11 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3.5 py-2.5 rounded-[10px] text-[12.5px] font-bold flex items-center gap-2.5 transition-all border ${
+      // A chip in the phone strip, a full-width row in the desktop sidebar.
+      className={`shrink-0 whitespace-nowrap rounded-[10px] border px-3.5 py-3 text-[12.5px] font-bold flex items-center gap-2.5 transition-all lg:w-full lg:py-2.5 lg:text-start ${
         active
           ? 'text-white border-transparent'
-          : 'text-muted hover:bg-ink/5 hover:text-ink border-transparent'
+          : 'text-muted hover:bg-ink/5 hover:text-ink border-line lg:border-transparent'
       }`}
       style={active ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : {}}
     >

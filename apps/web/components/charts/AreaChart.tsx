@@ -48,8 +48,12 @@ export function AreaChart({
   const grid = [0, 0.25, 0.5, 0.75, 1].map((p) => padT + innerH * p);
 
   return (
-    <div ref={ref} className="w-full">
-      <svg width={w} height={height} viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+    // `min-w-0` lets this shrink inside a grid or flex parent, and the SVG is
+    // sized in percent so it scales to the box instead of widening it. With a
+    // pixel width the chart forced its container to 640px, the observer then
+    // measured that inflated box, and the page overflowed on a phone.
+    <div ref={ref} className="w-full min-w-0">
+      <svg width="100%" height={height} viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" aria-hidden="true">
         <defs>
           {series.map((s, i) => (
             <linearGradient key={i} id={`ac-${i}`} x1="0" y1="0" x2="0" y2="1">

@@ -238,7 +238,8 @@
     "failed": "Upload failed.",
     "hint": "JPG, PNG, WebP or GIF · up to 5 MB · drag & drop supported",
     "notImage": "Please choose an image file.",
-    "tooLarge": "Image is larger than 5 MB."
+    "tooLarge": "Image is larger than 5 MB.",
+    "urlPlaceholder": "…or paste an image URL"
   },
   "errors": {
     "slugMismatch": "Please enter the correct card slug to confirm deletion."
