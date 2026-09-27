@@ -126,6 +126,13 @@ export default function TagsPage() {
     if (taps.some((x) => x.ok)) load().catch(() => {});
   }, [taps, load]);
 
+  // The register forms are well below the banner, so a refusal raised from one
+  // of them would otherwise scroll off-screen and read as nothing happening.
+  const errorRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [error]);
+
   const run = (fn: () => Promise<unknown>) => {
     setError('');
     fn()
@@ -203,7 +210,11 @@ export default function TagsPage() {
       })()}
 
       {error && (
-        <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-semibold flex items-center gap-2">
+        <div
+          ref={errorRef}
+          className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-semibold flex items-center gap-2"
+          role="alert"
+        >
           <span>⚠️</span>{error}
         </div>
       )}
@@ -334,6 +345,9 @@ export default function TagsPage() {
           <button className="v-btn w-full mt-6 font-bold shadow-md">{t('registerSingleBtn', 'Register single chip')}</button>
         </form>
 
+        {/* Manager+ only: the API refuses a bulk import from an employee, and a
+            control that can only fail is worse than no control. */}
+        {!isEmployee && (
         <form onSubmit={registerBatch} className="v-card p-6 bg-surface flex flex-col justify-between">
           <div>
             <div className="mb-4 flex items-center gap-3">
@@ -368,6 +382,7 @@ export default function TagsPage() {
           </div>
           <button className="v-btn v-btn-ghost w-full mt-6 font-bold"><Icon name="layers" size={15} /> {t('importBatchBtn', 'Import Batch')}</button>
         </form>
+        )}
       </div>
 
       {/* Filters & Header */}
@@ -406,7 +421,10 @@ export default function TagsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[14px] font-bold text-ink bg-canvas border border-line px-2 py-0.5 rounded-lg">{tag.uid}</span>
+                  {/* Pinned LTR: in Arabic the bidi algorithm moves the leading
+                      group of a colon-separated UID to the end, so 04:E1:22:...
+                      was being shown as E1:22:...:04 — a different serial. */}
+                  <span dir="ltr" className="font-mono text-[14px] font-bold text-ink bg-canvas border border-line px-2 py-0.5 rounded-lg">{tag.uid}</span>
                   <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border tracking-wider uppercase ${STATUS_STYLES[tag.status]}`}>
                     {t(`status.${tag.status.toLowerCase()}`, tag.status)}
                   </span>
@@ -502,27 +520,34 @@ export default function TagsPage() {
                   ))}
                 </select>
 
-                <button
-                  onClick={() =>
-                    run(() => authFetch(`/nfc/tags/${tag.id}`, {
-                      method: 'PATCH',
-                      body: JSON.stringify({
-                        status: tag.status === 'DISABLED'
-                          ? (tag.cardId ? 'ACTIVE' : 'UNASSIGNED')
-                          : 'DISABLED',
-                      }),
-                    }))
-                  }
-                  className="v-btn v-btn-ghost !h-9 text-[12px] font-bold"
-                >
-                  {tag.status === 'DISABLED' ? t('tagRow.enable') : t('tagRow.disable')}
-                </button>
-                <button
-                  onClick={() => run(() => authFetch(`/nfc/tags/${tag.id}`, { method: 'DELETE' }))}
-                  className="v-btn v-btn-danger !h-9 text-[12px] font-bold hover:bg-red-600"
-                >
-                  {t('tagRow.delete')}
-                </button>
+                {/* Disabling and deleting are stock decisions, which the API
+                    keeps with a manager. An employee linking and unlinking
+                    their own chip is the whole of their side of this. */}
+                {!isEmployee && (
+                  <>
+                    <button
+                      onClick={() =>
+                        run(() => authFetch(`/nfc/tags/${tag.id}`, {
+                          method: 'PATCH',
+                          body: JSON.stringify({
+                            status: tag.status === 'DISABLED'
+                              ? (tag.cardId ? 'ACTIVE' : 'UNASSIGNED')
+                              : 'DISABLED',
+                          }),
+                        }))
+                      }
+                      className="v-btn v-btn-ghost !h-11 text-[12px] font-bold sm:!h-9"
+                    >
+                      {tag.status === 'DISABLED' ? t('tagRow.enable') : t('tagRow.disable')}
+                    </button>
+                    <button
+                      onClick={() => run(() => authFetch(`/nfc/tags/${tag.id}`, { method: 'DELETE' }))}
+                      className="v-btn v-btn-danger !h-11 text-[12px] font-bold hover:bg-red-600 sm:!h-9"
+                    >
+                      {t('tagRow.delete')}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
