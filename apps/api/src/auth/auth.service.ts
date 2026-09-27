@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcryptjs';
 import {
+  defaultStageRows,
   isPaidPlan,
   type RegisterInput,
   type LoginInput,
@@ -69,18 +70,7 @@ export class AuthService {
           data: { userId: user.id, orgId: org.id, role: 'OWNER' },
         });
         // Seed the default 7-stage sales pipeline so the CRM works immediately.
-        const stages = [
-          'New',
-          'Contacted',
-          'Qualified',
-          'Proposal',
-          'Negotiation',
-          'Won',
-          'Lost',
-        ];
-        await tx.pipelineStage.createMany({
-          data: stages.map((name, order) => ({ orgId: org.id, name, order })),
-        });
+        await tx.pipelineStage.createMany({ data: defaultStageRows(org.id) });
         return { user, orgId: org.id };
       },
     );

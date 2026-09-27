@@ -1,8 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authFetch, getToken, type NfcTag, type Card } from '@/lib/client';
+import {
+  authFetch,
+  getToken,
+  type Me,
+  type Member,
+  type NfcTag,
+  type Card,
+} from '@/lib/client';
+import { useNfcScanner } from '@/components/nfc/useNfcScanner';
 import { API_URL } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -36,6 +44,46 @@ export default function TagsPage() {
   const [batchHardware, setBatchHardware] = useState<(typeof HARDWARE)[number]>('CARD');
   const [batchBatchId, setBatchBatchId] = useState('');
 
+  // Who is looking: an employee only ever handles their own chip, so the holder
+  // controls and the member list are not theirs to see.
+  const [me, setMe] = useState<Me | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const isEmployee = me?.role === 'EMPLOYEE';
+
+  // Tap-to-claim: the reader stays open so a delivery can be taken in chip after
+  // chip. Each tap's outcome is kept rather than replaced, so a long session
+  // leaves a record of what went in and what was refused.
+  const [taps, setTaps] = useState<{ uid: string; ok: boolean; message?: string }[]>([]);
+  const [tapHolder, setTapHolder] = useState('');
+  const tapSettings = useRef({ hardware, batchId, tapHolder });
+  tapSettings.current = { hardware, batchId, tapHolder };
+
+  /**
+   * Claims one tapped chip into this workspace's inventory.
+   *
+   * Reading only: nothing is written to the chip here. The chip already carries
+   * a gateway URL built from its own serial, so what it points at is decided by
+   * linking it to a card afterwards - no rewrite needed.
+   */
+  const claimTapped = useCallback(async (uid: string) => {
+    try {
+      await authFetch('/nfc/tags', {
+        method: 'POST',
+        body: JSON.stringify({
+          uid,
+          hardwareType: tapSettings.current.hardware,
+          batchId: tapSettings.current.batchId || undefined,
+          assignedUserId: tapSettings.current.tapHolder || undefined,
+        }),
+      });
+      setTaps((prev) => [{ uid, ok: true }, ...prev]);
+    } catch (e) {
+      setTaps((prev) => [{ uid, ok: false, message: (e as Error).message }, ...prev]);
+    }
+  }, []);
+
+  const scanner = useNfcScanner((serial) => void claimTapped(serial));
+
   const load = useCallback(async () => {
     const qs = new URLSearchParams();
     if (filterStatus) qs.set('status', filterStatus);
@@ -55,6 +103,28 @@ export default function TagsPage() {
     }
     load().catch((e) => setError(e.message));
   }, [router, load]);
+
+  useEffect(() => {
+    if (!getToken()) return;
+    authFetch<Me>('/auth/me')
+      .then((m) => {
+        setMe(m);
+        // The member list is a manager's tool; requesting it as an employee
+        // would only earn a 403.
+        if (m.role && m.role !== 'EMPLOYEE') {
+          authFetch<Member[]>('/orgs/members')
+            .then(setMembers)
+            .catch(() => setMembers([]));
+        }
+      })
+      .catch(() => setMe(null));
+  }, []);
+
+  // A successful tap has to show up in the list without waiting for the reader
+  // to be stopped.
+  useEffect(() => {
+    if (taps.some((x) => x.ok)) load().catch(() => {});
+  }, [taps, load]);
 
   const run = (fn: () => Promise<unknown>) => {
     setError('');
@@ -138,6 +208,96 @@ export default function TagsPage() {
         </div>
       )}
 
+      {/* Tap to claim - the primary way hardware comes in. The manual forms
+          below stay for iPhones, which cannot read NFC from a browser at all. */}
+      <div className="mt-6 v-card p-6 bg-surface">
+        <div className="flex items-start gap-3">
+          <span className="v-icon-tile shrink-0"><Icon name="zap" size={16} /></span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[15.5px] font-extrabold tracking-tight text-ink">
+              {t('tap.title', 'Add chips by tapping')}
+            </h2>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+              {t(
+                'tap.hint',
+                'Hold each chip you bought to the back of the phone. Its serial is read and added to your inventory - nothing is written to the chip. Only chips issued to your workspace can be added.',
+              )}
+            </p>
+
+            {scanner.blocker !== 'none' ? (
+              <p className="mt-4 rounded-xl bg-amber-500/10 px-4 py-3 text-[12.5px] leading-relaxed text-amber-600">
+                {scanner.blocker === 'insecure'
+                  ? t('tap.insecure', 'Reading chips needs a secure (HTTPS) page.')
+                  : t(
+                      'tap.unsupported',
+                      'This browser cannot read NFC - iPhone does not allow it at all. Use Chrome on Android, or enter the UID by hand below.',
+                    )}
+              </p>
+            ) : (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {scanner.scanning ? (
+                  <>
+                    <span className="flex items-center gap-2 text-[12.5px] font-bold text-accent">
+                      <Icon name="loader" size={14} className="animate-spin" />
+                      {t('tap.holdChip', 'Hold a chip to the phone...')}
+                    </span>
+                    <button onClick={scanner.stop} className="v-btn v-btn-ghost !h-11 text-[12.5px] font-bold">
+                      {t('tap.stop', 'Stop')}
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={scanner.start} className="v-btn !h-11 px-5 text-[13px] font-bold">
+                    {t('tap.start', 'Start reading chips')}
+                  </button>
+                )}
+
+                {!isEmployee && members.length > 0 && (
+                  <label className="flex items-center gap-2 text-[12px] font-semibold text-muted">
+                    {t('tap.forMember', 'For member')}
+                    <select
+                      className="v-field !h-11 w-[180px] !text-[12.5px] font-semibold bg-canvas"
+                      value={tapHolder}
+                      onChange={(e) => setTapHolder(e.target.value)}
+                    >
+                      <option value="">{t('tap.noMember', 'Unassigned')}</option>
+                      {members.map((m) => (
+                        <option key={m.user.id} value={m.user.id}>
+                          {m.user.name || m.user.email}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+            )}
+
+            {scanner.error && scanner.error !== 'read' && (
+              <p className="mt-3 text-[12px] font-semibold text-red-500">{scanner.error}</p>
+            )}
+
+            {taps.length > 0 && (
+              <div className="mt-4 max-h-44 space-y-1.5 overflow-y-auto border-t border-line pt-3">
+                {taps.map((x, i) => (
+                  <div key={`${x.uid}-${i}`} className="flex items-start gap-2 text-[11.5px]">
+                    <Icon
+                      name={x.ok ? 'check' : 'x'}
+                      size={13}
+                      className={x.ok ? 'mt-0.5 shrink-0 text-emerald-500' : 'mt-0.5 shrink-0 text-red-500'}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span dir="ltr" className="font-mono text-ink">{x.uid}</span>
+                      <span className="ms-2 text-muted">
+                        {x.ok ? t('tap.added', 'Added') : x.message}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Register forms */}
       <div className="mt-6 grid md:grid-cols-2 gap-6">
         <form onSubmit={registerSingle} className="v-card p-6 bg-surface flex flex-col justify-between">
@@ -146,7 +306,7 @@ export default function TagsPage() {
               <span className="v-icon-tile"><Icon name="tag" size={16} /></span>
               <div>
                 <h2 className="text-[15.5px] font-extrabold text-ink tracking-tight">{t('singleTitle', 'Single Tag Registration')}</h2>
-                <p className="text-[12px] text-muted">{t('singleSub', 'Register a single physical chip manually')}</p>
+                <p className="text-[12px] text-muted">{t('singleSub', 'Type a UID in by hand - for iPhones, which cannot read NFC in a browser')}</p>
               </div>
             </div>
             <div className="space-y-3.5">
@@ -261,6 +421,15 @@ export default function TagsPage() {
                   )}
                   <span>·</span>
                   <span className="text-accent">{tag.activationCount} {t('tagRow.scans')}</span>
+                  <span>·</span>
+                  <span>
+                    {t('tagRow.holder', 'Holder')}{' '}
+                    <span className="text-ink">
+                      {tag.assignedUser
+                        ? tag.assignedUser.name || tag.assignedUser.email
+                        : t('tagRow.noHolder', 'nobody')}
+                    </span>
+                  </span>
                   {tag.lastScanAt && (
                     <>
                       <span>·</span>
@@ -292,9 +461,33 @@ export default function TagsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Manager+ hands hardware to a member. An employee's own chip is
+                    already theirs, so there is nothing for them to choose. */}
+                {!isEmployee && members.length > 0 && (
+                  <select
+                    className="v-field !h-11 w-[170px] !text-[12.5px] font-semibold bg-canvas sm:!h-9"
+                    value={tag.assignedUserId ?? ''}
+                    onChange={(e) =>
+                      run(() =>
+                        authFetch(`/nfc/tags/${tag.id}/holder`, {
+                          method: 'POST',
+                          body: JSON.stringify({ userId: e.target.value || null }),
+                        }),
+                      )
+                    }
+                  >
+                    <option value="">{t('tagRow.setHolder', 'Give to member')}</option>
+                    {members.map((m) => (
+                      <option key={m.user.id} value={m.user.id}>
+                        {m.user.name || m.user.email}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
                 <select
-                  className="v-field !h-9 w-[180px] !text-[12.5px] font-semibold bg-canvas"
+                  className="v-field !h-11 w-[180px] !text-[12.5px] font-semibold bg-canvas sm:!h-9"
                   value={tag.cardId ?? ''}
                   onChange={(e) =>
                     e.target.value

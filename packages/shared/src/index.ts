@@ -299,6 +299,9 @@ export const createTagSchema = z.object({
   uid: z.string().min(1).max(120), // physical UID from the manufacturer
   hardwareType: HardwareType.optional(),
   batchId: z.string().max(120).optional(),
+  /// The member the chip belongs to. Ignored for an employee, who is always
+  /// recorded as the holder of a chip they register themselves.
+  assignedUserId: z.string().optional(),
 });
 export type CreateTagInput = z.infer<typeof createTagSchema>;
 
@@ -307,6 +310,7 @@ export const createTagsBatchSchema = z.object({
   uids: z.array(z.string().min(1).max(120)).min(1).max(1000),
   hardwareType: HardwareType.optional(),
   batchId: z.string().max(120).optional(),
+  assignedUserId: z.string().optional(),
 });
 export type CreateTagsBatchInput = z.infer<typeof createTagsBatchSchema>;
 
@@ -321,6 +325,39 @@ export const assignTagSchema = z.object({
   cardId: z.string().min(1),
 });
 export type AssignTagInput = z.infer<typeof assignTagSchema>;
+
+/**
+ * The pipeline a new workspace starts with.
+ *
+ * Kept here because four places used to create it from their own copy of the
+ * names, and the win flag has to be set on every one of them - a workspace
+ * whose "Won" stage is not flagged reports no wins at all.
+ */
+export const DEFAULT_PIPELINE_STAGES: { name: string; isWon: boolean }[] = [
+  { name: 'New', isWon: false },
+  { name: 'Contacted', isWon: false },
+  { name: 'Qualified', isWon: false },
+  { name: 'Proposal', isWon: false },
+  { name: 'Negotiation', isWon: false },
+  { name: 'Won', isWon: true },
+  { name: 'Lost', isWon: false },
+];
+
+/** The stock pipeline as Prisma createMany rows for one organization. */
+export function defaultStageRows(orgId: string) {
+  return DEFAULT_PIPELINE_STAGES.map((s, order) => ({
+    orgId,
+    name: s.name,
+    order,
+    isWon: s.isWon,
+  }));
+}
+
+// Hands a chip to a member, or takes the holder off it (null).
+export const setTagHolderSchema = z.object({
+  userId: z.string().min(1).nullable(),
+});
+export type SetTagHolderInput = z.infer<typeof setTagHolderSchema>;
 
 // ===========================================================================
 //  Team & Members DTOs
@@ -396,6 +433,9 @@ export const leadCaptureSchema = z
     note: z.string().max(1000).optional(),
     meetingAt: z.string().optional(), // ISO datetime for the MEETING intent
     visitorId: z.string().optional(),
+    /// The chip UID the visitor arrived from, carried through the redirect. It
+    /// credits the member whose hardware produced this client.
+    tagUid: z.string().max(120).optional(),
   })
   .refine((d) => !!d.email || !!d.phone, {
     message: 'Provide an email or a phone number',

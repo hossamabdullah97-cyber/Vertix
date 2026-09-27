@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '@/lib/client';
 import { Icon } from '@/components/Icon';
+import { useNfcScanner } from '@/components/nfc/useNfcScanner';
 import {
   Badge,
   Button,
@@ -22,6 +23,9 @@ export interface Chip {
   status: 'AVAILABLE' | 'CLAIMED' | 'BLOCKED';
   note: string | null;
   orgName: string | null;
+  /** The workspace this chip was sold to — only it may claim the chip. */
+  allocatedToOrgId: string | null;
+  allocatedToOrgName: string | null;
   claimedAt: string | null;
   createdAt: string;
   assigned: boolean;
@@ -34,19 +38,16 @@ interface ChipStats {
   available: number;
   claimed: number;
   blocked: number;
+  /** Open stock: no buyer recorded, so any workspace knowing the UID can claim it. */
+  unallocated: number;
+}
+
+interface AdminOrg {
+  id: string;
+  name: string;
 }
 
 type HardwareType = 'CARD' | 'STICKER' | 'KEYCHAIN' | 'WRISTBAND';
-
-/** Why the browser cannot read a chip, when it cannot. */
-type Blocker = 'none' | 'unsupported' | 'insecure';
-
-function detectBlocker(): Blocker {
-  if (typeof window === 'undefined') return 'none';
-  if (!window.isSecureContext) return 'insecure';
-  if (!('NDEFReader' in window)) return 'unsupported';
-  return 'none';
-}
 
 /** One tap's outcome, kept so a whole box of chips can be worked through. */
 interface ScanResult {
@@ -87,15 +88,18 @@ export default function ChipRegistry() {
   const [bulkText, setBulkText] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
-
-  const [blocker, setBlocker] = useState<Blocker>('none');
-  const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<ScanResult[]>([]);
-  const abortRef = useRef<AbortController | null>(null);
 
-  // The tap handler must see the current type/batch without restarting the scan.
-  const settings = useRef({ hardwareType, batchId });
-  settings.current = { hardwareType, batchId };
+  // Allocation: which workspace the stock being taken in was sold to.
+  const [orgs, setOrgs] = useState<AdminOrg[]>([]);
+  const [allocateTo, setAllocateTo] = useState('');
+  const [allocBatch, setAllocBatch] = useState('');
+  const [allocOrg, setAllocOrg] = useState('');
+
+  // The tap handler must see the current type/batch/buyer without the scan
+  // being restarted between taps.
+  const settings = useRef({ hardwareType, batchId, allocateTo });
+  settings.current = { hardwareType, batchId, allocateTo };
 
   const load = useCallback(async () => {
     const query = new URLSearchParams();
@@ -110,9 +114,11 @@ export default function ChipRegistry() {
     setLoading(false);
   }, [statusFilter, search]);
 
+  // The buyer picker needs the workspaces; the console already has an endpoint.
   useEffect(() => {
-    setBlocker(detectBlocker());
-    return () => abortRef.current?.abort();
+    authFetch<AdminOrg[]>('/admin/organizations')
+      .then((rows) => setOrgs(rows.map((o) => ({ id: o.id, name: o.name }))))
+      .catch(() => setOrgs([]));
   }, []);
 
   useEffect(() => {
@@ -133,6 +139,7 @@ export default function ChipRegistry() {
             uid,
             hardwareType: settings.current.hardwareType,
             batchId: settings.current.batchId.trim() || undefined,
+            allocatedToOrgId: settings.current.allocateTo || null,
           }),
         });
         setResults((prev) => [
@@ -150,35 +157,15 @@ export default function ChipRegistry() {
     [load],
   );
 
-  const startScanning = useCallback(async () => {
-    setNotice('');
-    const controller = new AbortController();
-    abortRef.current?.abort();
-    abortRef.current = controller;
+  const scanner = useNfcScanner((serial) => void registerTapped(serial));
+  const { blocker, scanning } = scanner;
 
-    try {
-      const reader = new NDEFReader();
-      // No `once` listener here: the scan stays open so a stack of chips can be
-      // registered one tap after another without pressing the button again.
-      reader.addEventListener('reading', (event) => {
-        void registerTapped(event.serialNumber);
-      });
-      reader.addEventListener('readingerror', () => {
-        setNotice(t('chips.readError'));
-      });
-      await reader.scan({ signal: controller.signal });
-      setScanning(true);
-    } catch (e) {
-      setNotice((e as Error).message);
-      setScanning(false);
-    }
-  }, [registerTapped, t]);
-
-  const stopScanning = useCallback(() => {
-    abortRef.current?.abort();
-    abortRef.current = null;
-    setScanning(false);
-  }, []);
+  // 'read' is the hook's signal for a chip it could not decode; anything else is
+  // already a message from the browser.
+  useEffect(() => {
+    if (scanner.error === 'read') setNotice(t('chips.readError'));
+    else if (scanner.error) setNotice(scanner.error);
+  }, [scanner.error, t]);
 
   const registerBulk = useCallback(async () => {
     const uids = bulkText
@@ -198,6 +185,7 @@ export default function ChipRegistry() {
             uids,
             hardwareType,
             batchId: batchId.trim() || undefined,
+            allocatedToOrgId: allocateTo || null,
           }),
         },
       );
@@ -209,7 +197,30 @@ export default function ChipRegistry() {
     } finally {
       setBusy(false);
     }
-  }, [bulkText, hardwareType, batchId, load, t]);
+  }, [bulkText, hardwareType, batchId, allocateTo, load, t]);
+
+  /**
+   * Records who a whole batch was sold to after the fact. Allocation is what
+   * makes the purchase enforceable: only that workspace can claim those chips,
+   * so nobody who works out a neighbouring batch's UIDs can take them.
+   */
+  const allocateBatch = useCallback(async () => {
+    if (!allocBatch.trim()) return;
+    setBusy(true);
+    setNotice('');
+    try {
+      const res = await authFetch<{ allocated: number }>('/admin/nfc-chips/allocate', {
+        method: 'POST',
+        body: JSON.stringify({ batchId: allocBatch.trim(), orgId: allocOrg || null }),
+      });
+      setNotice(t('chips.allocateDone', { count: res.allocated }));
+      await load();
+    } catch (e) {
+      setNotice((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }, [allocBatch, allocOrg, load, t]);
 
   const setStatus = useCallback(
     async (chip: Chip, status: Chip['status']) => {
@@ -248,13 +259,16 @@ export default function ChipRegistry() {
   return (
     <div className="space-y-6">
       {/* Counts: how much stock exists, and how much of it is actually out. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {(
           [
             ['total', stats?.total, 'text-ink'],
             ['available', stats?.available, 'text-emerald-500'],
             ['claimed', stats?.claimed, 'text-blue-500'],
             ['blocked', stats?.blocked, 'text-red-500'],
+            // Open stock is a standing risk, not a neutral figure: these are
+            // claimable by any workspace that learns the UID.
+            ['unallocated', stats?.unallocated, 'text-amber-500'],
           ] as const
         ).map(([key, value, tone]) => (
           <div key={key} className="min-w-0 rounded-xl border border-line bg-surface p-4">
@@ -311,6 +325,27 @@ export default function ChipRegistry() {
               />
             </div>
 
+            <div>
+              <label className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-wider text-muted">
+                {t('chips.soldTo')}
+              </label>
+              <Select
+                value={allocateTo}
+                onChange={(e) => setAllocateTo(e.target.value)}
+                className="w-full"
+              >
+                <option value="">{t('chips.openStock')}</option>
+                {orgs.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted">
+                {t('chips.soldToHint')}
+              </p>
+            </div>
+
             {blocker !== 'none' ? (
               <p className="rounded-xl bg-amber-500/10 px-4 py-3 text-[12.5px] leading-relaxed text-amber-600">
                 {blocker === 'insecure' ? t('chips.insecure') : t('chips.unsupported')}
@@ -321,12 +356,12 @@ export default function ChipRegistry() {
                   <Icon name="loader" size={14} className="animate-spin" />
                   {t('chips.holdChip')}
                 </span>
-                <Button variant="outline" className="w-full" onClick={stopScanning}>
+                <Button variant="outline" className="w-full" onClick={scanner.stop}>
                   {t('chips.stop')}
                 </Button>
               </div>
             ) : (
-              <Button variant="primary" className="w-full" onClick={startScanning}>
+              <Button variant="primary" className="w-full" onClick={scanner.start}>
                 {t('chips.start')}
               </Button>
             )}
@@ -384,6 +419,44 @@ export default function ChipRegistry() {
             >
               {t('chips.bulkSubmit')}
             </Button>
+
+            {/* Allocating an existing batch after the fact - the usual case when
+                a shipment is registered first and sold later. */}
+            <div className="space-y-3 border-t border-line pt-4">
+              <span className="block text-[12.5px] font-extrabold text-ink">
+                {t('chips.allocateTitle')}
+              </span>
+              <p className="text-[12.5px] leading-relaxed text-muted">
+                {t('chips.allocateHint')}
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  value={allocBatch}
+                  onChange={(e) => setAllocBatch(e.target.value)}
+                  placeholder={t('chips.batchPlaceholder')}
+                  className="w-full sm:flex-1"
+                />
+                <Select
+                  value={allocOrg}
+                  onChange={(e) => setAllocOrg(e.target.value)}
+                  className="w-full sm:w-52"
+                >
+                  <option value="">{t('chips.openStock')}</option>
+                  {orgs.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={allocateBatch}
+                  disabled={busy || !allocBatch.trim()}
+                >
+                  {t('chips.allocateSubmit')}
+                </Button>
+              </div>
+            </div>
           </CardBody>
         </Card>
       </div>
@@ -424,6 +497,7 @@ export default function ChipRegistry() {
                     <th className="p-3 text-start">UID</th>
                     <th className="p-3 text-start">{t('nfc.deviceModel')}</th>
                     <th className="p-3 text-start">{t('common.status')}</th>
+                    <th className="p-3 text-start">{t('chips.soldTo')}</th>
                     <th className="p-3 text-start">{t('chips.workspace')}</th>
                     <th className="p-3 text-start">{t('chips.batchLabel')}</th>
                     <th className="p-3 text-start">{t('nfc.scans')}</th>
@@ -447,6 +521,15 @@ export default function ChipRegistry() {
                         >
                           ● {t(`chips.status.${chip.status}`)}
                         </span>
+                      </td>
+                      <td className="p-3">
+                        {chip.allocatedToOrgName ? (
+                          <span className="text-muted">{chip.allocatedToOrgName}</span>
+                        ) : (
+                          <span className="text-[11px] font-bold text-amber-500">
+                            {t('chips.openStock')}
+                          </span>
+                        )}
                       </td>
                       <td className="p-3 text-muted">{chip.orgName ?? '—'}</td>
                       <td className="p-3 text-muted" dir="ltr">

@@ -48,6 +48,28 @@ export class AnalyticsController {
     return this.analytics.topCards(f, t);
   }
 
+  /** Per-chip performance: taps, people reached, and clients produced. */
+  @Get('nfc-tags')
+  tagPerformance(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const { f, t } = range(from, to);
+    return this.analytics.tagPerformance(f, t, limit ? Number(limit) : undefined);
+  }
+
+  /** Standings for the team members carrying the hardware. */
+  @Get('members')
+  memberPerformance(
+    @OrgId() orgId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const { f, t } = range(from, to);
+    return this.analytics.memberPerformance(orgId, f, t);
+  }
+
   @Get('referrers')
   referrers(@Query('from') from?: string, @Query('to') to?: string) {
     const { f, t } = range(from, to);

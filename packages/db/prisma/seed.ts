@@ -53,7 +53,15 @@ async function main() {
     });
     if (!existing) {
       await prisma.pipelineStage.create({
-        data: { orgId: org.id, name: stages[i], order: i },
+        // isWon drives the CRM's own win reporting, so the stock pipeline has
+        // to declare which of its stages means won rather than leaving that to
+        // be guessed from the name later.
+        data: {
+          orgId: org.id,
+          name: stages[i],
+          order: i,
+          isWon: stages[i] === 'Won',
+        },
       });
     }
   }

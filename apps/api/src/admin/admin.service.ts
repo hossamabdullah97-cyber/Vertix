@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { runWithTenant } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
-import { PLAN_LIMITS, type Plan, type Role } from '@vertex/shared';
+import { PLAN_LIMITS, defaultStageRows, type Plan, type Role } from '@vertex/shared';
 
 /**
  * Runs tenant-scoped writes under the 'admin' bypass context so the Prisma
@@ -116,11 +116,7 @@ export class AdminService {
           data: { userId: user.id, orgId: org.id, role: 'OWNER' },
         });
 
-        // default stages
-        const stages = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
-        await tx.pipelineStage.createMany({
-          data: stages.map((name, order) => ({ orgId: org.id, name, order })),
-        });
+        await tx.pipelineStage.createMany({ data: defaultStageRows(org.id) });
 
         return user;
       }),
@@ -394,9 +390,8 @@ export class AdminService {
         },
       });
 
-      const stages = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost'];
       await this.prisma.client.pipelineStage.createMany({
-        data: stages.map((name, order) => ({ orgId: org.id, name, order })),
+        data: defaultStageRows(org.id),
       });
     });
 
@@ -625,19 +620,28 @@ export class AdminService {
 
   /** Registry counts, for the header of the chips page. */
   async getChipStats() {
-    const [total, available, claimed, blocked] = await Promise.all([
+    const [total, available, claimed, blocked, unallocated] = await Promise.all([
       this.prisma.client.nfcChip.count(),
       this.prisma.client.nfcChip.count({ where: { status: 'AVAILABLE' } }),
       this.prisma.client.nfcChip.count({ where: { status: 'CLAIMED' } }),
       this.prisma.client.nfcChip.count({ where: { status: 'BLOCKED' } }),
+      // Open stock: no buyer recorded, so any workspace that knows the UID can
+      // claim it. Worth showing plainly rather than leaving it to be inferred.
+      this.prisma.client.nfcChip.count({
+        where: { allocatedToOrgId: null, status: { not: 'BLOCKED' } },
+      }),
     ]);
-    return { total, available, claimed, blocked };
+    return { total, available, claimed, blocked, unallocated };
   }
 
   /** The registry, newest first, optionally filtered by status or UID/batch text. */
-  async getChips(filters: { status?: string; search?: string } = {}) {
+  async getChips(
+    filters: { status?: string; search?: string; allocatedToOrgId?: string } = {},
+  ) {
     const where: Record<string, unknown> = {};
     if (filters.status && filters.status !== 'ALL') where.status = filters.status;
+    if (filters.allocatedToOrgId === 'NONE') where.allocatedToOrgId = null;
+    else if (filters.allocatedToOrgId) where.allocatedToOrgId = filters.allocatedToOrgId;
     if (filters.search) {
       where.OR = [
         { uid: { contains: filters.search, mode: 'insensitive' } },
@@ -649,7 +653,10 @@ export class AdminService {
       where,
       orderBy: { createdAt: 'desc' },
       take: 200,
-      include: { claimedByOrg: { select: { name: true } } },
+      include: {
+        claimedByOrg: { select: { name: true } },
+        allocatedToOrg: { select: { id: true, name: true } },
+      },
     });
 
     // The tag row is what a workspace created from the chip; showing whether it
@@ -670,6 +677,8 @@ export class AdminService {
         status: chip.status,
         note: chip.note,
         orgName: chip.claimedByOrg?.name ?? null,
+        allocatedToOrgId: chip.allocatedToOrg?.id ?? null,
+        allocatedToOrgName: chip.allocatedToOrg?.name ?? null,
         claimedAt: chip.claimedAt?.toISOString() ?? null,
         createdAt: chip.createdAt.toISOString(),
         assigned: tag ? tag.cardId !== null : false,
@@ -687,7 +696,14 @@ export class AdminService {
    * chip is left blocked: unblocking is a deliberate, separate action.
    */
   async registerChip(
-    input: { uid: string; hardwareType?: string; batchId?: string; note?: string },
+    input: {
+      uid: string;
+      hardwareType?: string;
+      batchId?: string;
+      note?: string;
+      /** Set when the buyer is already known, so one tap both records and assigns it. */
+      allocatedToOrgId?: string | null;
+    },
     actorId: string,
   ) {
     const uid = input.uid.trim();
@@ -707,6 +723,7 @@ export class AdminService {
         hardwareType: (input.hardwareType ?? 'CARD') as never,
         batchId: input.batchId?.trim() || null,
         note: input.note?.trim() || null,
+        allocatedToOrgId: input.allocatedToOrgId || null,
         registeredById: actorId,
       },
     });
@@ -720,7 +737,12 @@ export class AdminService {
 
   /** Bulk registration from a pasted or imported UID list. */
   async registerChipBatch(
-    input: { uids: string[]; hardwareType?: string; batchId?: string },
+    input: {
+      uids: string[];
+      hardwareType?: string;
+      batchId?: string;
+      allocatedToOrgId?: string | null;
+    },
     actorId: string,
   ) {
     const uids = Array.from(
@@ -733,6 +755,7 @@ export class AdminService {
         uid,
         hardwareType: (input.hardwareType ?? 'CARD') as never,
         batchId: input.batchId?.trim() || null,
+        allocatedToOrgId: input.allocatedToOrgId || null,
         registeredById: actorId,
       })),
       skipDuplicates: true,
@@ -747,6 +770,63 @@ export class AdminService {
       created: result.count,
       skipped: uids.length - result.count,
     };
+  }
+
+  /**
+   * Records which workspace a chip was sold to. Only that workspace may claim
+   * it afterwards, which is what turns "org A bought 100 chips" into something
+   * the system enforces instead of a note in an invoice.
+   *
+   * Passing null returns it to open stock. Reallocating a chip a workspace has
+   * already claimed is refused — the claim is the fact on the ground, and moving
+   * the allocation under it would leave the two disagreeing.
+   */
+  async allocateChips(
+    input: { uids?: string[]; batchId?: string; orgId: string | null },
+    actorId: string,
+  ) {
+    if (!input.uids?.length && !input.batchId) {
+      throw new ConflictException('Give either a list of UIDs or a batch to allocate.');
+    }
+    if (input.orgId) {
+      const org = await this.prisma.client.organization.findUnique({
+        where: { id: input.orgId },
+        select: { id: true },
+      });
+      if (!org) throw new NotFoundException('Organization not found');
+    }
+
+    const target: Record<string, unknown> = input.batchId
+      ? { batchId: input.batchId }
+      : { uid: { in: input.uids } };
+
+    const conflicting = await this.prisma.client.nfcChip.count({
+      where: {
+        ...target,
+        claimedByOrgId: { not: null },
+        NOT: { claimedByOrgId: input.orgId ?? undefined },
+      },
+    });
+    if (conflicting > 0) {
+      throw new ConflictException(
+        `${conflicting} of these chips are already claimed by a workspace and cannot be reallocated.`,
+      );
+    }
+
+    const result = await this.prisma.client.nfcChip.updateMany({
+      where: { ...target, claimedByOrgId: null },
+      data: { allocatedToOrgId: input.orgId },
+    });
+
+    await this.logAdminAction(
+      actorId,
+      input.orgId ? 'NFC_CHIP_ALLOCATE' : 'NFC_CHIP_DEALLOCATE',
+      'NfcChip',
+      input.batchId ?? 'uids',
+      { batchId: input.batchId ?? null, count: result.count, orgId: input.orgId },
+      input.orgId ?? undefined,
+    );
+    return { allocated: result.count, orgId: input.orgId };
   }
 
   /**
@@ -813,6 +893,7 @@ export class AdminService {
     status: string;
     note: string | null;
     claimedByOrgId: string | null;
+    allocatedToOrgId: string | null;
     claimedAt: Date | null;
     createdAt: Date;
   }) {
@@ -824,6 +905,7 @@ export class AdminService {
       status: chip.status,
       note: chip.note,
       claimedByOrgId: chip.claimedByOrgId,
+      allocatedToOrgId: chip.allocatedToOrgId,
       claimedAt: chip.claimedAt?.toISOString() ?? null,
       createdAt: chip.createdAt.toISOString(),
     };

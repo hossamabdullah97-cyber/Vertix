@@ -46,10 +46,17 @@ export default function ExchangeContact({
     try {
       const visitorId =
         typeof window !== 'undefined' ? localStorage.getItem('vertex_visitor') ?? undefined : undefined;
+      // The gateway puts the tapped chip's UID on the URL it redirects to, so a
+      // lead that arrived by tap can be credited to that chip - and through it
+      // to the member carrying it.
+      const tagUid =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('t') ?? undefined
+          : undefined;
       const res = await fetch(`${API_URL}/leads/capture`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, ...form, visitorId }),
+        body: JSON.stringify({ slug, ...form, visitorId, tagUid }),
       });
       const data = await res.json();
       if (!res.ok) {

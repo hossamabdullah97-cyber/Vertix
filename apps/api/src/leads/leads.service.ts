@@ -19,6 +19,60 @@ export class LeadsService {
   }
 
   /**
+   * Works out which chip, if any, brought this visitor in.
+   *
+   * The UID carried through the redirect is authoritative. When it is missing —
+   * the visitor browsed elsewhere before filling the form, so the query string
+   * was dropped — their own most recent scan of this card stands in. That
+   * fallback is bounded to a day: crediting a chip for a form filled in a week
+   * later would be a guess dressed up as data.
+   *
+   * Returns null rather than throwing: an unattributable lead is still a lead,
+   * and this runs on a public endpoint where the UID is caller-supplied.
+   */
+  private async resolveTag(
+    input: LeadCaptureInput,
+    cardId: string,
+    orgId: string,
+  ): Promise<{ id: string } | null> {
+    try {
+      if (input.tagUid) {
+        // Scoped to the card's own org, so a UID from elsewhere cannot be used
+        // to credit another workspace's hardware.
+        const byUid = await this.db.nfcTag.findFirst({
+          where: { uid: input.tagUid, orgId },
+          select: { id: true },
+        });
+        if (byUid) return byUid;
+      }
+
+      if (!input.visitorId) return null;
+      const visitor = await this.db.visitor.findFirst({
+        where: { anonymousId: input.visitorId },
+        select: { id: true },
+      });
+      if (!visitor) return null;
+
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const lastScan = await this.db.event.findFirst({
+        where: {
+          visitorId: visitor.id,
+          cardId,
+          type: 'NFC_SCAN',
+          tagId: { not: null },
+          createdAt: { gte: since },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { tagId: true },
+      });
+      return lastScan?.tagId ? { id: lastScan.tagId } : null;
+    } catch (err) {
+      this.logger.warn(`tag attribution failed: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  /**
    * Public lead capture from a card's exchange form. Runs without tenant
    * context, so orgId is resolved from the card and set explicitly.
    */
@@ -36,9 +90,18 @@ export class LeadsService {
       select: { id: true },
     });
 
+    const tag = await this.resolveTag(input, card.id, card.orgId);
+
     const intent = input.intent ?? 'CONTACT';
-    const source =
-      intent === 'MEETING' ? 'meeting' : intent === 'QUOTE' ? 'quote' : 'card_form';
+    // A lead that came off a chip says so, so the source reads as the channel it
+    // actually arrived through rather than the form it was typed into.
+    const source = tag
+      ? 'nfc_scan'
+      : intent === 'MEETING'
+        ? 'meeting'
+        : intent === 'QUOTE'
+          ? 'quote'
+          : 'card_form';
     // Meeting/quote requests signal higher intent → hotter lead.
     const temperature = intent === 'CONTACT' ? 'WARM' : 'HOT';
 
@@ -48,6 +111,7 @@ export class LeadsService {
         cardId: card.id,
         assignedTo: card.ownerId,
         stageId: stage?.id,
+        tagId: tag?.id ?? null,
         name: input.name,
         email: input.email || undefined,
         phone: input.phone,

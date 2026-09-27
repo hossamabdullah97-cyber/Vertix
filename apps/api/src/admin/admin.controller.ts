@@ -141,8 +141,13 @@ export class AdminController {
   // most sensitive writes in the console: they decide what physical chips work.
 
   @Get('nfc-chips')
-  getChips(@Query('status') status?: string, @Query('search') search?: string) {
-    return this.adminService.getChips({ status, search });
+  getChips(
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    /** An org id, or 'NONE' for open stock with no buyer recorded. */
+    @Query('allocatedToOrgId') allocatedToOrgId?: string,
+  ) {
+    return this.adminService.getChips({ status, search, allocatedToOrgId });
   }
 
   @Get('nfc-chips/stats')
@@ -153,7 +158,14 @@ export class AdminController {
   /** One chip — what a tap on the admin's phone posts. */
   @Post('nfc-chips')
   registerChip(
-    @Body() body: { uid: string; hardwareType?: string; batchId?: string; note?: string },
+    @Body()
+    body: {
+      uid: string;
+      hardwareType?: string;
+      batchId?: string;
+      note?: string;
+      allocatedToOrgId?: string | null;
+    },
     @CurrentUser() actor: JwtPayload,
   ) {
     return this.adminService.registerChip(body, actor.sub);
@@ -161,10 +173,29 @@ export class AdminController {
 
   @Post('nfc-chips/batch')
   registerChipBatch(
-    @Body() body: { uids: string[]; hardwareType?: string; batchId?: string },
+    @Body()
+    body: {
+      uids: string[];
+      hardwareType?: string;
+      batchId?: string;
+      allocatedToOrgId?: string | null;
+    },
     @CurrentUser() actor: JwtPayload,
   ) {
     return this.adminService.registerChipBatch(body, actor.sub);
+  }
+
+  /**
+   * Records the workspace a set of chips was sold to — by UID list or by whole
+   * batch. Only that workspace can claim them afterwards. A null orgId returns
+   * them to open stock.
+   */
+  @Post('nfc-chips/allocate')
+  allocateChips(
+    @Body() body: { uids?: string[]; batchId?: string; orgId: string | null },
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.adminService.allocateChips(body, actor.sub);
   }
 
   @Patch('nfc-chips/:id/status')

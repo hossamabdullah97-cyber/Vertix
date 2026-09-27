@@ -295,7 +295,15 @@
       "total": "Registered",
       "available": "Available",
       "claimed": "Claimed",
-      "blocked": "Blocked"
-    }
+      "blocked": "Blocked",
+      "unallocated": "Open stock"
+    },
+    "soldTo": "Sold to",
+    "openStock": "Open stock",
+    "soldToHint": "While a workspace is set, only it can add these chips. Leave as open stock only if the buyer is not known yet — any workspace that learns the UID can claim open stock.",
+    "allocateTitle": "Assign an existing batch to a buyer",
+    "allocateHint": "For stock registered before it was sold. Chips a workspace has already claimed cannot be reassigned.",
+    "allocateSubmit": "Assign batch",
+    "allocateDone": "{{count}} chip(s) assigned."
   }
 }

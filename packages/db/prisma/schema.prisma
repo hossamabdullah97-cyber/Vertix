@@ -54,6 +54,7 @@ model User {
   createdApiKeys     ApiKey[]              @relation("ApiKeyCreator")
   createdWebhooks    WebhookEndpoint[]     @relation("WebhookCreator")
   userIntegrations   IntegrationConnection[] @relation("IntegrationConnector")
+  heldTags           NfcTag[]                @relation("TagHolder")
 
   @@index([deletedAt])
   @@map("users")
@@ -75,7 +76,8 @@ model Organization {
   teams          Team[]
   cards          Card[]
   nfcTags        NfcTag[]
-  claimedChips   NfcChip[]
+  claimedChips   NfcChip[]       @relation("ChipClaimedBy")
+  allocatedChips NfcChip[]       @relation("ChipAllocatedTo")
   leads          Lead[]
   pipelineStages PipelineStage[]
   scoringRules   ScoringRule[]
@@ -269,6 +271,11 @@ model NfcChip {
   /// Manufacturing or purchase batch, for tracing a shipment.
   batchId        String?
   status         ChipStatus   @default(AVAILABLE)
+  /// The workspace this chip was sold/shipped to. Set by the platform admin.
+  /// While set, ONLY that workspace may claim it — this is what makes "org A
+  /// bought these 100 chips" real. Null means open stock: a counter sale whose
+  /// buyer is not known yet, claimable by whoever taps it first.
+  allocatedToOrgId String?
   /// Set when a workspace claims the chip; cleared if it is released.
   claimedByOrgId String?
   claimedAt      DateTime?
@@ -279,11 +286,13 @@ model NfcChip {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  claimedByOrg Organization? @relation(fields: [claimedByOrgId], references: [id], onDelete: SetNull)
+  claimedByOrg   Organization? @relation("ChipClaimedBy", fields: [claimedByOrgId], references: [id], onDelete: SetNull)
+  allocatedToOrg Organization? @relation("ChipAllocatedTo", fields: [allocatedToOrgId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([batchId])
   @@index([claimedByOrgId])
+  @@index([allocatedToOrgId])
   @@map("nfc_chips")
 }
 
@@ -291,6 +300,12 @@ model NfcTag {
   id              String       @id @default(cuid())
   orgId           String
   cardId          String?
+  /// The team member this piece of hardware belongs to.
+  ///
+  /// Kept alongside cardId rather than derived from it: a member may own
+  /// several cards and a card can be reassigned, so "whose chip is this" has to
+  /// be stated, not inferred. It is what per-member reporting counts by.
+  assignedUserId  String?
   uid             String       @unique // the tag's physical identifier
   status          TagStatus    @default(UNASSIGNED)
   hardwareType    HardwareType @default(CARD) // physical hardware type
@@ -301,12 +316,16 @@ model NfcTag {
   updatedAt       DateTime     @updatedAt
   deletedAt       DateTime?    // Soft delete
 
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  card Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  card         Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  assignedUser User?        @relation("TagHolder", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  events       Event[]
+  leads        Lead[]
 
   @@index([orgId])
   @@index([cardId])
   @@index([batchId])
+  @@index([assignedUserId])
   @@map("nfc_tags")
 }
 
@@ -320,6 +339,12 @@ model PipelineStage {
   name      String
   order     Int       @default(0) // 7 sequential stages
   color     String?
+  /// Marks the stage that means the deal was won.
+  ///
+  /// A flag rather than a match on the name "Won": stages are the org's own to
+  /// rename and translate, and reporting that reads a literal name would go
+  /// quietly to zero the day someone renames theirs.
+  isWon     Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // Soft delete
@@ -345,12 +370,16 @@ model Lead {
   value       Int         @default(0) // estimated deal value (whole currency units)
   temperature Temperature @default(COLD)
   source      String?     // lead source (nfc_scan, share, ...)
+  /// The chip the visitor arrived from, when it can be established. This is
+  /// what lets a member's hardware be credited with the clients it produced.
+  tagId       String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?   // Soft delete
 
   org        Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   card       Card?          @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  tag        NfcTag?        @relation(fields: [tagId], references: [id], onDelete: SetNull)
   assignee   User?          @relation("LeadAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
   stage      PipelineStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
   activities LeadActivity[]
@@ -360,6 +389,7 @@ model Lead {
   @@index([cardId])
   @@index([stageId])
   @@index([assignedTo])
+  @@index([tagId])
   @@index([deletedAt])
   @@map("leads")
 }
@@ -501,6 +531,12 @@ model Event {
   id        String    @id @default(cuid())
   orgId     String
   cardId    String?
+  /// The chip that was tapped, when the event came from one.
+  ///
+  /// Without this a scan is only attributable to a card, so "how many visitors
+  /// came from this chip" has no answer beyond NfcTag.activationCount — a
+  /// lifetime integer with no dates and no visitors behind it.
+  tagId     String?
   visitorId String?
   type      EventType
   geo       Json?
@@ -511,12 +547,14 @@ model Event {
 
   org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   card    Card?        @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  tag     NfcTag?      @relation(fields: [tagId], references: [id], onDelete: SetNull)
   visitor Visitor?     @relation(fields: [visitorId], references: [id], onDelete: SetNull)
 
   // time-series indexing: dashboard reports query by (orgId, createdAt)
   @@index([orgId, createdAt])
   @@index([cardId, createdAt])
   @@index([orgId, type, createdAt])
+  @@index([tagId, createdAt])
   @@index([visitorId])
   @@map("events")
 }

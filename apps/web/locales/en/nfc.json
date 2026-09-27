@@ -2,7 +2,7 @@
   "title": "NFC Hardware Management",
   "subtitle": "Register, configure, and bind physical NFC chips to digital business cards.",
   "singleTitle": "Single Tag Registration",
-  "singleSub": "Register a single physical chip manually",
+  "singleSub": "Type a UID in by hand — for iPhones, which cannot read NFC in a browser",
   "uidLabel": "Physical Tag UID",
   "hardwareLabel": "Hardware Type",
   "batchLabel": "Batch ID (Optional)",
@@ -50,7 +50,22 @@
     "linkCard": "— Link business card —",
     "enable": "Enable Tag",
     "disable": "Disable Tag",
-    "delete": "Delete"
+    "delete": "Delete",
+    "holder": "Holder",
+    "noHolder": "nobody",
+    "setHolder": "Give to member"
   },
-  "emptyState": "No NFC tags registered yet."
+  "emptyState": "No NFC tags registered yet.",
+  "tap": {
+    "title": "Add chips by tapping",
+    "hint": "Hold each chip you bought to the back of the phone. Its serial is read and added to your inventory — nothing is written to the chip. Only chips issued to your workspace can be added.",
+    "insecure": "Reading chips needs a secure (HTTPS) page.",
+    "unsupported": "This browser cannot read NFC — iPhone does not allow it at all. Use Chrome on Android, or enter the UID by hand below.",
+    "start": "Start reading chips",
+    "stop": "Stop",
+    "holdChip": "Hold a chip to the phone…",
+    "added": "Added",
+    "forMember": "For member",
+    "noMember": "Unassigned"
+  }
 }

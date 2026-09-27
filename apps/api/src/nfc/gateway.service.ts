@@ -78,7 +78,10 @@ export class GatewayService {
       };
     }
 
-    const cardPageUrl = `${appUrl}/c/${card.slug}`;
+    // The chip rides along in the URL so a lead captured on the card page can
+    // be credited to it. The tap and the form submit are separate requests, so
+    // without this the link between the two is lost.
+    const cardPageUrl = `${appUrl}/c/${card.slug}?t=${encodeURIComponent(uid)}`;
     const vcardUrl = `${ctx.apiBaseUrl}/c/${card.slug}/vcard`;
 
     // --- Stage 3: Attribution ---
@@ -158,6 +161,9 @@ export class GatewayService {
           data: {
             orgId: tag.orgId,
             cardId,
+            // Which physical chip produced this scan. Per-chip and per-member
+            // reporting both count these rows.
+            tagId: tag.id,
             visitorId: visitor?.id ?? null,
             type: 'NFC_SCAN',
             referrer: ctx.referrer,

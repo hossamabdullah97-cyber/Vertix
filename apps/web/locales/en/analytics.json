@@ -98,7 +98,11 @@
     "sourcesTitle": "Lead Sources",
     "sourcesSubtitle": "Where leads came from",
     "sourcesEmpty": "No lead sources recorded yet.",
-    "temp": { "hot": "Hot", "warm": "Warm", "cold": "Cold" },
+    "temp": {
+      "hot": "Hot",
+      "warm": "Warm",
+      "cold": "Cold"
+    },
     "stages": {
       "views": "Profile Views",
       "clicks": "Link Clicks",
@@ -171,5 +175,23 @@
       "requirement": "Enable IP-to-geo resolution on the tracking endpoint (populate Event.geo), then expose an /analytics/geo aggregation. Country and city breakdowns will appear here once real location data lands."
     }
   },
-  "emptyState": "No analytics data available for the selected period."
+  "emptyState": "No analytics data available for the selected period.",
+  "tagPerf": {
+    "title": "Per-chip performance",
+    "subtitle": "Taps, people reached, and clients produced by each piece of hardware",
+    "empty": "No chip has been tapped in this period yet.",
+    "chip": "Chip",
+    "holder": "Holder",
+    "taps": "Taps",
+    "visitors": "People reached",
+    "leads": "Clients"
+  },
+  "memberPerf": {
+    "title": "Team standings",
+    "subtitle": "Counted through the chip each member carries",
+    "empty": "No chip has been given to a member yet, so there is nothing to rank.",
+    "member": "Member",
+    "chips": "Chips",
+    "won": "Won"
+  }
 }

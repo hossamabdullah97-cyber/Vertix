@@ -294,7 +294,35 @@ export interface NfcTag {
   hardwareType: 'CARD' | 'STICKER' | 'KEYCHAIN' | 'WRISTBAND' | 'OTHER';
   batchId: string | null;
   cardId: string | null;
+  /** The member this piece of hardware belongs to — what reporting counts by. */
+  assignedUserId: string | null;
+  assignedUser?: { id: string; name: string | null; email: string } | null;
   activationCount: number;
   lastScanAt: string | null;
   createdAt: string;
+}
+
+/** One chip's standing over a date range, from /analytics/nfc-tags. */
+export interface TagPerformance {
+  tagId: string;
+  uid: string;
+  hardwareType: string | null;
+  holder: { id: string; name: string | null; email: string } | null;
+  cardSlug: string | null;
+  scans: number;
+  /** Distinct people reached, not taps — one person tapping twice is one. */
+  visitors: number;
+  leads: number;
+  lastScanAt: string | null;
+}
+
+/** A team member's standing for the hardware they carry, from /analytics/members. */
+export interface MemberPerformance {
+  user: { id: string; name: string | null; email: string; avatarUrl: string | null };
+  tags: number;
+  scans: number;
+  visitors: number;
+  leads: number;
+  wonLeads: number;
+  wonValue: number;
 }
