@@ -978,7 +978,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           <button
                             key={item.type}
                             onClick={() => addAction(item.type)}
-                            className="px-3.5 py-3 sm:py-1.5 rounded-xl border border-line bg-surface hover:border-line-strong hover:bg-elevated active:scale-95 transition-all text-xs font-bold text-ink shadow-sm"
+                            className="px-3.5 min-h-11 sm:min-h-0 py-3 sm:py-1.5 rounded-xl border border-line bg-surface hover:border-line-strong hover:bg-elevated active:scale-95 transition-all text-xs font-bold text-ink shadow-sm"
                           >
                             {item.emoji} {t(`links.shortcuts.${item.key}`)}
                           </button>
@@ -1126,7 +1126,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                   }),
                                 )
                               }
-                              className={`h-8 w-8 rounded-lg flex items-center justify-center border border-line transition-all active:scale-95 ${
+                              className={`h-11 w-11 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center border border-line transition-all active:scale-95 ${
                                 s.isVisible
                                   ? 'bg-accent/10 border-accent/25 text-accent shadow-sm'
                                   : 'bg-surface hover:bg-elevated text-muted'
@@ -1139,14 +1139,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             {/* Reorder sections controls */}
                             <button
                               onClick={() => move(sections, i, -1, 'sections')}
-                              className="h-8 w-8 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-xs font-bold"
+                              className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-xs font-bold"
                               title={t('links.moveUp')}
                             >
                               ↑
                             </button>
                             <button
                               onClick={() => move(sections, i, 1, 'sections')}
-                              className="h-8 w-8 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-xs font-bold"
+                              className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center border border-line bg-surface hover:bg-elevated text-muted hover:text-ink active:scale-95 transition-all text-xs font-bold"
                               title={t('links.moveDown')}
                             >
                               ↓
@@ -1157,7 +1157,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               onClick={() =>
                                 run(() => authFetch(`/cards/${id}/sections/${s.id}`, { method: 'DELETE' }))
                               }
-                              className="h-8 w-8 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
+                              className="h-11 w-11 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center bg-red-500/5 hover:bg-red-500/10 active:scale-95 transition-all text-red-600 border border-red-500/10"
                               title={t('sections.deleteBlock')}
                             >
                               <Icon name="trash" size={14} />

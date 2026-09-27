@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
           {/* Compare mode toggle switch */}
           <button
             onClick={() => setCompareMode(!compareMode)}
-            className="flex items-center gap-1.5 v-btn v-btn-ghost !h-9 text-[11.5px] font-bold"
+            className="flex items-center gap-1.5 v-btn v-btn-ghost !h-11 text-[11.5px] font-bold sm:!h-9"
             style={{ background: compareMode ? 'var(--v-accent-soft)' : 'transparent', color: compareMode ? 'var(--v-accent)' : 'hsl(var(--v-muted))' }}
           >
             <Icon name="refresh" size={13} />
@@ -113,7 +113,7 @@ export default function AnalyticsPage() {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="v-field !h-9 !w-auto text-[12px] font-semibold"
+            className="v-field !h-11 !w-auto text-[12px] font-semibold sm:!h-9"
           >
             <option value="today">{t('period.today')}</option>
             <option value="yesterday">{t('period.yesterday')}</option>

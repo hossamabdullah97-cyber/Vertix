@@ -597,7 +597,7 @@ export default function AppShell({
       {/* Mobile top nav */}
       <div className="v-glass sticky top-0 z-30 border-b border-line md:hidden">
         <div className="flex items-center justify-between px-5 py-3.5">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Link href="/dashboard" className="flex min-h-11 items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white shadow-sm" style={{ background: 'linear-gradient(135deg, var(--v-accent), #1d4ed8)' }}>
               <VMark size={14} strokeWidth={3} />
             </span>
@@ -606,10 +606,10 @@ export default function AppShell({
           <div className="flex items-center gap-1.5">
             <NotificationBell />
             <LanguageSwitcher />
-            <button onClick={toggleTheme} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-ink/5" aria-label={t('toggleTheme')}>
+            <button onClick={toggleTheme} className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-ink/5" aria-label={t('toggleTheme')}>
               <Icon name={theme === 'light' ? 'moon' : 'sun'} size={18} />
             </button>
-            <button onClick={signOut} className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500" aria-label={t('signOut')}>
+            <button onClick={signOut} className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500" aria-label={t('signOut')}>
               <Icon name="logout" size={18} />
             </button>
           </div>
@@ -621,7 +621,7 @@ export default function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
-                className="whitespace-nowrap rounded-full px-3.5 py-2 text-[12.5px] font-bold transition-all duration-200"
+                className="inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-3.5 text-[12.5px] font-bold transition-all duration-200"
                 style={{
                   color: active ? 'var(--v-accent-contrast)' : 'hsl(var(--v-muted))',
                   background: active ? 'var(--v-accent)' : 'transparent',

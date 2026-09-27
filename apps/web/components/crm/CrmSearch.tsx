@@ -131,7 +131,7 @@ export function CrmSearch({
       {/* Global Shortcut Button (Clickable in toolbar) */}
       <button
         onClick={() => setOpen(true)}
-        className="flex h-9 w-[180px] items-center justify-between rounded-xl border border-line bg-canvas px-3.5 text-left text-[12.5px] font-semibold text-muted shadow-sm transition-colors hover:border-line-strong hover:text-ink md:w-[220px]"
+        className="flex h-11 w-[180px] items-center justify-between rounded-xl border border-line bg-canvas px-3.5 text-left text-[12.5px] font-semibold text-muted shadow-sm transition-colors hover:border-line-strong hover:text-ink sm:h-9 md:w-[220px]"
       >
         <span className="flex items-center gap-1.5"><Icon name="search" size={14} /> {t('search.button')}</span>
         <kbd className="hidden rounded bg-canvas/60 border border-line/65 px-1.5 py-0.5 text-[9px] font-bold text-faint sm:inline-block">

@@ -100,7 +100,7 @@ export function SmartFilters({
       {/* Trigger Button */}
       <button
         onClick={() => setOpen(true)}
-        className="flex h-9 items-center gap-1.5 rounded-xl border border-line bg-canvas px-3.5 text-[12.5px] font-bold text-muted hover:border-line-strong hover:text-ink relative shadow-sm"
+        className="flex h-11 items-center gap-1.5 rounded-xl border border-line bg-canvas px-3.5 text-[12.5px] font-bold text-muted hover:border-line-strong hover:text-ink relative shadow-sm sm:h-9"
       >
         <Icon name="filter" size={14} /> {t('filters.smartFilters')}
         {activeFiltersCount > 0 && (

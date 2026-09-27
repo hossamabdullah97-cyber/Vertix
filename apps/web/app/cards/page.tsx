@@ -155,7 +155,7 @@ export default function CardsPage() {
         <button
           onClick={startNewCard}
           disabled={creating}
-          className="v-btn flex items-center gap-2 px-5 !h-10 text-sm font-semibold"
+          className="v-btn flex items-center gap-2 px-5 !h-11 text-sm font-semibold sm:!h-10"
         >
           <Icon name="plus" size={16} />
           {t('createCard', 'Create Card')}

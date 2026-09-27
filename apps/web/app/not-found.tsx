@@ -15,7 +15,7 @@ export default function NotFound() {
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-semibold">{t('notFound.title')}</h1>
         <p className="mt-2 text-muted">{t('notFound.body')}</p>
-        <Link href="/dashboard" className="v-btn mt-6 !h-10 px-6 text-[13.5px] font-bold">
+        <Link href="/dashboard" className="v-btn mt-6 !h-11 px-6 text-[13.5px] font-bold sm:!h-10">
           {t('notFound.home')}
         </Link>
       </div>

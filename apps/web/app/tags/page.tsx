@@ -458,7 +458,7 @@ export default function TagsPage() {
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <button
                     onClick={() => navigator.clipboard?.writeText(`${API_URL}/t/${tag.uid}`)}
-                    className="inline-flex items-center gap-1.5 text-[10.5px] text-muted hover:text-ink font-mono"
+                    className="inline-flex min-h-11 items-center gap-1.5 text-[10.5px] text-muted hover:text-ink font-mono sm:min-h-0"
                     title={t('tagRow.copyUrl')}
                   >
                     <span className="font-medium" dir="ltr">{API_URL}/t/{tag.uid}</span>
@@ -471,7 +471,7 @@ export default function TagsPage() {
                     onClick={() => {
                       setTimeout(() => load().catch(() => {}), 1500);
                     }}
-                    className="inline-flex items-center gap-1 bg-accent/10 border border-accent/25 hover:bg-accent/20 text-accent font-semibold px-2 py-0.5 rounded-lg text-[10px] transition-colors"
+                    className="inline-flex min-h-11 items-center gap-1 bg-accent/10 border border-accent/25 hover:bg-accent/20 text-accent font-semibold px-2 py-0.5 rounded-lg text-[10px] transition-colors sm:min-h-0"
                     title={t('tagRow.simulateTitle')}
                   >
                     <Icon name="zap" size={11} /> {t('tagRow.simulateTap')}

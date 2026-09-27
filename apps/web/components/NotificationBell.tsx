@@ -95,7 +95,7 @@ export function NotificationBell() {
       <button
         onClick={toggle}
         aria-label={`Notifications${count ? ` (${count} unread)` : ''}`}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-ink/5 hover:text-ink"
+        className="relative flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-ink/5 hover:text-ink md:h-9 md:w-9"
       >
         <Icon name="bell" size={18} />
         <AnimatePresence>
