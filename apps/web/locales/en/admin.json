@@ -24,7 +24,7 @@
     "dashboard": "Executive Overview",
     "users": "User Management",
     "organizations": "Tenant Organizations",
-    "nfc-qr": "NFC & QR Inventory",
+    "nfc-qr": "NFC Chip Registry",
     "jobs": "Background Queues",
     "flags": "Feature Rollouts",
     "security": "Firewall & Security",
@@ -42,7 +42,7 @@
     "goDashboard": "Go to Executive Dashboard",
     "goUsers": "Go to User Management",
     "goOrgs": "Go to Organization Operations",
-    "goNfc": "Go to NFC & QR Center",
+    "goNfc": "Go to NFC Chip Registry",
     "goJobs": "Go to Background Jobs & Queues",
     "goFlags": "Go to Feature Flags Configuration",
     "goSecurity": "Go to Security & Firewall",
@@ -165,19 +165,13 @@
     "enterprise": "Enterprise Tier"
   },
   "nfc": {
-    "stockTitle": "NFC Stock Inventory",
-    "bulkTitle": "Bulk Register NFC Hardware UIDs",
     "hardwareType": "Hardware type factor",
-    "uids": "NFC Chip UIDs (1 per line)",
-    "import": "Import Batch of Tags",
     "card": "Physical NFC Card",
     "sticker": "NFC Sticker",
     "keychain": "NFC Keychain",
     "wristband": "NFC Wristband",
     "deviceModel": "Device Model",
-    "scans": "Scans",
-    "importedToast": "NFC Tags batch imported and initialized successfully.",
-    "totalTags": "Total tags"
+    "scans": "Scans"
   },
   "jobs": {
     "title": "Active Background Jobs Queue",
@@ -259,6 +253,49 @@
     "error": "Error",
     "dark": "Dark",
     "light": "Light",
-    "status": "Status"
+    "status": "Status",
+    "loading": "Loading…"
+  },
+  "chips": {
+    "tapTitle": "Register by tapping",
+    "tapHint": "Hold each chip to the back of the phone. Its serial number is read and recorded as platform stock — nothing is written to the chip. Only registered chips can be used by a customer.",
+    "batchLabel": "Batch",
+    "batchPlaceholder": "e.g. BATCH-2026-04",
+    "start": "Start reading chips",
+    "stop": "Stop reading",
+    "holdChip": "Hold a chip to the phone…",
+    "readError": "Could not read that chip. Move it and try again.",
+    "insecure": "Reading chips needs a secure (HTTPS) page. Open the console over HTTPS, or on localhost, to register by tapping.",
+    "unsupported": "This browser cannot read NFC. Use Chrome on Android, or register the UIDs in bulk below.",
+    "result": {
+      "registered": "Registered",
+      "duplicate": "Already on file"
+    },
+    "bulkTitle": "Register a UID list",
+    "bulkHint": "For stock that arrives with a UID list from the supplier — one UID per line. UIDs already on file are skipped.",
+    "bulkSubmit": "Register these UIDs",
+    "bulkDone": "Registered {{created}} chip(s); {{skipped}} were already on file.",
+    "listTitle": "Chip registry",
+    "searchPlaceholder": "Search UID or batch…",
+    "workspace": "Workspace",
+    "empty": "No chips match this filter yet.",
+    "block": "Block",
+    "unblock": "Unblock",
+    "delete": "Delete",
+    "confirmDelete": "Remove chip {{uid}} from the registry? It will stop working.",
+    "filter": {
+      "all": "All statuses"
+    },
+    "status": {
+      "AVAILABLE": "Available",
+      "CLAIMED": "Claimed",
+      "BLOCKED": "Blocked"
+    },
+    "stats": {
+      "total": "Registered",
+      "available": "Available",
+      "claimed": "Claimed",
+      "blocked": "Blocked"
+    }
   }
 }

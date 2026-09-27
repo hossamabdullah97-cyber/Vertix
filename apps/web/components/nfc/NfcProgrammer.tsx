@@ -60,10 +60,15 @@ export default function NfcProgrammer({
           method: 'POST',
           body: JSON.stringify({ uid: serial, hardwareType: 'CARD' }),
         });
-      } catch {
+      } catch (err) {
         // Already in this org's inventory — reuse it instead of failing.
         const all = await authFetch<NfcTag[]>('/nfc/tags');
         tag = all.find((x) => x.uid === serial);
+        // Otherwise the registration itself was refused — most often because
+        // this chip was not issued by the platform. Surfacing the server's
+        // reason matters here; a generic failure would leave the holder of an
+        // unrecognised chip with no idea why it will not work.
+        if (!tag) throw err;
       }
       if (!tag) throw new Error(t('nfcProgram.errors.register'));
 

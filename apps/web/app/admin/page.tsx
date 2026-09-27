@@ -8,6 +8,7 @@ import { Icon } from '@/components/Icon';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { VMark } from '@/components/brand/VMark';
+import ChipRegistry from '@/components/admin/ChipRegistry';
 
 // Design System
 import {
@@ -99,18 +100,6 @@ interface QueueJob {
   retryable: boolean;
 }
 
-interface NfcTagAdmin {
-  id: string;
-  uid: string;
-  status: string;
-  hardwareType: string;
-  batchId: string | null;
-  activationCount: number;
-  lastScanAt: string | null;
-  orgName: string;
-  assigned: boolean;
-}
-
 interface AuditLogEntry {
   id: string;
   action: string;
@@ -136,7 +125,6 @@ export default function AdminConsole() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [jobs, setJobs] = useState<QueueJob[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [nfcTags, setNfcTags] = useState<NfcTagAdmin[]>([]);
 
   // Search/Filters
   const [userSearch, setUserSearch] = useState('');
@@ -147,8 +135,6 @@ export default function AdminConsole() {
   // Modals / Create States
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [nfcImportText, setNfcImportText] = useState('');
-  const [nfcHardwareType, setNfcHardwareType] = useState<'CARD' | 'STICKER' | 'KEYCHAIN' | 'WRISTBAND'>('CARD');
   const [errorMessage, setErrorMessage] = useState('');
 
   // Command Palette
@@ -210,14 +196,13 @@ export default function AdminConsole() {
       }
 
       // 2. Fetch admin datasets
-      const [kpiRes, usersRes, orgsRes, flagsRes, jobsRes, logsRes, tagsRes] = await Promise.all([
+      const [kpiRes, usersRes, orgsRes, flagsRes, jobsRes, logsRes] = await Promise.all([
         authFetch<KPIOverview>('/admin/kpis'),
         authFetch<UserAdmin[]>('/admin/users'),
         authFetch<OrgAdmin[]>('/admin/organizations'),
         authFetch<FeatureFlag[]>('/admin/feature-flags'),
         authFetch<QueueJob[]>('/admin/queue-jobs'),
         authFetch<AuditLogEntry[]>('/admin/audit-logs'),
-        authFetch<NfcTagAdmin[]>('/admin/nfc-tags'),
       ]);
 
       setKpi(kpiRes);
@@ -226,7 +211,6 @@ export default function AdminConsole() {
       setFlags(flagsRes);
       setJobs(jobsRes);
       setAuditLogs(logsRes);
-      setNfcTags(tagsRes);
     } catch (e) {
       setErrorMessage((e as Error).message);
     } finally {
@@ -371,29 +355,6 @@ export default function AdminConsole() {
       await loadData();
     } catch (e) {
       alert((e as Error).message);
-    }
-  };
-
-  const handleImportNfcTags = async () => {
-    if (!nfcImportText.trim()) return;
-    const uids = nfcImportText.split('\n').map((l) => l.trim()).filter(Boolean);
-    setActionLoading(true);
-    try {
-      await authFetch('/nfc/tags/batch', {
-        method: 'POST',
-        body: JSON.stringify({
-          uids,
-          hardwareType: nfcHardwareType,
-          batchId: `BATCH-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
-        }),
-      });
-      setNfcImportText('');
-      alert(t('nfc.importedToast'));
-      await loadData();
-    } catch (e) {
-      alert((e as Error).message);
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -1108,97 +1069,12 @@ export default function AdminConsole() {
             </div>
           )}
 
-          {/* TAB 4: NFC & QR INVENTORY */}
-          {activeTab === 'nfc-qr' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Batch Import Card */}
-              <Card className="lg:col-span-1">
-                <CardHeader className="border-b border-line px-6 py-4">
-                  <span className="text-[13.5px] font-extrabold text-ink">{t('nfc.bulkTitle')}</span>
-                </CardHeader>
-                <CardBody className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-muted mb-1.5">
-                      {t('nfc.hardwareType')}
-                    </label>
-                    <Select
-                      value={nfcHardwareType}
-                      onChange={(e) => setNfcHardwareType(e.target.value as any)}
-                      className="w-full"
-                    >
-                      <option value="CARD">{t('nfc.card')}</option>
-                      <option value="STICKER">{t('nfc.sticker')}</option>
-                      <option value="KEYCHAIN">{t('nfc.keychain')}</option>
-                      <option value="WRISTBAND">{t('nfc.wristband')}</option>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-muted mb-1.5">
-                      {t('nfc.uids')}
-                    </label>
-                    <textarea
-                      placeholder="04:DE:5F:AA:BB:CC:11&#10;04:DE:5F:AA:BB:CC:12&#10;04:DE:5F:AA:BB:CC:13"
-                      value={nfcImportText}
-                      onChange={(e) => setNfcImportText(e.target.value)}
-                      rows={6}
-                      className="w-full rounded-xl border border-line bg-canvas p-3.5 text-[12.5px] focus:outline-none focus:ring-1 focus:ring-accent"
-                    />
-                  </div>
-
-                  <Button variant="primary" className="w-full" onClick={handleImportNfcTags} disabled={actionLoading}>
-                    {t('nfc.import')}
-                  </Button>
-                </CardBody>
-              </Card>
-
-              {/* NFC Tags List */}
-              <Card className="lg:col-span-2">
-                <CardHeader className="border-b border-line px-6 py-4 flex items-center justify-between">
-                  <span className="text-[13.5px] font-extrabold text-ink">{t('nfc.stockTitle')}</span>
-                  <Badge variant="info">{kpi?.totals.nfcDevices} {t('nfc.totalTags')}</Badge>
-                </CardHeader>
-                <CardBody className="p-0">
-                  <div className="max-h-[420px] overflow-y-auto">
-                    <table className="w-full border-collapse text-left text-[12px]">
-                      <thead>
-                        <tr className="border-b border-line bg-surface/50 font-extrabold text-muted text-[10px] uppercase tracking-wider">
-                          <th className="p-3">UID</th>
-                          <th className="p-3">{t('nfc.deviceModel')}</th>
-                          <th className="p-3">{t('common.status')}</th>
-                          <th className="p-3">{t('nfc.scans')}</th>
-                          <th className="p-3 text-right">{t('users.actions')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {nfcTags.map((tag) => (
-                          <tr key={tag.id} className="border-b border-line hover:bg-surface/30">
-                            <td className="p-3 font-mono text-ink" dir="ltr">{tag.uid}</td>
-                            <td className="p-3">
-                              <Badge variant="neutral" className="text-[9px]">{tag.hardwareType}</Badge>
-                            </td>
-                            <td className="p-3">
-                              <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${
-                                tag.status === 'ACTIVE' ? 'text-emerald-500' : tag.status === 'DISABLED' ? 'text-red-500' : 'text-amber-500'
-                              }`}>
-                                ● {tag.status}
-                              </span>
-                            </td>
-                            <td className="p-3 font-bold text-ink">{tag.activationCount} {t('nfc.scans')}</td>
-                            <td className="p-3 text-right">
-                              <Button size="sm" variant="outline" className="text-[10px] px-2 py-1" onClick={() => alert('Status update trigger')}>
-                                {t('flags.toggleState')}
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardBody>
-              </Card>
-            </div>
-          )}
+          {/* TAB 4: PLATFORM NFC CHIP REGISTRY
+              The platform's own hardware inventory. Only a UID registered here
+              can be bound by a workspace, so this replaced the old panel that
+              imported UIDs straight into the admin's own org — that both put
+              stock in the wrong place and bypassed the registry entirely. */}
+          {activeTab === 'nfc-qr' && <ChipRegistry />}
 
           {/* TAB 5: BACKGROUND QUEUES */}
           {activeTab === 'jobs' && (

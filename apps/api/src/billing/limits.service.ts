@@ -5,13 +5,15 @@ import { PrismaService } from '../prisma/prisma.service';
 type Resource = 'cards' | 'members' | 'nfcTags';
 
 /**
- * The slice of the Prisma client the limit checks need. Typed structurally so
- * the same code works with the root client and with an interactive
- * transaction client (which carries the tenant extension too).
+ * The slice of the Prisma client the limit checks need, plus the models a
+ * guarded write touches alongside the counted one (`nfcChip` — claiming a
+ * platform chip has to happen in the same transaction as the tag insert).
+ * Typed structurally so the same code works with the root client and with an
+ * interactive transaction client (which carries the tenant extension too).
  */
 type CountingClient = Pick<
   PrismaService['client'],
-  'card' | 'membership' | 'nfcTag' | 'organization'
+  'card' | 'membership' | 'nfcTag' | 'nfcChip' | 'organization'
 >;
 
 @Injectable()

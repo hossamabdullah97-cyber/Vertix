@@ -615,26 +615,218 @@ export class AdminService {
     return { id: jobId, status: 'QUEUED' };
   }
 
-  /** Platform-wide NFC stock, newest first, with the org each tag belongs to. */
-  async getNfcTags() {
-    const tags = await this.prisma.client.nfcTag.findMany({
-      where: { deletedAt: null },
+  // --- Platform chip registry -------------------------------------------
+  //
+  // `NfcChip` is the list of hardware this business actually issued. It is not
+  // tenant-scoped on purpose: only this console writes to it, and a workspace
+  // can bind an NfcTag only to a UID that appears here (enforced in
+  // TagsService). That is what stops a customer buying a blank chip anywhere
+  // and using it with the product.
+
+  /** Registry counts, for the header of the chips page. */
+  async getChipStats() {
+    const [total, available, claimed, blocked] = await Promise.all([
+      this.prisma.client.nfcChip.count(),
+      this.prisma.client.nfcChip.count({ where: { status: 'AVAILABLE' } }),
+      this.prisma.client.nfcChip.count({ where: { status: 'CLAIMED' } }),
+      this.prisma.client.nfcChip.count({ where: { status: 'BLOCKED' } }),
+    ]);
+    return { total, available, claimed, blocked };
+  }
+
+  /** The registry, newest first, optionally filtered by status or UID/batch text. */
+  async getChips(filters: { status?: string; search?: string } = {}) {
+    const where: Record<string, unknown> = {};
+    if (filters.status && filters.status !== 'ALL') where.status = filters.status;
+    if (filters.search) {
+      where.OR = [
+        { uid: { contains: filters.search, mode: 'insensitive' } },
+        { batchId: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const chips = await this.prisma.client.nfcChip.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
-      take: 100,
-      include: { org: { select: { name: true } } },
+      take: 200,
+      include: { claimedByOrg: { select: { name: true } } },
     });
 
-    return tags.map((tag) => ({
-      id: tag.id,
-      uid: tag.uid,
-      status: tag.status,
-      hardwareType: tag.hardwareType,
-      batchId: tag.batchId,
-      activationCount: tag.activationCount,
-      lastScanAt: tag.lastScanAt?.toISOString() ?? null,
-      orgName: tag.org?.name ?? '—',
-      assigned: tag.cardId !== null,
-    }));
+    // The tag row is what a workspace created from the chip; showing whether it
+    // is bound to a card is the difference between "sold" and "actually in use".
+    const tags = await this.prisma.client.nfcTag.findMany({
+      where: { uid: { in: chips.map((c) => c.uid) } },
+      select: { uid: true, cardId: true, activationCount: true, lastScanAt: true },
+    });
+    const byUid = new Map(tags.map((t) => [t.uid, t]));
+
+    return chips.map((chip) => {
+      const tag = byUid.get(chip.uid);
+      return {
+        id: chip.id,
+        uid: chip.uid,
+        hardwareType: chip.hardwareType,
+        batchId: chip.batchId,
+        status: chip.status,
+        note: chip.note,
+        orgName: chip.claimedByOrg?.name ?? null,
+        claimedAt: chip.claimedAt?.toISOString() ?? null,
+        createdAt: chip.createdAt.toISOString(),
+        assigned: tag ? tag.cardId !== null : false,
+        activationCount: tag?.activationCount ?? 0,
+        lastScanAt: tag?.lastScanAt?.toISOString() ?? null,
+      };
+    });
+  }
+
+  /**
+   * Registers one chip — what a tap on the admin's phone calls.
+   *
+   * Re-tapping a chip that is already on file is the normal way to confirm one,
+   * so it is reported as `alreadyRegistered` rather than failing. A blocked
+   * chip is left blocked: unblocking is a deliberate, separate action.
+   */
+  async registerChip(
+    input: { uid: string; hardwareType?: string; batchId?: string; note?: string },
+    actorId: string,
+  ) {
+    const uid = input.uid.trim();
+    if (!uid) throw new ConflictException('A chip UID is required.');
+
+    const existing = await this.prisma.client.nfcChip.findUnique({ where: { uid } });
+    if (existing) {
+      return {
+        chip: this.chipSummary(existing),
+        alreadyRegistered: true,
+      };
+    }
+
+    const chip = await this.prisma.client.nfcChip.create({
+      data: {
+        uid,
+        hardwareType: (input.hardwareType ?? 'CARD') as never,
+        batchId: input.batchId?.trim() || null,
+        note: input.note?.trim() || null,
+        registeredById: actorId,
+      },
+    });
+
+    await this.logAdminAction(actorId, 'NFC_CHIP_REGISTER', 'NfcChip', chip.id, {
+      uid: chip.uid,
+      batchId: chip.batchId,
+    });
+    return { chip: this.chipSummary(chip), alreadyRegistered: false };
+  }
+
+  /** Bulk registration from a pasted or imported UID list. */
+  async registerChipBatch(
+    input: { uids: string[]; hardwareType?: string; batchId?: string },
+    actorId: string,
+  ) {
+    const uids = Array.from(
+      new Set(input.uids.map((u) => u.trim()).filter(Boolean)),
+    );
+    if (uids.length === 0) throw new ConflictException('No chip UIDs were supplied.');
+
+    const result = await this.prisma.client.nfcChip.createMany({
+      data: uids.map((uid) => ({
+        uid,
+        hardwareType: (input.hardwareType ?? 'CARD') as never,
+        batchId: input.batchId?.trim() || null,
+        registeredById: actorId,
+      })),
+      skipDuplicates: true,
+    });
+
+    await this.logAdminAction(actorId, 'NFC_CHIP_REGISTER_BATCH', 'NfcChip', input.batchId ?? 'batch', {
+      requested: uids.length,
+      created: result.count,
+    });
+    return {
+      requested: uids.length,
+      created: result.count,
+      skipped: uids.length - result.count,
+    };
+  }
+
+  /**
+   * Blocks or restores a chip. Blocking a claimed chip is deliberate — it is how
+   * a lost or cloned card is retired — so the workspace link is kept, meaning
+   * the record of who held it survives and restoring it puts it back with them.
+   */
+  async updateChipStatus(id: string, status: string, actorId: string) {
+    const allowed = ['AVAILABLE', 'CLAIMED', 'BLOCKED'];
+    if (!allowed.includes(status)) {
+      throw new ConflictException(`Status must be one of: ${allowed.join(', ')}`);
+    }
+
+    const chip = await this.prisma.client.nfcChip.findUnique({ where: { id } });
+    if (!chip) throw new NotFoundException('Chip not found');
+
+    // Coming out of BLOCKED, a chip that still has a workspace goes back to
+    // CLAIMED, never to AVAILABLE — otherwise it would look free while the
+    // customer's tag still exists.
+    const next =
+      status === 'AVAILABLE' && chip.claimedByOrgId ? 'CLAIMED' : status;
+
+    const updated = await this.prisma.client.nfcChip.update({
+      where: { id },
+      data: { status: next as never },
+    });
+
+    await this.logAdminAction(actorId, 'NFC_CHIP_STATUS', 'NfcChip', id, {
+      uid: chip.uid,
+      from: chip.status,
+      to: updated.status,
+    });
+    return this.chipSummary(updated);
+  }
+
+  /**
+   * Removes a chip from the registry.
+   *
+   * A chip a workspace has claimed is refused: deleting it would leave that
+   * customer's NfcTag pointing at hardware the platform no longer recognises.
+   * Block it instead — that stops it being usable while keeping the trail.
+   */
+  async removeChip(id: string, actorId: string) {
+    const chip = await this.prisma.client.nfcChip.findUnique({ where: { id } });
+    if (!chip) throw new NotFoundException('Chip not found');
+    if (chip.claimedByOrgId) {
+      throw new ConflictException(
+        'This chip is claimed by a workspace. Block it instead of deleting it.',
+      );
+    }
+
+    await this.prisma.client.nfcChip.delete({ where: { id } });
+    await this.logAdminAction(actorId, 'NFC_CHIP_DELETE', 'NfcChip', id, {
+      uid: chip.uid,
+    });
+    return { id, deleted: true };
+  }
+
+  private chipSummary(chip: {
+    id: string;
+    uid: string;
+    hardwareType: string;
+    batchId: string | null;
+    status: string;
+    note: string | null;
+    claimedByOrgId: string | null;
+    claimedAt: Date | null;
+    createdAt: Date;
+  }) {
+    return {
+      id: chip.id,
+      uid: chip.uid,
+      hardwareType: chip.hardwareType,
+      batchId: chip.batchId,
+      status: chip.status,
+      note: chip.note,
+      claimedByOrgId: chip.claimedByOrgId,
+      claimedAt: chip.claimedAt?.toISOString() ?? null,
+      createdAt: chip.createdAt.toISOString(),
+    };
   }
 
   async getAuditLogs(search = '') {

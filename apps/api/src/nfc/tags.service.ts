@@ -27,40 +27,107 @@ export class TagsService {
     return this.prisma.client;
   }
 
+  /**
+   * A workspace may only bind hardware the platform actually issued, so the
+   * chip has to exist in the platform registry and be free. Without this, any
+   * manager could buy a blank chip anywhere and register its UID here.
+   *
+   * Returns the chip so the caller can mark it claimed in the same transaction.
+   */
+  private async assertChipIssued(uid: string, orgId: string) {
+    const chip = await this.db.nfcChip.findUnique({ where: { uid } });
+
+    if (!chip) {
+      throw new NotFoundException(
+        'This chip is not registered with the platform. Only chips issued by Vertex Connect can be used.',
+      );
+    }
+    if (chip.status === 'BLOCKED') {
+      throw new ConflictException('This chip has been blocked and cannot be used.');
+    }
+    if (chip.claimedByOrgId && chip.claimedByOrgId !== orgId) {
+      throw new ConflictException('This chip already belongs to another workspace.');
+    }
+    return chip;
+  }
+
   async create(tenant: TenantContext, input: CreateTagInput) {
+    await this.assertChipIssued(input.uid, tenant.orgId);
+
     try {
       // Check and insert share a transaction so concurrent registrations
       // cannot all pass the same stale count (see LimitsService.guard).
-      return await this.limits.guard(tenant.orgId, 'nfcTags', (tx) =>
-        tx.nfcTag.create({
+      return await this.limits.guard(tenant.orgId, 'nfcTags', async (tx) => {
+        const tag = await tx.nfcTag.create({
           data: {
             orgId: tenant.orgId,
             uid: input.uid,
             hardwareType: input.hardwareType ?? 'CARD',
             batchId: input.batchId,
           },
-        }),
-      );
+        });
+        // Claim inside the same transaction: if the tag insert loses a race on
+        // the unique UID, the chip must not be left marked as taken.
+        await tx.nfcChip.update({
+          where: { uid: input.uid },
+          data: { status: 'CLAIMED', claimedByOrgId: tenant.orgId, claimedAt: new Date() },
+        });
+        return tag;
+      });
     } catch (err) {
       throw this.mapUidConflict(err);
     }
   }
 
-  /** Factory batch registration — bulk insert, skipping UIDs that already exist. */
+  /**
+   * Batch registration. Same rule as `create`: every UID must already be in the
+   * platform registry and free, so a bulk paste cannot smuggle in chips the
+   * platform never issued. Unusable UIDs are reported rather than silently
+   * dropped, so the operator can see which ones were rejected and why.
+   */
   async createBatch(tenant: TenantContext, input: CreateTagsBatchInput) {
-    const rows = input.uids.map((uid) => ({
+    const chips = await this.db.nfcChip.findMany({
+      where: { uid: { in: input.uids } },
+    });
+    const byUid = new Map(chips.map((c) => [c.uid, c]));
+
+    const usable: string[] = [];
+    const rejected: { uid: string; reason: string }[] = [];
+
+    for (const uid of input.uids) {
+      const chip = byUid.get(uid);
+      if (!chip) rejected.push({ uid, reason: 'NOT_REGISTERED' });
+      else if (chip.status === 'BLOCKED') rejected.push({ uid, reason: 'BLOCKED' });
+      else if (chip.claimedByOrgId && chip.claimedByOrgId !== tenant.orgId)
+        rejected.push({ uid, reason: 'CLAIMED_BY_ANOTHER_WORKSPACE' });
+      else usable.push(uid);
+    }
+
+    if (usable.length === 0) {
+      return { requested: input.uids.length, created: 0, rejected };
+    }
+
+    const rows = usable.map((uid) => ({
       orgId: tenant.orgId,
       uid,
       hardwareType: input.hardwareType ?? 'CARD',
       batchId: input.batchId,
     }));
+
     const result = await this.limits.guard(
       tenant.orgId,
       'nfcTags',
-      (tx) => tx.nfcTag.createMany({ data: rows, skipDuplicates: true }),
+      async (tx) => {
+        const created = await tx.nfcTag.createMany({ data: rows, skipDuplicates: true });
+        await tx.nfcChip.updateMany({
+          where: { uid: { in: usable } },
+          data: { status: 'CLAIMED', claimedByOrgId: tenant.orgId, claimedAt: new Date() },
+        });
+        return created;
+      },
       rows.length,
     );
-    return { requested: rows.length, created: result.count };
+    return { requested: input.uids.length, created: result.count, rejected };
   }
 
   list(_tenant: TenantContext, filters: { batchId?: string; status?: string }) {
@@ -124,6 +191,14 @@ export class TagsService {
       );
     }
     await this.db.nfcTag.delete({ where: { id } });
+    // The workspace has given the hardware back, so the platform registry must
+    // stop showing it as taken — otherwise the chip could never be re-issued.
+    // Deliberately not done on unassign: unbinding a card leaves the chip with
+    // the same workspace. A BLOCKED chip stays blocked.
+    await this.db.nfcChip.updateMany({
+      where: { uid: tag.uid, status: 'CLAIMED' },
+      data: { status: 'AVAILABLE', claimedByOrgId: null, claimedAt: null },
+    });
     return { id, deleted: true };
   }
 

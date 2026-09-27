@@ -136,9 +136,49 @@ export class AdminController {
     return this.adminService.triggerJobAction(jobId, action, actor.sub);
   }
 
-  @Get('nfc-tags')
-  getNfcTags() {
-    return this.adminService.getNfcTags();
+  // --- Platform chip registry -------------------------------------------
+  // Only hardware registered here can be bound by a workspace, so these are the
+  // most sensitive writes in the console: they decide what physical chips work.
+
+  @Get('nfc-chips')
+  getChips(@Query('status') status?: string, @Query('search') search?: string) {
+    return this.adminService.getChips({ status, search });
+  }
+
+  @Get('nfc-chips/stats')
+  getChipStats() {
+    return this.adminService.getChipStats();
+  }
+
+  /** One chip — what a tap on the admin's phone posts. */
+  @Post('nfc-chips')
+  registerChip(
+    @Body() body: { uid: string; hardwareType?: string; batchId?: string; note?: string },
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.adminService.registerChip(body, actor.sub);
+  }
+
+  @Post('nfc-chips/batch')
+  registerChipBatch(
+    @Body() body: { uids: string[]; hardwareType?: string; batchId?: string },
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.adminService.registerChipBatch(body, actor.sub);
+  }
+
+  @Patch('nfc-chips/:id/status')
+  updateChipStatus(
+    @Param('id') id: string,
+    @Body('status') status: string,
+    @CurrentUser() actor: JwtPayload,
+  ) {
+    return this.adminService.updateChipStatus(id, status, actor.sub);
+  }
+
+  @Delete('nfc-chips/:id')
+  removeChip(@Param('id') id: string, @CurrentUser() actor: JwtPayload) {
+    return this.adminService.removeChip(id, actor.sub);
   }
 
   @Get('audit-logs')

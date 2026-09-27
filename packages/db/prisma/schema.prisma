@@ -75,6 +75,7 @@ model Organization {
   teams          Team[]
   cards          Card[]
   nfcTags        NfcTag[]
+  claimedChips   NfcChip[]
   leads          Lead[]
   pipelineStages PipelineStage[]
   scoringRules   ScoringRule[]
@@ -251,6 +252,39 @@ model CardVariant {
   @@unique([cardId, accessKey])
   @@index([cardId])
   @@map("card_variants")
+}
+
+/// The platform's own stock of physical chips — the list of hardware this
+/// business actually sold or shipped.
+///
+/// It is deliberately NOT tenant-scoped: only a super admin writes to it, and a
+/// workspace can only bind a chip that appears here. That is what stops someone
+/// buying a blank chip anywhere and using it with the product; an unregistered
+/// UID has no row, so `NfcTag` creation is refused.
+model NfcChip {
+  id             String       @id @default(cuid())
+  /// The chip's physical serial, as read over NFC. Unique across the platform.
+  uid            String       @unique
+  hardwareType   HardwareType @default(CARD)
+  /// Manufacturing or purchase batch, for tracing a shipment.
+  batchId        String?
+  status         ChipStatus   @default(AVAILABLE)
+  /// Set when a workspace claims the chip; cleared if it is released.
+  claimedByOrgId String?
+  claimedAt      DateTime?
+  /// The super admin who added it, kept for the audit trail.
+  registeredById String?
+  /// Free-text: order reference, customer, or why it was blocked.
+  note           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  claimedByOrg Organization? @relation(fields: [claimedByOrgId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([batchId])
+  @@index([claimedByOrgId])
+  @@map("nfc_chips")
 }
 
 model NfcTag {
@@ -595,6 +629,16 @@ enum TagStatus {
   UNASSIGNED
   ACTIVE
   DISABLED
+}
+
+/// Where a chip stands in the platform's own inventory.
+enum ChipStatus {
+  /// Registered by the platform and free for a workspace to claim.
+  AVAILABLE
+  /// A workspace has taken it and bound it to one of its cards.
+  CLAIMED
+  /// Withheld — lost, returned, or suspected cloned. Cannot be claimed.
+  BLOCKED
 }
 
 enum HardwareType {
