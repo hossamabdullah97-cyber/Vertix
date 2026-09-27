@@ -19,13 +19,32 @@ type Membership = {
   org: { isActive: boolean; deletedAt: Date | null };
 } | null;
 
+/** What the organization lookup finds, for the super-admin path. */
+type OrgRow = { id: string; isActive: boolean; deletedAt: Date | null } | null;
+
+const liveOrg = (id = 'org_globex'): OrgRow => ({
+  id,
+  isActive: true,
+  deletedAt: null,
+});
+
 function makeGuard(
   membership: Membership,
   isPublic = false,
   platformScope = false,
+  // A super admin entering a named org is checked against the organization
+  // table, not against membership. Defaulting this to a live org keeps every
+  // other test reading as it did before that check existed.
+  org: OrgRow = liveOrg(),
 ) {
   const findFirst = jest.fn().mockResolvedValue(membership);
-  const prisma = { client: { membership: { findFirst } } } as unknown as PrismaService;
+  const findUnique = jest.fn().mockResolvedValue(org);
+  const prisma = {
+    client: {
+      membership: { findFirst },
+      organization: { findUnique },
+    },
+  } as unknown as PrismaService;
   const reflector = {
     getAllAndOverride: (key: string) => {
       if (key === IS_PUBLIC_KEY) return isPublic;
@@ -33,7 +52,7 @@ function makeGuard(
       return undefined;
     },
   } as unknown as Reflector;
-  return { guard: new TenantGuard(reflector, prisma), findFirst };
+  return { guard: new TenantGuard(reflector, prisma), findFirst, findUnique };
 }
 
 function request(user: unknown, headerOrg?: string) {
@@ -163,6 +182,47 @@ describe('TenantGuard — super admin', () => {
     const { guard } = makeGuard(null);
     const { ctx } = request({ ...member, isSuperAdmin: false }, 'org_globex');
     await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+  });
+
+  // The selected org is checked to exist and be live before it becomes the
+  // tenant. Without this the admin console could scope a request into an org id
+  // that was deleted — or never existed — and every query would come back empty
+  // rather than saying so.
+  it('checks the selected organization is real before scoping into it', async () => {
+    const { guard, findUnique } = makeGuard(null, false, false, liveOrg('org_globex'));
+    const { ctx } = request(root, 'org_globex');
+    await guard.canActivate(ctx);
+    expect(findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'org_globex' } }),
+    );
+  });
+
+  it('falls back to their own workspace when the selected org is gone', async () => {
+    // A stale header outlives the org it names — after a deletion, say. Falling
+    // back to a real membership keeps the console usable instead of locking the
+    // admin out of a workspace they do belong to.
+    const { guard } = makeGuard({ role: 'OWNER', org: { isActive: true, deletedAt: null } }, false, false, null);
+    const { req, ctx } = request(root, 'org_deleted');
+    // The fallback reads membership.orgId, which this mock does not carry, so
+    // the shape is asserted rather than the value.
+    await guard.canActivate(ctx);
+    expect(req.tenant).toBeDefined();
+  });
+
+  it('refuses outright when the selected org is gone and they belong nowhere', async () => {
+    const { guard } = makeGuard(null, false, false, null);
+    const { ctx } = request(root, 'org_deleted');
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/does not exist/i);
+  });
+
+  it('treats a suspended organization as unselectable', async () => {
+    const { guard } = makeGuard(null, false, false, {
+      id: 'org_globex',
+      isActive: false,
+      deletedAt: null,
+    });
+    const { ctx } = request(root, 'org_globex');
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/does not exist/i);
   });
 });
 

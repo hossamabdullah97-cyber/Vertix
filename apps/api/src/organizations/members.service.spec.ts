@@ -62,7 +62,17 @@ function makeService(d: Deps = {}) {
     sendAddedNotice: jest.fn().mockResolvedValue(true),
   } as unknown as MailService;
 
-  const limits = { assertWithin: jest.fn() } as unknown as LimitsService;
+  // A seat-consuming write runs inside LimitsService.guard, which hands the
+  // callback a transaction client. The double runs it against the same mocked
+  // client, so the writes it makes stay visible to membershipWrites() — a
+  // `guard` that swallowed the callback would make every assertion below pass
+  // while nothing was written.
+  const limits = {
+    assertWithin: jest.fn(),
+    guard: jest.fn((_orgId: string, _resource: string, fn: (tx: unknown) => unknown) =>
+      fn(prisma.client),
+    ),
+  } as unknown as LimitsService;
   const config = { get: (_k: string, dflt?: string) => dflt ?? 'x' };
   const audit = { log: jest.fn() } as unknown as AuditService;
   const notifications = { notify: jest.fn() } as unknown as NotificationsService;

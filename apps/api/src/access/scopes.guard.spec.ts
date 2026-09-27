@@ -28,9 +28,18 @@ function ctxFor(
 const key = (scopes: string[]): ApiAuth => ({ kind: 'api_key', id: 'k1', scopes });
 
 describe('ScopesGuard', () => {
-  it('allows a route that requires no scopes', () => {
+  // The guard denies by default for machines. A route that declares no scope is
+  // not part of the credential-accessible surface, and TenantGuard grants a
+  // machine principal role OWNER — so letting it through would hand a narrow key
+  // full owner authority. This test used to assert the opposite.
+  it('refuses a machine on a route that declares no scopes', () => {
     const { guard, ctx } = ctxFor({}, key([]));
-    expect(guard.canActivate(ctx)).toBe(true);
+    expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
+  });
+
+  it('refuses a machine even when the route declares an empty scope list', () => {
+    const { guard, ctx } = ctxFor({ scopes: [] }, key(['crm:read']));
+    expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
   });
 
   it('lets a human (no apiAuth) through — roles govern them', () => {
