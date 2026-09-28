@@ -23,6 +23,7 @@ import { IntegrationAnalyticsService } from './integration-analytics.service';
 import { OAuthService } from './oauth.service';
 import { OAuthAppsService } from './oauth-apps.service';
 import { CrmSyncService } from './crm/crm-sync.service';
+import { redirectUri } from './oauth-providers';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -91,8 +92,9 @@ export class IntegrationsController {
   @RequireScopes('integration:read')
   @Roles('OWNER', 'ADMIN')
   @Get(':provider/oauth-app')
-  getOAuthApp(@Tenant() tenant: TenantContext, @Param('provider') provider: string) {
-    return this.oauthApps.present(tenant.orgId, provider);
+  async getOAuthApp(@Tenant() tenant: TenantContext, @Param('provider') provider: string) {
+    // The callback URL is what the owner registers in the provider's app.
+    return { ...(await this.oauthApps.present(tenant.orgId, provider)), redirectUri: redirectUri(this.config) };
   }
 
   /** Registers or updates this org's OWN OAuth app credentials for a provider. */

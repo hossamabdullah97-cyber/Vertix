@@ -8,6 +8,7 @@ import {
   type Condition,
   type MatchType,
 } from './automation-conditions';
+import { webhookBody } from './automation-message';
 
 const ACTION_TIMEOUT_MS = 8000;
 
@@ -196,7 +197,7 @@ export class AutomationService {
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'user-agent': 'VertexConnect-Automations/1' },
-        body: JSON.stringify({ event, ...(payload as object) }),
+        body: JSON.stringify(webhookBody(url, event, payload)),
         signal: controller.signal,
       });
       return {

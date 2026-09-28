@@ -1,31 +1,430 @@
 {
-  "title": "Integrations & Automations",
-  "subtitle": "Connect Vertex Connect to CRMs, webhooks, and third-party workflow tools.",
-  "addWebhook": "Add Webhook",
-  "searchPlaceholder": "Search integrations and webhooks…",
+  "title": "Integrations",
+  "personal": "Integrations belong to an organization. Switch to one from the menu at the top of the sidebar.",
+  "readOnly": "Only owners and admins can change integrations.",
+  "dismiss": "Dismiss",
+  "close": "Close",
+  "cancel": "Cancel",
+  "save": "Save",
+  "saving": "Saving…",
+  "copy": "Copy",
+  "copied": "Copied",
+  "never": "Never",
+  "more": "More actions",
   "tabs": {
-    "overview": "Overview",
-    "marketplace": "Marketplace",
+    "apps": "Apps",
     "automations": "Automations",
     "webhooks": "Webhooks",
-    "keys": "API Keys"
+    "keys": "API keys"
   },
-  "stats": {
-    "deliveries7d": "Deliveries (7d)",
-    "successRate": "Success Rate",
-    "failed": "Failed",
-    "activeKeys": "Active API Keys"
+  "categories": {
+    "all": "All",
+    "crm": "CRM",
+    "marketing": "Marketing",
+    "communication": "Communication",
+    "calendar": "Calendar",
+    "productivity": "Productivity",
+    "storage": "Storage",
+    "automation": "Automation",
+    "analytics": "Analytics",
+    "payments": "Payments"
   },
-  "sections": {
-    "deliveriesPerDay": "Deliveries Per Day",
-    "noDeliveries": "No deliveries in the last 7 days.",
-    "byEvent": "By Event",
-    "noEvents": "No events forwarded yet.",
-    "endpointHealth": "Endpoint Health",
-    "noWebhooks": "No webhook endpoints to monitor yet."
-  },
-  "status": {
+  "apps": {
+    "search": "Search apps",
     "connected": "Connected",
-    "disconnected": "Disconnected"
+    "noMatch": "No apps match “{{q}}”.",
+    "state": {
+      "connected": "Connected",
+      "attention": "Needs attention",
+      "ready": "Ready to connect",
+      "ownApp": "Connect with your own app",
+      "soon": "Coming soon"
+    },
+    "returned": {
+      "connected": "{{name}} is connected.",
+      "failed": "The connection didn't go through: {{error}}"
+    },
+    "account": "Connected as {{account}}",
+    "lastSync": "Last synced {{time}}",
+    "expired": "The connection expired. Reconnect to keep it working.",
+    "soonBody": "A direct connection to {{name}} is on the way.",
+    "viaWebhook": "You can already send events to {{name}} with a webhook.",
+    "viaAutomation": "You can already post new leads to a {{name}} channel with an automation.",
+    "addWebhook": "Add a webhook",
+    "createAutomation": "Create the automation",
+    "access": "What it can access",
+    "connect": "Connect",
+    "connecting": "Connecting…",
+    "reconnect": "Reconnect",
+    "disconnect": "Disconnect",
+    "disconnectTitle": "Disconnect {{name}}?",
+    "disconnectBody": "Vertex Connect stops sending data to {{name}}. What was already sent stays there.",
+    "disconnecting": "Disconnecting…",
+    "ownApp": {
+      "title": "Use your own {{name}} app",
+      "body": "Create an app in {{name}}'s developer settings, add this redirect URL to it, then paste its client ID and secret here.",
+      "redirect": "Redirect URL",
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "secretKept": "Saved. Enter a new one to replace it.",
+      "saved": "App saved. You can connect now.",
+      "remove": "Remove app",
+      "removeTitle": "Remove your {{name}} app?",
+      "removeBody": "Vertex Connect will no longer be able to connect to {{name}} through it.",
+      "removing": "Removing…",
+      "both": "Enter both the client ID and the secret."
+    },
+    "sync": {
+      "title": "Send leads to {{name}}",
+      "auto": "Send each new lead automatically",
+      "mapping": "Fields",
+      "mappingHint": "Which {{name}} property each lead field fills. Leave one empty to skip it.",
+      "notMapped": "Not sent",
+      "now": "Send existing leads now",
+      "running": "Sending…",
+      "result": "Sent {{synced}}, failed {{failed}}.",
+      "recent": "Recent",
+      "none": "Nothing sent yet.",
+      "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "fullName": "Full name",
+        "email": "Email",
+        "phone": "Phone",
+        "company": "Company",
+        "source": "Source",
+        "temperature": "Temperature"
+      }
+    },
+    "descriptions": {
+      "hubspot": "Sync leads and contacts with HubSpot CRM.",
+      "salesforce": "Push leads and meetings into Salesforce.",
+      "zoho_crm": "Two-way contact and lead sync with Zoho CRM.",
+      "pipedrive": "Sync deals and people with Pipedrive.",
+      "dynamics": "Connect leads to Dynamics 365 Sales.",
+      "mailchimp": "Add captured contacts to Mailchimp audiences.",
+      "brevo": "Sync contacts into Brevo (Sendinblue) lists.",
+      "klaviyo": "Push profiles and events to Klaviyo.",
+      "activecampaign": "Sync contacts into ActiveCampaign automations.",
+      "slack": "Send lead and event notifications to a Slack channel.",
+      "ms_teams": "Post workspace events to a Teams channel.",
+      "whatsapp_business": "Notify and message contacts via WhatsApp Business.",
+      "telegram": "Send event notifications via a Telegram bot.",
+      "google_calendar": "Turn meeting requests into calendar events.",
+      "outlook_calendar": "Create events in Microsoft Outlook Calendar.",
+      "calendly": "Link Calendly bookings to leads.",
+      "google_workspace": "Connect Google Workspace directory and contacts.",
+      "microsoft_365": "Connect Microsoft 365 directory and contacts.",
+      "notion": "Log leads into a Notion database.",
+      "trello": "Create Trello cards from new leads.",
+      "asana": "Turn leads into Asana tasks.",
+      "clickup": "Create ClickUp tasks from workspace events.",
+      "google_drive": "Store exported assets in Google Drive.",
+      "onedrive": "Store exported assets in OneDrive.",
+      "dropbox": "Store exported assets in Dropbox.",
+      "zapier": "Trigger Zaps from Vertex Connect events via webhooks.",
+      "make": "Trigger Make scenarios from workspace events.",
+      "n8n": "Trigger n8n workflows from workspace events.",
+      "google_analytics": "Forward card and profile events to GA4.",
+      "google_tag_manager": "Manage tags for public card pages.",
+      "meta_pixel": "Send card events to the Meta Pixel.",
+      "linkedin_insight": "Track card visits with the LinkedIn Insight Tag."
+    },
+    "scopes": {
+      "Contacts": "Contacts",
+      "Companies": "Companies",
+      "Deals": "Deals",
+      "Leads": "Leads",
+      "Events": "Events",
+      "Persons": "People",
+      "Audiences": "Audiences",
+      "Lists": "Lists",
+      "Profiles": "Profiles",
+      "Post messages": "Post messages",
+      "Send messages": "Send messages",
+      "Calendar events": "Calendar events",
+      "Scheduled events": "Scheduled events",
+      "Directory": "Directory",
+      "Databases": "Databases",
+      "Pages": "Pages",
+      "Boards": "Boards",
+      "Cards": "Cards",
+      "Projects": "Projects",
+      "Tasks": "Tasks",
+      "Spaces": "Spaces",
+      "Files": "Files",
+      "Receive events": "Receive events",
+      "Measurement": "Measurement",
+      "Containers": "Containers"
+    }
+  },
+  "events": {
+    "all": "All events",
+    "groups": {
+      "leads": "Leads",
+      "cards": "Cards",
+      "nfc": "NFC chips",
+      "team": "Team"
+    },
+    "lead": {
+      "created": "Lead captured",
+      "updated": "Lead updated"
+    },
+    "meeting": {
+      "requested": "Meeting requested"
+    },
+    "quote": {
+      "requested": "Quote requested"
+    },
+    "card": {
+      "viewed": "Card viewed"
+    },
+    "contact": {
+      "saved": "Contact saved"
+    },
+    "nfc": {
+      "tapped": "NFC chip tapped"
+    },
+    "member": {
+      "added": "Member added"
+    }
+  },
+  "automations": {
+    "intro": "When something happens, check your conditions and act: tell your admins, add a task, or send it to another tool.",
+    "new": "New automation",
+    "edit": "Edit automation",
+    "delete": "Delete",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteBody": "It stops running. Its past runs stay in the log.",
+    "deleting": "Deleting…",
+    "on": "On",
+    "off": "Off",
+    "toggle": "Turn {{name}} on or off",
+    "runs_one": "Ran once",
+    "runs_other": "Ran {{count}} times",
+    "neverRan": "Hasn't run yet",
+    "lastRun": "last {{time}}",
+    "conditions_one": "one condition",
+    "conditions_other": "{{count}} conditions",
+    "emptyTitle": "Automate the follow-up",
+    "emptyBody": "Start from one of these, then adjust it to fit.",
+    "templates": "Start from a template",
+    "templateNames": {
+      "new-lead-notify": "New lead → tell the admins",
+      "new-lead-slack": "New lead → Slack or Zapier",
+      "hot-lead-task": "Hot lead → follow-up task",
+      "nfc-tap-forward": "Chip tapped → your server",
+      "meeting-request-notify": "Meeting requested → tell the admins",
+      "new-member-forward": "New member → your server"
+    },
+    "templateBodies": {
+      "new-lead-notify": "An in-app notification for owners and admins whenever a lead comes in.",
+      "new-lead-slack": "Post each new lead to a Slack channel, or pass it to Zapier, Make or n8n.",
+      "hot-lead-task": "A task due tomorrow whenever a lead arrives marked hot.",
+      "nfc-tap-forward": "Send every chip tap to a URL you choose.",
+      "meeting-request-notify": "Tell your admins as soon as someone asks for a meeting.",
+      "new-member-forward": "Let another system know when someone joins the workspace."
+    },
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Route hot leads",
+      "when": "When",
+      "if": "Only if",
+      "ifHint": "Optional. Without conditions it runs every time.",
+      "match": {
+        "ALL": "All match",
+        "ANY": "Any matches"
+      },
+      "field": "Field",
+      "otherField": "Other field…",
+      "fieldPath": "data.field",
+      "value": "Value",
+      "addCondition": "Add condition",
+      "then": "Then",
+      "addAction": "Add another action",
+      "remove": "Remove",
+      "title": "Title",
+      "message": "Message (optional)",
+      "dueIn": "Due in (days)",
+      "url": "URL",
+      "urlHint": "Slack incoming webhooks get a readable message. Any other URL gets the event as JSON.",
+      "needName": "Give it a name.",
+      "needAction": "Add at least one action.",
+      "needUrl": "Each “Send to a URL” action needs an https address.",
+      "operator": "Comparison"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "company": "Company",
+      "source": "Source",
+      "intent": "Intent",
+      "temperature": "Temperature",
+      "cardSlug": "Card",
+      "slug": "Card",
+      "tagUid": "Chip",
+      "role": "Role",
+      "value": "Deal value",
+      "stageChanged": "Stage changed"
+    },
+    "operators": {
+      "equals": "is",
+      "not_equals": "is not",
+      "contains": "contains",
+      "not_contains": "doesn't contain",
+      "exists": "is filled in",
+      "not_exists": "is empty",
+      "gt": "is more than",
+      "lt": "is less than"
+    },
+    "actions": {
+      "notify": "Notify admins",
+      "task": "Create a task",
+      "webhook": "Send to a URL"
+    },
+    "recent": "Recent runs",
+    "run": {
+      "SUCCESS": "Done",
+      "PARTIAL": "Partly done",
+      "FAILED": "Failed"
+    },
+    "columns": {
+      "automation": "Automation",
+      "event": "Event",
+      "result": "Result",
+      "when": "When"
+    },
+    "removed": "Deleted automation",
+    "actionsShort": {
+      "notify": "Notify",
+      "task": "Task",
+      "webhook": "Send to URL"
+    }
+  },
+  "webhooks": {
+    "intro": "Send signed events to your own server, or to tools like Zapier, Make and n8n.",
+    "add": "Add endpoint",
+    "edit": "Edit endpoint",
+    "stats": {
+      "deliveries": "Deliveries, last 7 days",
+      "success": "Delivered",
+      "failed": "Failed"
+    },
+    "health": {
+      "healthy": "Healthy",
+      "warning": "Some failures",
+      "degraded": "Failing often",
+      "error": "Failing",
+      "idle": "No deliveries yet"
+    },
+    "events_one": "one event",
+    "events_other": "{{count}} events",
+    "allEvents": "all events",
+    "secret": "secret {{hint}}",
+    "enabled": "Sending",
+    "paused": "Paused",
+    "toggle": "Send to {{url}}",
+    "deliveries": "Deliveries",
+    "rotate": "New signing secret",
+    "rotateTitle": "Create a new signing secret?",
+    "rotateBody": "The current secret stops working right away. Update your server with the new one.",
+    "rotating": "Creating…",
+    "delete": "Delete",
+    "deleteTitle": "Delete this endpoint?",
+    "deleteBody": "Events stop going to {{url}}.",
+    "deleting": "Deleting…",
+    "emptyTitle": "No endpoints yet",
+    "emptyBody": "Add a URL and choose the events it should receive.",
+    "form": {
+      "url": "Endpoint URL",
+      "urlHint": "https only; http://localhost works for testing.",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Production server",
+      "events": "Events",
+      "needUrl": "Enter the endpoint's URL.",
+      "needEvents": "Choose at least one event."
+    },
+    "log": {
+      "title": "Deliveries",
+      "empty": "Nothing delivered yet.",
+      "replay": "Send again",
+      "replaying": "Sending…",
+      "attempts_one": "1 attempt",
+      "attempts_other": "{{count}} attempts",
+      "status": {
+        "SUCCESS": "Delivered",
+        "FAILED": "Failed",
+        "PENDING": "Pending"
+      }
+    },
+    "verify": {
+      "title": "Verifying requests",
+      "body": "Each request carries an X-Vertex-Signature header of the form t=<time>,v1=<signature>. The signature is an HMAC-SHA256, made with your signing secret, of the time, a dot, and the raw body."
+    }
+  },
+  "keys": {
+    "intro": "Keys let your own software work with this workspace. Each key can only do what you allow it.",
+    "new": "New key",
+    "columns": {
+      "name": "Name",
+      "key": "Key",
+      "access": "Access",
+      "lastUsed": "Last used"
+    },
+    "createdBy": "By {{name}} · {{date}}",
+    "expires": "Expires {{date}}",
+    "status": {
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "rotate": "Replace key",
+    "rotateTitle": "Replace “{{name}}”?",
+    "rotateBody": "The current key stops working right away and a new one is shown once.",
+    "rotating": "Replacing…",
+    "revoke": "Revoke",
+    "revokeTitle": "Revoke “{{name}}”?",
+    "revokeBody": "Anything using this key loses access right away. This can't be undone.",
+    "revoking": "Revoking…",
+    "delete": "Delete",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteBody": "The key is removed from the list.",
+    "deleting": "Deleting…",
+    "emptyTitle": "No keys yet",
+    "emptyBody": "Create one for each program that needs access, so you can revoke it alone.",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Website sync",
+      "access": "Access",
+      "expires": "Expires",
+      "never": "Never",
+      "days": "In {{count}} days",
+      "year": "In a year",
+      "needName": "Give the key a name.",
+      "needAccess": "Allow at least one kind of access."
+    },
+    "resources": {
+      "cards": "Cards",
+      "crm": "Leads and CRM",
+      "analytics": "Analytics",
+      "nfc": "NFC chips",
+      "qr": "QR codes",
+      "integration": "Integrations"
+    },
+    "levels": {
+      "none": "None",
+      "read": "Read",
+      "write": "Read and write"
+    },
+    "use": {
+      "title": "Using a key",
+      "body": "Send it as a Bearer token in the Authorization header:"
+    }
+  },
+  "secretDialog": {
+    "keyTitle": "Copy your new key",
+    "secretTitle": "Copy the signing secret",
+    "body": "It's shown only this once. Keep it somewhere safe; if it's lost, replace it.",
+    "done": "I've copied it"
   }
 }
