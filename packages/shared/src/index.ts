@@ -41,6 +41,10 @@ export interface UsageSummary {
   limits: PlanDef;
   usage: { cards: number; members: number; nfcTags: number };
   status: string;
+  /** When the paid period ends (renews or lapses), if billing has reported one. */
+  periodEnd: string | null;
+  /** Whether the org has a billing account, i.e. the billing portal can open. */
+  billingAccount: boolean;
 }
 
 export const checkoutSchema = z.object({

@@ -68,6 +68,8 @@ const PATHS: Record<string, string> = {
   shield: 'M12 3l8 3v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6z',
   'arrow-left': 'M19 12H5M11 6l-6 6 6 6',
   refresh: 'M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6',
+  info: 'M12 11v5M12 7.5v.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
+  alert: 'M12 9v4M12 16.5v.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
 };
 
 const ACTION_ICON: Record<string, string> = {

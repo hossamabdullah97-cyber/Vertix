@@ -1,52 +1,94 @@
 {
-  "title": "الاشتراك والفوترة",
-  "subtitle": "رقّ خطتك وراجع حدود استخدام مؤسستك الحالية",
-  "loading": "جارٍ تحميل بيانات الاشتراك…",
-  "successBanner": "تم تحديث الاشتراك بنجاح. شكراً لاختيارك Vertex Connect!",
-  "sandboxBanner": "الفوترة تعمل في بيئة تجريبية محلية — حدود الاشتراك فعّالة لكن الدفع عبر Stripe محاكى.",
+  "title": "الفوترة",
+  "personal": "الخطط خاصة بالمؤسسات. انتقل إلى مؤسسة من القائمة أعلى الشريط الجانبي.",
+  "readOnly": "يمكن للمالكين والمسؤولين فقط تغيير الخطة.",
+  "dismiss": "إغلاق",
+  "notices": {
+    "success": "تم استلام الدفع. ستظهر خطتك الجديدة هنا فور تأكيدها.",
+    "successDone": "أنت الآن على {{plan}}.",
+    "canceled": "أُغلقت صفحة الدفع. لم يُخصم أي مبلغ.",
+    "disabled": "الدفع الإلكتروني غير مُفعّل على هذا الخادم بعد، لذا لا يمكن تغيير الخطة من هنا. حدود خطتك الحالية ما زالت سارية."
+  },
   "current": {
-    "tier": "مستوى الاشتراك الحالي",
-    "planSuffix": "{{name}}",
-    "managePortal": "إدارة بوابة الفوترة"
+    "label": "خطتك",
+    "free": "بدون دفع",
+    "perMonth": "{{price}} شهرياً",
+    "contract": "عقد مخصّص",
+    "paidThrough": "مدفوعة حتى {{date}}",
+    "manage": "إدارة الفوترة",
+    "opening": "جارٍ الفتح…",
+    "pastDue": "لم تتم عملية الدفع الأخيرة. حدّث وسيلة الدفع للحفاظ على {{plan}}.",
+    "updatePayment": "تحديث وسيلة الدفع"
+  },
+  "status": {
+    "ACTIVE": "نشطة",
+    "TRIALING": "تجريبية",
+    "PAST_DUE": "دفعة مستحقة",
+    "CANCELED": "ملغاة"
   },
   "usage": {
     "cards": "البطاقات",
     "members": "الأعضاء",
-    "nfcTags": "تاجات NFC"
+    "nfcTags": "شرائح NFC",
+    "of": "{{used}} من {{limit}}",
+    "unlimited": "{{used}} · بلا حد",
+    "left": "المتبقي: {{count}}",
+    "full": "وصلت إلى الحد",
+    "open": "فتح {{page}}"
   },
+  "nudge": {
+    "cards": "وصلت إلى حد البطاقات في خطتك.",
+    "members": "وصلت إلى حد الأعضاء في خطتك.",
+    "nfcTags": "وصلت إلى حد شرائح NFC في خطتك.",
+    "upTo": "{{plan}} تتيح حتى {{count}}.",
+    "noLimit": "{{plan}} بلا حد."
+  },
+  "plansTitle": "الخطط",
+  "plansHint": "الأسعار بالدولار الأمريكي شهرياً. يسري التغيير فور تأكيد الدفع.",
   "plans": {
     "FREE": "الخطة المجانية",
     "PRO": "الخطة الاحترافية",
     "BUSINESS": "خطة الأعمال",
     "ENTERPRISE": "خطة المؤسسات"
   },
+  "taglines": {
+    "FREE": "بطاقة واحدة للتجربة.",
+    "PRO": "لشخص أو فريق صغير.",
+    "BUSINESS": "للفرق التي توزّع بطاقات كثيرة.",
+    "ENTERPRISE": "للمؤسسات الكبيرة، بعقد."
+  },
   "plan": {
-    "active": "نشطة",
+    "currentPlan": "خطتك الحالية",
     "custom": "مخصّص",
-    "perMonth": "/شهرياً",
-    "unlimited": "عدد غير محدود من",
-    "currentPlan": "خطتك النشطة حالياً",
+    "perMonth": "/ شهرياً",
+    "upgrade": "الترقية إلى {{plan}}",
+    "switchTo": "التحويل إلى {{plan}}",
     "redirecting": "جارٍ التحويل…",
-    "upgradeTo": "الترقية إلى {{name}}",
-    "sandboxDisabled": "بيئة تجريبية — الترقية معطّلة",
-    "contactSales": "تواصل مع فريق مبيعات الشركات",
-    "cards_zero": "البطاقات الرقمية",
-    "cards_one": "بطاقة رقمية",
-    "cards_two": "بطاقة رقمية",
-    "cards_few": "بطاقات رقمية",
-    "cards_many": "بطاقة رقمية",
-    "cards_other": "بطاقة رقمية",
-    "members_zero": "الأعضاء",
-    "members_one": "عضو",
-    "members_two": "عضو",
-    "members_few": "أعضاء",
-    "members_many": "عضواً",
-    "members_other": "عضو",
-    "tags_zero": "التاجات القابلة للبرمجة",
-    "tags_one": "تاج قابل للبرمجة",
-    "tags_two": "تاج قابل للبرمجة",
-    "tags_few": "تاجات قابلة للبرمجة",
-    "tags_many": "تاجاً قابلاً للبرمجة",
-    "tags_other": "تاج قابل للبرمجة"
-  }
+    "contactSales": "تواصل مع المبيعات"
+  },
+  "features": {
+    "cards_zero": "بدون بطاقات",
+    "cards_one": "بطاقة واحدة",
+    "cards_two": "بطاقتان",
+    "cards_few": "{{count}} بطاقات",
+    "cards_many": "{{count}} بطاقة",
+    "cards_other": "{{count}} بطاقة",
+    "cardsUnlimited": "بطاقات بلا حد",
+    "members_zero": "بدون أعضاء",
+    "members_one": "عضو واحد",
+    "members_two": "عضوان",
+    "members_few": "{{count}} أعضاء",
+    "members_many": "{{count}} عضواً",
+    "members_other": "{{count}} عضو",
+    "membersUnlimited": "أعضاء بلا حد",
+    "nfcTags_zero": "بدون شرائح",
+    "nfcTags_one": "شريحة واحدة",
+    "nfcTags_two": "شريحتان",
+    "nfcTags_few": "{{count}} شرائح",
+    "nfcTags_many": "{{count}} شريحة",
+    "nfcTags_other": "{{count}} شريحة",
+    "nfcTagsUnlimited": "شرائح بلا حد",
+    "verified": "شارة التوثيق على بطاقاتك"
+  },
+  "secure": "تتم المدفوعات عبر Stripe. بيانات البطاقة لا تصل إلى Vertex Connect أبداً."
 }
