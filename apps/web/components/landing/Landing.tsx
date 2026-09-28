@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { SALES_MAILTO } from '@/lib/contact';
+import { useStoredTheme } from '@/lib/useStoredTheme';
 import { Icon } from '@/components/Icon';
 import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 import { Header, useSignedIn } from './Header';
@@ -15,16 +15,7 @@ import { Footer } from './Footer';
 import { Contactless, REGISTER, SectionHead, WRAP } from './shared';
 
 export function Landing() {
-  // Follows the theme chosen inside the app, so a returning visitor is not
-  // switched from dark to light on the way in.
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  useEffect(() => {
-    try {
-      if (localStorage.getItem('vertex_theme') === 'dark') setTheme('dark');
-    } catch {
-      // storage unavailable: stay light
-    }
-  }, []);
+  const theme = useStoredTheme();
 
   return (
     <div data-theme={theme} className="min-h-screen bg-canvas text-ink antialiased">
