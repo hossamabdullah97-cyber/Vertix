@@ -60,7 +60,7 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
   return (
     <div className="space-y-6">
       <div className="border-b border-line pb-4">
-        <h2 className="text-[16px] font-extrabold tracking-tight text-ink">{t('reports.title')}</h2>
+        <h2 className="text-[16px] font-semibold text-ink">{t('reports.title')}</h2>
         <p className="text-[12.5px] text-muted">{t('reports.subtitle')}</p>
       </div>
 
@@ -75,13 +75,13 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
       <div className="grid gap-5 md:grid-cols-2">
         {/* Real monthly growth */}
         <div className="v-card p-5">
-          <h3 className="mb-4 flex items-center gap-2.5 text-[14px] font-extrabold tracking-tight text-ink">
+          <h3 className="mb-4 flex items-center gap-2.5 text-[14px] font-semibold text-ink">
             <span className="v-icon-tile !h-8 !w-8"><Icon name="chart-bar" size={15} /></span> {t('reports.growth6m')}
           </h3>
           <div className="flex h-44 items-end justify-between gap-4 pt-2">
             {a.growth.map((g, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-2">
-                <span className="text-[10px] font-bold tabular-nums text-muted">{g.count || ''}</span>
+                <span className="text-[10px] font-semibold tabular-nums text-muted">{g.count || ''}</span>
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${(g.count / maxGrowth) * 100}%` }}
@@ -96,13 +96,13 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
 
         {/* Real funnel */}
         <div className="v-card p-5">
-          <h3 className="mb-4 flex items-center gap-2.5 text-[14px] font-extrabold tracking-tight text-ink">
+          <h3 className="mb-4 flex items-center gap-2.5 text-[14px] font-semibold text-ink">
             <span className="v-icon-tile !h-8 !w-8"><Icon name="gauge" size={15} /></span> {t('reports.funnel')}
           </h3>
           <div className="space-y-3">
             {a.funnel.map((f, i) => (
               <div key={i} className="space-y-1">
-                <div className="flex items-center justify-between text-[11.5px] font-bold">
+                <div className="flex items-center justify-between text-[11.5px] font-semibold">
                   <span className="text-ink">{f.stage}</span>
                   <span className="text-muted">{f.count} · {formatMoney(f.value)}</span>
                 </div>
@@ -122,7 +122,7 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
 
       {/* Real source performance */}
       <div className="v-card p-5">
-        <h3 className="mb-4 flex items-center gap-2.5 text-[14px] font-extrabold tracking-tight text-ink">
+        <h3 className="mb-4 flex items-center gap-2.5 text-[14px] font-semibold text-ink">
           <span className="v-icon-tile !h-8 !w-8"><Icon name="tag" size={15} /></span> {t('reports.sourcePerformance')}
         </h3>
         {a.sources.length === 0 ? (
@@ -133,7 +133,7 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
               <div key={s.source} className="space-y-1">
                 <div className="flex items-center justify-between text-[11.5px]">
                   <span className="font-semibold capitalize text-ink">{s.source.replace(/_/g, ' ')}</span>
-                  <span className="font-bold text-muted">{s.count} · {s.percentage}%</span>
+                  <span className="font-semibold text-muted">{s.count} · {s.percentage}%</span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-canvas">
                   <div className="h-full rounded-full" style={{ width: `${s.percentage}%`, background: 'var(--v-gradient-brand)' }} />

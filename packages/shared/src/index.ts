@@ -41,6 +41,10 @@ export interface UsageSummary {
   limits: PlanDef;
   usage: { cards: number; members: number; nfcTags: number };
   status: string;
+  /** When the paid period ends (renews or lapses), if billing has reported one. */
+  periodEnd: string | null;
+  /** Whether the org has a billing account, i.e. the billing portal can open. */
+  billingAccount: boolean;
 }
 
 export const checkoutSchema = z.object({
@@ -537,3 +541,32 @@ export const resolveApprovalSchema = z.object({
   comment: z.string().max(1000).optional(),
 });
 export type ResolveApprovalInput = z.infer<typeof resolveApprovalSchema>;
+
+// --- Occasions (dated markers on a workspace's charts) ---
+const dayField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-09-20');
+/** Longest occasion, in days: long enough for a season, short of covering every chart. */
+export const OCCASION_MAX_DAYS = 62;
+export const createOccasionSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  startsOn: dayField,
+  endsOn: dayField,
+});
+export type CreateOccasionInput = z.infer<typeof createOccasionSchema>;
+export const updateOccasionSchema = createOccasionSchema.partial();
+export type UpdateOccasionInput = z.infer<typeof updateOccasionSchema>;
+export interface Occasion {
+  id: string;
+  name: string;
+  /** YYYY-MM-DD, inclusive. */
+  startsOn: string;
+  /** YYYY-MM-DD, inclusive. */
+  endsOn: string;
+}
+/** Why a date range cannot be an occasion, or null when it can. */
+export function occasionRangeError(startsOn: string, endsOn: string): string | null {
+  if (endsOn < startsOn) return 'The occasion ends before it starts';
+  const days = (Date.parse(`${endsOn}T00:00:00Z`) - Date.parse(`${startsOn}T00:00:00Z`)) / 86_400_000 + 1;
+  if (!Number.isFinite(days)) return 'Use a date like 2026-09-20';
+  if (days > OCCASION_MAX_DAYS) return `An occasion can last at most ${OCCASION_MAX_DAYS} days`;
+  return null;
+}

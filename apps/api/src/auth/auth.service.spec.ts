@@ -1,6 +1,6 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { AuthService } from './auth.service';
+import { AuthService, SUSPENDED_MESSAGE } from './auth.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { TokensService } from '../mail/tokens.service';
 import type { MailService } from '../mail/mail.service';
@@ -536,5 +536,110 @@ describe('AuthService.getPlanBadge', () => {
       plan: 'FREE',
       verified: false,
     });
+  });
+});
+
+describe('AuthService: who may start a session', () => {
+  const account = { id: 'u1', email: 'omar@acme.co', passwordHash: '' };
+  beforeAll(() => {
+    account.passwordHash = HASH;
+  });
+
+  /** Memberships by status, as the database would answer each lookup. */
+  const byStatus = (rows: Record<string, unknown>) =>
+    jest.fn(async ({ where }: { where: { status?: string } }) => rows[where.status ?? ''] ?? null);
+
+  it('finds the account whatever case the email is typed in, and never a deleted one', async () => {
+    const findFirst = jest.fn().mockResolvedValue(account);
+    const { service } = makeService({ user: { findFirst } });
+    await service.login({ email: '  Omar@Acme.co ', password: PASSWORD });
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { email: { equals: 'Omar@Acme.co', mode: 'insensitive' }, deletedAt: null },
+    });
+  });
+
+  it('opens the oldest workspace the person is still active in', async () => {
+    const findFirst = byStatus({ ACTIVE: { orgId: 'org_active', role: 'MANAGER' } });
+    const { service, signed } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue(account) },
+      membership: { findFirst },
+    });
+    await service.login({ email: account.email, password: PASSWORD });
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'u1', status: 'ACTIVE' }, orderBy: { createdAt: 'asc' } }),
+    );
+    expect(access(signed)).toMatchObject({ orgId: 'org_active', role: 'MANAGER' });
+  });
+
+  it('refuses someone suspended from every workspace, saying so', async () => {
+    const { service, signed } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue(account) },
+      membership: { findFirst: byStatus({ SUSPENDED: { id: 'm1' } }) },
+    });
+    await expect(service.login({ email: account.email, password: PASSWORD })).rejects.toThrow(ForbiddenException);
+    await expect(service.login({ email: account.email, password: PASSWORD })).rejects.toThrow(SUSPENDED_MESSAGE);
+    expect(signed).toHaveLength(0);
+  });
+
+  it('still checks the password before saying an account is suspended', async () => {
+    const { service } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue(account) },
+      membership: { findFirst: byStatus({ SUSPENDED: { id: 'm1' } }) },
+    });
+    await expect(service.login({ email: account.email, password: 'wrong-password' })).rejects.toThrow('Invalid credentials');
+  });
+
+  it('lets a platform admin in even when suspended from their workspaces', async () => {
+    const { service, signed } = makeService({
+      user: {
+        findFirst: jest.fn().mockResolvedValue(account),
+        findUnique: jest.fn().mockResolvedValue({ isSuperAdmin: true }),
+      },
+      membership: { findFirst: byStatus({ SUSPENDED: { id: 'm1' } }) },
+    });
+    await service.login({ email: account.email, password: PASSWORD });
+    expect(access(signed)).toMatchObject({ sub: 'u1', orgId: undefined, isSuperAdmin: true });
+  });
+
+  it('stores a new account in lower case and refuses the same address in another case', async () => {
+    const create = jest.fn().mockResolvedValue({ id: 'u2', email: 'new@acme.co' });
+    const { service } = makeService({ user: { create } });
+    await service.register({ email: ' New@Acme.co', password: PASSWORD, organizationName: 'Acme' });
+    expect(create).toHaveBeenCalledWith({ data: expect.objectContaining({ email: 'new@acme.co' }) });
+
+    const taken = makeService({ user: { findFirst: jest.fn().mockResolvedValue(account) } });
+    await expect(
+      taken.service.register({ email: 'OMAR@acme.co', password: PASSWORD, organizationName: 'Acme' }),
+    ).rejects.toThrow(ConflictException);
+    expect(taken.prisma.client.user.findFirst).toHaveBeenCalledWith({
+      where: { email: { equals: 'omar@acme.co', mode: 'insensitive' } },
+    });
+  });
+
+  it('does not renew the session of a deleted account', async () => {
+    const { service, jwt } = makeService({
+      user: { findUnique: jest.fn().mockResolvedValue({ deletedAt: new Date(), isSuperAdmin: false }) },
+    });
+    jwt.verifyAsync.mockResolvedValue({ sub: 'u1', email: 'a@b.co' });
+    await expect(service.refresh('tok')).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('does not renew the session of someone suspended since signing in', async () => {
+    const { service, jwt } = makeService({
+      membership: { findFirst: byStatus({ SUSPENDED: { id: 'm1' } }) },
+    });
+    jwt.verifyAsync.mockResolvedValue({ sub: 'u1', email: 'a@b.co' });
+    await expect(service.refresh('tok')).rejects.toThrow(ForbiddenException);
+  });
+
+  it('sends the reset link to the address on the account, whatever case was typed', async () => {
+    const findFirst = jest.fn().mockResolvedValue({ id: 'u1', email: 'omar@acme.co' });
+    const { service, mail, tokens } = makeService({ user: { findFirst } });
+    await service.forgotPassword('OMAR@acme.co');
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { email: { equals: 'OMAR@acme.co', mode: 'insensitive' }, deletedAt: null },
+    });
+    expect(tokens.create).toHaveBeenCalledWith(expect.objectContaining({ email: 'omar@acme.co' }));
+    expect((mail.sendPasswordReset as unknown as jest.Mock).mock.calls[0][0]).toBe('omar@acme.co');
   });
 });

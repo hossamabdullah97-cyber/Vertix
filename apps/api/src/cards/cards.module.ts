@@ -6,6 +6,8 @@ import { ActionsService } from './actions.service';
 import { CardVariantsService } from './card-variants.service';
 import { PaymentLinksService } from './payment-links.service';
 import { CardsController } from './cards.controller';
+import { CardPresenceController } from './card-presence.controller';
+import { CardPresenceService } from './card-presence.service';
 import { CardSectionsController } from './sections.controller';
 import { CardActionsController } from './actions.controller';
 import { CardVariantsController } from './card-variants.controller';
@@ -16,13 +18,14 @@ import { PublicCardsController } from './public-cards.controller';
   imports: [BillingModule],
   controllers: [
     CardsController,
+    CardPresenceController,
     CardSectionsController,
     CardActionsController,
     CardVariantsController,
     PaymentLinksController,
     PublicCardsController,
   ],
-  providers: [CardsService, SectionsService, ActionsService, CardVariantsService, PaymentLinksService],
+  providers: [CardsService, SectionsService, ActionsService, CardVariantsService, PaymentLinksService, CardPresenceService],
   exports: [CardsService],
 })
 export class CardsModule {}

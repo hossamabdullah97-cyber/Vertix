@@ -1,33 +1,44 @@
 {
-  "title": "NFC Hardware Management",
-  "subtitle": "Register, configure, and bind physical NFC chips to digital business cards.",
-  "singleTitle": "Single Tag Registration",
-  "singleSub": "Type a UID in by hand — for iPhones, which cannot read NFC in a browser",
-  "uidLabel": "Physical Tag UID",
-  "hardwareLabel": "Hardware Type",
-  "batchLabel": "Batch ID (Optional)",
-  "registerSingleBtn": "Register single chip",
-  "batchTitle": "Batch Factory Import",
-  "batchSub": "Register multiple tags at once from manufacturer data",
-  "batchUidsLabel": "List of UIDs (One per line)",
-  "batchIdLabel": "Batch ID",
-  "importBatchBtn": "Import Batch",
-  "listTitle": "Registered Chips list",
-  "listSub": "Link tags to profile cards below",
-  "allStatuses": "All statuses",
-  "allBatches": "All batches",
-  "filterBatchPlaceholder": "Filter by Batch ID",
-  "emptyStateFilter": "No registered NFC tags match the current filter criteria.",
-  "stats": {
-    "total": "Total Tags",
-    "active": "Active",
-    "unassigned": "Unassigned",
-    "disabled": "Disabled",
-    "totalScans": "Total Scans"
+  "title": "NFC chips",
+  "add": "Add chips",
+  "summary": {
+    "chips_one": "1 chip",
+    "chips_other": "{{value}} chips",
+    "linked_one": "1 linked to a card",
+    "linked_other": "{{value}} linked to cards",
+    "taps_one": "1 tap all time",
+    "taps_other": "{{value}} taps all time"
+  },
+  "filters": {
+    "status": "Filter by status",
+    "all": "All",
+    "ACTIVE": "Linked",
+    "UNASSIGNED": "Not linked",
+    "DISABLED": "Disabled",
+    "batch": "Delivery batch",
+    "allBatches": "All batches"
+  },
+  "search": "Search serial, card or holder",
+  "results_one": "1 result",
+  "results_other": "{{count}} results",
+  "clearFilters": "Clear filters",
+  "empty": {
+    "noMatch": "No chips match these filters."
+  },
+  "table": {
+    "chip": "Chip",
+    "status": "Status",
+    "opens": "Opens",
+    "holder": "Carried by",
+    "taps": "Taps",
+    "lastTap": "Last tap",
+    "actions": "Actions",
+    "notLinked": "Not linked",
+    "never": "Never"
   },
   "status": {
-    "active": "Active",
-    "unassigned": "Unassigned",
+    "active": "Linked",
+    "unassigned": "Not linked",
     "disabled": "Disabled"
   },
   "hardwareType": {
@@ -37,35 +48,95 @@
     "wristband": "Wristband",
     "other": "Other"
   },
-  "batchSuccess": "Batch: {{created}}/{{requested}} tags created successfully.",
-  "tagRow": {
-    "type": "Type:",
-    "batch": "Batch:",
-    "scans": "scans",
-    "last": "Last:",
-    "copyUrl": "Copy tap URL",
+  "actions": {
+    "more": "More actions",
+    "details": "Details",
+    "copyLink": "Copy tap link",
     "copy": "Copy",
-    "simulateTitle": "Simulate NFC Tap (Open redirect in new tab)",
-    "simulateTap": "Simulate Tap",
-    "linkCard": "— Link business card —",
-    "enable": "Enable Tag",
-    "disable": "Disable Tag",
+    "testTap": "Test a tap",
+    "enable": "Enable",
+    "disable": "Disable",
     "delete": "Delete",
-    "holder": "Holder",
-    "noHolder": "nobody",
-    "setHolder": "Give to member"
+    "deleting": "Deleting…",
+    "cancel": "Cancel",
+    "dismiss": "Dismiss",
+    "close": "Close"
   },
-  "emptyState": "No NFC tags registered yet.",
-  "tap": {
-    "title": "Add chips by tapping",
-    "hint": "Hold each chip you bought to the back of the phone. Its serial is read and added to your inventory — nothing is written to the chip. Only chips issued to your workspace can be added.",
-    "insecure": "Reading chips needs a secure (HTTPS) page.",
-    "unsupported": "This browser cannot read NFC — iPhone does not allow it at all. Use Chrome on Android, or enter the UID by hand below.",
-    "start": "Start reading chips",
-    "stop": "Stop",
-    "holdChip": "Hold a chip to the phone…",
+  "toasts": {
+    "linkCopied": "Tap link copied.",
+    "copyFailed": "Couldn’t copy the link.",
+    "enabled": "Chip enabled.",
+    "disabled": "Chip disabled.",
+    "linked": "Chip linked.",
+    "unlinked": "Chip unlinked.",
+    "holderSet": "Holder updated.",
+    "deleted": "Chip deleted."
+  },
+  "delete": {
+    "title": "Delete this chip?",
+    "body": "It leaves your inventory and a tap on it stops opening anything. Its past taps stay in Analytics."
+  },
+  "details": {
+    "added": "Added {{date}}",
+    "status": "Status",
+    "disabledNote": "A disabled chip opens nothing when tapped. Enable it to bring it back.",
+    "opens": "Opens",
+    "opensHint": "Tapping the chip opens this card. You can change it at any time without rewriting the chip.",
+    "noCard": "Nothing, not linked",
+    "holder": "Carried by",
+    "holderHint": "Taps and leads from this chip count for this person in Analytics.",
+    "noHolder": "Nobody",
+    "tapLink": "Tap link",
+    "tapLinkHint": "This is the address written on the chip. It stays the same whichever card the chip opens."
+  },
+  "addSheet": {
+    "title": "Add chips",
+    "subtitle": "Only chips issued to your workspace can be added.",
+    "how": "How to add",
+    "modes": {
+      "tap": "Tap",
+      "type": "Type",
+      "paste": "Paste a list"
+    },
+    "hardware": "Type",
+    "batch": "Delivery batch",
+    "batchPlaceholder": "Optional",
+    "holder": "Give to",
+    "adding": "Adding…",
     "added": "Added",
-    "forMember": "For member",
-    "noMember": "Unassigned"
+    "log": "This session",
+    "tap": {
+      "insecure": "Reading chips needs a secure (HTTPS) page.",
+      "unsupported": "This browser can’t read chips. It works in Chrome on Android; iPhone doesn’t allow it in any browser, so type the serial instead.",
+      "hint": "Hold each chip to the back of the phone. Its serial is read and added; nothing is written to the chip.",
+      "listening": "Hold a chip to the phone…",
+      "stop": "Stop",
+      "start": "Start reading chips"
+    },
+    "type": {
+      "uid": "Serial (UID)",
+      "hint": "Printed on the chip’s packaging or its delivery sheet.",
+      "add": "Add chip"
+    },
+    "paste": {
+      "uids": "Serials, one per line",
+      "hint": "From the delivery sheet. Chips that can’t be added are listed with the reason.",
+      "add": "Add chips",
+      "result": "Added {{created}} of {{requested}}.",
+      "reasons": {
+        "NOT_REGISTERED": "Not issued by Vertex Connect",
+        "BLOCKED": "Blocked",
+        "ISSUED_TO_ANOTHER_WORKSPACE": "Issued to another workspace"
+      }
+    }
+  },
+  "first": {
+    "title": "Add your first chips",
+    "body": "A chip is the physical card, sticker or keychain people tap with their phone. Each one opens the card you link it to.",
+    "steps": {
+      "add": "Add the chips you received",
+      "link": "Link each one to a card",
+      "tap": "Hand them out and tap"
+    }
   }
 }

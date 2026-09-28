@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 @import '../design-system/styles/system.css';
 
 @tailwind base;
@@ -6,74 +6,81 @@
 @tailwind utilities;
 
 /* ============================================================================
-   Vertex Connect — Premium Design System v3
-   Inspired by Apple (acrylic depth, clean gradients), Google Material 3
-   (harmonious states, shape comfort), and Microsoft Fluent 2 (light restraint).
+   Vertex Connect — interface foundation
+   Warm neutrals, one flat accent, hairline structure. The accent marks what
+   can be acted on (primary buttons, the active item, the current data series)
+   and nothing else, so there are no gradients, glows or coloured icon tiles.
+   Geist and IBM Plex Sans Arabic carry Latin and Arabic text; Geist Mono is
+   for identifiers (chip UIDs, slugs) and every number uses tabular figures.
    ============================================================================ */
 :root {
-  /* Neutrals — Linear-grade cool precision palette */
-  --v-bg: 220 24% 97.5%;
-  --v-surface: 0 0% 100%;
-  --v-elevated: 220 22% 98.5%;
-  --v-fg: 224 22% 8%;
-  --v-muted: 220 9% 45%;
-  --v-faint: 220 11% 64%;
-  --v-border: 220 17% 91%;
-  --v-border-strong: 220 15% 83%;
+  /* Neutrals (HSL triplets, consumed as hsl(var(--v-*)) and by Tailwind) */
+  --v-bg: 45 13% 94%; /* app canvas, behind the sidebar and the content sheet */
+  --v-surface: 0 0% 100%; /* sheets, panels, inputs */
+  --v-elevated: 45 14% 97%; /* quiet fills: table headers, inactive tabs, hover */
+  --v-fg: 240 6% 10%;
+  --v-muted: 250 3% 38%;
+  --v-faint: 249 3% 59%;
+  --v-border: 43 14% 90%;
+  --v-border-strong: 42 12% 84%;
+  /* Aliases a few components read directly. */
+  --v-canvas: var(--v-bg);
+  --v-ink: var(--v-fg);
 
-  /* Brand — Royal Blue with Stripe-style gradient depth */
-  --v-accent: #2563eb; /* Premium Royal Blue */
-  --v-accent-hover: #1d4ed8;
+  /* Accent — the brand blue, always flat */
+  --v-accent: #2563eb;
+  --v-accent-hover: #1e54d6;
   --v-accent-rgb: 37, 99, 235;
+  --v-accent-ch: 37 99 235; /* same colour as channels, for Tailwind opacity */
   --v-accent-soft: rgba(37, 99, 235, 0.08);
   --v-accent-contrast: #ffffff;
-  --v-gradient-brand: linear-gradient(135deg, #3b82f6 0%, #2563eb 48%, #1d4ed8 100%);
-  --v-gradient-hero: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-  --v-gradient-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+  /* Kept for callers that still paint with these names; both are the flat accent. */
+  --v-gradient-brand: var(--v-accent);
+  --v-gradient-hero: var(--v-accent);
+  --v-gradient-sheen: none;
   /* Legacy alias — some components reference --ds-accent; keep it on-brand. */
   --ds-accent: var(--v-accent);
   --ds-accent-contrast: var(--v-accent-contrast);
 
-  /* Radius scale */
-  --v-radius-sm: 10px;
-  --v-radius: 12px;
-  --v-radius-lg: 16px;
-  --v-radius-xl: 20px;
+  /* Shape */
+  --v-radius-sm: 6px;
+  --v-radius: 8px;
+  --v-radius-lg: 12px;
+  --v-radius-xl: 14px;
 
-  /* Elevation — subtle by default (Linear), rich glow for brand (Stripe) */
-  --v-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 1px rgba(16, 24, 40, 0.03);
-  --v-shadow-md: 0 4px 16px -4px rgba(16, 24, 40, 0.06), 0 2px 6px -2px rgba(16, 24, 40, 0.04);
-  --v-shadow-lg: 0 18px 40px -12px rgba(16, 24, 40, 0.12), 0 6px 14px -6px rgba(16, 24, 40, 0.06);
-  --v-shadow-xl: 0 32px 64px -16px rgba(16, 24, 40, 0.18), 0 10px 24px -10px rgba(16, 24, 40, 0.08);
-  --v-shadow-accent: 0 10px 28px -8px rgba(37, 99, 235, 0.42);
-  --v-ring: 0 0 0 3px var(--v-accent-soft);
+  /* Elevation — a hairline ring does the work; shadow only separates layers */
+  --v-shadow-sm: 0 0 0 1px rgba(23, 23, 26, 0.04), 0 1px 2px rgba(23, 23, 26, 0.04);
+  --v-shadow-md: 0 0 0 1px rgba(23, 23, 26, 0.05), 0 4px 16px -8px rgba(23, 23, 26, 0.1);
+  --v-shadow-lg: 0 0 0 1px rgba(23, 23, 26, 0.06), 0 12px 32px -8px rgba(23, 23, 26, 0.16),
+    0 4px 8px -4px rgba(23, 23, 26, 0.06);
+  --v-shadow-xl: 0 0 0 1px rgba(23, 23, 26, 0.06), 0 24px 48px -12px rgba(23, 23, 26, 0.22);
+  --v-shadow-accent: 0 1px 2px rgba(30, 84, 214, 0.3);
+  --v-ring: 0 0 0 3px rgba(37, 99, 235, 0.18);
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  /* Obsidian neutrals — deep, cool, Linear-dark */
-  --v-bg: 225 18% 5%;
-  --v-surface: 225 14% 8%;
-  --v-elevated: 225 13% 11%;
-  --v-fg: 210 20% 98%;
-  --v-muted: 220 10% 64%;
-  --v-faint: 220 9% 44%;
-  --v-border: 225 11% 15%;
-  --v-border-strong: 225 10% 22%;
+  --v-bg: 240 7% 6%;
+  --v-surface: 240 5% 9%;
+  --v-elevated: 240 5% 11%;
+  --v-fg: 240 5% 93%;
+  --v-muted: 240 4% 64%;
+  --v-faint: 240 4% 45%;
+  --v-border: 240 5% 16%;
+  --v-border-strong: 240 6% 21%;
 
-  --v-accent: #60a5fa; /* Soft Sky Blue for Dark Mode */
-  --v-accent-hover: #93c5fd;
-  --v-accent-rgb: 96, 165, 250;
-  --v-accent-soft: rgba(96, 165, 250, 0.14);
-  --v-gradient-brand: linear-gradient(135deg, #60a5fa 0%, #3b82f6 55%, #4f46e5 100%);
-  --v-gradient-hero: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
-  --v-gradient-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0));
+  --v-accent: #3572f0;
+  --v-accent-hover: #4a82f3;
+  --v-accent-rgb: 53, 114, 240;
+  --v-accent-ch: 53 114 240;
+  --v-accent-soft: rgba(53, 114, 240, 0.16);
 
-  --v-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --v-shadow-md: 0 4px 20px -4px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
-  --v-shadow-lg: 0 20px 44px -12px rgba(0, 0, 0, 0.6), 0 6px 16px -6px rgba(0, 0, 0, 0.4);
-  --v-shadow-xl: 0 34px 68px -18px rgba(0, 0, 0, 0.7), 0 12px 26px -10px rgba(0, 0, 0, 0.5);
-  --v-shadow-accent: 0 10px 30px -8px rgba(96, 165, 250, 0.4);
+  --v-shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --v-shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  --v-shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 16px 40px -12px rgba(0, 0, 0, 0.6);
+  --v-shadow-xl: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+  --v-shadow-accent: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --v-ring: 0 0 0 3px rgba(53, 114, 240, 0.3);
   color-scheme: dark;
 }
 
@@ -87,24 +94,39 @@ body {
 body {
   background: hsl(var(--v-bg));
   color: hsl(var(--v-fg));
-  font-family: 'Plus Jakarta Sans', 'Inter', 'Cairo', -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", sans-serif;
-}
-
-/* Arabic / RTL uses Cairo (Latin still falls back to Jakarta above). */
-[dir='rtl'] {
-  font-family: 'Cairo', 'Plus Jakarta Sans', -apple-system, sans-serif;
+  font-family: 'Geist', 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-feature-settings: 'ss01' on;
+  letter-spacing: -0.003em;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
+/* Arabic leads with Plex Sans Arabic, digits included, so a line of Arabic
+   never mixes two families; Geist remains the fallback. */
+[dir='rtl'],
+[dir='rtl'] body {
+  font-family: 'IBM Plex Sans Arabic', 'Geist', -apple-system, sans-serif;
+  letter-spacing: 0;
+}
+
 ::selection {
-  background: var(--v-accent);
-  color: var(--v-accent-contrast);
+  background: rgba(var(--v-accent-rgb), 0.18);
+  color: inherit;
+}
+
+/* Numbers line up in columns everywhere they are compared. */
+.tabular,
+.v-stat-value,
+.v-table td {
+  font-variant-numeric: tabular-nums;
 }
 
 .v-display {
-  letter-spacing: -0.025em;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.022em;
+}
+[dir='rtl'] .v-display {
+  letter-spacing: 0;
 }
 
 /* --- Surfaces --------------------------------------------------------- */
@@ -112,72 +134,35 @@ body {
   background: hsl(var(--v-surface));
   border: 1px solid hsl(var(--v-border));
   border-radius: var(--v-radius-lg);
-  box-shadow: var(--v-shadow-sm);
-  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.v-card-hover:hover {
-  border-color: hsl(var(--v-border-strong));
-  box-shadow: var(--v-shadow-lg);
-  transform: translateY(-2px);
-}
-
-/* Brand hero surface — Stripe-style gradient panel */
-.v-hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--v-radius-lg);
-  background: var(--v-gradient-hero);
-  color: #fff;
-  box-shadow: var(--v-shadow-lg);
-}
-.v-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--v-gradient-sheen);
-  pointer-events: none;
-}
-.v-hero::after {
-  content: '';
-  position: absolute;
-  top: -40%;
-  inset-inline-end: -10%;
-  width: 60%;
-  height: 180%;
-  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.16), transparent);
-  pointer-events: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .v-glass {
-  background: hsl(var(--v-surface) / 0.72);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border-bottom: 1px solid hsl(var(--v-border) / 0.7);
+  background: hsl(var(--v-surface) / 0.85);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid hsl(var(--v-border));
 }
 
 /* --- Controls ---------------------------------------------------------- */
 .v-field {
   width: 100%;
   /* 44px on touch-sized screens so fields clear the minimum tap target;
-     back to the tighter 40px desktop rhythm from `sm` up. */
+     back to the tighter desktop rhythm from `sm` up. */
   height: 2.75rem;
-  padding-inline: 0.85rem;
+  padding-inline: 0.75rem;
   font-size: 0.875rem;
   color: hsl(var(--v-fg));
   background: hsl(var(--v-surface));
-  border: 1px solid hsl(var(--v-border));
+  border: 1px solid hsl(var(--v-border-strong));
   border-radius: var(--v-radius);
   outline: none;
-  box-shadow: var(--v-shadow-sm);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 @media (min-width: 640px) {
   .v-field {
-    height: 2.5rem;
+    height: 2.25rem;
   }
 }
 
@@ -185,105 +170,101 @@ body {
   color: hsl(var(--v-faint));
 }
 
+.v-field:hover {
+  border-color: hsl(var(--v-faint) / 0.7);
+}
+
 .v-field:focus {
   border-color: var(--v-accent);
-  box-shadow: 0 0 0 3px var(--v-accent-soft), var(--v-shadow-sm);
+  box-shadow: var(--v-ring);
 }
 
 textarea.v-field {
   height: auto;
-  padding-block: 0.65rem;
+  padding-block: 0.6rem;
+  line-height: 1.5;
 }
 
 .v-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   /* 44px tap target on phones; the tighter desktop height returns at sm. */
   height: 2.75rem;
-  padding-inline: 1.15rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  padding-inline: 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
   white-space: nowrap;
-  border-radius: var(--v-radius-sm);
-  background: var(--v-gradient-brand);
+  border-radius: var(--v-radius);
+  background: var(--v-accent);
   color: var(--v-accent-contrast);
-  box-shadow: var(--v-shadow-sm), var(--v-shadow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(29, 78, 216, 0.55);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px var(--v-accent-hover),
+    0 1px 2px rgba(30, 84, 214, 0.25);
+  transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
   cursor: pointer;
 }
 
 @media (min-width: 640px) {
   .v-btn {
-    height: 2.5rem;
+    height: 2.125rem;
   }
 }
 
 .v-btn:hover {
-  filter: brightness(1.05) saturate(1.05);
-  transform: translateY(-1px);
-  box-shadow: var(--v-shadow-md), var(--v-shadow-accent), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  background: var(--v-accent-hover);
 }
 
 .v-btn:active {
-  transform: translateY(0) scale(0.985);
-  filter: brightness(0.97);
+  transform: translateY(0.5px);
 }
 
 .v-btn:focus-visible {
   outline: none;
-  box-shadow: var(--v-ring), var(--v-shadow-accent);
+  box-shadow: var(--v-ring);
 }
 
 .v-btn:disabled {
   opacity: 0.5;
   pointer-events: none;
-  transform: none;
 }
 
 .v-btn-ghost {
   background: hsl(var(--v-surface));
   color: hsl(var(--v-fg));
-  border: 1px solid hsl(var(--v-border));
-  box-shadow: var(--v-shadow-sm);
+  box-shadow: inset 0 0 0 1px hsl(var(--v-border-strong)), 0 1px 1px rgba(23, 23, 26, 0.04);
 }
 
 .v-btn-ghost:hover {
-  filter: none;
   background: hsl(var(--v-elevated));
-  border-color: hsl(var(--v-border-strong));
   color: hsl(var(--v-fg));
-  transform: translateY(-1px);
-  box-shadow: var(--v-shadow-md);
 }
 
 .v-btn-ghost:focus-visible {
-  box-shadow: var(--v-ring);
+  box-shadow: inset 0 0 0 1px hsl(var(--v-border-strong)), var(--v-ring);
 }
 
 .v-btn-danger {
-  background: #ef4444;
-  border-color: #dc2626;
+  background: #c8322a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px #b42318;
 }
 .v-btn-danger:hover {
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  background: #b42318;
 }
 
 .v-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.3rem 0.75rem;
+  padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 999px;
-  border: 1px solid hsl(var(--v-border));
+  font-weight: 500;
+  border-radius: var(--v-radius-sm);
+  border: 1px solid hsl(var(--v-border-strong));
   color: hsl(var(--v-muted));
   background: hsl(var(--v-surface));
-  transition: all 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 /* --- Nav --------------------------------------------------------------- */
@@ -291,15 +272,14 @@ textarea.v-field {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  height: 2.375rem;
-  padding-inline: 0.7rem;
-  border-radius: var(--v-radius-sm);
-  font-size: 0.85rem;
+  gap: 0.625rem;
+  height: 2rem;
+  padding-inline: 0.5rem;
+  border-radius: var(--v-radius);
+  font-size: 0.84375rem;
   font-weight: 500;
   color: hsl(var(--v-muted));
-  transition: background 0.16s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .v-nav-item:hover {
@@ -308,37 +288,9 @@ textarea.v-field {
 }
 
 .v-nav-item[data-active='true'] {
-  background: var(--v-accent-soft);
-  color: var(--v-accent);
-  font-weight: 600;
-}
-
-/* Accent rail on the active nav item — Linear signature */
-.v-nav-item[data-active='true']::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: -0.7rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 1.1rem;
-  border-radius: 999px;
-  background: var(--v-accent);
-}
-
-/* --- Animated background for login --- */
-@keyframes mesh-pulse {
-  0% { transform: scale(1) translate(0px, 0px) rotate(0deg); }
-  33% { transform: scale(1.15) translate(30px, -50px) rotate(120deg); }
-  66% { transform: scale(0.9) translate(-20px, 20px) rotate(240deg); }
-  100% { transform: scale(1) translate(0px, 0px) rotate(360deg); }
-}
-
-.animate-mesh-1 {
-  animation: mesh-pulse 18s ease-in-out infinite alternate;
-}
-.animate-mesh-2 {
-  animation: mesh-pulse 24s ease-in-out infinite alternate-reverse;
+  background: hsl(var(--v-surface));
+  color: hsl(var(--v-fg));
+  box-shadow: var(--v-shadow-sm);
 }
 
 /* --- iPhone Mock Frame --- */
@@ -407,63 +359,51 @@ textarea.v-field {
 *::-webkit-scrollbar-track { background: transparent; }
 
 /* ============================================================================
-   Primitives v4 — professional SaaS building blocks
-   Linear-grade precision + Stripe-grade depth. Consumed across pages.
+   Primitives shared across pages
    ============================================================================ */
 
-/* Metric / KPI card */
+/* Metric */
 .v-stat {
   position: relative;
   overflow: hidden;
-  padding: 1.15rem 1.25rem;
+  padding: 1rem 1.125rem;
   background: hsl(var(--v-surface));
   border: 1px solid hsl(var(--v-border));
   border-radius: var(--v-radius-lg);
-  box-shadow: var(--v-shadow-sm);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-.v-stat:hover {
-  border-color: hsl(var(--v-border-strong));
-  box-shadow: var(--v-shadow-md);
-  transform: translateY(-1px);
 }
 .v-stat-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: hsl(var(--v-faint));
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: hsl(var(--v-muted));
 }
 .v-stat-value {
-  margin-top: 0.35rem;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.75rem;
+  margin-top: 0.4rem;
+  font-size: 1.625rem;
   line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   color: hsl(var(--v-fg));
 }
 [dir='rtl'] .v-stat-value { letter-spacing: normal; }
 
-/* Icon tile — gradient chip for card/section headers */
+/* Icon tile — a quiet container for a section or row icon */
 .v-icon-tile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--v-radius-sm);
-  background: var(--v-gradient-brand);
-  color: #fff;
-  box-shadow: var(--v-shadow-accent);
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: var(--v-radius);
+  background: hsl(var(--v-elevated));
+  color: hsl(var(--v-muted));
+  box-shadow: inset 0 0 0 1px hsl(var(--v-border));
 }
 
-/* Section eyebrow label */
+/* Section label */
 .v-section-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  font-weight: 500;
   color: hsl(var(--v-faint));
 }
 
@@ -472,57 +412,52 @@ textarea.v-field {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  line-height: 1.4;
-  border-radius: 999px;
+  padding: 0.0625rem 0.4rem;
+  font-size: 0.71875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: 5px;
   border: 1px solid transparent;
 }
 .v-badge-accent {
   color: var(--v-accent);
   background: var(--v-accent-soft);
-  border-color: color-mix(in srgb, var(--v-accent) 22%, transparent);
 }
 .v-badge-success {
-  color: #047857;
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.24);
+  color: #12784a;
+  background: #eaf6ef;
 }
 .v-badge-warning {
-  color: #b45309;
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.26);
+  color: #9a5b07;
+  background: #fdf3e4;
 }
 .v-badge-danger {
-  color: #be123c;
-  background: rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.24);
+  color: #b42318;
+  background: #fdedeb;
 }
 .v-badge-neutral {
   color: hsl(var(--v-muted));
   background: hsl(var(--v-fg) / 0.05);
-  border-color: hsl(var(--v-border));
 }
-[data-theme='dark'] .v-badge-success { color: #6ee7b7; }
-[data-theme='dark'] .v-badge-warning { color: #fcd34d; }
-[data-theme='dark'] .v-badge-danger { color: #fda4af; }
+[data-theme='dark'] .v-badge-success { color: #4cc38a; background: #13261c; }
+[data-theme='dark'] .v-badge-warning { color: #e3a24a; background: #2a2114; }
+[data-theme='dark'] .v-badge-danger { color: #f07a6e; background: #2e1716; }
 
 /* Keyboard hint */
 .v-kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  padding-inline: 0.35rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: hsl(var(--v-muted));
-  background: hsl(var(--v-elevated));
-  border: 1px solid hsl(var(--v-border));
-  border-bottom-width: 2px;
-  border-radius: 6px;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding-inline: 0.3rem;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: hsl(var(--v-faint));
+  background: hsl(var(--v-surface));
+  border: 1px solid hsl(var(--v-border-strong));
+  border-radius: 5px;
 }
 
 /* Table shell */
@@ -530,31 +465,27 @@ textarea.v-field {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
 }
 .v-table thead th {
-  padding: 0.7rem 1rem;
+  padding: 0.6rem 1rem;
   text-align: start;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: hsl(var(--v-faint));
-  background: hsl(var(--v-elevated));
+  background: hsl(var(--v-surface));
   border-bottom: 1px solid hsl(var(--v-border));
 }
-.v-table thead th:first-child { border-start-start-radius: var(--v-radius); }
-.v-table thead th:last-child { border-start-end-radius: var(--v-radius); }
 .v-table tbody td {
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid hsl(var(--v-border) / 0.7);
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid hsl(var(--v-border));
   color: hsl(var(--v-fg));
 }
 .v-table tbody tr {
-  transition: background 0.15s ease;
+  transition: background 0.12s ease;
 }
 .v-table tbody tr:hover td {
-  background: hsl(var(--v-fg) / 0.025);
+  background: hsl(var(--v-elevated));
 }
 .v-table tbody tr:last-child td { border-bottom: none; }
 

@@ -7,10 +7,11 @@ import type { Locale } from '@/lib/i18n/config';
 
 const localeTag: Record<Locale, string> = {
   // Arabic-Egypt with Latin digits keeps numbers readable while localizing
-  // month/day names; swap to 'ar-EG' (default) if Arabic-Indic digits are
-  // desired platform-wide.
+  // month/day names; drop the `-u-nu-latn` extension if Arabic-Indic digits
+  // are desired platform-wide. Without it, ar-EG formats ٣٠ rather than 30,
+  // which disagreed with every number interpolated straight into a string.
   en: 'en-US',
-  ar: 'ar-EG',
+  ar: 'ar-EG-u-nu-latn',
 };
 
 export function formatDate(
@@ -38,10 +39,14 @@ export function formatDateTime(date: Date | string | number, locale: Locale): st
 }
 
 /** Relative time, e.g. "3 days ago" / "منذ ٣ أيام". */
-export function formatRelativeTime(date: Date | string | number, locale: Locale): string {
+export function formatRelativeTime(
+  date: Date | string | number,
+  locale: Locale,
+  style: Intl.RelativeTimeFormatStyle = 'long',
+): string {
   const d = date instanceof Date ? date : new Date(date);
   if (Number.isNaN(d.getTime())) return '';
-  const rtf = new Intl.RelativeTimeFormat(localeTag[locale], { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat(localeTag[locale], { numeric: 'auto', style });
   const diffMs = d.getTime() - Date.now();
   const abs = Math.abs(diffMs);
   const units: [Intl.RelativeTimeFormatUnit, number][] = [

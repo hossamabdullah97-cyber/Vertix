@@ -6,6 +6,8 @@ import {
   Plan,
   isPaidPlan,
   trackEventSchema,
+  createOccasionSchema,
+  occasionRangeError,
 } from './index';
 
 describe('registerSchema', () => {
@@ -78,5 +80,23 @@ describe('isPaidPlan', () => {
       expect(typeof isPaidPlan(plan)).toBe('boolean');
     }
     expect(Plan.options.filter(isPaidPlan)).toEqual(['PRO', 'BUSINESS', 'ENTERPRISE']);
+  });
+});
+
+describe('occasions', () => {
+  it('accepts a range of whole days, one day included', () => {
+    expect(occasionRangeError('2026-09-19', '2026-09-21')).toBeNull();
+    expect(occasionRangeError('2026-09-20', '2026-09-20')).toBeNull();
+  });
+
+  it('refuses an end before the start, and a range longer than the limit', () => {
+    expect(occasionRangeError('2026-09-21', '2026-09-20')).toMatch(/ends before/);
+    expect(occasionRangeError('2026-01-01', '2026-12-31')).toMatch(/at most 62 days/);
+  });
+
+  it('takes dates as YYYY-MM-DD only', () => {
+    expect(createOccasionSchema.safeParse({ name: 'Expo', startsOn: '2026-09-19', endsOn: '2026-09-21' }).success).toBe(true);
+    expect(createOccasionSchema.safeParse({ name: 'Expo', startsOn: '19/09/2026', endsOn: '2026-09-21' }).success).toBe(false);
+    expect(createOccasionSchema.safeParse({ name: '  ', startsOn: '2026-09-19', endsOn: '2026-09-21' }).success).toBe(false);
   });
 });

@@ -1,122 +1,154 @@
+/**
+ * Strings for the public profile. They follow the card's own language, not
+ * the visitor's app settings, so they live apart from the dashboard locales.
+ */
 export type Lang = 'en' | 'ar';
 
-export interface ProfileStrings {
-  save: string;
-  saving: string;
-  saved: string;
-  connect: string;
-  meeting: string;
-  quote: string;
-  pickDay: string;
-  time: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  company: string;
-  shareDetails: string;
-  requestMeeting: string;
-  requestQuote: string;
-  sending: string;
-  doneContact: string;
-  doneMeeting: string;
-  doneQuote: string;
-  followup: string;
-  scanToConnect: string;
-  pointCamera: string;
-  poweredBy: string;
-  noteOptional: string;
-  quotePlaceholder: string;
-  readMore: string;
-  showLess: string;
-  share: string;
-  copyLink: string;
-  copied: string;
-  linkCopied: string;
-  available: string;
-  respondsIn: string;
-  connectTitle: string;
-  aboutTitle: string;
-  paymentsTitle: string;
-}
-
-const EN: ProfileStrings = {
+const EN = {
+  yourName: 'Your name',
   save: 'Save contact',
   saving: 'Preparing…',
-  saved: 'Saved to your phone',
-  connect: 'Connect',
-  meeting: 'Meeting',
-  quote: 'Quote',
-  pickDay: 'Pick a day',
-  time: 'Time',
+  saved: 'Saved',
+  exchange: 'Exchange',
+  share: 'Share',
+  close: 'Close',
+  verified: 'Verified',
+  available: 'Available now',
+  respondsIn: 'Replies in {{time}}',
+  about: 'About',
+  readMore: 'Read more',
+  showLess: 'Show less',
+  links: 'Links',
+  payments: 'Payments',
+  open: 'Open',
+  poweredBy: 'Made with',
+  profileTag: 'Profile',
+
+  // Share sheet
+  shareTitle: 'Share this card',
+  shareHint: 'Scan with any phone camera, or send the link.',
+  copyLink: 'Copy link',
+  linkCopied: 'Link copied',
+  shareVia: 'Share via…',
+
+  // Exchange sheet
+  exchangeTitle: 'Share your details with {{name}}',
+  exchangeHint: 'They get your details right away and can reply.',
+  intents: { CONTACT: 'My details', MEETING: 'Meeting', QUOTE: 'Quote' },
   fullName: 'Full name',
   email: 'Email',
   phone: 'Phone',
   company: 'Company',
-  shareDetails: 'Share my details',
-  requestMeeting: 'Request meeting',
-  requestQuote: 'Request a quote',
+  optional: 'optional',
+  pickDay: 'Day',
+  time: 'Time',
+  note: 'Note',
+  quoteNote: 'What do you need a quote for?',
+  send: { CONTACT: 'Send my details', MEETING: 'Request meeting', QUOTE: 'Request quote' },
   sending: 'Sending…',
-  doneContact: 'Details shared',
-  doneMeeting: 'Meeting requested',
-  doneQuote: 'Quote request sent',
-  followup: "You'll hear back shortly.",
-  scanToConnect: 'Scan to connect',
-  pointCamera: 'Point any phone camera here',
-  poweredBy: 'Powered by',
-  noteOptional: 'Add a note (optional)',
-  quotePlaceholder: 'What do you need a quote for?',
-  readMore: 'Read more',
-  showLess: 'Show less',
-  share: 'Share',
-  copyLink: 'Copy link',
-  copied: 'Copied!',
-  linkCopied: 'Link copied to clipboard',
-  available: 'Available now',
-  respondsIn: 'Responds in',
-  connectTitle: 'Connect',
-  aboutTitle: 'About',
-  paymentsTitle: 'Payments',
+  done: { CONTACT: 'Details sent', MEETING: 'Meeting requested', QUOTE: 'Quote requested' },
+  doneHint: '{{name}} will get back to you.',
+  needContact: 'Add an email or a phone number so they can reach you.',
+  failed: 'Could not send. Check your connection and try again.',
+  previewOnly: 'In the preview, nothing is sent.',
+
+  // Link labels for the generic kinds; brand names stay as they are.
+  labels: {
+    Call: 'Call',
+    Email: 'Email',
+    Website: 'Website',
+    'Book a meeting': 'Book a meeting',
+    'Request a quote': 'Request a quote',
+    Directions: 'Directions',
+    Location: 'Location',
+    Download: 'Download',
+    'Save contact': 'Save contact',
+  } as Record<string, string>,
+
+  // Passcode-protected profiles
+  lockedTitle: 'Private profile',
+  lockedBody: '“{{name}}” is protected. Enter its passcode to view it.',
+  lockedBodyNoName: 'This profile is protected. Enter its passcode to view it.',
+  passcode: 'Passcode',
+  unlock: 'Unlock',
+  unlocking: 'Unlocking…',
+  wrongCode: 'That passcode is not right. Try again.',
 };
 
+export type ProfileStrings = typeof EN;
+
 const AR: ProfileStrings = {
+  yourName: 'اسمك',
   save: 'حفظ جهة الاتصال',
   saving: 'جارٍ التحضير…',
-  saved: 'تم الحفظ في هاتفك',
-  connect: 'تواصل',
-  meeting: 'اجتماع',
-  quote: 'عرض سعر',
-  pickDay: 'اختر يوماً',
-  time: 'الوقت',
+  saved: 'تم الحفظ',
+  exchange: 'تبادل البيانات',
+  share: 'مشاركة',
+  close: 'إغلاق',
+  verified: 'موثّق',
+  available: 'متاح الآن',
+  respondsIn: 'يرد خلال {{time}}',
+  about: 'نبذة',
+  readMore: 'اقرأ المزيد',
+  showLess: 'عرض أقل',
+  links: 'الروابط',
+  payments: 'الدفع',
+  open: 'فتح',
+  poweredBy: 'صُنعت باستخدام',
+  profileTag: 'ملف',
+
+  shareTitle: 'شارك هذه البطاقة',
+  shareHint: 'امسحها بكاميرا أي هاتف، أو أرسل الرابط.',
+  copyLink: 'نسخ الرابط',
+  linkCopied: 'نُسخ الرابط',
+  shareVia: 'مشاركة عبر…',
+
+  exchangeTitle: 'شارك بياناتك مع {{name}}',
+  exchangeHint: 'تصله بياناتك فوراً ويمكنه الرد عليك.',
+  intents: { CONTACT: 'بياناتي', MEETING: 'اجتماع', QUOTE: 'عرض سعر' },
   fullName: 'الاسم الكامل',
   email: 'البريد الإلكتروني',
   phone: 'رقم الهاتف',
   company: 'الشركة',
-  shareDetails: 'أرسل بياناتي',
-  requestMeeting: 'طلب اجتماع',
-  requestQuote: 'طلب عرض سعر',
+  optional: 'اختياري',
+  pickDay: 'اليوم',
+  time: 'الوقت',
+  note: 'ملاحظة',
+  quoteNote: 'ما الذي تحتاج عرض سعر له؟',
+  send: { CONTACT: 'أرسل بياناتي', MEETING: 'اطلب اجتماعاً', QUOTE: 'اطلب عرض سعر' },
   sending: 'جارٍ الإرسال…',
-  doneContact: 'تم إرسال بياناتك',
-  doneMeeting: 'تم طلب الاجتماع',
-  doneQuote: 'تم إرسال طلب عرض السعر',
-  followup: 'سنعاود التواصل معك قريباً.',
-  scanToConnect: 'امسح للتواصل',
-  pointCamera: 'وجّه كاميرا أي هاتف هنا',
-  poweredBy: 'مُشغَّل بواسطة',
-  noteOptional: 'أضف ملاحظة (اختياري)',
-  quotePlaceholder: 'ما الذي تحتاج عرض سعر له؟',
-  readMore: 'اقرأ المزيد',
-  showLess: 'عرض أقل',
-  share: 'مشاركة',
-  copyLink: 'نسخ الرابط',
-  copied: 'تم النسخ!',
-  linkCopied: 'تم نسخ الرابط',
-  available: 'متاح الآن',
-  respondsIn: 'يردّ خلال',
-  connectTitle: 'تواصل',
-  aboutTitle: 'نبذة',
-  paymentsTitle: 'المدفوعات',
+  done: { CONTACT: 'أُرسلت بياناتك', MEETING: 'أُرسل طلب الاجتماع', QUOTE: 'أُرسل طلب عرض السعر' },
+  doneHint: 'سيتواصل معك {{name}}.',
+  needContact: 'أضف بريداً إلكترونياً أو رقم هاتف ليتمكن من التواصل معك.',
+  failed: 'تعذّر الإرسال. تحقق من الاتصال وحاول مرة أخرى.',
+  previewOnly: 'في المعاينة لا يُرسل أي شيء.',
+
+  labels: {
+    Call: 'اتصال',
+    Email: 'البريد الإلكتروني',
+    Website: 'الموقع الإلكتروني',
+    'Book a meeting': 'احجز موعداً',
+    'Request a quote': 'اطلب عرض سعر',
+    Directions: 'الاتجاهات',
+    Location: 'الموقع',
+    Download: 'تحميل',
+    'Save contact': 'حفظ جهة الاتصال',
+  },
+
+  lockedTitle: 'ملف خاص',
+  lockedBody: '«{{name}}» محمي. أدخل رمز الدخول لعرضه.',
+  lockedBodyNoName: 'هذا الملف محمي. أدخل رمز الدخول لعرضه.',
+  passcode: 'رمز الدخول',
+  unlock: 'فتح',
+  unlocking: 'جارٍ الفتح…',
+  wrongCode: 'رمز الدخول غير صحيح. حاول مرة أخرى.',
 };
 
 export function profileStrings(lang: Lang): ProfileStrings {
   return lang === 'ar' ? AR : EN;
+}
+
+/** Fills {{name}}-style placeholders. */
+export function fill(template: string, values: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => values[k] ?? '');
 }

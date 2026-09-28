@@ -1,7 +1,8 @@
 /* ============================================================================
-   Vertex Connect Enterprise Design System — Core Stylesheet
-   Central source of truth for design tokens, support light and dark themes.
-   Inspired by Vercel, Linear, Stripe, and Apple HIG.
+   Vertex Connect design system — component tokens
+   The base colours, surfaces and shadows below resolve to the --v-* tokens in
+   app/globals.css, so these components and the rest of the app share one
+   palette and one dark mode. Status colours and the scales stay local.
    ============================================================================ */
 
 :root {
@@ -55,20 +56,21 @@
   --ds-info-border: 200 95% 90%;
   --ds-info-accent: 200 95% 48%;
 
-  /* Base Application Colors */
-  --ds-bg: var(--ds-gray-50);
-  --ds-surface: 0 0% 100%;
-  --ds-elevated: var(--ds-gray-100);
-  --ds-fg: var(--ds-gray-900);
-  --ds-fg-muted: var(--ds-gray-500);
-  --ds-fg-faint: var(--ds-gray-400);
-  --ds-border: var(--ds-gray-200);
-  --ds-border-strong: var(--ds-gray-300);
+  /* Base Application Colors — shared with the app tokens */
+  --ds-bg: var(--v-bg);
+  --ds-surface: var(--v-surface);
+  --ds-elevated: var(--v-elevated);
+  --ds-fg: var(--v-fg);
+  --ds-fg-muted: var(--v-muted);
+  --ds-fg-faint: var(--v-faint);
+  --ds-border: var(--v-border);
+  --ds-border-strong: var(--v-border-strong);
+  --ds-accent-soft: var(--v-accent-soft);
 
   /* Interactive States overlay opacity levels */
   --ds-state-hover: rgba(0, 0, 0, 0.04);
   --ds-state-active: rgba(0, 0, 0, 0.08);
-  --ds-state-focus-ring: rgba(99, 102, 241, 0.15);
+  --ds-state-focus-ring: rgba(37, 99, 235, 0.18);
   --ds-state-disabled: 0.5;
 
   /* --- Spacing Scale (4px base) --- */
@@ -92,12 +94,12 @@
   --ds-radius-2xl: 24px;
   --ds-radius-pill: 9999px;
 
-  /* --- Shadow & Elevation System (Layered Apple/Vercel Style) --- */
-  --ds-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
-  --ds-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 1px rgba(0, 0, 0, 0.02);
-  --ds-shadow-md: 0 6px 16px rgba(0, 0, 0, 0.03), 0 2px 6px rgba(0, 0, 0, 0.015);
-  --ds-shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
-  --ds-shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.06), 0 8px 20px rgba(0, 0, 0, 0.03);
+  /* --- Elevation — the same scale as the app tokens --- */
+  --ds-shadow-xs: var(--v-shadow-sm);
+  --ds-shadow-sm: var(--v-shadow-sm);
+  --ds-shadow-md: var(--v-shadow-md);
+  --ds-shadow-lg: var(--v-shadow-lg);
+  --ds-shadow-xl: var(--v-shadow-xl);
 
   /* --- Z-Index scale --- */
   --ds-z-negative: -1;
@@ -113,7 +115,7 @@
   --ds-transition-duration-fast: 120ms;
   --ds-transition-duration-normal: 200ms;
   --ds-transition-duration-slow: 300ms;
-  --ds-transition-timing: cubic-bezier(0.16, 1, 0.3, 1); /* Apple / Linear ease */
+  --ds-transition-timing: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Theme Override (Dark Mode) */
@@ -168,27 +170,13 @@
   --ds-info-border: 200 85% 12%;
   --ds-info-accent: 200 85% 55%;
 
-  /* Base Application Colors */
-  --ds-bg: var(--ds-gray-50);
-  --ds-surface: var(--ds-gray-100);
-  --ds-elevated: var(--ds-gray-200);
-  --ds-fg: var(--ds-gray-900);
-  --ds-fg-muted: var(--ds-gray-500);
-  --ds-fg-faint: var(--ds-gray-400);
-  --ds-border: var(--ds-gray-200);
-  --ds-border-strong: var(--ds-gray-300);
+  /* Base application colours follow the --v-* tokens set for dark mode. */
 
   /* Interactive States overlay opacity levels */
   --ds-state-hover: rgba(255, 255, 255, 0.04);
   --ds-state-active: rgba(255, 255, 255, 0.08);
-  --ds-state-focus-ring: rgba(129, 140, 248, 0.25);
+  --ds-state-focus-ring: rgba(53, 114, 240, 0.3);
 
-  /* Shadows override for dark mode (deeper, higher opacity) */
-  --ds-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --ds-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25), 0 1px 1px rgba(0, 0, 0, 0.2);
-  --ds-shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
-  --ds-shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
-  --ds-shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 /* ============================================================================
@@ -226,7 +214,7 @@
 .ds-body-sm { font-size: 0.875rem; line-height: 1.6; font-weight: 400; }
 
 .ds-caption { font-size: 0.8125rem; line-height: 1.5; font-weight: 500; }
-.ds-label { font-size: 0.75rem; line-height: 1.4; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.ds-label { font-size: 0.8125rem; line-height: 1.4; font-weight: 500; }
 
 /* Support RTL direction alignments */
 [dir="rtl"] .ds-display-xl,

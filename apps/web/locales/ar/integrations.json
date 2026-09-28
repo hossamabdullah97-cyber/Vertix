@@ -1,31 +1,446 @@
 {
-  "title": "التكاملات والأتمتة",
-  "subtitle": "ربط Vertex Connect بأنظمة CRM والـ Webhooks وأدوات سير العمل.",
-  "addWebhook": "إضافة Webhook",
-  "searchPlaceholder": "البحث في التكاملات والـ Webhooks…",
+  "title": "التكاملات",
+  "personal": "التكاملات خاصة بالمؤسسات. انتقل إلى مؤسسة من القائمة أعلى الشريط الجانبي.",
+  "readOnly": "يمكن للمالكين والمسؤولين فقط تغيير التكاملات.",
+  "dismiss": "إغلاق",
+  "close": "إغلاق",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "saving": "جارٍ الحفظ…",
+  "copy": "نسخ",
+  "copied": "تم النسخ",
+  "never": "أبداً",
+  "more": "إجراءات أخرى",
   "tabs": {
-    "overview": "نظرة عامة",
-    "marketplace": "سوق التطبيقات",
+    "apps": "التطبيقات",
     "automations": "الأتمتة",
-    "webhooks": "الـ Webhooks",
+    "webhooks": "Webhooks",
     "keys": "مفاتيح API"
   },
-  "stats": {
-    "deliveries7d": "عمليات التسليم (7 أيام)",
-    "successRate": "نسبة النجاح",
-    "failed": "المخفوقات",
-    "activeKeys": "مفاتيح API النشطة"
+  "categories": {
+    "all": "الكل",
+    "crm": "إدارة العملاء",
+    "marketing": "التسويق",
+    "communication": "التواصل",
+    "calendar": "التقويم",
+    "productivity": "الإنتاجية",
+    "storage": "التخزين",
+    "automation": "الأتمتة",
+    "analytics": "التحليلات",
+    "payments": "المدفوعات"
   },
-  "sections": {
-    "deliveriesPerDay": "عمليات التسليم اليومية",
-    "noDeliveries": "لا توجد عمليات تسليم في الـ 7 أيام الماضية.",
-    "byEvent": "بحسب الحدث",
-    "noEvents": "لم يتم توجيه أي أحداث بعد.",
-    "endpointHealth": "حالة جاهزية نقاط النهاية (Endpoints)",
-    "noWebhooks": "لا توجد نقاط نهاية Webhook لمراقبتها حالياً."
+  "apps": {
+    "search": "ابحث في التطبيقات",
+    "connected": "المتصلة",
+    "noMatch": "لا توجد تطبيقات تطابق «{{q}}».",
+    "state": {
+      "connected": "متصل",
+      "attention": "يحتاج إلى مراجعة",
+      "ready": "جاهز للاتصال",
+      "ownApp": "اتصل بتطبيقك الخاص",
+      "soon": "قريباً"
+    },
+    "returned": {
+      "connected": "تم الاتصال بـ {{name}}.",
+      "failed": "لم يكتمل الاتصال: {{error}}"
+    },
+    "account": "متصل بحساب {{account}}",
+    "lastSync": "آخر مزامنة {{time}}",
+    "expired": "انتهت صلاحية الاتصال. أعد الاتصال ليستمر العمل.",
+    "soonBody": "الاتصال المباشر بـ {{name}} قادم قريباً.",
+    "viaWebhook": "يمكنك من الآن إرسال الأحداث إلى {{name}} عبر Webhook.",
+    "viaAutomation": "يمكنك من الآن نشر العملاء المحتملين الجدد في قناة {{name}} عبر أتمتة.",
+    "addWebhook": "إضافة Webhook",
+    "createAutomation": "إنشاء الأتمتة",
+    "access": "ما يمكنه الوصول إليه",
+    "connect": "اتصال",
+    "connecting": "جارٍ الاتصال…",
+    "reconnect": "إعادة الاتصال",
+    "disconnect": "قطع الاتصال",
+    "disconnectTitle": "قطع الاتصال بـ {{name}}؟",
+    "disconnectBody": "سيتوقف Vertex Connect عن إرسال البيانات إلى {{name}}. ما أُرسل سابقاً يبقى هناك.",
+    "disconnecting": "جارٍ قطع الاتصال…",
+    "ownApp": {
+      "title": "استخدم تطبيق {{name}} الخاص بك",
+      "body": "أنشئ تطبيقاً من إعدادات المطورين في {{name}}، وأضف إليه رابط إعادة التوجيه هذا، ثم الصق معرّف العميل والسر هنا.",
+      "redirect": "رابط إعادة التوجيه",
+      "clientId": "معرّف العميل (Client ID)",
+      "clientSecret": "سر العميل (Client secret)",
+      "secretKept": "محفوظ. أدخل سراً جديداً لاستبداله.",
+      "saved": "تم حفظ التطبيق. يمكنك الاتصال الآن.",
+      "remove": "إزالة التطبيق",
+      "removeTitle": "إزالة تطبيق {{name}} الخاص بك؟",
+      "removeBody": "لن يتمكن Vertex Connect بعدها من الاتصال بـ {{name}} من خلاله.",
+      "removing": "جارٍ الإزالة…",
+      "both": "أدخل معرّف العميل والسر معاً."
+    },
+    "sync": {
+      "title": "إرسال العملاء المحتملين إلى {{name}}",
+      "auto": "أرسل كل عميل محتمل جديد تلقائياً",
+      "mapping": "الحقول",
+      "mappingHint": "أي خاصية في {{name}} يملؤها كل حقل. اترك الحقل فارغاً لتجاوزه.",
+      "notMapped": "لا يُرسل",
+      "now": "أرسل العملاء الحاليين الآن",
+      "running": "جارٍ الإرسال…",
+      "result": "أُرسل {{synced}}، وفشل {{failed}}.",
+      "recent": "الأحدث",
+      "none": "لم يُرسل شيء بعد.",
+      "fields": {
+        "firstName": "الاسم الأول",
+        "lastName": "اسم العائلة",
+        "fullName": "الاسم الكامل",
+        "email": "البريد الإلكتروني",
+        "phone": "الهاتف",
+        "company": "الشركة",
+        "source": "المصدر",
+        "temperature": "درجة الاهتمام"
+      }
+    },
+    "descriptions": {
+      "hubspot": "مزامنة العملاء المحتملين وجهات الاتصال مع HubSpot CRM.",
+      "salesforce": "إرسال العملاء المحتملين والاجتماعات إلى Salesforce.",
+      "zoho_crm": "مزامنة جهات الاتصال والعملاء المحتملين في الاتجاهين مع Zoho CRM.",
+      "pipedrive": "مزامنة الصفقات والأشخاص مع Pipedrive.",
+      "dynamics": "ربط العملاء المحتملين بـ Dynamics 365 Sales.",
+      "mailchimp": "إضافة جهات الاتصال الملتقطة إلى جماهير Mailchimp.",
+      "brevo": "مزامنة جهات الاتصال مع قوائم Brevo (Sendinblue).",
+      "klaviyo": "إرسال الملفات الشخصية والأحداث إلى Klaviyo.",
+      "activecampaign": "مزامنة جهات الاتصال مع أتمتة ActiveCampaign.",
+      "slack": "إرسال تنبيهات العملاء المحتملين والأحداث إلى قناة Slack.",
+      "ms_teams": "نشر أحداث مساحة العمل في قناة Teams.",
+      "whatsapp_business": "تنبيه جهات الاتصال ومراسلتها عبر WhatsApp Business.",
+      "telegram": "إرسال تنبيهات الأحداث عبر بوت Telegram.",
+      "google_calendar": "تحويل طلبات الاجتماعات إلى أحداث في التقويم.",
+      "outlook_calendar": "إنشاء أحداث في تقويم Microsoft Outlook.",
+      "calendly": "ربط حجوزات Calendly بالعملاء المحتملين.",
+      "google_workspace": "ربط دليل Google Workspace وجهات اتصاله.",
+      "microsoft_365": "ربط دليل Microsoft 365 وجهات اتصاله.",
+      "notion": "تسجيل العملاء المحتملين في قاعدة بيانات Notion.",
+      "trello": "إنشاء بطاقات Trello من العملاء المحتملين الجدد.",
+      "asana": "تحويل العملاء المحتملين إلى مهام في Asana.",
+      "clickup": "إنشاء مهام ClickUp من أحداث مساحة العمل.",
+      "google_drive": "حفظ الملفات المصدَّرة في Google Drive.",
+      "onedrive": "حفظ الملفات المصدَّرة في OneDrive.",
+      "dropbox": "حفظ الملفات المصدَّرة في Dropbox.",
+      "zapier": "تشغيل Zaps من أحداث Vertex Connect عبر Webhooks.",
+      "make": "تشغيل سيناريوهات Make من أحداث مساحة العمل.",
+      "n8n": "تشغيل مسارات n8n من أحداث مساحة العمل.",
+      "google_analytics": "تمرير أحداث البطاقات والملفات إلى GA4.",
+      "google_tag_manager": "إدارة الوسوم لصفحات البطاقات العامة.",
+      "meta_pixel": "إرسال أحداث البطاقات إلى Meta Pixel.",
+      "linkedin_insight": "تتبّع زيارات البطاقات باستخدام LinkedIn Insight Tag."
+    },
+    "scopes": {
+      "Contacts": "جهات الاتصال",
+      "Companies": "الشركات",
+      "Deals": "الصفقات",
+      "Leads": "العملاء المحتملون",
+      "Events": "الأحداث",
+      "Persons": "الأشخاص",
+      "Audiences": "الجماهير",
+      "Lists": "القوائم",
+      "Profiles": "الملفات الشخصية",
+      "Post messages": "نشر الرسائل",
+      "Send messages": "إرسال الرسائل",
+      "Calendar events": "أحداث التقويم",
+      "Scheduled events": "المواعيد المحجوزة",
+      "Directory": "الدليل",
+      "Databases": "قواعد البيانات",
+      "Pages": "الصفحات",
+      "Boards": "اللوحات",
+      "Cards": "البطاقات",
+      "Projects": "المشاريع",
+      "Tasks": "المهام",
+      "Spaces": "المساحات",
+      "Files": "الملفات",
+      "Receive events": "استقبال الأحداث",
+      "Measurement": "القياس",
+      "Containers": "الحاويات"
+    }
   },
-  "status": {
-    "connected": "متصل",
-    "disconnected": "غير متصل"
+  "events": {
+    "all": "كل الأحداث",
+    "groups": {
+      "leads": "العملاء المحتملون",
+      "cards": "البطاقات",
+      "nfc": "شرائح NFC",
+      "team": "الفريق"
+    },
+    "lead": {
+      "created": "التقاط عميل محتمل",
+      "updated": "تحديث عميل محتمل"
+    },
+    "meeting": {
+      "requested": "طلب اجتماع"
+    },
+    "quote": {
+      "requested": "طلب عرض سعر"
+    },
+    "card": {
+      "viewed": "مشاهدة بطاقة"
+    },
+    "contact": {
+      "saved": "حفظ جهة اتصال"
+    },
+    "nfc": {
+      "tapped": "لمس شريحة NFC"
+    },
+    "member": {
+      "added": "إضافة عضو"
+    }
+  },
+  "automations": {
+    "intro": "عندما يحدث شيء، تُفحص شروطك ثم يُنفَّذ ما تريد: تنبيه المسؤولين، أو إضافة مهمة، أو إرساله إلى أداة أخرى.",
+    "new": "أتمتة جديدة",
+    "edit": "تعديل الأتمتة",
+    "delete": "حذف",
+    "deleteTitle": "حذف «{{name}}»؟",
+    "deleteBody": "ستتوقف عن العمل، وتبقى مرات تشغيلها السابقة في السجل.",
+    "deleting": "جارٍ الحذف…",
+    "on": "تعمل",
+    "off": "متوقفة",
+    "toggle": "تشغيل {{name}} أو إيقافها",
+    "runs_zero": "لم تعمل بعد",
+    "runs_one": "عملت مرة واحدة",
+    "runs_two": "عملت مرتين",
+    "runs_few": "عملت {{count}} مرات",
+    "runs_many": "عملت {{count}} مرة",
+    "runs_other": "عملت {{count}} مرة",
+    "neverRan": "لم تعمل بعد",
+    "lastRun": "آخرها {{time}}",
+    "conditions_zero": "بلا شروط",
+    "conditions_one": "شرط واحد",
+    "conditions_two": "شرطان",
+    "conditions_few": "{{count}} شروط",
+    "conditions_many": "{{count}} شرطاً",
+    "conditions_other": "{{count}} شرط",
+    "emptyTitle": "اجعل المتابعة تلقائية",
+    "emptyBody": "ابدأ بواحدة من هذه، ثم عدّلها لتناسبك.",
+    "templates": "ابدأ من قالب",
+    "templateNames": {
+      "new-lead-notify": "عميل جديد ← تنبيه المسؤولين",
+      "new-lead-slack": "عميل جديد ← Slack أو Zapier",
+      "hot-lead-task": "عميل ساخن ← مهمة متابعة",
+      "nfc-tap-forward": "لمس شريحة ← خادمك",
+      "meeting-request-notify": "طلب اجتماع ← تنبيه المسؤولين",
+      "new-member-forward": "عضو جديد ← خادمك"
+    },
+    "templateBodies": {
+      "new-lead-notify": "تنبيه داخل التطبيق للمالكين والمسؤولين كلما وصل عميل محتمل.",
+      "new-lead-slack": "انشر كل عميل جديد في قناة Slack، أو مرّره إلى Zapier أو Make أو n8n.",
+      "hot-lead-task": "مهمة تستحق غداً كلما وصل عميل مصنّف كساخن.",
+      "nfc-tap-forward": "أرسل كل لمسة شريحة إلى رابط تختاره.",
+      "meeting-request-notify": "نبّه المسؤولين فور أن يطلب أحد اجتماعاً.",
+      "new-member-forward": "أبلغ نظاماً آخر عندما ينضم أحد إلى مساحة العمل."
+    },
+    "form": {
+      "name": "الاسم",
+      "namePlaceholder": "توجيه العملاء الساخنين",
+      "when": "عندما",
+      "if": "بشرط",
+      "ifHint": "اختياري. بدون شروط تعمل في كل مرة.",
+      "match": {
+        "ALL": "كل الشروط",
+        "ANY": "أي شرط"
+      },
+      "field": "الحقل",
+      "otherField": "حقل آخر…",
+      "fieldPath": "data.field",
+      "value": "القيمة",
+      "addCondition": "إضافة شرط",
+      "then": "ثم",
+      "addAction": "إضافة إجراء آخر",
+      "remove": "إزالة",
+      "title": "العنوان",
+      "message": "الرسالة (اختياري)",
+      "dueIn": "تستحق بعد (أيام)",
+      "url": "الرابط",
+      "urlHint": "روابط Slack الواردة تصلها رسالة مقروءة. أي رابط آخر يصله الحدث بصيغة JSON.",
+      "needName": "أعطها اسماً.",
+      "needAction": "أضف إجراءً واحداً على الأقل.",
+      "needUrl": "كل إجراء «إرسال إلى رابط» يحتاج إلى عنوان https.",
+      "operator": "المقارنة"
+    },
+    "fields": {
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "company": "الشركة",
+      "source": "المصدر",
+      "intent": "الغرض",
+      "temperature": "درجة الاهتمام",
+      "cardSlug": "البطاقة",
+      "slug": "البطاقة",
+      "tagUid": "الشريحة",
+      "role": "الدور",
+      "value": "قيمة الصفقة",
+      "stageChanged": "تغيّرت المرحلة"
+    },
+    "operators": {
+      "equals": "يساوي",
+      "not_equals": "لا يساوي",
+      "contains": "يحتوي على",
+      "not_contains": "لا يحتوي على",
+      "exists": "مُعبّأ",
+      "not_exists": "فارغ",
+      "gt": "أكبر من",
+      "lt": "أصغر من"
+    },
+    "actions": {
+      "notify": "تنبيه المسؤولين",
+      "task": "إنشاء مهمة",
+      "webhook": "إرسال إلى رابط"
+    },
+    "recent": "آخر مرات التشغيل",
+    "run": {
+      "SUCCESS": "تمّت",
+      "PARTIAL": "تمّت جزئياً",
+      "FAILED": "فشلت"
+    },
+    "columns": {
+      "automation": "الأتمتة",
+      "event": "الحدث",
+      "result": "النتيجة",
+      "when": "الوقت"
+    },
+    "removed": "أتمتة محذوفة",
+    "actionsShort": {
+      "notify": "تنبيه",
+      "task": "مهمة",
+      "webhook": "إرسال لرابط"
+    }
+  },
+  "webhooks": {
+    "intro": "أرسل أحداثاً موقّعة إلى خادمك، أو إلى أدوات مثل Zapier وMake وn8n.",
+    "add": "إضافة عنوان",
+    "edit": "تعديل العنوان",
+    "stats": {
+      "deliveries": "الإرسالات، آخر 7 أيام",
+      "success": "وصلت",
+      "failed": "فشلت"
+    },
+    "health": {
+      "healthy": "سليم",
+      "warning": "بعض الإخفاقات",
+      "degraded": "يفشل كثيراً",
+      "error": "يفشل",
+      "idle": "لا إرسالات بعد"
+    },
+    "events_zero": "بلا أحداث",
+    "events_one": "حدث واحد",
+    "events_two": "حدثان",
+    "events_few": "{{count}} أحداث",
+    "events_many": "{{count}} حدثاً",
+    "events_other": "{{count}} حدث",
+    "allEvents": "كل الأحداث",
+    "secret": "السر {{hint}}",
+    "enabled": "يعمل",
+    "paused": "متوقف",
+    "toggle": "الإرسال إلى {{url}}",
+    "deliveries": "الإرسالات",
+    "rotate": "سر توقيع جديد",
+    "rotateTitle": "إنشاء سر توقيع جديد؟",
+    "rotateBody": "يتوقف السر الحالي عن العمل فوراً. حدّث خادمك بالسر الجديد.",
+    "rotating": "جارٍ الإنشاء…",
+    "delete": "حذف",
+    "deleteTitle": "حذف هذا العنوان؟",
+    "deleteBody": "ستتوقف الأحداث عن الوصول إلى {{url}}.",
+    "deleting": "جارٍ الحذف…",
+    "emptyTitle": "لا توجد عناوين بعد",
+    "emptyBody": "أضف رابطاً واختر الأحداث التي يستقبلها.",
+    "form": {
+      "url": "رابط العنوان",
+      "urlHint": "https فقط؛ ويعمل http://localhost للتجربة.",
+      "description": "الوصف (اختياري)",
+      "descriptionPlaceholder": "خادم الإنتاج",
+      "events": "الأحداث",
+      "needUrl": "أدخل رابط العنوان.",
+      "needEvents": "اختر حدثاً واحداً على الأقل."
+    },
+    "log": {
+      "title": "الإرسالات",
+      "empty": "لم يُرسل شيء بعد.",
+      "replay": "إرسال مرة أخرى",
+      "replaying": "جارٍ الإرسال…",
+      "attempts_zero": "بلا محاولات",
+      "attempts_one": "محاولة واحدة",
+      "attempts_two": "محاولتان",
+      "attempts_few": "{{count}} محاولات",
+      "attempts_many": "{{count}} محاولة",
+      "attempts_other": "{{count}} محاولة",
+      "status": {
+        "SUCCESS": "وصل",
+        "FAILED": "فشل",
+        "PENDING": "قيد الإرسال"
+      }
+    },
+    "verify": {
+      "title": "التحقق من الطلبات",
+      "body": "يحمل كل طلب ترويسة X-Vertex-Signature بالشكل t=<الوقت>,v1=<التوقيع>. التوقيع هو HMAC-SHA256 بسر التوقيع لديك، للوقت ثم نقطة ثم نص الطلب كما هو."
+    }
+  },
+  "keys": {
+    "intro": "المفاتيح تتيح لبرامجك العمل مع مساحة العمل هذه. كل مفتاح لا يفعل إلا ما تسمح به.",
+    "new": "مفتاح جديد",
+    "columns": {
+      "name": "الاسم",
+      "key": "المفتاح",
+      "access": "الصلاحيات",
+      "lastUsed": "آخر استخدام"
+    },
+    "createdBy": "بواسطة {{name}} · {{date}}",
+    "expires": "ينتهي {{date}}",
+    "status": {
+      "revoked": "ملغى",
+      "expired": "منتهٍ"
+    },
+    "rotate": "استبدال المفتاح",
+    "rotateTitle": "استبدال «{{name}}»؟",
+    "rotateBody": "يتوقف المفتاح الحالي فوراً، ويظهر المفتاح الجديد مرة واحدة.",
+    "rotating": "جارٍ الاستبدال…",
+    "revoke": "إلغاء",
+    "revokeTitle": "إلغاء «{{name}}»؟",
+    "revokeBody": "كل ما يستخدم هذا المفتاح يفقد الوصول فوراً، ولا يمكن التراجع.",
+    "revoking": "جارٍ الإلغاء…",
+    "delete": "حذف",
+    "deleteTitle": "حذف «{{name}}»؟",
+    "deleteBody": "سيُزال المفتاح من القائمة.",
+    "deleting": "جارٍ الحذف…",
+    "emptyTitle": "لا توجد مفاتيح بعد",
+    "emptyBody": "أنشئ مفتاحاً لكل برنامج يحتاج إلى الوصول، لتتمكن من إلغائه وحده.",
+    "form": {
+      "name": "الاسم",
+      "namePlaceholder": "مزامنة الموقع",
+      "access": "الصلاحيات",
+      "expires": "ينتهي",
+      "never": "أبداً",
+      "days": "بعد {{count}} يوماً",
+      "year": "بعد سنة",
+      "needName": "أعطِ المفتاح اسماً.",
+      "needAccess": "اسمح بنوع واحد من الصلاحيات على الأقل."
+    },
+    "resources": {
+      "cards": "البطاقات",
+      "crm": "العملاء وإدارة العملاء",
+      "analytics": "التحليلات",
+      "nfc": "شرائح NFC",
+      "qr": "رموز QR",
+      "integration": "التكاملات"
+    },
+    "levels": {
+      "none": "لا شيء",
+      "read": "قراءة",
+      "write": "قراءة وكتابة"
+    },
+    "use": {
+      "title": "استخدام المفتاح",
+      "body": "أرسله كرمز Bearer في ترويسة Authorization:"
+    }
+  },
+  "secretDialog": {
+    "keyTitle": "انسخ مفتاحك الجديد",
+    "secretTitle": "انسخ سر التوقيع",
+    "body": "يظهر هذه المرة فقط. احفظه في مكان آمن، وإن ضاع فاستبدله.",
+    "done": "نسخته"
   }
 }

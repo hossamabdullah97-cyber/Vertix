@@ -1,6 +1,7 @@
 import {
   Injectable,
   ConflictException,
+  ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -31,6 +32,19 @@ function slugify(input: string): string {
   return `${base || 'org'}-${suffix}`;
 }
 
+/** Stored and compared without the case or spaces a phone keyboard adds. */
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/** Matches an address however it was capitalised when the account was made. */
+function emailIs(email: string) {
+  return { equals: email.trim(), mode: 'insensitive' as const };
+}
+
+export const SUSPENDED_MESSAGE =
+  'This account has been suspended. Ask your workspace owner to restore it.';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -42,8 +56,9 @@ export class AuthService {
   ) {}
 
   async register(input: RegisterInput): Promise<AuthTokens> {
+    const email = normalizeEmail(input.email);
     const existing = await this.prisma.client.user.findFirst({
-      where: { email: input.email },
+      where: { email: emailIs(email) },
     });
     if (existing) {
       throw new ConflictException('Email is already in use');
@@ -55,7 +70,7 @@ export class AuthService {
       async (tx) => {
         const user = await tx.user.create({
           data: {
-            email: input.email,
+            email,
             name: input.name,
             passwordHash,
           },
@@ -85,7 +100,7 @@ export class AuthService {
 
   async login(input: LoginInput): Promise<AuthTokens> {
     const user = await this.prisma.client.user.findFirst({
-      where: { email: input.email },
+      where: { email: emailIs(input.email), deletedAt: null },
     });
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException('Invalid credentials');
@@ -95,10 +110,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const membership = await this.prisma.client.membership.findFirst({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'asc' },
-    });
+    const membership = await this.defaultMembership(user.id);
 
     return this.issueTokens({
       sub: user.id,
@@ -118,14 +130,20 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // The refresh token deliberately carries no orgId/role, so they are read
-    // back from the membership — which also means a role change or removal
-    // takes effect on the next refresh instead of lingering for the token's
-    // whole lifetime.
-    const membership = await this.prisma.client.membership.findFirst({
-      where: { userId: payload.sub },
-      orderBy: { createdAt: 'asc' },
+    // A deleted account's refresh token must not keep its session alive.
+    const account = await this.prisma.client.user.findUnique({
+      where: { id: payload.sub },
+      select: { deletedAt: true },
     });
+    if (!account || account.deletedAt) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // The refresh token deliberately carries no orgId/role, so they are read
+    // back from the membership — which also means a role change, removal or
+    // suspension takes effect on the next refresh instead of lingering for
+    // the token's whole lifetime.
+    const membership = await this.defaultMembership(payload.sub);
 
     return this.issueTokens({
       sub: payload.sub,
@@ -167,8 +185,11 @@ export class AuthService {
 
   /** Sends a password-reset link. Always succeeds (does not reveal account existence). */
   async forgotPassword(email: string): Promise<{ ok: true }> {
-    const user = await this.prisma.client.user.findFirst({ where: { email } });
+    const user = await this.prisma.client.user.findFirst({
+      where: { email: emailIs(email), deletedAt: null },
+    });
     if (user) {
+      email = user.email;
       const token = await this.tokens.create({
         type: 'PASSWORD_RESET',
         email,
@@ -239,6 +260,32 @@ export class AuthService {
       },
     });
     return this.getProfile(userId);
+  }
+
+  /**
+   * The workspace a session opens in: the oldest one the person is still
+   * active in. Someone suspended from every workspace they belong to cannot
+   * start a session (a platform admin still can, for the admin console); a
+   * person with no workspace at all still can.
+   */
+  private async defaultMembership(userId: string) {
+    const active = await this.prisma.client.membership.findFirst({
+      where: { userId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (active) return active;
+    const suspended = await this.prisma.client.membership.findFirst({
+      where: { userId, status: 'SUSPENDED' },
+      select: { id: true },
+    });
+    if (suspended) {
+      const user = await this.prisma.client.user.findUnique({
+        where: { id: userId },
+        select: { isSuperAdmin: true },
+      });
+      if (!user?.isSuperAdmin) throw new ForbiddenException(SUSPENDED_MESSAGE);
+    }
+    return null;
   }
 
   private async issueTokens(payload: JwtPayload): Promise<AuthTokens> {

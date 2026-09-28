@@ -4,54 +4,68 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Trans, useTranslation } from 'react-i18next';
 import { forgotPassword } from '@/lib/client';
-import AuthShell from '@/components/AuthShell';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { Field, FormMessage, SubmitButton, authErrorText, emailProps } from '@/components/auth/fields';
+import { Icon } from '@/components/Icon';
+import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setError('');
     setBusy(true);
-    await forgotPassword(email.trim());
-    setSent(true);
-    setBusy(false);
+    try {
+      await forgotPassword(email);
+      setSent(true);
+    } catch (err) {
+      setError(authErrorText(err, t, 'link'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const back = (
+    <Link href="/login" className="mt-8 inline-flex min-h-11 items-center gap-1.5 text-[13.5px] text-muted transition-colors hover:text-ink">
+      <DirectionalIcon name="arrow-left" size={14} /> {t('forgot.backToLogin')}
+    </Link>
+  );
+
+  if (sent) {
+    return (
+      <AuthShell title={t('forgot.sentTitle')}>
+        <div className="flex items-start gap-3 rounded-lg bg-elevated p-4 ring-1 ring-inset ring-line">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+            <Icon name="mail" size={15} />
+          </span>
+          <p className="text-[14px] leading-relaxed text-ink">
+            {/* The address is bolded inside the sentence, so it has to be a Trans. */}
+            <Trans i18nKey="forgot.sentTo" ns="auth" values={{ email: email.trim() }} components={{ 1: <bdi className="font-medium" /> }} />
+          </p>
+        </div>
+        <button type="button" onClick={() => setSent(false)} className="v-btn v-btn-ghost mt-5 w-full !h-11 sm:!h-10">
+          {t('forgot.tryAgain')}
+        </button>
+        {back}
+      </AuthShell>
+    );
   }
 
   return (
-    <AuthShell title={t('forgot.title')} subtitle={t('forgot.subtitleLong')}>
-      {sent ? (
-        <div>
-          <p className="text-sm">
-            {/* The address is bolded inside the sentence, so it has to be a Trans. */}
-            <Trans i18nKey="forgot.sentTo" ns="auth" values={{ email }} components={{ 1: <b dir="ltr" /> }}>
-              {'If an account exists for <1>{{email}}</1>, a reset link is on its way.'}
-            </Trans>
-          </p>
-          <Link href="/login" className="mt-4 inline-block text-sm text-accent">
-            {t('forgot.backToLogin')}
-          </Link>
-        </div>
-      ) : (
-        <form onSubmit={submit} className="grid gap-3">
-          <input
-            type="email"
-            className="v-field"
-            placeholder={t('forgot.emailPlaceholder')}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <button className="v-btn w-full" disabled={busy}>
-            {busy ? t('forgot.sending') : t('forgot.submit')}
-          </button>
-          <Link href="/login" className="text-center text-sm text-muted">
-            {t('forgot.backToLogin')}
-          </Link>
-        </form>
-      )}
+    <AuthShell title={t('forgot.title')} subtitle={t('forgot.subtitle')}>
+      <form onSubmit={submit} className="space-y-5">
+        {error && <FormMessage tone="danger">{error}</FormMessage>}
+        <Field label={t('login.email')}>
+          {(p) => <input {...p} {...emailProps('email')} value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('login.emailPlaceholder')} autoFocus />}
+        </Field>
+        <SubmitButton busy={busy} label={t('forgot.submit')} busyLabel={t('forgot.sending')} />
+      </form>
+      {back}
     </AuthShell>
   );
 }

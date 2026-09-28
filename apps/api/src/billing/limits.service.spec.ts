@@ -95,6 +95,8 @@ describe('LimitsService.usage', () => {
       limits: PLAN_LIMITS.PRO,
       usage: { cards: 2, members: 3, nfcTags: 7 },
       status: 'ACTIVE',
+      periodEnd: null,
+      billingAccount: false,
     });
   });
 
@@ -110,5 +112,26 @@ describe('LimitsService.usage', () => {
     } as unknown as PrismaService;
     const out = await new LimitsService(prisma).usage('org');
     expect(out.status).toBe('NONE');
+  });
+
+  it('reports the paid period and whether the billing portal can open', async () => {
+    const prisma = {
+      client: {
+        organization: { findUnique: jest.fn().mockResolvedValue({ plan: 'PRO' }) },
+        card: { count: jest.fn().mockResolvedValue(1) },
+        membership: { count: jest.fn().mockResolvedValue(1) },
+        nfcTag: { count: jest.fn().mockResolvedValue(0) },
+        subscription: {
+          findFirst: jest.fn().mockResolvedValue({
+            status: 'ACTIVE',
+            currentPeriodEnd: new Date('2026-10-28T00:00:00Z'),
+            stripeCustomerId: 'cus_1',
+          }),
+        },
+      },
+    } as unknown as PrismaService;
+    const out = await new LimitsService(prisma).usage('org');
+    expect(out.periodEnd).toBe('2026-10-28T00:00:00.000Z');
+    expect(out.billingAccount).toBe(true);
   });
 });

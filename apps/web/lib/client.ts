@@ -54,28 +54,89 @@ export function isAuthenticated(): boolean {
   return !!getToken();
 }
 
-/** Authenticated fetch against the API. On 401 it clears the session and redirects to /login. */
+let renewing: Promise<boolean> | null = null;
+
+/**
+ * Trades the refresh token for a fresh pair. An access token lives fifteen
+ * minutes, so without this every session ended there, mid-task. Requests that
+ * fail together share one renewal.
+ */
+export function renewSession(): Promise<boolean> {
+  if (typeof window === 'undefined') return Promise.resolve(false);
+  renewing ??= (async () => {
+    const refreshToken = localStorage.getItem(REFRESH_KEY);
+    if (!refreshToken) return false;
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!res.ok) return false;
+      saveTokens((await res.json()) as AuthTokens);
+      return true;
+    } catch {
+      return false;
+    }
+  })().finally(() => {
+    renewing = null;
+  });
+  return renewing;
+}
+
+/** Where sign-in returns to: a page of this app, never another site. */
+export function safeNext(next: string | null | undefined): string | null {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return null;
+  if (/^\/(login|register)(\/|\?|$)/.test(next)) return null;
+  return next;
+}
+
+/**
+ * Sends a request with the session, renewing it once if it has expired. Only
+ * when it cannot be renewed does the person go back to sign in, returning to
+ * this page afterwards.
+ */
+let leaving = false;
+
+async function withSession(send: (token: string | null) => Promise<Response>): Promise<Response> {
+  const sentWith = getToken();
+  let res = await send(sentWith);
+  if (res.status === 401 && sentWith) {
+    // Another request may already have renewed it while this one was out.
+    const renewed = getToken() !== sentWith ? !!getToken() : await renewSession();
+    if (renewed) res = await send(getToken());
+  }
+  if (res.status === 401) {
+    // The first request to find the session over decides where to go; the
+    // ones still in flight must not replace that (and its "session ended").
+    if (!leaving && typeof window !== 'undefined') {
+      leaving = true;
+      logout();
+      const here = window.location.pathname + window.location.search;
+      window.location.href = `/login?${sentWith ? 'expired=1&' : ''}next=${encodeURIComponent(here)}`;
+    }
+    throw new Error('Unauthorized');
+  }
+  return res;
+}
+
+/** Authenticated fetch against the API. An expired session is renewed; one that cannot be ends in /login. */
 export async function authFetch<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const token = getToken();
   const orgId = getActiveOrgId();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(orgId ? { 'x-organization-id': orgId } : {}),
-    },
-  });
-
-  if (res.status === 401) {
-    logout();
-    if (typeof window !== 'undefined') window.location.href = '/login';
-    throw new Error('Unauthorized');
-  }
+  const res = await withSession((token) =>
+    fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init.headers ?? {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(orgId ? { 'x-organization-id': orgId } : {}),
+      },
+    }),
+  );
 
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
@@ -97,21 +158,17 @@ export async function authFetch<T>(
  * manually; the browser adds the multipart boundary.
  */
 export async function uploadImage(file: File): Promise<string> {
-  const token = getToken();
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${API_URL}/uploads`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: form,
-  });
+  const res = await withSession((token) =>
+    fetch(`${API_URL}/uploads`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    }),
+  );
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
-  if (res.status === 401) {
-    logout();
-    if (typeof window !== 'undefined') window.location.href = '/login';
-    throw new Error('Unauthorized');
-  }
   if (!res.ok) {
     throw new Error((data && (data.message || data.error)) || `Upload failed (${res.status})`);
   }
@@ -123,26 +180,69 @@ export async function uploadImage(file: File): Promise<string> {
  * the editor's guided start collects the name, contact channels, and style, so
  * there is one place that onboards a card rather than two.
  */
+/**
+ * A new, empty card. In an organization it starts from the workspace's
+ * defaults (brand colour and card language, set in Workspace settings); if
+ * those cannot be read, it starts from the house defaults as before.
+ */
 export async function createBlankCard(): Promise<Card> {
+  const theme: Record<string, unknown> = {};
+  if (getActiveOrgId()) {
+    try {
+      const org = await authFetch<{ branding: Record<string, unknown> | null; settings: Record<string, unknown> | null }>('/orgs/current');
+      const accent = org.branding?.accent;
+      const lang = org.settings?.language;
+      if (typeof accent === 'string' && /^#[0-9a-f]{6}$/i.test(accent)) theme.accent = accent;
+      if (lang === 'en' || lang === 'ar') theme.lang = lang;
+    } catch {
+      // Defaults are a convenience; never block creating a card on them.
+    }
+  }
   return authFetch<Card>('/cards', {
     method: 'POST',
-    body: JSON.stringify({ templateId: 'swiss-blue' }),
+    body: JSON.stringify({ templateId: 'swiss-blue', ...(Object.keys(theme).length ? { theme } : {}) }),
   });
 }
 
+/** A refused sign-in call. `status` says why; 0 means the server could not be reached. */
+export class AuthError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+async function authPost<T>(path: string, body: unknown): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/auth/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new AuthError('Could not reach the server', 0);
+  }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const message =
+      Array.isArray(data?.errors) && data.errors.length
+        ? data.errors.map((e: { message: string }) => e.message).join(', ')
+        : data?.message || `Request failed (${res.status})`;
+    throw new AuthError(message, res.status);
+  }
+  return data as T;
+}
+
 export async function login(email: string, password: string) {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Invalid credentials');
+  const data = await authPost<AuthTokens>('login', { email: email.trim(), password });
   saveTokens(data);
   // A stale x-organization-id from whoever was signed in before this account
   // would otherwise override the org this JWT actually belongs to.
   setActiveOrgId(null);
-  return data as AuthTokens;
+  return data;
 }
 
 export async function register(input: {
@@ -151,53 +251,31 @@ export async function register(input: {
   name?: string;
   organizationName: string;
 }) {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+  const data = await authPost<AuthTokens>('register', {
+    ...input,
+    email: input.email.trim(),
+    name: input.name?.trim() || undefined,
+    organizationName: input.organizationName.trim(),
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      Array.isArray(data?.errors) && data.errors.length
-        ? data.errors.map((e: { message: string }) => e.message).join(', ')
-        : data.message || 'Registration failed',
-    );
-  }
   saveTokens(data);
   setActiveOrgId(null);
-  return data as AuthTokens;
+  return data;
 }
 
+/** Succeeds whether or not the address has an account; fails only when the request does. */
 export async function forgotPassword(email: string) {
-  await fetch(`${API_URL}/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
+  await authPost('forgot-password', { email: email.trim() });
 }
 
 export async function resetPassword(token: string, password: string) {
-  const res = await fetch(`${API_URL}/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Reset failed');
+  await authPost('reset-password', { token, password });
 }
 
 export async function acceptInvite(token: string, password: string, name?: string) {
-  const res = await fetch(`${API_URL}/auth/accept-invite`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, password, name }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Could not accept invitation');
+  const data = await authPost<AuthTokens>('accept-invite', { token, password, name: name?.trim() || undefined });
   saveTokens(data);
   setActiveOrgId(null);
-  return data as AuthTokens;
+  return data;
 }
 
 // --- Resource types ---

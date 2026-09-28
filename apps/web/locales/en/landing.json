@@ -1,77 +1,166 @@
 {
   "brand": "Vertex Connect",
   "nav": {
-    "features": "Features",
-    "howItWorks": "How it works",
+    "label": "Main",
+    "product": "Product",
+    "how": "How it works",
+    "pricing": "Pricing",
+    "faq": "Questions",
     "signIn": "Sign in",
-    "openDashboard": "Open dashboard"
+    "start": "Get started",
+    "dashboard": "Open dashboard"
   },
   "hero": {
-    "badge": "Production NFC + CRM platform",
-    "titleLine1": "Turn every tap into a",
-    "titleLine2": "tracked business opportunity.",
-    "subtitle": "NFC smart cards, premium digital profiles, a built-in CRM, and real analytics — one platform to unify and scale your organization's real-world connections.",
-    "trust": {
-      "isolation": "Multi-tenant isolation",
-      "pipeline": "7-stage pipeline",
-      "nfc": "Native NFC programming"
+    "eyebrow": "NFC business cards with a built-in pipeline",
+    "title": "Share your card with a tap. Keep every lead it brings.",
+    "subtitle": "Put your digital business card on an NFC chip or a QR code. Whoever taps it sees your card in their browser, with no app to install, and the details they leave go straight to your pipeline.",
+    "primary": "Create your free card",
+    "secondary": "Sign in",
+    "facts": {
+      "free": "Free plan, no payment details",
+      "phones": "Opens on any phone",
+      "languages": "Cards in Arabic or English"
     }
   },
-  "features": {
-    "label": "Everything in one platform",
-    "title": "Built to connect and convert",
-    "subtitle": "From the first tap to a closed deal — every capability works on real data, no mock dashboards.",
-    "items": {
-      "nfcCards": {
-        "title": "NFC Smart Cards",
-        "desc": "Register physical NFC chips and bind them to any digital profile. Every tap opens your live card instantly."
-      },
-      "digitalCards": {
-        "title": "Digital Business Cards",
-        "desc": "Build rich profiles with contact actions, social links, and content sections — published live in one click."
-      },
-      "templates": {
-        "title": "Template Marketplace",
-        "desc": "19 premium templates with a live design studio and side-by-side compare view to find your look."
-      },
-      "crm": {
-        "title": "Built-in CRM",
-        "desc": "A 7-stage sales pipeline with board and table views, contacts, companies, tasks, and lead scoring."
-      },
-      "analytics": {
-        "title": "Real Analytics",
-        "desc": "Track profile views, taps, clicks and saves. See top-performing cards and a real conversion funnel."
-      },
-      "teams": {
-        "title": "Teams & Workspaces",
-        "desc": "Multi-tenant organizations with roles, teams, member directory, and per-workspace isolation."
+  "sample": {
+    "label": "An example card on a phone, and a lead it brought in",
+    "name": "Mariam Khaled",
+    "title": "Partnerships lead · Nile Studio",
+    "about": "I help brands plan their events and exhibitions across Egypt.",
+    "location": "Cairo",
+    "chip": "NFC",
+    "lead": {
+      "title": "New lead",
+      "name": "Omar Farouk",
+      "what": "asked for a meeting",
+      "via": "From Mariam's card · NFC tap",
+      "time": "now"
+    },
+    "people": {
+      "omar": "Omar Farouk",
+      "salma": "Salma Adel",
+      "karim": "Karim Nabil",
+      "nour": "Nour Hassan",
+      "youssef": "Youssef Samir",
+      "laila": "Laila Mostafa"
+    }
+  },
+  "product": {
+    "label": "Product",
+    "title": "Everything between the tap and the deal",
+    "subtitle": "One workspace for your cards, the chips that open them and the people they bring in.",
+    "card": {
+      "title": "A card that is always current",
+      "body": "Choose one of 19 templates, add your contact buttons and links, and publish. Change anything later: the chip and the QR code always open the latest version."
+    },
+    "chips": {
+      "title": "Chips you control",
+      "body": "Point a chip at another card without rewriting it, hand it to a teammate, or switch it off if it is lost.",
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "leads": {
+      "title": "Leads without typing",
+      "body": "Visitors leave their details, or ask for a meeting or a quote, right from your card. Each request arrives as a lead, with the card it came from.",
+      "kinds": {
+        "CONTACT": "Contact details",
+        "MEETING": "Meeting request",
+        "QUOTE": "Quote request"
+      }
+    },
+    "pipeline": {
+      "title": "One pipeline for the whole team",
+      "body": "Seven stages from New to Won, as a board or a table, with notes, tasks and a score on every lead.",
+      "more": "+{{count}}"
+    },
+    "analytics": {
+      "title": "Numbers you can act on",
+      "body": "Views, taps, saves and clicks for every card, compared with the period before, and a CSV whenever you need one.",
+      "views": "Card views",
+      "previous": "Previous period"
+    },
+    "team": {
+      "title": "Made for teams",
+      "body": "Owners, admins, managers and members each see what their role allows. Everyone gets their own card and chip."
+    },
+    "more": {
+      "title": "Also included",
+      "items": {
+        "save": "Save to contacts in one tap",
+        "qr": "A QR code for every card",
+        "profiles": "Several profiles on one link, by schedule or passcode",
+        "payments": "Payment links on your card",
+        "webhooks": "Webhooks and an API",
+        "slack": "Lead alerts in Slack"
       }
     }
   },
   "how": {
     "label": "How it works",
-    "title": "Three steps to your first lead",
+    "title": "From the first tap to the follow-up",
     "steps": {
       "create": {
-        "title": "Create your card",
-        "desc": "Design a digital profile in the studio — pick a template, add your details and tap actions."
+        "title": "Make your card",
+        "body": "Pick a template, add your details and the buttons you want people to press."
       },
       "share": {
-        "title": "Tap or share",
-        "desc": "Link a physical NFC chip or share your QR. One tap opens your live profile on any phone."
+        "title": "Put it on a chip",
+        "body": "Link an NFC chip or print the QR code. A tap or a scan opens your card on any phone."
       },
-      "capture": {
-        "title": "Capture leads",
-        "desc": "Every save and interaction lands in your CRM pipeline, ready to convert and track."
+      "follow": {
+        "title": "Follow up",
+        "body": "Everyone who leaves their details appears in your pipeline, and you get a notification."
+      }
+    }
+  },
+  "pricing": {
+    "label": "Pricing",
+    "title": "Start free. Pay when your team grows.",
+    "subtitle": "The pipeline, analytics and integrations come with every plan. Plans differ in how many cards, members and chips you can have.",
+    "start": "Get started",
+    "note": "Prices are in US dollars, billed monthly. You can change your plan at any time from Billing."
+  },
+  "faq": {
+    "label": "Questions",
+    "title": "Questions people ask",
+    "items": {
+      "app": {
+        "q": "Does the other person need an app?",
+        "a": "No. Your card opens in their phone's browser, whether they tap the chip or scan the QR code."
+      },
+      "phones": {
+        "q": "Which phones can read the chip?",
+        "a": "Recent iPhones and most Android phones read NFC chips without an app; on Android, NFC has to be switched on. Any phone with a camera can scan the QR code."
+      },
+      "change": {
+        "q": "Can I change my card after the chip is printed?",
+        "a": "Yes. The chip holds a fixed link, so whatever you change on the card shows on the next tap. You can also point the chip at a different card."
+      },
+      "lost": {
+        "q": "What if a chip is lost?",
+        "a": "Disable it from NFC chips. A disabled chip opens nothing until you enable it again."
+      },
+      "leads": {
+        "q": "Where do the details people leave go?",
+        "a": "Into Leads, as a new lead in the first stage of your pipeline, with the card it came from. You get a notification too."
+      },
+      "arabic": {
+        "q": "Does it work in Arabic?",
+        "a": "Yes. Each card can be in Arabic or English, and the whole workspace can be used in either language."
       }
     }
   },
   "cta": {
-    "title": "Ready to connect smarter?",
-    "subtitle": "Open your workspace and build your first NFC-powered digital card in minutes."
+    "title": "Your first card takes a few minutes.",
+    "body": "Start on the free plan, and upgrade when you need more cards, members or chips.",
+    "primary": "Create your free card",
+    "secondary": "Talk to sales"
   },
   "footer": {
-    "tagline": "NFC digital business cards & CRM · Built for teams.",
-    "dashboard": "Dashboard"
+    "tagline": "NFC business cards, and a pipeline for the leads they bring.",
+    "product": "On this page",
+    "account": "Account",
+    "createAccount": "Create an account",
+    "rights": "© {{year}} Vertex Connect"
   }
 }

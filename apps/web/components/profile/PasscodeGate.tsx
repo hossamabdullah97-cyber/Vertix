@@ -1,80 +1,71 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VMark } from '@/components/brand/VMark';
+import { Icon } from '@/components/Icon';
+import { fill, profileStrings, type Lang } from '@/lib/profileI18n';
+import { profileStyle } from '@/lib/profile';
 
 /**
- * PIN gate shown when a passcode-protected profile variant is opened without the
- * correct code. Submitting reloads the same URL with `?p=<key>&code=<pin>` so the
- * server resolves and reveals the variant.
+ * Shown when a passcode-protected profile is opened without the right code.
+ * Submitting reloads the page with ?p=<key>&code=<pin>, and the server decides.
+ * The card's language is not known yet, so this follows the visitor's.
  */
-export function PasscodeGate({
-  slug,
-  p,
-  profileName,
-  wrongCode,
-}: {
-  slug: string;
-  p: string;
-  profileName: string;
-  wrongCode: boolean;
-}) {
+export function PasscodeGate({ slug, p, profileName, wrongCode }: { slug: string; p: string; profileName: string; wrongCode: boolean }) {
   const router = useRouter();
+  const [lang, setLang] = useState<Lang>('en');
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const t = profileStrings(lang);
+
+  useEffect(() => {
+    if (navigator.language?.toLowerCase().startsWith('ar')) setLang('ar');
+  }, []);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) return;
     setSubmitting(true);
-    const qs = new URLSearchParams({ p, code: code.trim() });
-    router.push(`/c/${slug}?${qs.toString()}`);
+    router.push(`/c/${slug}?${new URLSearchParams({ p, code: code.trim() })}`);
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-canvas px-6 text-ink">
-      <form onSubmit={submit} className="w-full max-w-[380px] text-center">
-        <span
-          className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg"
-          style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
-        >
-          <VMark size={26} strokeWidth={2.8} />
+    <main
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      style={profileStyle({ accent: '#2563eb', mode: 'light' })}
+      className="flex min-h-[100dvh] items-center justify-center bg-[var(--p-bg)] px-6 text-[var(--p-fg)]"
+    >
+      <form onSubmit={submit} className="w-full max-w-[360px] rounded-[20px] bg-[var(--p-surface)] p-6 text-center shadow-[0_0_0_1px_var(--p-line),0_24px_48px_-24px_rgba(0,0,0,0.2)]">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--p-elevated)] text-[var(--p-muted)]">
+          <Icon name="lock" size={20} />
         </span>
-
-        <h1 className="mt-6 text-[22px] font-extrabold tracking-tight">Private profile</h1>
-        <p className="mt-2 text-[14px] font-medium text-muted">
-          {profileName ? (
-            <>“{profileName}” is protected. Enter the passcode to view it.</>
-          ) : (
-            <>This profile is protected. Enter the passcode to view it.</>
-          )}
-        </p>
+        <h1 className="mt-4 text-[20px] font-semibold">{t.lockedTitle}</h1>
+        <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--p-muted)]">{profileName ? fill(t.lockedBody, { name: profileName }) : t.lockedBodyNoName}</p>
 
         <input
           autoFocus
           inputMode="numeric"
+          autoComplete="one-time-code"
+          dir="ltr"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="Passcode"
-          className="mt-6 w-full rounded-xl border border-line bg-surface px-4 py-3 text-center text-[18px] font-bold tracking-[0.3em] outline-none focus:border-accent"
+          placeholder={t.passcode}
+          aria-label={t.passcode}
+          aria-invalid={wrongCode}
+          className="mt-5 h-12 w-full rounded-[12px] bg-[var(--p-elevated)] px-4 text-center text-[18px] font-medium tracking-[0.3em] outline-none ring-1 ring-inset ring-transparent placeholder:tracking-normal placeholder:text-[var(--p-faint)] focus:ring-[var(--p-accent)]"
         />
+        {wrongCode && <p className="mt-2 text-[13.5px] text-[#d4453a]">{t.wrongCode}</p>}
 
-        {wrongCode && (
-          <p className="mt-2 text-[13px] font-semibold text-red-500">Incorrect passcode. Try again.</p>
-        )}
-
-        <button
-          type="submit"
-          disabled={submitting || !code.trim()}
-          className="v-btn mt-4 h-11 w-full text-[14.5px] font-bold disabled:opacity-50"
-        >
-          {submitting ? 'Unlocking…' : 'Unlock profile'}
+        <button type="submit" disabled={submitting || !code.trim()} className="mt-3 h-12 w-full rounded-[12px] bg-[var(--p-accent)] text-[15px] font-medium text-[var(--p-on-accent)] disabled:opacity-50">
+          {submitting ? t.unlocking : t.unlock}
         </button>
 
-        <p className="mt-6 flex items-center justify-center gap-1.5 text-[11.5px] text-faint">
-          <span style={{ color: 'var(--v-accent)' }}><VMark size={12} strokeWidth={3} /></span>
-          Powered by <span className="font-semibold text-muted">Vertex Connect</span>
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-[12px] text-[var(--p-faint)]">
+          {t.poweredBy}
+          <span className="flex items-center gap-1 font-medium text-[var(--p-muted)]">
+            <VMark size={12} strokeWidth={3} /> Vertex Connect
+          </span>
         </p>
       </form>
     </main>

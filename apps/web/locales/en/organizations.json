@@ -1,4 +1,68 @@
 {
-  "title": "Organization & Workspaces",
-  "subtitle": "Manage multi-tenant organization settings, plan limits, and sub-teams."
+  "title": "Workspace settings",
+  "personal": "Workspace settings belong to an organization. Switch to one from the menu at the top of the sidebar.",
+  "readOnly": "Only owners and admins can change these settings.",
+  "sections": {
+    "general": "General",
+    "brand": "Brand",
+    "files": "Files"
+  },
+  "save": "Save",
+  "saving": "Saving…",
+  "discard": "Discard",
+  "copy": "Copy",
+  "copied": "Copied",
+  "cancel": "Cancel",
+  "dismiss": "Dismiss",
+  "more": "More actions",
+  "plans": {
+    "FREE": "Free",
+    "PRO": "Pro",
+    "BUSINESS": "Business",
+    "ENTERPRISE": "Enterprise"
+  },
+  "general": {
+    "name": "Workspace name",
+    "nameHint": "Shown in the workspace switcher and to people you invite.",
+    "language": "Language for new cards",
+    "languageHint": "New cards start in this language. Each card can change it in the Studio.",
+    "plan": "Plan",
+    "planHint": "What this workspace can do and how many cards, people and chips it includes.",
+    "billing": "Manage billing",
+    "id": "Workspace ID",
+    "idHint": "Integrations and the API use this to reach this workspace."
+  },
+  "brand": {
+    "logo": "Logo",
+    "logoHint": "Shown in the workspace switcher. A square image works best.",
+    "colour": "Brand colour",
+    "colourHint": "New cards start with this colour. Each card can still choose its own.",
+    "custom": "Custom colour",
+    "hex": "Colour code",
+    "invalid": "Use a six-digit colour code, like #2563eb.",
+    "previewTitle": "Where it shows",
+    "inSwitcher": "Workspace switcher",
+    "inNewCards": "A new card"
+  },
+  "files": {
+    "intro": "Images everyone in the workspace can reuse: logos, backgrounds, product shots. Copy a file's link to use it in a card.",
+    "upload": "Upload image",
+    "uploading": "Uploading…",
+    "onlyImages": "Only images can be uploaded here for now.",
+    "emptyTitle": "No shared files yet",
+    "emptyBody": "Upload the logos and images your team uses on its cards.",
+    "copyLink": "Copy link",
+    "open": "Open",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "deleteTitle": "Delete this file?",
+    "deleteBody": "Cards that already use its link will show a broken image."
+  },
+  "toasts": {
+    "saved": "Settings saved.",
+    "brandSaved": "Brand saved.",
+    "uploaded": "File uploaded.",
+    "linkCopied": "Link copied.",
+    "deleted": "File deleted."
+  }
 }

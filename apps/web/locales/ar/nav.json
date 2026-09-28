@@ -6,19 +6,72 @@
     "administration": "الإدارة"
   },
   "items": {
-    "dashboard": "لوحة التحكم",
+    "dashboard": "الرئيسية",
     "analytics": "التحليلات",
     "cards": "البطاقات",
     "leads": "العملاء المحتملون",
     "tags": "بطاقات NFC",
     "team": "الفريق",
     "integrations": "التكاملات",
-    "adminConsole": "وحدة تحكم الإدارة"
+    "adminConsole": "وحدة تحكم الإدارة",
+    "settings": "الإعدادات"
   },
   "searchWorkspace": "بحث في مساحة العمل…",
   "darkMode": "الوضع الداكن",
   "lightMode": "الوضع الفاتح",
   "toggleTheme": "تبديل مظهر الألوان",
   "signOut": "تسجيل الخروج",
-  "notifications": "الإشعارات"
+  "notifications": "الإشعارات",
+  "search": "بحث",
+  "searchPlaceholder": "ابحث في البطاقات والعملاء والأعضاء…",
+  "searchLoading": "جارٍ التحميل…",
+  "searchEmpty": "لا توجد نتائج لـ «{{query}}»",
+  "searchGroups": {
+    "pages": "انتقل إلى",
+    "cards": "البطاقات",
+    "departments": "الأقسام",
+    "teams": "الفرق",
+    "members": "الأعضاء",
+    "leads": "العملاء المحتملون",
+    "tags": "بطاقات NFC",
+    "files": "الملفات",
+    "notifications": "الإشعارات"
+  },
+  "searchKeys": {
+    "navigate": "تنقّل",
+    "open": "فتح",
+    "close": "إغلاق"
+  },
+  "teamsCount": "{{count}} فرق",
+  "membersCount": "{{count}} أعضاء",
+  "unnamedLead": "عميل بدون اسم",
+  "pendingMember": "دعوة معلّقة",
+  "switcher": {
+    "favorites": "المفضلة",
+    "recents": "الأخيرة",
+    "workspaces": "مساحات العمل",
+    "personal": "مساحة العمل الشخصية",
+    "noResults": "لا توجد مساحات عمل مطابقة",
+    "onlyOne": "هذه مساحة العمل الوحيدة لديك.",
+    "favorite": "إضافة إلى المفضلة",
+    "unfavorite": "إزالة من المفضلة"
+  },
+  "plan": {
+    "cards": "{{used}} من {{limit}} بطاقات",
+    "cardsUnlimited": "{{used}} بطاقات",
+    "compare": "قارن الخطط"
+  },
+  "account": {
+    "menu": "قائمة الحساب",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "light": "فاتح",
+    "dark": "داكن"
+  },
+  "roles": {
+    "OWNER": "مالك",
+    "ADMIN": "مسؤول",
+    "MANAGER": "مدير",
+    "EMPLOYEE": "عضو"
+  }
 }

@@ -140,13 +140,13 @@ export default function NfcProgrammer({
   /* ---------- unsupported browsers ---------- */
   if (blocker !== 'none') {
     return (
-      <div className="rounded-2xl border border-line bg-canvas/30 p-5">
+      <div className="rounded-xl bg-elevated/60 p-4 ring-1 ring-inset ring-line">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-            <Icon name="tag" size={16} />
+          <span className="v-icon-tile">
+            <Icon name="tag" size={15} />
           </span>
           <div>
-            <h4 className="text-[13.5px] font-extrabold text-ink">{t('nfcProgram.title')}</h4>
+            <h4 className="text-[13.5px] font-semibold text-ink">{t('nfcProgram.title')}</h4>
             <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
               {blocker === 'insecure' ? t('nfcProgram.insecure') : t('nfcProgram.unsupported')}
             </p>
@@ -174,7 +174,7 @@ export default function NfcProgrammer({
         </span>
 
         <div className="min-w-0 flex-1">
-          <h4 className="text-[13.5px] font-extrabold text-ink">{t('nfcProgram.title')}</h4>
+          <h4 className="text-[13.5px] font-semibold text-ink">{t('nfcProgram.title')}</h4>
           <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
             {phase === 'idle' && t('nfcProgram.idle')}
             {phase === 'waiting' && t('nfcProgram.waiting')}
@@ -193,7 +193,7 @@ export default function NfcProgrammer({
           <div className="mt-4 flex items-center gap-2">
             {busy ? (
               <>
-                <span className="flex items-center gap-2 text-[12.5px] font-bold text-accent">
+                <span className="flex items-center gap-2 text-[12.5px] font-semibold text-accent">
                   <Icon name="loader" size={14} className="animate-spin" />
                   {phase === 'waiting' ? t('nfcProgram.holdTag') : t('nfcProgram.keepHolding')}
                 </span>
@@ -205,7 +205,7 @@ export default function NfcProgrammer({
                 </button>
               </>
             ) : (
-              <button onClick={program} className="v-btn !h-10 px-5 text-[13px] font-bold">
+              <button onClick={program} className="v-btn !h-10 px-5 text-[13px] font-semibold">
                 {phase === 'done' || phase === 'error'
                   ? t('nfcProgram.again')
                   : t('nfcProgram.start')}

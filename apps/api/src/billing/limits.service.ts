@@ -94,7 +94,7 @@ export class LimitsService {
       this.db.nfcTag.count(),
       this.db.subscription.findFirst({
         where: { orgId },
-        select: { status: true },
+        select: { status: true, currentPeriodEnd: true, stripeCustomerId: true },
       }),
     ]);
     return {
@@ -102,6 +102,8 @@ export class LimitsService {
       limits: PLAN_LIMITS[plan],
       usage: { cards, members, nfcTags },
       status: sub?.status ?? 'NONE',
+      periodEnd: sub?.currentPeriodEnd?.toISOString() ?? null,
+      billingAccount: !!sub?.stripeCustomerId,
     };
   }
 }

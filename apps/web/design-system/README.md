@@ -4,11 +4,14 @@ Welcome to the **Vertex Connect Enterprise Design System**. This package serves 
 
 ---
 
-## Design Philosophy
-Our visual language is designed to feel:
-- **Minimal & Elegant** (inspired by Apple and Vercel)
-- **High-Contrast & Usable** (inspired by Google Material 3 and WCAG AA standards)
-- **Fluid & Responsive** (inspired by Stripe and Linear)
+## Design Principles
+- **Data first, decoration never.** Structure comes from spacing, type size and 1px rules — not from boxes, shadows or coloured icon tiles.
+- **One accent, and it means something.** The brand blue (`#2563EB`) is flat and appears only on primary actions, the active item and the current data series. Everything else is warm neutrals.
+- **One family for two scripts.** Geist sets Latin text and IBM Plex Sans Arabic sets Arabic; Geist Mono is for identifiers such as chip UIDs and slugs. Numbers use tabular figures.
+- **Plain, specific words.** Sentence-case labels, no uppercase eyebrows, no emoji in the interface.
+- **Tight shapes.** 6–8px on controls, 12px on panels; hairline borders over shadows.
+
+The tokens live in `app/globals.css` (`--v-*`); `styles/system.css` maps the `--ds-*` names used by these components onto them.
 
 ---
 

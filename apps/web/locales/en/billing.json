@@ -1,40 +1,82 @@
 {
-  "title": "Subscription & Billing",
-  "subtitle": "Upgrade your plan and check current organization usage limits",
-  "loading": "Loading subscription context…",
-  "successBanner": "Subscription updated successfully. Thank you for choosing Vertex Connect!",
-  "sandboxBanner": "Billing is running in local Sandbox / Test Mode — subscription limits are active but Stripe checkout is simulated.",
+  "title": "Billing",
+  "personal": "Plans belong to an organization. Switch to one from the menu at the top of the sidebar.",
+  "readOnly": "Only owners and admins can change the plan.",
+  "dismiss": "Dismiss",
+  "notices": {
+    "success": "Payment received. Your new plan shows here as soon as it is confirmed.",
+    "successDone": "You're on {{plan}} now.",
+    "canceled": "Checkout closed. Nothing was charged.",
+    "disabled": "Online payment isn't connected on this server yet, so the plan can't be changed from here. Your plan's limits still apply."
+  },
   "current": {
-    "tier": "Active Subscription tier",
-    "planSuffix": "{{name}} Plan",
-    "managePortal": "Manage billing portal"
+    "label": "Your plan",
+    "free": "No payment needed",
+    "perMonth": "{{price}} per month",
+    "contract": "Custom contract",
+    "paidThrough": "Paid through {{date}}",
+    "manage": "Manage billing",
+    "opening": "Opening…",
+    "pastDue": "The last payment didn't go through. Update the payment method to keep {{plan}}.",
+    "updatePayment": "Update payment"
+  },
+  "status": {
+    "ACTIVE": "Active",
+    "TRIALING": "Trial",
+    "PAST_DUE": "Payment due",
+    "CANCELED": "Canceled"
   },
   "usage": {
     "cards": "Cards",
     "members": "Members",
-    "nfcTags": "NFC Tags"
+    "nfcTags": "NFC chips",
+    "of": "{{used}} of {{limit}}",
+    "unlimited": "{{used}} · no limit",
+    "left": "{{count}} left",
+    "full": "Limit reached",
+    "open": "Open {{page}}"
   },
+  "nudge": {
+    "cards": "You've reached your plan's card limit.",
+    "members": "You've reached your plan's member limit.",
+    "nfcTags": "You've reached your plan's NFC chip limit.",
+    "upTo": "{{plan}} allows up to {{count}}.",
+    "noLimit": "{{plan}} has no limit."
+  },
+  "plansTitle": "Plans",
+  "plansHint": "Prices are in US dollars, per month. Changes apply as soon as payment is confirmed.",
   "plans": {
     "FREE": "Free",
     "PRO": "Pro",
     "BUSINESS": "Business",
     "ENTERPRISE": "Enterprise"
   },
+  "taglines": {
+    "FREE": "One card, to try it out.",
+    "PRO": "For a person or a small team.",
+    "BUSINESS": "For teams handing out many cards.",
+    "ENTERPRISE": "For large organizations, on contract."
+  },
   "plan": {
-    "active": "Active",
+    "currentPlan": "Current plan",
     "custom": "Custom",
-    "perMonth": "/mo",
-    "unlimited": "Unlimited",
-    "currentPlan": "Current active plan",
+    "perMonth": "/ month",
+    "upgrade": "Upgrade to {{plan}}",
+    "switchTo": "Switch to {{plan}}",
     "redirecting": "Redirecting…",
-    "upgradeTo": "Upgrade to {{name}}",
-    "sandboxDisabled": "Sandbox — upgrade disabled",
-    "contactSales": "Contact corporate sales",
-    "cards_one": "digital profile card",
-    "cards_other": "digital profile cards",
-    "members_one": "organization member",
-    "members_other": "organization members",
-    "tags_one": "programmable tag",
-    "tags_other": "programmable tags"
-  }
+    "contactSales": "Contact sales"
+  },
+  "features": {
+    "cards_one": "One card",
+    "cards_other": "{{count}} cards",
+    "cardsUnlimited": "Unlimited cards",
+    "members_one": "One member",
+    "members_other": "{{count}} members",
+    "membersUnlimited": "Unlimited members",
+    "nfcTags_one": "One NFC chip",
+    "nfcTags_other": "{{count}} NFC chips",
+    "nfcTagsUnlimited": "Unlimited NFC chips",
+    "verified": "Verified badge on your cards"
+  },
+  "secure": "Payments are handled by Stripe. Card details never reach Vertex Connect."
 }

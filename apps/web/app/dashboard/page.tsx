@@ -3,55 +3,31 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { authFetch, getToken, getActiveOrgId, type Card as CardType, type NfcTag, type Member, type Team, type Me } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { formatDate, formatTime, formatDateTime } from '@/lib/format';
+import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
+import { formatDate, formatNumber, formatRelativeTime } from '@/lib/format';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { Sparkline } from '@/components/charts/Sparkline';
-import { AreaChart } from '@/components/charts/AreaChart';
+import { TrendChart } from '@/components/charts/TrendChart';
+import { OccasionsSheet } from '@/components/occasions/OccasionsSheet';
+import { countDuring, markersFor, occasionOn, type Occasion } from '@/lib/occasions';
 import AppShell from '@/components/AppShell';
+import { CardThumb } from '@/components/cards/CardThumb';
+import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
 
-// Design System Imports
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Badge,
-  ProgressBar,
-  Skeleton,
-  Alert,
-} from '@/design-system';
-
-interface Overview {
-  totals: Record<string, number>;
-  uniqueVisitors: number;
-  leads: number;
-}
-
-interface Point {
-  day: string;
-  VIEW: number;
-  CLICK: number;
-  SAVE: number;
-  SHARE: number;
-  NFC_SCAN: number;
-}
 
 interface Lead {
   id: string;
   name: string | null;
   company: string | null;
+  email?: string | null;
   temperature: 'COLD' | 'WARM' | 'HOT';
-  source: string;
+  source: string | null;
   stageId: string | null;
   createdAt: string;
-  intent?: string | null;
-  meetingAt?: string | null;
-  email?: string | null;
-  phone?: string | null;
+  card?: { slug: string } | null;
 }
 
 interface Stage {
@@ -63,8 +39,6 @@ interface Stage {
 interface Department {
   id: string;
   name: string;
-  color: string | null;
-  manager: { name: string; email: string } | null;
   _count: { teams: number; memberships: number };
 }
 
@@ -73,13 +47,37 @@ interface ApprovalRequest {
   title: string;
   type: string;
   status: string;
-  comment: string | null;
   requester: { name: string; email: string };
   createdAt: string;
-  metadata: Record<string, any> | null;
 }
 
-export default function CommandCenter() {
+interface TopCard {
+  cardId: string;
+  slug: string;
+  events: number;
+}
+
+interface AuditLog {
+  id: string;
+  action: string;
+  targetType: string | null;
+  createdAt: string;
+  actor: { name: string | null; email: string } | null;
+}
+
+type Period = 7 | 30 | 90;
+type MetricKey = 'VIEW' | 'NFC_SCAN' | 'SAVE' | 'LEADS';
+
+const PERIODS: Period[] = [7, 30, 90];
+
+/** "org.branding_updated" → "Branding updated". */
+function humanizeAction(action: string) {
+  const last = action.split('.').pop() ?? action;
+  const words = last.replace(/[_-]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+export default function HomePage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard');
   const { locale } = useLocale();
@@ -87,91 +85,36 @@ export default function CommandCenter() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [me, setMe] = useState<Me | null>(null);
-  // Switcher and Org details
-  const [org, setOrg] = useState<{ id: string; name: string; slug: string; plan: string } | null>(null);
 
-  // Common workspace stats
   const [cards, setCards] = useState<CardType[]>([]);
   const [tags, setTags] = useState<NfcTag[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
 
-  // Org Specific states
+  // Organization workspace
   const [members, setMembers] = useState<Member[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
-  // Personal workspace extra states
+  // Personal workspace
   const [personalTasks, setPersonalTasks] = useState<any[]>([]);
   const [personalNotifications, setPersonalNotifications] = useState<any[]>([]);
 
-  // Analytics states
+  // Analytics for the chosen period and the one before it
+  const [period, setPeriod] = useState<Period>(30);
+  const [metric, setMetric] = useState<MetricKey>('VIEW');
   const [ov, setOv] = useState<Overview | null>(null);
+  const [ovPrev, setOvPrev] = useState<Overview | null>(null);
   const [ts, setTs] = useState<Point[]>([]);
-
-  // Filter State
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterDept, setFilterDept] = useState('ALL');
+  const [tsPrev, setTsPrev] = useState<Point[]>([]);
+  const [topCards, setTopCards] = useState<TopCard[]>([]);
+  const [occasions, setOccasions] = useState<Occasion[]>([]);
+  const [showOccasions, setShowOccasions] = useState(false);
+  const loadOccasions = useCallback(() => authFetch<Occasion[]>('/orgs/occasions').then(setOccasions).catch(() => setOccasions([])), []);
 
   const [showOnboarding, setShowOnboarding] = useState(true);
-
-  const onboardingSteps = useMemo(() => {
-    const hasCard = cards.length > 0;
-    const hasPublishedCard = cards.some(c => c.isPublished);
-    const hasLinkedTag = tags.some(t => t.cardId !== null);
-    const hasLeads = leads.length > 0;
-
-    return [
-      {
-        id: 'create-card',
-        label: t('onboarding.steps.createCard.label'),
-        desc: t('onboarding.steps.createCard.desc'),
-        completed: hasCard,
-        link: '/cards?new=1',
-        linkText: t('onboarding.steps.createCard.link'),
-      },
-      {
-        id: 'publish-card',
-        label: t('onboarding.steps.publishCard.label'),
-        desc: t('onboarding.steps.publishCard.desc'),
-        completed: hasPublishedCard,
-        link: cards[0] ? `/cards/${cards[0].id}` : '/cards',
-        linkText: cards[0] ? t('onboarding.steps.publishCard.link') : t('onboarding.steps.publishCard.linkAlt'),
-      },
-      {
-        id: 'link-tag',
-        label: t('onboarding.steps.linkTag.label'),
-        desc: t('onboarding.steps.linkTag.desc'),
-        completed: hasLinkedTag,
-        link: '/tags',
-        linkText: t('onboarding.steps.linkTag.link'),
-      },
-      {
-        id: 'capture-lead',
-        label: t('onboarding.steps.captureLead.label'),
-        desc: t('onboarding.steps.captureLead.desc'),
-        completed: hasLeads,
-        link: '/leads',
-        linkText: t('onboarding.steps.captureLead.link'),
-      },
-    ];
-  }, [cards, tags, leads, t]);
-
-  const onboardingProgress = useMemo(() => {
-    const completedCount = onboardingSteps.filter(s => s.completed).length;
-    return Math.round((completedCount / onboardingSteps.length) * 100);
-  }, [onboardingSteps]);
-
-  const toggleOnboarding = () => {
-    setShowOnboarding((prev) => {
-      const next = !prev;
-      localStorage.setItem('vertex_show_onboarding', String(next));
-      return next;
-    });
-  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -184,7 +127,6 @@ export default function CommandCenter() {
       setMe(meInfo);
 
       if (!orgId) {
-        // PERSONAL WORKSPACE DATA
         const [c, tg, l, tsk, ntf] = await Promise.all([
           authFetch<CardType[]>('/cards').catch(() => []),
           authFetch<NfcTag[]>('/nfc/tags').catch(() => []),
@@ -198,10 +140,8 @@ export default function CommandCenter() {
         setPersonalTasks(tsk);
         setPersonalNotifications(ntf);
       } else {
-        // ORGANIZATION WORKSPACE DATA
-        const [o, c, tg, l, stg, mem, tm, dept, appList, logs, currentOrg] = await Promise.all([
-          authFetch<Overview>('/analytics/overview').catch(() => null),
-          authFetch<Point[]>('/analytics/timeseries').catch(() => []),
+        const [c, tg, l, stg, mem, tm, dept, appList, logs] = await Promise.all([
+          authFetch<CardType[]>('/cards').catch(() => []),
           authFetch<NfcTag[]>('/nfc/tags').catch(() => []),
           authFetch<Lead[]>('/leads').catch(() => []),
           authFetch<Stage[]>('/leads/stages').catch(() => []),
@@ -209,12 +149,9 @@ export default function CommandCenter() {
           authFetch<Team[]>('/orgs/teams').catch(() => []),
           authFetch<Department[]>('/orgs/departments').catch(() => []),
           authFetch<ApprovalRequest[]>('/orgs/approvals').catch(() => []),
-          authFetch<any[]>('/orgs/audit-logs').catch(() => []),
-          authFetch<{ id: string; name: string; slug: string; plan: string }>('/orgs/current').catch(() => null),
+          authFetch<AuditLog[]>('/orgs/audit-logs').catch(() => []),
         ]);
-
-        setOv(o);
-        setTs(c as any); // timeseries
+        setCards(c);
         setTags(tg);
         setLeads(l);
         setStages(stg);
@@ -223,14 +160,14 @@ export default function CommandCenter() {
         setDepartments(dept);
         setApprovals(appList);
         setAuditLogs(logs);
-        setOrg(currentOrg);
+        loadOccasions();
       }
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadOccasions]);
 
   useEffect(() => {
     if (!getToken()) {
@@ -238,761 +175,838 @@ export default function CommandCenter() {
       return;
     }
     const savedOnboarding = localStorage.getItem('vertex_show_onboarding');
-    if (savedOnboarding !== null) {
-      setShowOnboarding(savedOnboarding === 'true');
-    }
+    if (savedOnboarding !== null) setShowOnboarding(savedOnboarding === 'true');
     load().catch((e) => setError(e.message));
   }, [router, load]);
+
+  // The window is whole UTC days ending today; the comparison window is the
+  // same number of days immediately before it.
+  const windows = useMemo(() => periodWindows(period), [period]);
+
+  useEffect(() => {
+    if (!activeOrgId) return;
+    const now = new Date();
+    const q = rangeQuery;
+    let alive = true;
+    Promise.all([
+      authFetch<Overview>('/analytics/overview' + q(windows.from, now)).catch(() => null),
+      authFetch<Overview>('/analytics/overview' + q(windows.prevFrom, windows.from)).catch(() => null),
+      authFetch<Point[]>('/analytics/timeseries' + q(windows.from, now)).catch(() => []),
+      authFetch<Point[]>('/analytics/timeseries' + q(windows.prevFrom, windows.from)).catch(() => []),
+      authFetch<TopCard[]>('/analytics/top-cards' + q(windows.from, now)).catch(() => []),
+    ]).then(([o, op, s, sp, top]) => {
+      if (!alive) return;
+      setOv(o);
+      setOvPrev(op);
+      setTs(s);
+      setTsPrev(sp);
+      setTopCards(top);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [activeOrgId, windows]);
 
   const handleResolveApproval = async (id: string, status: 'APPROVED' | 'REJECTED') => {
     try {
       await authFetch(`/orgs/approvals/${id}/resolve`, {
         method: 'PATCH',
-        body: JSON.stringify({ status, comment: `${status} via CommandCenter Dashboard` }),
+        body: JSON.stringify({ status, comment: `${status} from the home page` }),
       });
-      // reload data
       load();
     } catch (e) {
       setError((e as Error).message);
     }
   };
 
-  // Helper selectors & aggregations
-  const totalViews = useMemo(() => {
-    if (activeOrgId) return ov?.totals?.VIEW ?? 0;
-    return cards.length * 15; // fallback client-side estimation for personal mode
-  }, [activeOrgId, ov, cards]);
+  const handleToggleTask = async (taskId: string, completed: boolean) => {
+    try {
+      await authFetch(`/tasks/${taskId}`, { method: 'PATCH', body: JSON.stringify({ completed }) });
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
 
-  const totalTaps = useMemo(() => {
-    if (activeOrgId) return ov?.totals?.NFC_SCAN ?? 0;
-    return tags.reduce((sum, t) => sum + (t.activationCount ?? 0), 0);
-  }, [activeOrgId, ov, tags]);
+  const toggleOnboarding = () => {
+    setShowOnboarding((prev) => {
+      const next = !prev;
+      localStorage.setItem('vertex_show_onboarding', String(next));
+      return next;
+    });
+  };
 
-  const totalLeads = leads.length;
+  const onboardingSteps = useMemo(() => {
+    const hasCard = cards.length > 0;
+    return [
+      {
+        id: 'create-card',
+        label: t('onboarding.steps.createCard.label'),
+        desc: t('onboarding.steps.createCard.desc'),
+        completed: hasCard,
+        link: '/cards?new=1',
+        linkText: t('onboarding.steps.createCard.link'),
+      },
+      {
+        id: 'publish-card',
+        label: t('onboarding.steps.publishCard.label'),
+        desc: t('onboarding.steps.publishCard.desc'),
+        completed: cards.some((c) => c.isPublished),
+        link: cards[0] ? `/cards/${cards[0].id}` : '/cards',
+        linkText: cards[0] ? t('onboarding.steps.publishCard.link') : t('onboarding.steps.publishCard.linkAlt'),
+      },
+      {
+        id: 'link-tag',
+        label: t('onboarding.steps.linkTag.label'),
+        desc: t('onboarding.steps.linkTag.desc'),
+        completed: tags.some((tg) => tg.cardId !== null),
+        link: '/tags',
+        linkText: t('onboarding.steps.linkTag.link'),
+      },
+      {
+        id: 'capture-lead',
+        label: t('onboarding.steps.captureLead.label'),
+        desc: t('onboarding.steps.captureLead.desc'),
+        completed: leads.length > 0,
+        link: '/leads',
+        linkText: t('onboarding.steps.captureLead.link'),
+      },
+    ];
+  }, [cards, tags, leads, t]);
 
-  const convRate = useMemo(() => {
-    return totalViews ? ((totalLeads / totalViews) * 100).toFixed(1) : '0.0';
-  }, [totalViews, totalLeads]);
+  // Leads still sitting in the first pipeline stage have not been picked up yet.
+  const firstStageId = useMemo(() => [...stages].sort((a, b) => a.order - b.order)[0]?.id ?? null, [stages]);
+  const waitingLeads = useMemo(
+    () =>
+      leads
+        .filter((l) => !l.stageId || l.stageId === firstStageId)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [leads, firstStageId],
+  );
 
-  const filteredCards = useMemo(() => {
-    if (!searchQuery) return [];
-    return cards.filter(c => c.slug.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [cards, searchQuery]);
+  const firstName = (me?.name?.trim().split(/\s+/)[0] || me?.email?.split('@')[0] || '').trim();
+  const hour = new Date().getHours();
+  const greeting = t(hour < 12 ? 'greeting.morning' : hour < 18 ? 'greeting.afternoon' : 'greeting.evening', {
+    name: firstName,
+  });
+  const today = formatDate(new Date(), locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  const comma = locale === 'ar' ? '، ' : ', ';
+  const fmt = (n: number) => formatNumber(n, locale);
+  // Percentages go through Intl so the sign sits on the right side in Arabic too.
+  const pctOf = (part: number, whole: number, digits: number) =>
+    formatNumber(whole ? part / whole : 0, locale, { style: 'percent', maximumFractionDigits: digits, minimumFractionDigits: digits });
 
-  // Timeseries graphs data
-  const days = useMemo(() => ts.map((p) => p.day), [ts]);
-  const viewsSeries = useMemo(() => ts.map((p) => p.VIEW), [ts]);
-  const scansSeries = useMemo(() => ts.map((p) => p.NFC_SCAN), [ts]);
-  const clicksSeries = useMemo(() => ts.map((p) => p.CLICK), [ts]);
-  const savesSeries = useMemo(() => ts.map((p) => p.SAVE), [ts]);
-  const graphLabels = useMemo(() => days.map((d) => d.slice(5)), [days]);
+  const newCardAction = (
+    <Link href="/cards?new=1" className="v-btn">
+      <Icon name="plus" size={15} />
+      {t('newCard')}
+    </Link>
+  );
 
   if (loading) {
     return (
-      <AppShell title={t('titles.command')}>
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <Skeleton className="h-10 w-64 animate-pulse bg-line" />
-            <Skeleton className="h-10 w-36 animate-pulse bg-line" />
+      <AppShell title={t('titles.command')} action={newCardAction}>
+        <div className="space-y-5">
+          <div className="v-skeleton h-14 w-80" />
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="v-skeleton h-[420px]" />
+            <div className="v-skeleton h-[420px]" />
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((n) => (
-              <Skeleton key={n} className="h-28 rounded-2xl animate-pulse bg-line" />
-            ))}
-          </div>
-          <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-            <Skeleton className="h-96 rounded-2xl animate-pulse bg-line" />
-            <Skeleton className="h-96 rounded-2xl animate-pulse bg-line" />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="v-skeleton h-60" />
+            <div className="v-skeleton h-60" />
           </div>
         </div>
       </AppShell>
     );
   }
 
-  // --------------------------------------------------------------------------
-  const handleToggleTask = async (taskId: string, completed: boolean) => {
-    try {
-      await authFetch(`/tasks/${taskId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ completed }),
-      });
-      load();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
+  const errorBanner = error && (
+    <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 dark:text-red-300">
+      {error}
+    </div>
+  );
+
+  const onboarding = (
+    <Onboarding steps={onboardingSteps} visible={showOnboarding} onToggle={toggleOnboarding} t={t} />
+  );
+
+  const recentLeadsPanel = (
+    <section className="v-card flex flex-col">
+      <PanelHeader title={t('recent.title')} />
+      {leads.length === 0 ? (
+        <p className="px-4 pb-6 pt-2 text-[13px] leading-relaxed text-muted">{t('recent.empty')}</p>
+      ) : (
+        <ul className="px-2 pb-1">
+          {leads.slice(0, 6).map((l) => (
+            <li key={l.id}>
+              <Link href="/leads" className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-elevated">
+                <Avatar user={{ id: l.id, name: l.name, email: l.email }} size={30} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13.5px] font-medium text-ink">{l.name || t('recent.unnamed')}</span>
+                  <span className="block truncate text-[12px] text-faint">
+                    {[l.company, t(`recent.sources.${sourceKey(l.source)}`)].filter(Boolean).join(' · ')}
+                  </span>
+                </span>
+                <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(l.createdAt, locale)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link href="/leads" className="mt-auto border-t border-line px-4 py-3 text-[12.5px] font-medium text-accent hover:underline">
+        {t('recent.all')}
+      </Link>
+    </section>
+  );
 
   // --------------------------------------------------------------------------
-  // (A) PERSONAL WORKSPACE VIEW
+  // Personal workspace
   // --------------------------------------------------------------------------
   if (!activeOrgId) {
-    const initialLetter = (me?.email?.charAt(0) ?? 'P').toUpperCase();
-    const personalLeads = leads.length;
-    const personalTaps = tags.reduce((sum, t) => sum + (t.activationCount ?? 0), 0);
-    const publishedCount = cards.filter((c) => c.isPublished).length;
-
-    const activeTasks = personalTasks.filter(t => !t.completed);
-    const upcomingMeetings = leads.filter(l => l.intent === 'MEETING' && l.meetingAt).sort((a, b) => new Date(a.meetingAt!).getTime() - new Date(b.meetingAt!).getTime());
+    const taps = tags.reduce((sum, tg) => sum + (tg.activationCount ?? 0), 0);
+    const openTasks = personalTasks.filter((task) => !task.completed);
+    const meetingRequests = leads.filter((l) => l.source === 'meeting');
+    const stats = [
+      { label: t('personal.kpi.cards'), value: cards.length, sub: t('personal.kpi.published', { count: cards.filter((c) => c.isPublished).length }) },
+      { label: t('personal.kpi.leads'), value: leads.length, sub: t('personal.kpi.leadsSub') },
+      { label: t('personal.kpi.chips'), value: tags.length, sub: t('personal.kpi.chipsSub') },
+      { label: t('personal.kpi.taps'), value: taps, sub: t('personal.kpi.tapsSub') },
+    ];
 
     return (
-      <AppShell title={t('titles.personal')}>
-        <div className="space-y-8">
-          {/* Hero Banner */}
-          <div className="v-hero p-6 md:p-7">
-            <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4 min-w-0">
-                {me?.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={me.avatarUrl}
-                    alt=""
-                    className="h-14 w-14 shrink-0 rounded-2xl object-cover ring-2 ring-white/25"
-                  />
-                ) : (
-                  // On the gradient hero the frosted tile reads better than a
-                  // solid initials circle, so keep the banner's own treatment.
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-lg font-extrabold text-white backdrop-blur">
-                    {initialLetter}
-                  </span>
-                )}
-                <div className="min-w-0">
-                  <h2 className="v-display text-[22px] font-extrabold tracking-tight text-white">{t('titles.personal')}</h2>
-                  <p className="mt-1 max-w-xl text-[12.5px] font-medium text-white/75">
-                    {t('personal.heroSubtitle')}
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/cards"
-                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-bold text-[#1d4ed8] shadow-sm transition-transform hover:-translate-y-0.5"
-              >
-                <Icon name="plus" size={15} /> {t('personal.createCard')}
-              </Link>
+      <AppShell title={t('titles.personal')} action={newCardAction}>
+        <h2 className="text-[24px] font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
+        <p className="mt-1 text-[14px] text-muted">{t('personal.subtitle')}</p>
+        {errorBanner}
+        {onboarding}
+
+        <div className="v-card mt-5 grid grid-cols-2 overflow-hidden lg:grid-cols-4">
+          {stats.map((s, i) => (
+            <div key={s.label} className={`px-4 py-4 ${i % 2 ? 'border-s border-line' : ''} ${i >= 2 ? 'border-t border-line lg:border-t-0' : ''} ${i === 2 ? 'lg:border-s' : ''}`}>
+              <p className="text-[12.5px] font-medium text-muted">{s.label}</p>
+              <p className="tabular mt-2 text-[26px] font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(s.value)}</p>
+              <p className="mt-1.5 truncate text-[12px] text-faint">{s.sub}</p>
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* Onboarding Checklist */}
-          <OnboardingWizard
-            steps={onboardingSteps}
-            progress={onboardingProgress}
-            visible={showOnboarding && onboardingProgress < 100}
-            onToggle={toggleOnboarding}
-            t={t}
-          />
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <section className="v-card">
+            <PanelHeader title={t('personal.cards')} meta={cards.length ? fmt(cards.length) : undefined} />
+            {cards.length === 0 ? (
+              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noCards')}</p>
+            ) : (
+              <ul className="px-2 pb-2">
+                {cards.map((c) => (
+                  <li key={c.id}>
+                    <Link href={`/cards/${c.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-elevated">
+                      <CardThumb card={c} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13.5px] font-medium text-ink">{cardName(c)}</span>
+                        <span dir="ltr" className="block truncate text-start font-mono text-[11.5px] text-faint">/c/{c.slug}</span>
+                      </span>
+                      <span className={`v-badge ${c.isPublished ? 'v-badge-success' : 'v-badge-neutral'}`}>
+                        {c.isPublished ? t('personal.live') : t('personal.draft')}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          {recentLeadsPanel}
+        </div>
 
-          {/* Quick Metrics Grid — real counts only */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard label={t('personal.kpi.myCards')} value={cards.length} icon="grid" sub={t('personal.kpi.published', { count: publishedCount })} />
-            <KpiCard label={t('personal.kpi.leadsCaptured')} value={personalLeads} icon="inbox" sub={t('personal.kpi.crmContacts')} />
-            <KpiCard label={t('personal.kpi.nfcDevices')} value={tags.length} icon="tag" sub={t('personal.kpi.registered')} />
-            <KpiCard label={t('personal.kpi.nfcTaps')} value={personalTaps} icon="sparkle" sub={t('personal.kpi.lifetimeScans')} />
-          </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <section className="v-card">
+            <PanelHeader title={t('personal.tasks')} meta={openTasks.length ? fmt(openTasks.length) : undefined} />
+            {openTasks.length === 0 ? (
+              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noTasks')}</p>
+            ) : (
+              <ul className="px-2 pb-2">
+                {openTasks.map((task) => (
+                  <li key={task.id}>
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[13.5px] text-ink hover:bg-elevated">
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={() => handleToggleTask(task.id, !task.completed)}
+                        className="h-4 w-4 rounded border-line accent-[var(--v-accent)]"
+                      />
+                      <span className="truncate">{task.title}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-          {/* 3-Column Content Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Column 1: Profile & Card List */}
-            <div className="space-y-6">
-              <Card variant="standard" className="p-5 space-y-4">
-                <h3 className="text-[13.5px] font-black text-ink tracking-tight flex items-center gap-2 border-b border-line pb-2.5">
-                  <Icon name="user" size={15} /> {t('personal.creatorProfile')}
-                </h3>
-                <div className="space-y-3.5 text-xs font-semibold text-muted">
-                  <div className="flex items-center justify-between py-1 border-b border-line/60">
-                    <span>{t('personal.emailAddress')}</span>
-                    <span dir="ltr" className="text-ink font-bold font-mono truncate max-w-[150px]">{me?.email}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1 border-b border-line/60">
-                    <span>{t('personal.workspaceLevel')}</span>
-                    <span className="text-ink font-bold uppercase tracking-wider">{t('personal.freeDeveloper')}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span>{t('personal.userTokenId')}</span>
-                    <span className="text-faint font-mono">{me?.sub?.slice(0, 10)}...</span>
-                  </div>
-                </div>
-              </Card>
+          <section className="v-card">
+            <PanelHeader title={t('personal.meetings')} meta={meetingRequests.length ? fmt(meetingRequests.length) : undefined} />
+            {meetingRequests.length === 0 ? (
+              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noMeetings')}</p>
+            ) : (
+              <ul className="px-2 pb-2">
+                {meetingRequests.slice(0, 5).map((m) => (
+                  <li key={m.id} className="flex items-center gap-3 rounded-lg px-2 py-2.5">
+                    <span className="text-faint">
+                      <Icon name="calendar" size={16} />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{m.name || t('recent.unnamed')}</span>
+                    <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(m.createdAt, locale)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-              <Card variant="standard" className="p-5 space-y-4">
-                <h3 className="text-[13.5px] font-black text-ink tracking-tight flex items-center gap-2 border-b border-line pb-2.5">
-                  <Icon name="grid" size={15} /> {t('personal.activeCards', { count: cards.length })}
-                </h3>
-                {cards.length === 0 ? (
-                  <div className="text-center py-6 text-faint">
-                    <p className="text-xs font-bold">{t('personal.noCards')}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                    {cards.map((c) => (
-                      <Link
-                        key={c.id}
-                        href={`/cards/${c.id}`}
-                        className="p-3 bg-canvas/30 border border-line rounded-xl hover:border-accent transition-all flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <p className="font-bold text-ink truncate max-w-[150px]">{c.slug}</p>
-                          <p className="text-[10px] text-faint font-mono mt-0.5">/c/{c.slug}</p>
-                        </div>
-                        <Badge variant={c.isPublished ? 'success' : 'neutral'} className="text-[9px] uppercase font-black">
-                          {c.isPublished ? t('personal.live') : t('personal.draft')}
-                        </Badge>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Column 2: CRM & Tasks */}
-            <div className="space-y-6">
-              <Card variant="standard" className="p-5 space-y-4">
-                <h3 className="text-[13.5px] font-black text-ink tracking-tight flex items-center gap-2 border-b border-line pb-2.5">
-                  <Icon name="check-circle" size={15} /> {t('personal.personalTasks', { count: activeTasks.length })}
-                </h3>
-                {activeTasks.length === 0 ? (
-                  <p className="text-xs font-bold text-muted text-center py-6">{t('personal.allTasksDone')}</p>
-                ) : (
-                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                    {activeTasks.map((t) => (
-                      <label
-                        key={t.id}
-                        className="flex items-center gap-2.5 p-2.5 bg-canvas/30 border border-line rounded-xl cursor-pointer hover:bg-canvas/60 transition-all text-xs font-semibold text-ink"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={t.completed}
-                          onChange={() => handleToggleTask(t.id, !t.completed)}
-                          className="h-4 w-4 rounded border-line text-accent focus:ring-accent"
-                        />
-                        <span className="truncate">{t.title}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </Card>
-
-              <Card variant="standard" className="p-5 space-y-4">
-                <h3 className="text-[13.5px] font-black text-ink tracking-tight flex items-center gap-2 border-b border-line pb-2.5">
-                  <Icon name="calendar" size={15} /> {t('personal.upcomingMeetings', { count: upcomingMeetings.length })}
-                </h3>
-                {upcomingMeetings.length === 0 ? (
-                  <p className="text-xs font-bold text-muted text-center py-6">{t('personal.noMeetings')}</p>
-                ) : (
-                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                    {upcomingMeetings.map((m) => (
-                      <div key={m.id} className="p-2.5 bg-canvas/30 border border-line rounded-xl text-xs font-semibold">
-                        <div className="flex justify-between items-center">
-                          <span className="text-ink font-bold">{m.name}</span>
-                          <Badge variant="warning" className="text-[9px] uppercase font-black">{t('personal.scheduled')}</Badge>
-                        </div>
-                        <p className="text-muted mt-1 text-[11px]">
-                          📅 {formatDateTime(m.meetingAt!, locale)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Column 3: Activity & Notifications */}
-            <div className="space-y-6">
-              <Card variant="standard" className="p-5 space-y-4">
-                <h3 className="text-[13.5px] font-black text-ink tracking-tight flex items-center gap-2 border-b border-line pb-2.5">
-                  <Icon name="bell" size={15} /> {t('personal.notifications', { count: personalNotifications.filter(n => !n.readAt).length })}
-                </h3>
-                {personalNotifications.length === 0 ? (
-                  <p className="text-xs font-bold text-muted text-center py-6">{t('personal.allClear')}</p>
-                ) : (
-                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                    {personalNotifications.slice(0, 4).map((n) => (
-                      <div
-                        key={n.id}
-                        className="p-2.5 bg-canvas/30 border border-line rounded-xl text-xs font-semibold text-muted flex gap-2 items-start"
-                        style={{ background: n.readAt ? undefined : 'var(--v-accent-soft)' }}
-                      >
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-accent mt-1.5" />
-                        <div>
-                          <p className="text-ink font-bold">{n.title}</p>
-                          <p className="text-[10px] text-faint mt-0.5">{n.body || n.category}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-
-              <Card variant="standard" className="p-5 space-y-4">
-                <h3 className="text-[13.5px] font-black text-ink tracking-tight flex items-center gap-2 border-b border-line pb-2.5">
-                  <Icon name="clock" size={15} /> {t('personal.quickActions')}
-                </h3>
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <Link href="/cards" className="p-3 bg-canvas/30 hover:bg-canvas border border-line rounded-xl text-xs font-bold text-ink block transition-colors">
-                    📇 {t('personal.qaCards')}
-                  </Link>
-                  <Link href="/tags" className="p-3 bg-canvas/30 hover:bg-canvas border border-line rounded-xl text-xs font-bold text-ink block transition-colors">
-                    🏷️ {t('personal.qaLinkNfc')}
-                  </Link>
-                  <Link href="/leads" className="p-3 bg-canvas/30 hover:bg-canvas border border-line rounded-xl text-xs font-bold text-ink block transition-colors col-span-2">
-                    🎯 {t('personal.qaCrm')}
-                  </Link>
-                </div>
-              </Card>
-            </div>
-          </div>
+          <section className="v-card">
+            <PanelHeader
+              title={t('personal.notifications')}
+              meta={personalNotifications.filter((n) => !n.readAt).length ? fmt(personalNotifications.filter((n) => !n.readAt).length) : undefined}
+            />
+            {personalNotifications.length === 0 ? (
+              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noNotifications')}</p>
+            ) : (
+              <ul className="px-2 pb-2">
+                {personalNotifications.slice(0, 5).map((n) => (
+                  <li key={n.id}>
+                    <Link href="/notifications" className="flex gap-3 rounded-lg px-2 py-2.5 hover:bg-elevated">
+                      <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.readAt ? 'bg-transparent' : 'bg-accent'}`} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-[13.5px] font-medium text-ink">{n.title}</span>
+                        <span className="block truncate text-[12px] text-faint">{n.body || n.category}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       </AppShell>
     );
   }
 
   // --------------------------------------------------------------------------
-  // (B) ORGANIZATION WORKSPACE VIEW
+  // Organization workspace
   // --------------------------------------------------------------------------
-  // No placeholder brand/plan names here: if org is null after loading, that
-  // means the fetch actually failed (see `error`), so invented-looking data
-  // must never stand in for it.
-  const orgName = org?.name ?? '—';
-  const orgPlan = org?.plan ?? 'FREE';
+  const cur = ov?.totals ?? {};
+  const prev = ovPrev?.totals ?? {};
+  const views = cur.VIEW ?? 0;
+  const newLeads = ov?.leads ?? 0;
+  const activeChips = tags.filter((tg) => tg.status === 'ACTIVE').length;
 
-  // Dynamic filter for approvals
-  const pendingApprovals = approvals.filter(a => a.status === 'PENDING');
+  const tabs: { key: MetricKey; label: string; value: number; previous: number; sub: string }[] = [
+    { key: 'VIEW', label: t('metrics.views'), value: views, previous: prev.VIEW ?? 0, sub: t('metrics.viewsSub', { value: fmt(prev.VIEW ?? 0) }) },
+    { key: 'NFC_SCAN', label: t('metrics.taps'), value: cur.NFC_SCAN ?? 0, previous: prev.NFC_SCAN ?? 0, sub: t('metrics.tapsSub', { active: activeChips, total: tags.length }) },
+    { key: 'SAVE', label: t('metrics.saves'), value: cur.SAVE ?? 0, previous: prev.SAVE ?? 0, sub: t('metrics.savesSub', { pct: pctOf(cur.SAVE ?? 0, views, 0) }) },
+    { key: 'LEADS', label: t('metrics.leads'), value: newLeads, previous: ovPrev?.leads ?? 0, sub: t('metrics.leadsSub', { pct: pctOf(newLeads, views, 1) }) },
+  ];
+  const selected = tabs.find((tab) => tab.key === metric) ?? tabs[0];
 
-  // Largest teams — ranked by real membership counts (no fabricated scores).
-  const topTeams = [...teams]
-    .map((t) => ({ id: t.id, name: t.name, seats: t._count?.memberships ?? 0 }))
+  const series =
+    metric === 'LEADS'
+      ? { current: countByDay(leads, windows.keys), previous: countByDay(leads, windows.prevKeys) }
+      : { current: eventSeries(ts, windows.keys, metric), previous: eventSeries(tsPrev, windows.prevKeys, metric) };
+  const dayLabel = (key: string) => formatDate(`${key}T12:00:00Z`, locale, { day: 'numeric', month: 'short' });
+  const labels = windows.keys.map(dayLabel);
+  const hasActivity = series.current.some((v) => v > 0) || series.previous.some((v) => v > 0);
+  const peak = series.current.reduce((best, v, i) => (v > series.current[best] ? i : best), 0);
+  const markers = markersFor(occasions, windows.keys);
+  const peakOccasion = occasionOn(occasions, windows.keys[peak]);
+  const leadsDuringPeak = peakOccasion ? countDuring(peakOccasion.occasion, leads.map((l) => l.createdAt)) : 0;
+  const myRole = members.find((m) => m.user.id === me?.id)?.role;
+  const canManageOccasions = !!me?.isSuperAdmin || myRole === 'OWNER' || myRole === 'ADMIN' || myRole === 'MANAGER';
+
+  // The headline: this week's new leads, and how many of them nobody has picked up yet.
+  const weekAgo = Date.now() - 7 * DAY;
+  const thisWeek = leads.filter((l) => new Date(l.createdAt).getTime() >= weekAgo);
+  const waitingThisWeek = thisWeek.filter((l) => !l.stageId || l.stageId === firstStageId).length;
+
+  const pendingApprovals = approvals.filter((a) => a.status === 'PENDING');
+  const unlinkedChips = tags.filter((tg) => !tg.cardId && tg.status !== 'DISABLED');
+  const draftCards = cards.filter((c) => !c.isPublished);
+
+  const leadsBySlug = new Map<string, number>();
+  for (const l of leads) if (l.card?.slug) leadsBySlug.set(l.card.slug, (leadsBySlug.get(l.card.slug) ?? 0) + 1);
+  const cardById = new Map(cards.map((c) => [c.id, c]));
+  const topRows = topCards.slice(0, 5);
+  const topMax = Math.max(1, ...topRows.map((r) => r.events));
+
+  const largestTeams = [...teams]
+    .map((tm) => ({ id: tm.id, name: tm.name, seats: tm._count?.memberships ?? 0 }))
     .sort((a, b) => b.seats - a.seats)
-    .slice(0, 4);
-
-  // Recently joined members — real directory data, newest first where available.
-  const recentMembers = [...members].slice(0, 4);
+    .slice(0, 3);
 
   return (
-    <AppShell title={t('titles.command')}>
-      {/* 1. Hero Banner */}
-      <div className="v-hero mb-6 p-6 md:p-7">
-        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> {t('org.planConnected', { plan: orgPlan })}
-            </span>
-            <h2 className="v-display text-[22px] font-extrabold tracking-tight text-white md:text-[26px]">
-              {t('org.welcome')}
-            </h2>
-            <p className="text-[12.5px] font-medium text-white/75">
-              {t('org.activeWorkspace')} <span className="font-bold text-white">{orgName}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-white/10 px-4 py-2.5 text-end backdrop-blur">
-              <p className="text-[12.5px] font-extrabold text-white">
-                {formatDate(new Date(), locale, { weekday: 'long', month: 'short', day: 'numeric' })}
-              </p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-white/70">{t('org.systemOnline')}</p>
-            </div>
-            <Link
-              href="/cards"
-              className="inline-flex h-11 sm:h-10 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-bold text-[#1d4ed8] shadow-sm transition-transform hover:-translate-y-0.5"
+    <AppShell title={t('titles.command')} action={newCardAction}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-[24px] font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
+          <p className="mt-1 text-[14px] text-muted">
+            {today} ·{' '}
+            {thisWeek.length > 0 ? (
+              <>
+                <span className="font-medium text-ink">{t('summary.newLeads', { count: thisWeek.length })}</span>
+                {comma}
+                {waitingThisWeek > 0 ? t('summary.waiting', { count: waitingThisWeek }) : t('summary.allAnswered')}
+              </>
+            ) : (
+              `${t('summary.noNewLeads')}.`
+            )}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <button onClick={() => setShowOccasions(true)} className="v-btn v-btn-ghost sm:!h-8">
+          <Icon name="calendar" size={14} /> {t('occasions.button')}
+        </button>
+        <div role="radiogroup" aria-label={t('period.label')} className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+          {PERIODS.map((p) => (
+            <button
+              key={p}
+              role="radio"
+              aria-checked={period === p}
+              onClick={() => setPeriod(p)}
+              className={`h-11 rounded-md px-3 text-[12.5px] font-medium transition-colors sm:h-7 ${
+                period === p ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
+              }`}
             >
-              <Icon name="plus" size={15} /> {t('org.newCard')}
-            </Link>
-          </div>
+              {t(`period.d${p}`)}
+            </button>
+          ))}
+        </div>
         </div>
       </div>
 
-      {error && (
-        <Alert variant="error" className="mb-6">
-          {error}
-        </Alert>
-      )}
+      {errorBanner}
+      {onboarding}
 
-      {/* Onboarding Checklist */}
-      <OnboardingWizard
-        steps={onboardingSteps}
-        progress={onboardingProgress}
-        visible={showOnboarding && onboardingProgress < 100}
-        onToggle={toggleOnboarding}
-        t={t}
-      />
+      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="v-card min-w-0 overflow-hidden">
+          <div role="tablist" className="grid grid-cols-2 border-b border-line lg:grid-cols-4">
+            {tabs.map((tab, i) => {
+              const active = tab.key === metric;
+              const pct = change(tab.value, tab.previous);
+              return (
+                <button
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setMetric(tab.key)}
+                  className={`relative min-w-0 px-4 py-3.5 text-start transition-colors ${
+                    active ? 'bg-surface' : 'bg-elevated hover:bg-surface'
+                  } ${i % 2 ? 'border-s border-line' : ''} ${i >= 2 ? 'border-t border-line lg:border-t-0' : ''} ${i === 2 ? 'lg:border-s' : ''}`}
+                >
+                  {active && <span className="absolute inset-x-0 top-0 h-0.5 bg-accent" />}
+                  <span className="block truncate text-[12.5px] font-medium text-muted">{tab.label}</span>
+                  <span className="mt-2 flex items-baseline gap-2">
+                    <span className="tabular text-[26px] font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(tab.value)}</span>
+                    {pct !== null && (
+                      <span dir="ltr" className={`v-badge ${pct >= 0 ? 'v-badge-success' : 'v-badge-danger'}`}>
+                        {formatChange(pct)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-1.5 block truncate text-[12px] text-faint">{tab.sub}</span>
+                </button>
+              );
+            })}
+          </div>
 
-      {/* 2. Primary metrics — real analytics with sparklines & computed trends */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="v-section-label">{t('org.engagementLast30')}</span>
-        <span className="v-divider flex-1" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <KpiCard label={t('org.kpi.profileViews')} value={totalViews} icon="search" spark={viewsSeries} color="#2563eb" trend={seriesTrend(viewsSeries)} sub={t('org.vsPrior')} />
-        <KpiCard label={t('org.kpi.nfcTaps')} value={totalTaps} icon="tag" spark={scansSeries} color="#4f46e5" trend={seriesTrend(scansSeries)} sub={t('org.vsPrior')} />
-        <KpiCard label={t('org.kpi.linkClicks')} value={ov?.totals?.CLICK ?? 0} icon="chart-bar" spark={clicksSeries} color="#0ea5e9" trend={seriesTrend(clicksSeries)} sub={t('org.vsPrior')} />
-        <KpiCard label={t('org.kpi.contactSaves')} value={ov?.totals?.SAVE ?? 0} icon="copy" spark={savesSeries} color="#10b981" trend={seriesTrend(savesSeries)} sub={t('org.vsPrior')} />
-      </div>
-
-      {/* 3. Workspace composition — real counts, no fabricated deltas */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="v-section-label">{t('org.workspace')}</span>
-        <span className="v-divider flex-1" />
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 mb-8">
-        <KpiCard label={t('org.kpi.leads')} value={totalLeads} icon="inbox" sub={t('org.kpi.inPipeline')} />
-        <KpiCard label={t('org.kpi.conversion')} value={`${convRate}%`} icon="sparkle" sub={t('org.kpi.leadsPerViews')} />
-        <KpiCard label={t('org.kpi.members')} value={members.length} icon="users" sub={t('org.kpi.inWorkspace')} />
-        <KpiCard label={t('org.kpi.teams')} value={teams.length} icon="grid" sub={t('org.kpi.depts', { count: departments.length })} />
-        <KpiCard label={t('org.kpi.cards')} value={cards.length} icon="layers" sub={t('org.kpi.publishedCount', { count: cards.filter((c) => c.isPublished).length })} />
-        <KpiCard label={t('org.kpi.meetings')} value={leads.filter((l) => l.intent === 'MEETING').length} icon="calendar" sub={t('org.kpi.booked')} />
-      </div>
-
-      {/* 3. Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        {/* Left Side: Interative Charts & Approvals */}
-        <div className="space-y-6">
-          {/* Chart */}
-          <section className="v-card p-6">
-            <div className="mb-5 flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <span className="v-icon-tile"><Icon name="chart-bar" size={16} /></span>
-                <div>
-                  <h2 className="text-[15px] font-extrabold text-ink tracking-tight">{t('org.timeline')}</h2>
-                  <p className="text-[11.5px] text-muted font-medium">{t('org.timelineSub')}</p>
-                </div>
-              </div>
-              <div className="flex gap-4 text-[11.5px] font-bold text-muted">
-                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#2563eb]" />{t('org.views')}</span>
-                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#4f46e5]" />{t('org.taps')}</span>
-              </div>
-            </div>
-            {ts.length ? (
-              <AreaChart
-                labels={graphLabels}
-                series={[
-                  { name: t('org.views'), color: '#2563eb', points: viewsSeries },
-                  { name: t('org.taps'), color: '#4f46e5', points: scansSeries },
-                ]}
+          <div className="px-4 pb-2 pt-5 sm:px-5">
+            {hasActivity ? (
+              <TrendChart
+                current={series.current}
+                previous={series.previous}
+                labels={labels}
+                currentLabel={selected.label}
+                previousLabel={t('metrics.previous')}
+                formatDelta={formatChange}
+                markers={markers}
               />
             ) : (
-              <div className="py-20 text-center text-sm font-semibold text-muted">{t('org.noInteractions')}</div>
-            )}
-          </section>
-
-          {/* Approval Center */}
-          <section className="v-card p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <span className="v-icon-tile"><Icon name="check-circle" size={16} /></span>
-              <div>
-                <h2 className="text-[15px] font-extrabold text-ink tracking-tight">{t('org.approvalCenter')}</h2>
-                <p className="text-[11.5px] text-muted font-medium">{t('org.approvalSub')}</p>
-              </div>
-            </div>
-
-            {pendingApprovals.length === 0 ? (
-              <div className="py-12 border border-dashed border-line rounded-xl text-center text-muted font-semibold text-xs flex flex-col items-center gap-2">
-                <Icon name="check-circle" size={24} className="text-emerald-500" />
-                <span>{t('org.allCaughtUp')}</span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingApprovals.map((req) => (
-                  <div key={req.id} className="p-4 bg-canvas/30 border border-line rounded-xl flex items-center justify-between flex-wrap sm:flex-nowrap gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="warning" className="text-[8px] font-black uppercase">{req.type}</Badge>
-                        <h4 className="text-[13px] font-bold text-ink truncate">{req.title}</h4>
-                      </div>
-                      <p className="text-[11px] text-muted mt-1 truncate">{t('org.requestedBy', { name: req.requester.name, email: req.requester.email })}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button variant="outline" size="sm" onClick={() => handleResolveApproval(req.id, 'REJECTED')} className="!text-red-500 hover:!bg-red-500/10 font-bold border-red-500/20">
-                        {t('org.reject')}
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleResolveApproval(req.id, 'APPROVED')} className="!text-emerald-500 hover:!bg-emerald-500/10 font-bold border-emerald-500/20">
-                        {t('org.approve')}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex h-[232px] items-center justify-center px-6 text-center text-[13px] leading-relaxed text-muted">
+                <p className="max-w-sm">{t('metrics.noActivity')}</p>
               </div>
             )}
-          </section>
-        </div>
+          </div>
 
-        {/* Right Side: Leaders & Activity logs */}
-        <div className="space-y-6">
-          {/* Workspace composition — real team & member data */}
-          <section className="v-card p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <span className="v-icon-tile"><Icon name="users" size={16} /></span>
-              <div>
-                <h2 className="text-[15px] font-extrabold text-ink tracking-tight">{t('org.composition')}</h2>
-                <p className="text-[11.5px] text-muted font-medium">{t('org.compositionSub')}</p>
-              </div>
+          {hasActivity && series.current[peak] > 0 && (
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-line bg-elevated px-4 py-3 text-[13px] text-muted sm:px-5">
+              <span className="v-badge v-badge-neutral">{t('metrics.insight')}</span>
+              <span className="min-w-0 flex-1">
+                {peakOccasion ? (
+                  <>
+                    <Trans
+                      t={t}
+                      i18nKey="metrics.busiestDuring"
+                      values={{
+                        date: dayLabel(windows.keys[peak]),
+                        count: fmt(series.current[peak]),
+                        metric: selected.label.toLocaleLowerCase(locale),
+                        day: fmt(peakOccasion.day),
+                        occasion: peakOccasion.occasion.name,
+                      }}
+                      components={{ b: <b className="font-medium text-ink" /> }}
+                    />
+                    {leadsDuringPeak > 0 && (
+                      <>
+                        {' '}
+                        <Trans t={t} i18nKey="metrics.leadsDuring" values={{ count: fmt(leadsDuringPeak) }} components={{ b: <b className="font-medium text-ink" /> }} />
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Trans
+                    t={t}
+                    i18nKey="metrics.busiest"
+                    values={{ date: dayLabel(windows.keys[peak]), count: fmt(series.current[peak]), metric: selected.label.toLocaleLowerCase(locale) }}
+                    components={{ b: <b className="font-medium text-ink" /> }}
+                  />
+                )}
+              </span>
+              <Link href="/analytics" className="text-[12.5px] font-medium text-accent hover:underline">
+                {t('metrics.openAnalytics')}
+              </Link>
             </div>
+          )}
+        </section>
 
-            <div className="space-y-5">
-              <div>
-                <p className="v-section-label mb-2.5">{t('org.largestTeams')}</p>
-                <div className="space-y-1.5">
-                  {topTeams.map((item, idx) => (
-                    <div key={item.id} className="flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-ink/[0.03] transition-colors">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-accent-soft text-[10px] font-bold text-accent">{idx + 1}</span>
-                        <span className="text-ink font-bold truncate">{item.name}</span>
-                      </span>
-                      <span className="v-badge v-badge-neutral shrink-0">{t('org.seat', { count: item.seats })}</span>
-                    </div>
-                  ))}
-                  {topTeams.length === 0 && <p className="text-[11px] text-faint px-2">{t('org.noTeams')}</p>}
-                </div>
-              </div>
+        {recentLeadsPanel}
+      </div>
 
-              <div className="v-divider" />
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <section className="v-card">
+          <PanelHeader title={t('attention.title')} />
+          <ul className="px-2 pb-2">
+            {waitingLeads.length > 0 && (
+              <AttentionRow
+                icon="inbox"
+                tone="accent"
+                title={t('attention.newLeads', { count: waitingLeads.length })}
+                desc={t('attention.oldestWaiting', { time: formatRelativeTime(waitingLeads[0].createdAt, locale) })}
+                action={
+                  <Link href="/leads" className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8">
+                    {t('attention.openLeads')}
+                  </Link>
+                }
+              />
+            )}
+            {pendingApprovals.map((req) => (
+              <AttentionRow
+                key={req.id}
+                icon="check"
+                tone="warning"
+                title={req.title}
+                desc={t('attention.requestedBy', { name: req.requester.name || req.requester.email })}
+                action={
+                  <span className="flex gap-1.5">
+                    <button
+                      onClick={() => handleResolveApproval(req.id, 'REJECTED')}
+                      className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8"
+                    >
+                      {t('attention.reject')}
+                    </button>
+                    <button onClick={() => handleResolveApproval(req.id, 'APPROVED')} className="v-btn !h-11 !px-3 !text-[12.5px] sm:!h-8">
+                      {t('attention.approve')}
+                    </button>
+                  </span>
+                }
+              />
+            ))}
+            {unlinkedChips.length > 0 && (
+              <AttentionRow
+                icon="tag"
+                title={t('attention.unlinked', { count: unlinkedChips.length })}
+                desc={
+                  <span dir="ltr" className="font-mono">
+                    {unlinkedChips
+                      .slice(0, 2)
+                      .map((tg) => tg.uid)
+                      .join(', ')}
+                    {unlinkedChips.length > 2 ? ', …' : ''}
+                  </span>
+                }
+                action={
+                  <Link href="/tags" className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8">
+                    {t('attention.link')}
+                  </Link>
+                }
+              />
+            )}
+            {draftCards.length > 0 && (
+              <AttentionRow
+                icon="grid"
+                title={t('attention.drafts', { count: draftCards.length })}
+                desc={draftCards.slice(0, 2).map(cardName).join(comma) + (draftCards.length > 2 ? comma + '…' : '')}
+                action={
+                  <Link
+                    href={draftCards.length === 1 ? `/cards/${draftCards[0].id}` : '/cards'}
+                    className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8"
+                  >
+                    {t('attention.review')}
+                  </Link>
+                }
+              />
+            )}
+            {!waitingLeads.length && !pendingApprovals.length && !unlinkedChips.length && !draftCards.length && (
+              <li className="flex items-center gap-3 px-2 py-5 text-[13px] text-muted">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                  <Icon name="check" size={14} />
+                </span>
+                {t('attention.clear')}
+              </li>
+            )}
+          </ul>
+        </section>
 
-              <div>
-                <p className="v-section-label mb-2.5">{t('org.members')}</p>
-                <div className="space-y-1.5">
-                  {recentMembers.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-ink/[0.03] transition-colors">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <Avatar user={m.user} size={24} />
-                        <span className="text-ink font-bold truncate">{m.user?.name || m.user?.email || t('org.pendingInvite')}</span>
-                      </span>
-                      <span className="v-badge v-badge-accent shrink-0">{m.role.toLowerCase()}</span>
-                    </div>
-                  ))}
-                  {recentMembers.length === 0 && <p className="text-[11px] text-faint px-2">{t('org.noMembers')}</p>}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Org Activity Feed */}
-          <section className="v-card p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <span className="v-icon-tile"><Icon name="clock" size={16} /></span>
-              <div>
-                <h2 className="text-[15px] font-extrabold text-ink tracking-tight">{t('org.activityFeed')}</h2>
-                <p className="text-[11.5px] text-muted font-medium">{t('org.activitySub')}</p>
-              </div>
-            </div>
-
-            {auditLogs.length === 0 ? (
-              <p className="text-xs text-muted text-center py-6">{t('org.noEvents')}</p>
-            ) : (
-              <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1 no-scrollbar">
-                {auditLogs.slice(0, 10).map((log: any) => {
-                  const actionLower = log.action.toLowerCase();
-                  let iconName = 'clock';
-                  let iconBg = 'bg-slate-500/10 text-slate-500';
-                  
-                  if (actionLower.includes('card')) {
-                    iconName = 'grid';
-                    iconBg = 'bg-emerald-500/10 text-emerald-500';
-                  } else if (actionLower.includes('member') || actionLower.includes('role')) {
-                    iconName = 'user';
-                    iconBg = 'bg-blue-600/10 text-blue-600';
-                  } else if (actionLower.includes('dept') || actionLower.includes('department')) {
-                    iconName = 'layers';
-                    iconBg = 'bg-amber-500/10 text-amber-500';
-                  } else if (actionLower.includes('team')) {
-                    iconName = 'users';
-                    iconBg = 'bg-blue-500/10 text-blue-500';
-                  } else if (actionLower.includes('lead')) {
-                    iconName = 'inbox';
-                    iconBg = 'bg-rose-500/10 text-rose-500';
-                  } else if (actionLower.includes('tag') || actionLower.includes('nfc')) {
-                    iconName = 'tag';
-                    iconBg = 'bg-blue-500/10 text-blue-500';
-                  }
-
+        <section className="v-card overflow-hidden">
+          <PanelHeader
+            title={t('top.title')}
+            action={
+              <Link href="/cards" className="text-[12.5px] font-medium text-accent hover:underline">
+                {t('top.all')}
+              </Link>
+            }
+          />
+          {topRows.length === 0 ? (
+            <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('top.empty')}</p>
+          ) : (
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="text-[12px] text-faint">
+                  <th className="px-4 pb-2 pt-1 text-start font-medium">{t('top.card')}</th>
+                  <th className="px-4 pb-2 pt-1 text-end font-medium">{t('top.interactions')}</th>
+                  <th className="px-4 pb-2 pt-1 text-end font-medium">{t('top.leads')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topRows.map((row) => {
+                  const card = cardById.get(row.cardId);
                   return (
-                    <div key={log.id} className="flex gap-3 text-xs font-semibold text-muted items-start p-2.5 bg-canvas/30 rounded-xl border border-line/50">
-                      <span className={`flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
-                        <Icon name={iconName} size={13} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-ink font-bold leading-tight">{log.action}</p>
-                        <p className="text-[10px] text-faint mt-0.5 font-mono truncate">
-                          {t('org.target')} {log.targetType} · {log.targetId?.slice(0, 8)}
-                        </p>
-                      </div>
-                      <span className="text-[9px] text-faint font-mono shrink-0 whitespace-nowrap pt-0.5">
-                        {formatTime(log.createdAt, locale)}
-                      </span>
-                    </div>
+                    <tr key={row.cardId} className="border-t border-line">
+                      <td className="w-full max-w-0 px-4 py-2.5">
+                        <Link href={card ? `/cards/${card.id}` : '/cards'} className="flex min-w-0 items-center gap-3">
+                          {card ? <CardThumb card={card} /> : <span className="h-[25px] w-10 rounded bg-elevated" />}
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium text-ink">{card ? cardName(card) : row.slug}</span>
+                            <span dir="ltr" className="block truncate text-start font-mono text-[11.5px] text-faint">/c/{row.slug}</span>
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="flex items-center justify-end gap-2.5 whitespace-nowrap">
+                          <span className="tabular text-ink">{fmt(row.events)}</span>
+                          <span className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-elevated ring-1 ring-inset ring-line sm:block">
+                            <span className="block h-full rounded-full bg-accent" style={{ width: `${(row.events / topMax) * 100}%` }} />
+                          </span>
+                        </span>
+                      </td>
+                      <td className="tabular px-4 py-2.5 text-end text-ink">{fmt(leadsBySlug.get(row.slug) ?? 0)}</td>
+                    </tr>
                   );
                 })}
-              </div>
-            )}
-          </section>
-        </div>
+              </tbody>
+            </table>
+          )}
+        </section>
       </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="v-card">
+          <PanelHeader title={t('activity.title')} />
+          {auditLogs.length === 0 ? (
+            <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('activity.empty')}</p>
+          ) : (
+            <ul className="px-2 pb-2">
+              {auditLogs.slice(0, 6).map((log) => (
+                <li key={log.id} className="flex items-center gap-3 rounded-lg px-2 py-2.5">
+                  <span className="v-icon-tile !h-7 !w-7">
+                    <Icon name={auditIcon(log.action)} size={13} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] text-ink">{humanizeAction(log.action)}</span>
+                    <span className="block truncate text-[12px] text-faint">
+                      {[log.actor?.name || log.actor?.email, log.targetType].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(log.createdAt, locale)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="v-card flex flex-col">
+          <PanelHeader title={t('team.title')} />
+          <dl className="grid grid-cols-3 border-y border-line">
+            {[
+              [t('team.members'), members.length],
+              [t('team.teams'), teams.length],
+              [t('team.departments'), departments.length],
+            ].map(([label, value], i) => (
+              <div key={label as string} className={`px-4 py-3 ${i ? 'border-s border-line' : ''}`}>
+                <dt className="truncate text-[12px] text-faint">{label}</dt>
+                <dd className="tabular mt-1 text-[20px] font-semibold leading-none text-ink">{fmt(value as number)}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="px-4 py-3">
+            <p className="text-[12px] text-faint">{t('team.largest')}</p>
+            {largestTeams.length === 0 ? (
+              <p className="mt-2 text-[13px] text-muted">{t('team.noTeams')}</p>
+            ) : (
+              <ul className="mt-1">
+                {largestTeams.map((tm) => (
+                  <li key={tm.id} className="flex items-center justify-between gap-3 py-1.5 text-[13px]">
+                    <Link href={`/team?team=${tm.id}`} className="truncate text-ink hover:underline">
+                      {tm.name}
+                    </Link>
+                    <span className="shrink-0 text-faint">{t('team.seat', { count: tm.seats })}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Link href="/team" className="mt-auto border-t border-line px-4 py-3 text-[12.5px] font-medium text-accent hover:underline">
+            {t('team.manage')}
+          </Link>
+        </section>
+      </div>
+      <OccasionsSheet open={showOccasions} onClose={() => setShowOccasions(false)} occasions={occasions} canManage={canManageOccasions} onChanged={loadOccasions} />
     </AppShell>
   );
 }
 
-/**
- * Compute an honest period-over-period trend from a real timeseries.
- * Compares the sum of the newer half against the older half. Returns null
- * when there isn't enough real data to make a claim — no fabricated deltas.
- */
-function seriesTrend(series: number[]): string | null {
-  if (!series || series.length < 4) return null;
-  const mid = Math.floor(series.length / 2);
-  const older = series.slice(0, mid).reduce((a, b) => a + b, 0);
-  const newer = series.slice(mid).reduce((a, b) => a + b, 0);
-  if (older === 0 && newer === 0) return null;
-  if (older === 0) return '+100%';
-  const pct = ((newer - older) / older) * 100;
-  if (!isFinite(pct)) return null;
-  return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
+function sourceKey(source: string | null) {
+  return source && ['nfc_scan', 'card_form', 'meeting', 'quote'].includes(source) ? source : 'other';
 }
 
-function KpiCard({
-  label,
-  value,
-  icon,
-  spark,
-  color,
-  trend,
-  sub,
-}: {
-  label: string;
-  value: number | string;
-  icon: string;
-  spark?: number[];
-  color?: string;
-  trend?: string | null;
-  sub?: string;
-}) {
-  const trendDown = trend ? trend.startsWith('-') : false;
-  const hasSpark = Array.isArray(spark) && spark.filter((n) => n > 0).length > 1;
+function cardName(card: CardType) {
+  return ((card.vcardData?.fullName as string) || card.slug).trim();
+}
+
+/** A tiny rendition of the card in its own colours, so a list reads at a glance. */
+function auditIcon(action: string) {
+  const a = action.toLowerCase();
+  if (a.includes('card')) return 'grid';
+  if (a.includes('member') || a.includes('role') || a.includes('invite')) return 'user';
+  if (a.includes('team')) return 'users';
+  if (a.includes('dept') || a.includes('department')) return 'layers';
+  if (a.includes('lead')) return 'inbox';
+  if (a.includes('tag') || a.includes('nfc') || a.includes('chip')) return 'tag';
+  return 'clock';
+}
+
+function PanelHeader({ title, meta, action }: { title: string; meta?: string; action?: React.ReactNode }) {
   return (
-    <div className="v-stat group">
-      <div className="flex items-center justify-between">
-        <span className="v-stat-label">{label}</span>
-        <span className="v-icon-tile !h-8 !w-8">
-          <Icon name={icon} size={15} />
-        </span>
-      </div>
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="v-stat-value truncate">{value}</p>
-          {(trend || sub) && (
-            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold">
-              {trend && (
-                <span className={`v-badge ${trendDown ? 'v-badge-danger' : 'v-badge-success'} !py-0`}>
-                  {trendDown ? '▾' : '▴'} {trend}
-                </span>
-              )}
-              {sub && <span className="text-faint truncate">{sub}</span>}
-            </p>
-          )}
-        </div>
-        {hasSpark && (
-          <div className="h-[32px] w-[78px] shrink-0 overflow-hidden">
-            <Sparkline data={spark!} color={color ?? 'var(--v-accent)'} />
-          </div>
-        )}
-      </div>
+    <div className="flex items-center gap-2 px-4 pb-2 pt-3.5">
+      <h3 className="text-[14px] font-semibold text-ink">{title}</h3>
+      {meta && <span className="tabular text-[12.5px] text-faint">{meta}</span>}
+      {action && <span className="ms-auto">{action}</span>}
     </div>
   );
 }
 
-function OnboardingWizard({
+function AttentionRow({
+  icon,
+  tone,
+  title,
+  desc,
+  action,
+}: {
+  icon: string;
+  tone?: 'accent' | 'warning';
+  title: string;
+  desc: React.ReactNode;
+  action: React.ReactNode;
+}) {
+  const toneClass =
+    tone === 'accent'
+      ? 'bg-accent/10 text-accent'
+      : tone === 'warning'
+        ? 'bg-amber-500/10 text-amber-600'
+        : 'bg-elevated text-muted ring-1 ring-inset ring-line';
+  return (
+    <li className="flex flex-wrap items-center gap-3 border-b border-line px-2 py-3 last:border-b-0 sm:flex-nowrap">
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${toneClass}`}>
+        <Icon name={icon} size={15} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13.5px] font-medium text-ink">{title}</span>
+        <span className="block truncate text-[12px] text-faint">{desc}</span>
+      </span>
+      <span className="shrink-0">{action}</span>
+    </li>
+  );
+}
+
+function Onboarding({
   steps,
-  progress,
   visible,
   onToggle,
   t,
 }: {
   steps: { id: string; label: string; desc: string; completed: boolean; link: string; linkText: string }[];
-  progress: number;
   visible: boolean;
   onToggle: () => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
+  const done = steps.filter((s) => s.completed).length;
+  if (done === steps.length) return null;
+
   if (!visible) {
     return (
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={onToggle}
-          className="text-xs font-bold text-accent hover:underline flex items-center gap-1.5 bg-accent/5 border border-accent/15 px-3 py-1.5 rounded-xl transition-all"
-        >
-          <span>🎯 {t('onboarding.showChecklist', { progress })}</span>
-        </button>
-      </div>
+      <button onClick={onToggle} className="mt-4 min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+        {t('onboarding.show', { done, total: steps.length })}
+      </button>
     );
   }
 
   return (
-    <div className="bg-surface border border-line p-6 rounded-2xl shadow-sm relative overflow-hidden mb-6 transition-all group">
-      {/* Background radial accent */}
-      <span className="absolute top-0 right-0 h-40 w-40 rounded-full bg-accent/5 blur-2xl pointer-events-none" />
-
-      <div className="flex justify-between items-center mb-4 flex-wrap gap-2 relative z-10">
-        <div className="space-y-1">
-          <h3 className="text-[14px] font-black text-ink flex items-center gap-2">
-            <span>🎯</span> {t('onboarding.title')}
-            <span className="text-[11px] text-muted font-black ms-2 bg-canvas px-2 py-0.5 rounded-md border border-line">{t('onboarding.complete', { progress })}</span>
-          </h3>
-          <p className="text-[11.5px] text-muted font-semibold">{t('onboarding.subtitle')}</p>
-        </div>
-        <button
-          onClick={onToggle}
-          className="py-3.5 sm:py-0 text-[11px] font-extrabold text-muted hover:text-ink transition-colors px-2.5 py-1 border border-line rounded-lg bg-canvas/40 hover:bg-canvas"
-        >
+    <section className="v-card mt-5 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
+        <h3 className="text-[14px] font-semibold text-ink">{t('onboarding.title')}</h3>
+        <span className="text-[12.5px] text-faint">{t('onboarding.progress', { done, total: steps.length })}</span>
+        <span className="flex gap-1" aria-hidden>
+          {steps.map((s) => (
+            <span key={s.id} className={`h-1 w-6 rounded-full ${s.completed ? 'bg-accent' : 'bg-line'}`} />
+          ))}
+        </span>
+        <button onClick={onToggle} className="ms-auto min-h-11 text-[12.5px] text-muted hover:text-ink sm:min-h-0">
           {t('onboarding.hide')}
         </button>
       </div>
-
-      {/* Progress Bar */}
-      <div className="w-full bg-canvas rounded-full h-2 mb-6 overflow-hidden border border-line/50 relative z-10">
-        <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${progress}%`, background: 'var(--v-gradient-brand)' }}
-        />
-      </div>
-
-      {/* Steps Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
-        {steps.map((step, idx) => (
-          <div
-            key={step.id}
-            className={`p-4 border rounded-xl flex flex-col justify-between transition-all ${
-              step.completed
-                ? 'border-emerald-500/25 bg-emerald-500/[0.02]'
-                : 'border-line bg-canvas/30 hover:border-line-strong'
-            }`}
+      <ol className="grid sm:grid-cols-2 xl:grid-cols-4">
+        {steps.map((s, i) => (
+          <li
+            key={s.id}
+            className={`flex gap-3 p-4 ${i ? 'border-t border-line' : ''} ${i % 2 ? 'sm:border-s' : ''} ${
+              i < 2 ? 'sm:border-t-0' : ''
+            } ${i === 2 ? 'xl:border-s' : ''} xl:border-t-0`}
           >
-            <div className="space-y-2">
-              <div className="flex justify-between items-start">
-                <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-muted">
-                  {t('onboarding.step', { number: idx + 1 })}
-                </span>
-                {step.completed ? (
-                  <span className="h-5 w-5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center justify-center text-[10px] font-black">
-                    ✓
-                  </span>
-                ) : (
-                  <span className="h-5 w-5 rounded-full bg-canvas text-faint border border-line flex items-center justify-center text-[9px] font-bold">
-                    {idx + 1}
-                  </span>
-                )}
-              </div>
-              <h4 className={`text-[12.5px] font-bold leading-snug ${step.completed ? 'text-emerald-700 line-through opacity-70' : 'text-ink'}`}>
-                {step.label}
-              </h4>
-              <p className="text-[11px] text-muted font-medium leading-relaxed">
-                {step.desc}
-              </p>
+            <span
+              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                s.completed ? 'bg-accent text-white' : 'text-faint ring-1 ring-inset ring-faint/40'
+              }`}
+            >
+              {s.completed ? <Icon name="check" size={12} /> : i + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className={`text-[13.5px] font-medium ${s.completed ? 'text-faint line-through' : 'text-ink'}`}>{s.label}</p>
+              <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{s.desc}</p>
+              {!s.completed && (
+                <Link href={s.link} className="mt-2 inline-flex min-h-11 items-center gap-1 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+                  {s.linkText}
+                  <DirectionalIcon name="arrow" size={13} />
+                </Link>
+              )}
             </div>
-            {!step.completed && (
-              <Link
-                href={step.link}
-                className="v-btn !h-11 sm:!h-8 px-3 text-[11px] font-bold mt-4 bg-accent text-white hover:shadow-sm rounded-lg text-center flex items-center justify-center"
-              >
-                {step.linkText}
-              </Link>
-            )}
-          </div>
+          </li>
         ))}
-      </div>
-    </div>
+      </ol>
+    </section>
   );
 }

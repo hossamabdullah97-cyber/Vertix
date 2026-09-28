@@ -1,5 +1,5 @@
 {
-  "title": "Payment Links",
+  "title": "Payment links",
   "titleCompact": "Payment links",
   "subtitle": "Share your external payment links (InstaPay, wallets, or a custom URL). Vertex Connect only opens the link — it never processes payments.",
   "addLink": "Add payment link",

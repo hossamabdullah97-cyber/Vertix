@@ -4,26 +4,21 @@ import { useTranslation } from 'react-i18next';
 import { VMark } from '@/components/brand/VMark';
 
 /**
- * Shown when a public card link resolves to nothing. The audience here is a
- * visitor with no account, so it explains the likely cause instead of offering
- * an app destination they cannot use.
+ * A card link that resolves to nothing. The reader is a visitor without an
+ * account, so it explains the likely cause rather than pointing into the app.
  */
 export default function CardNotFound() {
   const { t } = useTranslation('cards');
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-canvas px-6">
-      <div className="max-w-sm text-center">
-        <span
-          className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-[14px] text-white shadow-md"
-          style={{ background: 'var(--v-gradient-brand)' }}
-        >
-          <VMark size={22} strokeWidth={3} />
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f5f4f1] px-6 text-[#17171a]">
+      <div className="w-full max-w-[360px] rounded-[20px] bg-white p-7 text-center shadow-[0_0_0_1px_#ecebe7,0_24px_48px_-24px_rgba(0,0,0,0.2)]">
+        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f4f1] text-[#5e5d63]">
+          <VMark size={20} strokeWidth={3} />
         </span>
-
-        <h1 className="text-[22px] font-extrabold tracking-tight text-ink">{t('notFound.title')}</h1>
-        <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{t('notFound.body')}</p>
-        <p className="mt-4 text-[12.5px] leading-relaxed text-faint">{t('notFound.hint')}</p>
+        <h1 className="mt-4 text-[20px] font-semibold">{t('notFound.title')}</h1>
+        <p className="mt-1.5 text-[14px] leading-relaxed text-[#5e5d63]">{t('notFound.body')}</p>
+        <p className="mt-3 text-[13px] leading-relaxed text-[#94939a]">{t('notFound.hint')}</p>
       </div>
     </main>
   );

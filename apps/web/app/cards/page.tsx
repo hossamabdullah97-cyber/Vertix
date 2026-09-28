@@ -1,51 +1,77 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, createBlankCard, getToken, type Card } from '@/lib/client';
+import { authFetch, createBlankCard, getToken, type Card, type Member, type NfcTag } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { formatDate } from '@/lib/format';
+import { formatNumber, formatRelativeTime } from '@/lib/format';
+import { readableOn, shade } from '@/lib/color';
 import { Icon, actionIcon } from '@/components/Icon';
 import AppShell from '@/components/AppShell';
+import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
-const BRANDS_COLORS: Record<string, string> = {
-  SAVE_CONTACT: '#1d4ed8',
-  WHATSAPP: '#25d366',
-  CALL: '#10b981',
-  EMAIL: '#ef4444',
-  LINKEDIN: '#0a66c2',
-  WEBSITE: '#2563eb',
-  BOOK_MEETING: '#f59e0b',
-  REQUEST_QUOTE: '#0ea5e9',
-  MAPS: '#f43f5e',
-  FILE: '#64748b',
-};
+/** The list endpoint returns a little more than the shared Card type declares. */
+type ListCard = Card & { updatedAt?: string; _count?: { variants: number } };
+/** All-time event counts for one card, from /analytics/cards/:id. */
+type CardStats = { VIEW: number; CLICK: number; SAVE: number; SHARE: number; NFC_SCAN: number };
+type Status = 'all' | 'live' | 'draft';
+type Sort = 'updated' | 'created' | 'name' | 'views';
+type Layout = 'grid' | 'table';
+
+const LAYOUT_KEY = 'vertex_cards_layout';
+const STATS_CONCURRENCY = 4;
+
+const nameOf = (c: Card) => ((c.vcardData?.fullName as string) || '').trim();
+const roleOf = (c: Card) =>
+  [(c.vcardData?.title as string) || '', (c.vcardData?.org as string) || ''].filter(Boolean).join(' · ');
+const editedAt = (c: ListCard) => c.updatedAt ?? c.createdAt;
 
 export default function CardsPage() {
   const router = useRouter();
   const { t } = useTranslation('cards');
   const { locale } = useLocale();
-  const [cards, setCards] = useState<Card[] | null>(null);
-  const [creating, setCreating] = useState(false);
 
-  /** Straight into the guided start — no questions before the card exists. */
+  const [cards, setCards] = useState<ListCard[] | null>(null);
+  const [stats, setStats] = useState<Record<string, CardStats | null>>({});
+  const [leadsBySlug, setLeadsBySlug] = useState<Record<string, number> | null>(null);
+  const [chipsByCard, setChipsByCard] = useState<Record<string, number> | null>(null);
+  const [owners, setOwners] = useState<Record<string, Member['user']>>({});
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<ListCard | null>(null);
+
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<Status>('all');
+  const [sort, setSort] = useState<Sort>('updated');
+  const [layout, setLayout] = useState<Layout>('grid');
+
+  function flash(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2000);
+  }
+
+  /** Straight into the guided start: the card exists before any questions. */
   const startNewCard = async () => {
     if (creating) return;
     setCreating(true);
+    setError('');
     try {
       const card = await createBlankCard();
       router.push(`/cards/${card.id}`);
-    } catch {
+    } catch (e) {
+      // Usually the plan's card limit; the API says which.
+      setError((e as Error).message);
       setCreating(false);
     }
   };
 
-  // `?new=1` starts a card straight away — the dashboard checklist links here so
-  // "Create your card" actually creates one instead of opening the list.
-  // `replace` drops the ?new=1 entry, so going back never creates a second card.
+  // `?new=1` starts a card straight away. The Home checklist links here so
+  // "Create your card" creates one; `replace` means Back never makes a second.
   const autoStarted = useRef(false);
   useEffect(() => {
     if (autoStarted.current || !getToken()) return;
@@ -55,657 +81,316 @@ export default function CardsPage() {
       .then((card) => router.replace(`/cards/${card.id}`))
       .catch(() => router.replace('/cards'));
   }, [router]);
-  const [error, setError] = useState('');
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Filter, Search, and Sort state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'LIVE' | 'DRAFT'>('ALL');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name-asc' | 'name-desc'>('newest');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  // Toast feedback state
-  const [toastMessage, setToastMessage] = useState('');
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(LAYOUT_KEY);
+      if (saved === 'grid' || saved === 'table') setLayout(saved);
+    } catch {
+      // no storage: stay on the grid
+    }
+  }, []);
+
+  function chooseLayout(next: Layout) {
+    setLayout(next);
+    try {
+      localStorage.setItem(LAYOUT_KEY, next);
+    } catch {
+      // the choice still holds for this visit
+    }
+  }
 
   useEffect(() => {
     if (!getToken()) {
       router.replace('/login');
       return;
     }
-    authFetch<Card[]>('/cards')
+    authFetch<ListCard[]>('/cards')
       .then(setCards)
       .catch((e) => setError(e.message));
+
+    // Counts that live elsewhere. Each is optional: a role that cannot read
+    // leads or members simply does not see that column.
+    authFetch<{ card: { slug: string } | null }[]>('/leads')
+      .then((leads) => {
+        const by: Record<string, number> = {};
+        for (const l of leads) if (l.card?.slug) by[l.card.slug] = (by[l.card.slug] ?? 0) + 1;
+        setLeadsBySlug(by);
+      })
+      .catch(() => setLeadsBySlug(null));
+    authFetch<NfcTag[]>('/nfc/tags')
+      .then((tags) => {
+        const by: Record<string, number> = {};
+        for (const tag of tags) if (tag.cardId && tag.status !== 'DISABLED') by[tag.cardId] = (by[tag.cardId] ?? 0) + 1;
+        setChipsByCard(by);
+      })
+      .catch(() => setChipsByCard(null));
+    authFetch<Member[]>('/orgs/members')
+      .then((members) => setOwners(Object.fromEntries(members.map((m) => [m.user.id, m.user]))))
+      .catch(() => setOwners({}));
   }, [router]);
 
-  const handleDelete = async (cardId: string) => {
-    setIsDeleting(true);
+  // Per-card numbers, a few requests at a time so a large workspace does not
+  // fire a hundred at once. A failed card shows a dash, not a zero.
+  useEffect(() => {
+    if (!cards?.length) return;
+    let cancelled = false;
+    const queue = cards.map((c) => c.id).filter((id) => !(id in stats));
+    const worker = async () => {
+      while (!cancelled && queue.length) {
+        const id = queue.shift()!;
+        const s = await authFetch<CardStats>(`/analytics/cards/${id}`).catch(() => null);
+        if (!cancelled) setStats((prev) => ({ ...prev, [id]: s }));
+      }
+    };
+    Array.from({ length: STATS_CONCURRENCY }, worker);
+    return () => {
+      cancelled = true;
+    };
+    // Only a new set of cards needs fetching; `stats` is read to skip known ones.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards]);
+
+  const counts = useMemo(
+    () => ({
+      all: cards?.length ?? 0,
+      live: cards?.filter((c) => c.isPublished).length ?? 0,
+      draft: cards?.filter((c) => !c.isPublished).length ?? 0,
+    }),
+    [cards],
+  );
+
+  const shown = useMemo(() => {
+    if (!cards) return [];
+    const q = query.trim().toLowerCase();
+    return cards
+      .filter((c) => (status === 'all' ? true : status === 'live' ? c.isPublished : !c.isPublished))
+      .filter((c) => !q || `${nameOf(c)} ${roleOf(c)} ${c.slug}`.toLowerCase().includes(q))
+      .sort((a, b) => {
+        if (sort === 'name') return (nameOf(a) || a.slug).localeCompare(nameOf(b) || b.slug, locale);
+        if (sort === 'views') return (stats[b.id]?.VIEW ?? -1) - (stats[a.id]?.VIEW ?? -1);
+        const key = sort === 'created' ? (c: ListCard) => c.createdAt : editedAt;
+        return new Date(key(b)).getTime() - new Date(key(a)).getTime();
+      });
+  }, [cards, query, status, sort, stats, locale]);
+
+  // Only worth a column when more than one person owns cards here.
+  const showOwner = useMemo(() => new Set(cards?.map((c) => c.ownerId)).size > 1 && Object.keys(owners).length > 0, [cards, owners]);
+
+  const totalViews = useMemo(
+    () => (cards ?? []).reduce((sum, c) => sum + (stats[c.id]?.VIEW ?? 0), 0),
+    [cards, stats],
+  );
+  const statsReady = !!cards && cards.every((c) => c.id in stats);
+
+  async function copyLink(card: ListCard) {
     try {
-      await authFetch(`/cards/${cardId}`, { method: 'DELETE' });
-      setCards((prev) => (prev ? prev.filter((c) => c.id !== cardId) : prev));
-      setDeletingId(null);
-      triggerToast(t('toasts.deleted'));
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setIsDeleting(false);
+      await navigator.clipboard.writeText(`${window.location.origin}/c/${card.slug}`);
+      flash(t('toasts.linkCopied'));
+    } catch {
+      flash(t('toasts.copyFailed'));
     }
+  }
+
+  async function setPublished(card: ListCard, isPublished: boolean) {
+    setCards((prev) => prev?.map((c) => (c.id === card.id ? { ...c, isPublished } : c)) ?? prev);
+    try {
+      await authFetch(`/cards/${card.id}`, { method: 'PATCH', body: JSON.stringify({ isPublished }) });
+      flash(isPublished ? t('toasts.published') : t('toasts.unpublished'));
+    } catch (e) {
+      setCards((prev) => prev?.map((c) => (c.id === card.id ? { ...c, isPublished: !isPublished } : c)) ?? prev);
+      setError((e as Error).message);
+    }
+  }
+
+  async function remove(card: ListCard) {
+    await authFetch(`/cards/${card.id}`, { method: 'DELETE' });
+    setCards((prev) => prev?.filter((c) => c.id !== card.id) ?? prev);
+    setDeleting(null);
+    flash(t('toasts.deleted'));
+  }
+
+  const closeDelete = useCallback(() => setDeleting(null), []);
+
+  const filtersActive = query.trim() !== '' || status !== 'all';
+  const clearFilters = () => {
+    setQuery('');
+    setStatus('all');
   };
 
-  const triggerToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 2500);
-  };
-
-  const copyToClipboard = (e: React.MouseEvent, slug: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const url = `${window.location.origin}/c/${slug}`;
-    navigator.clipboard.writeText(url)
-      .then(() => triggerToast(t('toasts.linkCopied')))
-      .catch(() => triggerToast(t('toasts.copyFailed')));
-  };
-
-  // 1. Calculate statistics
-  const stats = {
-    total: cards?.length ?? 0,
-    live: cards?.filter((c) => c.isPublished).length ?? 0,
-    draft: cards?.filter((c) => !c.isPublished).length ?? 0,
-  };
-
-  // 2. Filter and Sort cards
-  const filteredAndSortedCards = cards
-    ? cards
-        .filter((card) => {
-          const fullName = (card.vcardData?.fullName as string) ?? '';
-          const matchSearch =
-            fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            card.slug.toLowerCase().includes(searchQuery.toLowerCase());
-          
-          const matchStatus =
-            statusFilter === 'ALL' ||
-            (statusFilter === 'LIVE' && card.isPublished) ||
-            (statusFilter === 'DRAFT' && !card.isPublished);
-
-          return matchSearch && matchStatus;
-        })
-        .sort((a, b) => {
-          if (sortBy === 'newest') {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          }
-          if (sortBy === 'oldest') {
-            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          }
-          const nameA = ((a.vcardData?.fullName as string) || a.slug).toLowerCase();
-          const nameB = ((b.vcardData?.fullName as string) || b.slug).toLowerCase();
-          if (sortBy === 'name-asc') {
-            return nameA.localeCompare(nameB);
-          }
-          if (sortBy === 'name-desc') {
-            return nameB.localeCompare(nameA);
-          }
-          return 0;
-        })
-    : [];
+  const rowProps = (card: ListCard): RowProps => ({
+    card,
+    stats: card.id in stats ? stats[card.id] : undefined,
+    leads: leadsBySlug ? leadsBySlug[card.slug] ?? 0 : null,
+    chips: chipsByCard ? chipsByCard[card.id] ?? 0 : null,
+    owner: showOwner ? owners[card.ownerId] ?? null : undefined,
+    onCopy: () => copyLink(card),
+    onPublish: (v) => setPublished(card, v),
+    onDelete: () => setDeleting(card),
+  });
 
   return (
     <AppShell
-      title={t('title', 'Digital Business Cards')}
+      title={t('title')}
+      fluid
       action={
-        <button
-          onClick={startNewCard}
-          disabled={creating}
-          className="v-btn flex items-center gap-2 px-5 !h-11 text-sm font-semibold sm:!h-10"
-        >
-          <Icon name="plus" size={16} />
-          {t('createCard', 'Create Card')}
+        <button onClick={startNewCard} disabled={creating} className="v-btn">
+          <Icon name={creating ? 'loader' : 'plus'} size={14} className={creating ? 'animate-spin' : undefined} />
+          {t('newCard')}
         </button>
       }
     >
+      {cards && cards.length > 0 && (
+        <p className="text-[14px] text-muted">
+          <span className="font-medium text-ink">{t('summary.cards', { count: counts.all })}</span>
+          <span className="mx-2 text-faint" aria-hidden>
+            ·
+          </span>
+          {t('summary.live', { count: counts.live })}
+          {statsReady && (
+            <>
+              <span className="mx-2 text-faint" aria-hidden>
+                ·
+              </span>
+              {t('summary.views', { count: totalViews, value: formatNumber(totalViews, locale) })}
+            </>
+          )}
+        </p>
+      )}
 
       {error && (
-        <div className="mb-6 p-4 rounded-xl border border-red-500/10 bg-red-500/5 text-red-500 text-sm font-medium flex items-center gap-2">
-          <Icon name="x" size={16} />
-          {error}
+        <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError('')} aria-label={t('actions.dismiss')} className="-m-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-red-500/10">
+            <Icon name="x" size={13} />
+          </button>
         </div>
       )}
 
-      {/* 1. Statistics Cards Section */}
-      {/* Three columns at phone width squeezed each label into ~45px, so the
-          titles wrapped over three lines. On a phone these read as rows. */}
-      {cards !== null && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 mb-8">
-          <StatTile
-            icon="layers"
-            tone="v-icon-tile"
-            label={t('stats.total', 'Total Cards')}
-            value={stats.total}
-            sub={t('stats.allProfiles', 'all profiles')}
-          />
-          <StatTile
-            icon="globe"
-            tone="bg-emerald-500/10 text-emerald-500"
-            label={t('stats.live', 'Live Cards')}
-            value={stats.live}
-            sub={
-              <>
-                {stats.live > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
-                {t('stats.published', 'published')}
-              </>
-            }
-          />
-          <StatTile
-            icon="quote"
-            tone="bg-amber-500/10 text-amber-500"
-            label={t('stats.draft', 'Draft Cards')}
-            value={stats.draft}
-            sub={t('stats.unpublished', 'unpublished')}
-          />
-        </div>
-      )}
-
-      {/* 2. Search and Filters Toolbar */}
-      {cards !== null && cards.length > 0 && (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-line">
-          {/* Search box */}
-          <div className="relative flex-1 max-w-md">
-            <span className="absolute inset-y-0 start-3 flex items-center text-muted">
-              <Icon name="search" size={16} />
-            </span>
-            <input
-              type="text"
-              placeholder={t('searchPlaceholder', 'Search by card name or slug...')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="v-field !ps-10 !pe-9"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 end-3 flex items-center text-muted hover:text-ink"
-              >
-                <Icon name="x" size={14} />
-              </button>
-            )}
-          </div>
-
-          {/* Filter, Sort & Toggle controls */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Status filters */}
-            <div className="inline-flex rounded-xl border border-line p-0.5 bg-canvas/30">
-              {(['ALL', 'LIVE', 'DRAFT'] as const).map((filter) => (
+      {cards === null ? (
+        <GridSkeleton />
+      ) : cards.length === 0 ? (
+        <FirstCard onCreate={startNewCard} creating={creating} />
+      ) : (
+        <>
+          <nav role="tablist" aria-label={t('filters.status')} className="no-scrollbar -mx-5 mt-4 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
+            {(['all', 'live', 'draft'] as const).map((s) => {
+              const active = status === s;
+              return (
                 <button
-                  key={filter}
-                  onClick={() => setStatusFilter(filter)}
-                  className="px-3.5 py-3.5 sm:py-1.5 rounded-lg text-xs font-bold transition-all"
-                  style={
-                    statusFilter === filter
-                      ? { background: 'var(--v-gradient-brand)', color: '#fff', boxShadow: 'var(--v-shadow-accent)' }
-                      : undefined
-                  }
-                  data-inactive={statusFilter !== filter}
+                  key={s}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setStatus(s)}
+                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-[13.5px] font-medium transition-colors sm:min-h-10 ${
+                    active ? 'text-ink' : 'text-muted hover:text-ink'
+                  }`}
                 >
-                  <span className={statusFilter === filter ? '' : 'text-muted hover:text-ink'}>
-                    {t(`statusFilter.${filter.toLowerCase()}`, filter.charAt(0) + filter.slice(1).toLowerCase())}
-                  </span>
+                  {t(`filters.${s}`)}
+                  <span className="tabular text-[12px] text-faint">{counts[s]}</span>
+                  {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <label className="relative min-w-[220px] flex-1 sm:max-w-[320px]">
+              <span className="sr-only">{t('search')}</span>
+              <span className="pointer-events-none absolute inset-y-0 start-2.5 flex items-center text-faint">
+                <Icon name="search" size={14} />
+              </span>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('search')}
+                className="v-field !ps-8 !text-[13px] sm:!h-8"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-[12.5px] text-faint">
+              <span className="hidden sm:inline">{t('sort.label')}</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as Sort)}
+                aria-label={t('sort.label')}
+                className="v-field !h-11 !w-auto !py-0 !pe-8 !text-[13px] sm:!h-8"
+              >
+                <option value="updated">{t('sort.updated')}</option>
+                <option value="created">{t('sort.created')}</option>
+                <option value="name">{t('sort.name')}</option>
+                <option value="views">{t('sort.views')}</option>
+              </select>
+            </label>
+            {filtersActive && (
+              <>
+                <span className="text-[12.5px] text-faint">{t('results', { count: shown.length })}</span>
+                <button onClick={clearFilters} className="min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+                  {t('clearFilters')}
+                </button>
+              </>
+            )}
+            <div role="radiogroup" aria-label={t('layout.label')} className="ms-auto inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+              {(['grid', 'table'] as const).map((l) => (
+                <button
+                  key={l}
+                  role="radio"
+                  aria-checked={layout === l}
+                  onClick={() => chooseLayout(l)}
+                  className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition-colors sm:h-7 ${
+                    layout === l ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  <Icon name={l === 'grid' ? 'grid' : 'list'} size={13} />
+                  {t(`layout.${l}`)}
                 </button>
               ))}
             </div>
-
-            {/* Sort Dropdown */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-3.5 sm:py-2 border border-line rounded-xl bg-surface text-xs font-bold text-ink focus:outline-none focus:border-accent"
-            >
-              <option value="newest">{t('sortOptions.newest', 'Newest First')}</option>
-              <option value="oldest">{t('sortOptions.oldest', 'Oldest First')}</option>
-              <option value="name-asc">{t('sortOptions.nameAsc', 'Name (A-Z)')}</option>
-              <option value="name-desc">{t('sortOptions.nameDesc', 'Name (Z-A)')}</option>
-            </select>
-
-            {/* View Mode Toggle */}
-            <div className="inline-flex rounded-xl border border-line p-0.5 bg-canvas/30">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-all sm:min-h-0 sm:min-w-0 sm:p-1.5 ${viewMode === 'grid' ? 'text-white' : 'text-muted hover:text-ink'}`}
-                style={viewMode === 'grid' ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : undefined}
-                title={t('view.grid')}
-              >
-                <Icon name="grid" size={16} />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-all sm:min-h-0 sm:min-w-0 sm:p-1.5 ${viewMode === 'list' ? 'text-white' : 'text-muted hover:text-ink'}`}
-                style={viewMode === 'list' ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : undefined}
-                title={t('view.list')}
-              >
-                <Icon name="list" size={16} />
-              </button>
-            </div>
           </div>
-        </div>
+
+          <div className="mt-4">
+            {shown.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-14 text-center">
+                <p className="text-[13.5px] text-muted">{query.trim() ? t('empty.noMatchFor', { query: query.trim() }) : t('empty.noMatch')}</p>
+                <button onClick={clearFilters} className="v-btn v-btn-ghost">
+                  {t('clearFilters')}
+                </button>
+              </div>
+            ) : layout === 'grid' ? (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {shown.map((card) => (
+                  <CardTile key={card.id} {...rowProps(card)} />
+                ))}
+              </div>
+            ) : (
+              <CardsTable rows={shown.map(rowProps)} showOwner={showOwner} />
+            )}
+          </div>
+        </>
       )}
 
-      {/* 3. Cards Display (Grid or List) */}
-      {cards === null ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="v-skeleton h-[270px] rounded-2xl" />
-          ))}
-        </div>
-      ) : cards.length === 0 ? (
-        <div className="v-card flex flex-col items-center gap-4 py-20 text-center max-w-md mx-auto mt-8 border-dashed">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent">
-            <Icon name="grid" size={24} />
-          </span>
-          <div className="space-y-1.5">
-            <h3 className="font-bold text-lg text-ink">{t('empty.title')}</h3>
-            <p className="text-sm text-muted px-6">
-              {t('empty.desc')}
-            </p>
-          </div>
-          <button
-            onClick={startNewCard}
-          disabled={creating}
-            className="v-btn mt-2 flex items-center gap-2 !h-10 px-5 text-sm"
-          >
-            <Icon name="plus" size={16} /> {t('createCard')}
-          </button>
-        </div>
-      ) : filteredAndSortedCards.length === 0 ? (
-        <div className="text-center py-20 bg-surface border border-line border-dashed rounded-2xl max-w-md mx-auto">
-          <span className="inline-flex p-3 rounded-full bg-canvas text-muted mb-3">
-            <Icon name="search" size={20} />
-          </span>
-          <p className="text-sm font-semibold text-muted">{t('empty.filtered')}</p>
-        </div>
-      ) : viewMode === 'grid' ? (
-        /* PORTRAIT DEVICE MOCKUP GRID VIEW LAYOUT */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-          <AnimatePresence mode="popLayout">
-            {filteredAndSortedCards.map((card) => {
-              const accent = (card.theme?.accent as string) ?? '#2563eb';
-              const isDark = (card.theme?.mode as string) === 'dark';
-              const name = (card.vcardData?.fullName as string) || `/${card.slug}`;
-              const isConfirmDeleting = deletingId === card.id;
+      <ConfirmDialog
+        open={deleting !== null}
+        title={deleting ? t('delete.title', { name: nameOf(deleting) || deleting.slug }) : ''}
+        body={t('delete.body')}
+        confirmLabel={t('actions.delete')}
+        busyLabel={t('actions.deleting')}
+        cancelLabel={t('actions.cancel')}
+        danger
+        onConfirm={() => (deleting ? remove(deleting) : undefined)}
+        onCancel={closeDelete}
+      />
 
-              const coverImage = card.vcardData?.coverImage as string;
-              const coverType = card.theme?.cover as string;
-              const avatar = card.vcardData?.avatar as string;
-              const activeActions = card.actions?.filter((a) => a.isActive) ?? [];
-
-              const title = (card.vcardData?.title as string) || '';
-              const company = (card.vcardData?.org as string) || '';
-
-              return (
-                <motion.div
-                  key={card.id}
-                  layout
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                  className="group relative bg-surface border border-line rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-line-strong transition-all flex flex-col h-[270px]"
-                >
-                  {/* Glassmorphic Delete Confirmation Overlay */}
-                  <AnimatePresence>
-                    {isConfirmDeleting && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface/95 backdrop-blur-sm p-4 text-center"
-                      >
-                        <p className="text-xs font-bold text-ink mb-3 px-3">
-                          {t('confirmDelete', 'Are you sure you want to delete this card? This action is permanent.')}
-                        </p>
-                        <div className="flex gap-2 w-full justify-center">
-                          <button
-                            disabled={isDeleting}
-                            onClick={() => setDeletingId(null)}
-                            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-line bg-canvas hover:bg-elevated text-ink transition-colors"
-                          >
-                            {t('actions.cancel', 'Cancel')}
-                          </button>
-                          <button
-                            disabled={isDeleting}
-                            onClick={() => handleDelete(card.id)}
-                            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
-                          >
-                            {isDeleting ? t('actions.deleting', 'Deleting...') : t('actions.delete', 'Delete')}
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Top Part: Cover, Avatar, and Profile Metadata */}
-                  <div className="flex-1 flex flex-col min-w-0">
-                    {/* Card Cover */}
-                    <div
-                      className="relative h-[96px] shrink-0 bg-cover bg-center overflow-hidden"
-                      style={{
-                        background: coverImage
-                          ? `url("${coverImage}") center/cover no-repeat`
-                          : (coverType === 'constellation' || isDark ? '#09090b' : `linear-gradient(135deg, ${accent}, rgba(0,0,0,0.15))`),
-                      }}
-                    >
-                      <div className="absolute inset-0 bg-black/5" />
-
-                      {(isDark || coverType === 'constellation') && !coverImage && (
-                        <span
-                          className="absolute inset-0 opacity-60 pointer-events-none"
-                          style={{
-                            background: `radial-gradient(100% 120% at 75% 20%, ${accent}55, transparent)`,
-                          }}
-                        />
-                      )}
-
-                      {/* Live/Draft badge on top-left of cover */}
-                      <span
-                        className="absolute top-3 start-3 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border backdrop-blur-sm text-white"
-                        style={
-                          card.isPublished
-                            ? { background: 'rgba(16,185,129,0.25)', borderColor: 'rgba(16,185,129,0.4)', color: '#a7f3d0' }
-                            : { background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', color: '#e4e4e7' }
-                        }
-                      >
-                        {card.isPublished && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-                        {card.isPublished ? t('cardStatus.live', 'Live') : t('cardStatus.draft', 'Draft')}
-                      </span>
-                    </div>
-
-                    {/* Centered Avatar badge overlapping the cover */}
-                    <div className="flex justify-center -mt-8 z-10 select-none">
-                      <span
-                        className="flex h-16 w-16 overflow-hidden items-center justify-center rounded-full border-3 border-surface bg-slate-100 shadow-md transition-transform group-hover:scale-105"
-                        style={{ borderColor: 'hsl(var(--v-surface))', background: accent }}
-                      >
-                        {avatar ? (
-                          <img src={avatar} alt={name} className="h-full w-full object-cover" />
-                        ) : (
-                          <span className="text-[18px] font-extrabold text-white">
-                            {name.charAt(name.startsWith('/') ? 1 : 0).toUpperCase()}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-
-                    {/* Centered Typography for Name, Subtitle and Slug */}
-                    <div className="pt-2 px-3 text-center min-w-0">
-                      <p className="font-extrabold text-[15.5px] text-ink group-hover:text-accent transition-colors truncate px-1">
-                        {name}
-                      </p>
-                      
-                      {title || company ? (
-                        <p className="truncate text-[11px] text-muted font-bold mt-0.5 px-2">
-                          {title}{title && company && ' · '}{company}
-                        </p>
-                      ) : (
-                        <p className="text-[11px] text-faint font-semibold mt-0.5">{t('digitalCard')}</p>
-                      )}
-
-                      <p className="truncate text-[10px] text-faint font-medium font-mono mt-1">/c/{card.slug}</p>
-                    </div>
-
-                    {/* Centered active connection links */}
-                    <div className="flex justify-center items-center gap-1.5 mt-3 px-4 overflow-hidden shrink-0">
-                      {activeActions.slice(0, 6).map((a) => {
-                        const color = BRANDS_COLORS[a.type] ?? '#2563eb';
-                        return (
-                          <span
-                            key={a.id}
-                            className="flex h-6.5 w-6.5 items-center justify-center rounded-lg text-white shadow-sm shrink-0 border border-white/5"
-                            style={{ background: color }}
-                            title={a.type}
-                          >
-                            <Icon name={actionIcon(a.type)} size={11} />
-                          </span>
-                        );
-                      })}
-                      {activeActions.length === 0 && (
-                        <span className="text-[11px] text-faint font-semibold">{t('noActiveLinks', 'No active links')}</span>
-                      )}
-                      {activeActions.length > 6 && (
-                        <span className="text-[9px] font-bold text-muted bg-canvas px-1.5 py-0.5 rounded border border-line shrink-0">
-                          +{activeActions.length - 6}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Premium Unified Actions Bar (Footer) */}
-                  <div className="flex border-t border-line divide-x divide-line bg-canvas/30 shrink-0 text-center select-none">
-                    <Link
-                      href={`/cards/${card.id}`}
-                      className="flex-1 flex items-center justify-center gap-1 py-3.5 sm:py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
-                      title={t('actions.edit', 'Edit')}
-                    >
-                      <Icon name="settings" size={12} />
-                      <span>{t('actions.edit', 'Edit')}</span>
-                    </Link>
-                    <a
-                      href={`/c/${card.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 flex items-center justify-center gap-1 py-3.5 sm:py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
-                      title={t('actions.view', 'View')}
-                    >
-                      <Icon name="external-link" size={12} />
-                      <span>{t('actions.view', 'View')}</span>
-                    </a>
-                    <button
-                      onClick={(e) => copyToClipboard(e, card.slug)}
-                      className="flex-1 flex items-center justify-center gap-1 py-3.5 sm:py-2.5 text-[11px] font-black text-muted hover:text-accent hover:bg-canvas/50 transition-all"
-                      title={t('actions.copy', 'Copy')}
-                    >
-                      <Icon name="copy" size={12} />
-                      <span>{t('actions.copy', 'Copy')}</span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDeletingId(card.id);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-black text-muted hover:text-red-500 hover:bg-red-500/5 transition-all"
-                      title={t('actions.delete', 'Delete')}
-                    >
-                      <Icon name="trash" size={12} />
-                      <span>{t('actions.delete', 'Delete')}</span>
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      ) : (
-        /* LIST VIEW LAYOUT */
-        <div className="flex flex-col gap-3">
-          <AnimatePresence mode="popLayout">
-            {filteredAndSortedCards.map((card) => {
-              const accent = (card.theme?.accent as string) ?? '#2563eb';
-              const name = (card.vcardData?.fullName as string) || `/${card.slug}`;
-              const isConfirmDeleting = deletingId === card.id;
-              const avatar = card.vcardData?.avatar as string;
-              const activeActions = card.actions?.filter((a) => a.isActive) ?? [];
-              const createdDate = formatDate(card.createdAt, locale, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              });
-
-              return (
-                <motion.div
-                  key={card.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                  className="group relative bg-surface border border-line rounded-2xl p-4 flex items-center justify-between gap-4 hover:border-line-strong hover:shadow-sm transition-all"
-                >
-                  {/* Inline Delete Confirmation Overlay for List Mode */}
-                  <AnimatePresence>
-                    {isConfirmDeleting && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-20 flex items-center justify-between bg-surface/95 backdrop-blur-sm px-6"
-                      >
-                        <p className="text-xs font-bold text-ink">
-                          {t('confirmDelete')}
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            disabled={isDeleting}
-                            onClick={() => setDeletingId(null)}
-                            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border border-line bg-canvas hover:bg-elevated text-ink transition-colors"
-                          >
-                            {t('actions.cancel')}
-                          </button>
-                          <button
-                            disabled={isDeleting}
-                            onClick={() => handleDelete(card.id)}
-                            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
-                          >
-                            {isDeleting ? t('actions.deleting') : t('actions.delete')}
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Left section: Avatar & Profile info */}
-                  <div className="flex items-center gap-3.5 min-w-0 flex-1 md:flex-initial md:w-[280px]">
-                    <span
-                      className="flex h-11 w-11 shrink-0 overflow-hidden items-center justify-center rounded-full border border-line shadow-sm"
-                      style={{ background: accent }}
-                    >
-                      {avatar ? (
-                        <img src={avatar} alt={name} className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="text-[13px] font-black text-white">
-                          {name.charAt(name.startsWith('/') ? 1 : 0).toUpperCase()}
-                        </span>
-                      )}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-extrabold text-[14.5px] text-ink group-hover:text-accent transition-colors truncate">
-                        {name}
-                      </p>
-                      <p className="text-[11px] text-muted font-mono truncate">/c/{card.slug}</p>
-                    </div>
-                  </div>
-
-                  {/* Middle Section 1: Active links list (hidden on mobile) */}
-                  <div className="hidden lg:flex items-center gap-1.5 max-w-[200px] overflow-hidden shrink-0">
-                    <div className="flex gap-1.5">
-                      {activeActions.slice(0, 6).map((a) => {
-                        const color = BRANDS_COLORS[a.type] ?? '#2563eb';
-                        return (
-                          <span
-                            key={a.id}
-                            className="flex h-5.5 w-5.5 items-center justify-center rounded-lg text-white shadow-sm shrink-0 border border-white/5"
-                            style={{ background: color }}
-                            title={a.type}
-                          >
-                            <Icon name={actionIcon(a.type)} size={10} />
-                          </span>
-                        );
-                      })}
-                      {activeActions.length === 0 && (
-                        <span className="text-xs text-faint font-semibold">—</span>
-                      )}
-                      {activeActions.length > 6 && (
-                        <span className="text-[9px] font-bold text-muted bg-canvas px-1.5 py-0.5 rounded border border-line shrink-0">
-                          +{activeActions.length - 6}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Middle Section 2: Created date */}
-                  <div className="hidden md:block text-xs font-semibold text-muted tracking-wide shrink-0 md:w-[100px]">
-                    {createdDate}
-                  </div>
-
-                  {/* Right Section: Status badge & Actions */}
-                  <div className="flex items-center gap-4 shrink-0">
-                    {/* Status badge */}
-                    <span
-                      className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border shrink-0"
-                      style={
-                        card.isPublished
-                          ? { background: 'rgba(16,185,129,0.06)', borderColor: 'rgba(16,185,129,0.2)', color: '#10b981' }
-                          : { background: 'hsl(var(--v-border))', borderColor: 'hsl(var(--v-border-strong))', color: 'hsl(var(--v-muted))' }
-                      }
-                    >
-                      {card.isPublished && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
-                      {card.isPublished ? t('cardStatus.live') : t('cardStatus.draft')}
-                    </span>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={(e) => copyToClipboard(e, card.slug)}
-                        className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-canvas hover:text-accent active:scale-90 transition-all text-muted border border-transparent hover:border-line"
-                        title={t('actions.copyLink')}
-                      >
-                        <Icon name="copy" size={14} />
-                      </button>
-                      <a
-                        href={`/c/${card.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-canvas hover:text-accent active:scale-90 transition-all text-muted border border-transparent hover:border-line"
-                        title={t('actions.previewCard')}
-                      >
-                        <Icon name="external-link" size={14} />
-                      </a>
-                      <Link
-                        href={`/cards/${card.id}`}
-                        className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-canvas hover:text-accent active:scale-90 transition-all text-muted border border-transparent hover:border-line"
-                        title={t('actions.editCard')}
-                      >
-                        <Icon name="settings" size={14} />
-                      </Link>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setDeletingId(card.id);
-                        }}
-                        className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-500/5 hover:text-red-500 active:scale-90 transition-all text-muted border border-transparent hover:border-line"
-                        title={t('actions.deleteCard')}
-                      >
-                        <Icon name="trash" size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Floating Copy Feedback Toast Notification */}
       <AnimatePresence>
-        {toastMessage && (
+        {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border border-white/10 dark:border-black/5 px-4.5 py-3 rounded-2xl shadow-xl text-xs font-bold tracking-wide"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            role="status"
+            className="fixed inset-x-0 bottom-6 z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
           >
-            <span className="text-emerald-400 dark:text-emerald-600">
-              <Icon name="check" size={14} />
-            </span>
-            {toastMessage}
+            <Icon name="check" size={14} /> {toast}
           </motion.div>
         )}
       </AnimatePresence>
@@ -713,38 +398,305 @@ export default function CardsPage() {
   );
 }
 
-/**
- * One headline number. A row on a phone (icon and label leading, figure
- * trailing) and the usual stacked tile from `sm` up.
- */
-function StatTile({
-  icon,
-  tone,
-  label,
-  value,
-  sub,
-}: {
-  icon: string;
-  /** Utility classes for the icon chip's colour. */
-  tone: string;
-  label: string;
-  value: number;
-  sub: React.ReactNode;
-}) {
+interface RowProps {
+  card: ListCard;
+  /** undefined while loading, null when it could not be read. */
+  stats: CardStats | null | undefined;
+  /** null when this role cannot read leads or chips. */
+  leads: number | null;
+  chips: number | null;
+  /** undefined when the owner column is not shown. */
+  owner?: Member['user'] | null;
+  onCopy: () => void;
+  onPublish: (isPublished: boolean) => void;
+  onDelete: () => void;
+}
+
+/* ---------------------------------------------------------------------------
+ * The card's face, drawn small in its own colours: the thing people will
+ * recognise faster than a name.
+ * ------------------------------------------------------------------------- */
+function CardFace({ card, compact = false }: { card: ListCard; compact?: boolean }) {
+  const { t } = useTranslation('cards');
+  const accent = /^#[0-9a-f]{6}$/i.test((card.theme?.accent as string) ?? '') ? (card.theme!.accent as string) : '#2563eb';
+  const dark = card.theme?.mode === 'dark';
+  const cover = (card.theme?.cover as string) || (dark ? 'constellation' : 'gradient');
+  const coverImage = card.vcardData?.coverImage as string | undefined;
+  const avatar = card.vcardData?.avatar as string | undefined;
+  const name = nameOf(card);
+  const role = roleOf(card);
+  const actions = (card.actions ?? []).filter((a) => a.isActive).sort((a, b) => a.order - b.order);
+  const face = dark ? { bg: '#0e0e12', fg: '#fafafa', muted: '#a1a1aa', edge: '#26262e' } : { bg: '#ffffff', fg: '#0a0a0a', muted: '#71717a', edge: '#e7e5e4' };
+
+  const coverStyle: React.CSSProperties = coverImage
+    ? { background: `url("${coverImage}") center/cover no-repeat` }
+    : cover === 'solid'
+      ? { background: accent }
+      : cover === 'constellation'
+        ? { background: `radial-gradient(90% 140% at 80% 0%, ${accent}66, transparent 70%), #0b0b0e` }
+        : { background: `linear-gradient(135deg, ${accent}, ${shade(accent, -46)})` };
+
+  if (compact) {
+    return (
+      <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-[12px] font-semibold" style={{ background: accent, color: readableOn(accent) }} aria-hidden>
+        {avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatar} alt="" className="h-full w-full object-cover" />
+        ) : (
+          (name || card.slug).charAt(0).toUpperCase()
+        )}
+      </span>
+    );
+  }
+
   return (
-    <div className="v-stat flex items-center justify-between gap-3 sm:block">
-      <div className="flex min-w-0 items-center gap-2.5 sm:justify-between">
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${tone}`}>
-          <Icon name={icon} size={15} />
+    // The face reads in the card's own language, whatever the dashboard's is.
+    <div
+      dir={card.theme?.lang === 'ar' ? 'rtl' : 'ltr'}
+      className="relative aspect-[1.7] overflow-hidden rounded-lg"
+      style={{ background: face.bg, boxShadow: `inset 0 0 0 1px ${face.edge}` }}
+      aria-hidden
+    >
+      <div className="h-[38%]" style={coverStyle} />
+      <div className="absolute inset-x-0 bottom-0 top-[38%] flex flex-col px-[7%] pb-[6%]">
+        <span
+          className="-mt-[22px] flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-[15px] font-semibold"
+          style={{ background: accent, color: readableOn(accent), boxShadow: `0 0 0 2.5px ${face.bg}` }}
+        >
+          {avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatar} alt="" className="h-full w-full object-cover" />
+          ) : (
+            (name || card.slug).charAt(0).toUpperCase()
+          )}
         </span>
-        <span className="v-stat-label truncate sm:whitespace-normal">{label}</span>
-      </div>
-      <div className="shrink-0 text-end sm:text-start">
-        <p className="v-stat-value sm:mt-3">{value}</p>
-        <p className="mt-0.5 flex items-center justify-end gap-1.5 text-[11px] font-semibold text-faint sm:mt-1 sm:justify-start">
-          {sub}
+        <p className="mt-2 truncate text-[14px] font-semibold leading-tight" style={{ color: face.fg }}>
+          {name || t('untitled')}
         </p>
+        <p className="mt-0.5 truncate text-[12px]" style={{ color: face.muted }}>
+          {role || ' '}
+        </p>
+        <div className="mt-auto flex items-center gap-1.5" style={{ color: face.muted }}>
+          {actions.slice(0, 5).map((a) => (
+            <span key={a.id} className="flex h-6 w-6 items-center justify-center rounded-full" style={{ boxShadow: `inset 0 0 0 1px ${face.edge}` }}>
+              <Icon name={actionIcon(a.type)} size={11} />
+            </span>
+          ))}
+          {actions.length > 5 && <span className="tabular text-[11px]">+{actions.length - 5}</span>}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function StatusBadge({ live }: { live: boolean }) {
+  const { t } = useTranslation('cards');
+  return live ? (
+    <span className="v-badge v-badge-success shrink-0">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {t('status.live')}
+    </span>
+  ) : (
+    <span className="v-badge v-badge-neutral shrink-0">{t('status.draft')}</span>
+  );
+}
+
+/** A number that may still be loading (undefined) or be unavailable (null). */
+function Num({ value }: { value: number | null | undefined }) {
+  const { locale } = useLocale();
+  if (value === undefined) return <span className="v-skeleton inline-block h-3.5 w-7 align-middle" />;
+  if (value === null) return <span className="text-faint">—</span>;
+  return <>{formatNumber(value, locale)}</>;
+}
+
+function CardTile({ card, stats, leads, chips, owner, onCopy, onPublish, onDelete }: RowProps) {
+  const { t } = useTranslation('cards');
+  const { locale } = useLocale();
+  const metrics: { key: string; value: number | null | undefined }[] = [
+    { key: 'views', value: stats === undefined ? undefined : stats?.VIEW ?? null },
+    { key: 'taps', value: stats === undefined ? undefined : stats?.NFC_SCAN ?? null },
+    { key: 'leads', value: leads },
+  ];
+
+  return (
+    <article className="group relative flex flex-col rounded-xl bg-surface p-2 ring-1 ring-inset ring-line transition-shadow hover:ring-[hsl(var(--v-border-strong))]">
+      <Link href={`/cards/${card.id}`} className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-label={t('actions.openNamed', { name: nameOf(card) || card.slug })}>
+        <CardFace card={card} />
+      </Link>
+
+      <div className="flex items-center gap-2 px-1.5 pt-3">
+        <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-[12px] text-faint rtl:text-right">
+          /c/{card.slug}
+        </span>
+        <StatusBadge live={card.isPublished} />
+        <RowMenu card={card} onCopy={onCopy} onPublish={onPublish} onDelete={onDelete} />
+      </div>
+
+      <dl className="mx-1.5 mt-3 grid grid-cols-3 border-t border-line pt-3">
+        {metrics.map((m) => (
+          <div key={m.key} className="min-w-0">
+            <dt className="text-[11.5px] text-faint">{t(`metrics.${m.key}`)}</dt>
+            <dd className="tabular mt-0.5 text-[15px] font-medium text-ink">
+              <Num value={m.value} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <p className="mx-1.5 mb-1 mt-3 flex items-center gap-1.5 text-[12px] text-faint">
+        {owner && (
+          <>
+            <span className="truncate text-muted">{owner.name || owner.email}</span>
+            <span aria-hidden>·</span>
+          </>
+        )}
+        <span className="shrink-0">{t('edited', { when: formatRelativeTime(editedAt(card), locale) })}</span>
+        {chips !== null && chips > 0 && (
+          <>
+            <span aria-hidden>·</span>
+            <span className="shrink-0">{t('chips', { count: chips })}</span>
+          </>
+        )}
+      </p>
+    </article>
+  );
+}
+
+function CardsTable({ rows, showOwner }: { rows: RowProps[]; showOwner: boolean }) {
+  const { t } = useTranslation('cards');
+  const { locale } = useLocale();
+  const router = useRouter();
+  return (
+    <div className="v-card overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="v-table">
+          <thead>
+            <tr>
+              <th>{t('table.card')}</th>
+              <th>{t('table.status')}</th>
+              {showOwner && <th className="hidden md:table-cell">{t('table.owner')}</th>}
+              <th className="!text-end">{t('metrics.views')}</th>
+              <th className="hidden !text-end sm:table-cell">{t('metrics.taps')}</th>
+              <th className="hidden !text-end sm:table-cell">{t('metrics.leads')}</th>
+              <th className="hidden !text-end lg:table-cell">{t('table.chips')}</th>
+              <th className="hidden lg:table-cell">{t('table.edited')}</th>
+              <th className="w-12">
+                <span className="sr-only">{t('table.actions')}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ card, stats, leads, chips, owner, onCopy, onPublish, onDelete }) => (
+              <tr
+                key={card.id}
+                tabIndex={0}
+                onClick={() => router.push(`/cards/${card.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target === e.currentTarget) router.push(`/cards/${card.id}`);
+                }}
+                className="cursor-pointer outline-none focus-visible:[&>td]:bg-elevated"
+              >
+                <td className="w-full max-w-0">
+                  <span className="flex items-center gap-3">
+                    <CardFace card={card} compact />
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium text-ink">{nameOf(card) || t('untitled')}</span>
+                      <span dir="ltr" className="block truncate text-start font-mono text-[12px] text-faint rtl:text-right">
+                        /c/{card.slug}
+                      </span>
+                    </span>
+                  </span>
+                </td>
+                <td>
+                  <StatusBadge live={card.isPublished} />
+                </td>
+                {showOwner && <td className="hidden whitespace-nowrap text-muted md:table-cell">{owner ? owner.name || owner.email : '—'}</td>}
+                <td className="text-end">
+                  <Num value={stats === undefined ? undefined : stats?.VIEW ?? null} />
+                </td>
+                <td className="hidden text-end sm:table-cell">
+                  <Num value={stats === undefined ? undefined : stats?.NFC_SCAN ?? null} />
+                </td>
+                <td className="hidden text-end sm:table-cell">
+                  <Num value={leads} />
+                </td>
+                <td className="hidden text-end lg:table-cell">
+                  <Num value={chips} />
+                </td>
+                <td className="hidden whitespace-nowrap text-muted lg:table-cell">{formatRelativeTime(editedAt(card), locale, 'short')}</td>
+                <td onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <RowMenu card={card} onCopy={onCopy} onPublish={onPublish} onDelete={onDelete} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/** Everything else you can do to a card, behind one button. */
+function RowMenu({
+  card,
+  onCopy,
+  onPublish,
+  onDelete,
+}: {
+  card: ListCard;
+  onCopy: () => void;
+  onPublish: (isPublished: boolean) => void;
+  onDelete: () => void;
+}) {
+  const { t } = useTranslation('cards');
+  const items: ActionItem[] = [
+    { key: 'edit', label: t('actions.edit'), icon: 'settings', href: `/cards/${card.id}` },
+    ...(card.isPublished ? [{ key: 'view', label: t('actions.view'), icon: 'external-link', externalHref: `/c/${card.slug}` }] : []),
+    { key: 'copy', label: t('actions.copyLink'), icon: 'copy', onSelect: onCopy },
+    {
+      key: 'publish',
+      label: card.isPublished ? t('actions.unpublish') : t('actions.publish'),
+      icon: card.isPublished ? 'eye-off' : 'globe',
+      onSelect: () => onPublish(!card.isPublished),
+    },
+    { key: 'delete', label: t('actions.delete'), icon: 'trash', onSelect: onDelete, danger: true, separated: true },
+  ];
+  return <ActionMenu label={t('actions.more')} items={items} />;
+}
+
+function GridSkeleton() {
+  return (
+    <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="rounded-xl p-2 ring-1 ring-inset ring-line">
+          <div className="v-skeleton aspect-[1.7] w-full rounded-lg" />
+          <div className="v-skeleton mx-1.5 mt-3 h-4 w-2/3" />
+          <div className="v-skeleton mx-1.5 mb-1 mt-4 h-9" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** No cards yet: say what a card is for and make the first one a click away. */
+function FirstCard({ onCreate, creating }: { onCreate: () => void; creating: boolean }) {
+  const { t } = useTranslation('cards');
+  const steps = ['details', 'look', 'share'] as const;
+  return (
+    <div className="mx-auto mt-6 max-w-[560px] rounded-xl px-6 py-10 text-center ring-1 ring-inset ring-line">
+      <h2 className="text-[17px] font-semibold text-ink">{t('first.title')}</h2>
+      <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-muted">{t('first.body')}</p>
+      <ol className="mx-auto mt-6 grid max-w-md gap-2 text-start sm:grid-cols-3">
+        {steps.map((s, i) => (
+          <li key={s} className="flex items-start gap-2.5 rounded-lg bg-elevated px-3 py-2.5 text-[12.5px] text-muted ring-1 ring-inset ring-line sm:flex-col sm:gap-1.5">
+            <span className="tabular flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-medium text-ink ring-1 ring-line">{i + 1}</span>
+            {t(`first.steps.${s}`)}
+          </li>
+        ))}
+      </ol>
+      <button onClick={onCreate} disabled={creating} className="v-btn mt-6">
+        <Icon name={creating ? 'loader' : 'plus'} size={14} className={creating ? 'animate-spin' : undefined} />
+        {t('newCard')}
+      </button>
     </div>
   );
 }

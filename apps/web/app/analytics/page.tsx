@@ -1,236 +1,438 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authFetch, getToken } from '@/lib/client';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import AppShell from '@/components/AppShell';
+import { authFetch, getToken, type Card, type Member } from '@/lib/client';
+import { useLocale } from '@/components/i18n/LanguageProvider';
+import { formatDate, formatNumber } from '@/lib/format';
+import {
+  change,
+  countByDay,
+  eventSeries,
+  formatChange,
+  periodWindows,
+  rangeQuery,
+  shareOf,
+  type EventType,
+  type Overview,
+  type Point,
+} from '@/lib/analytics';
+import { type Lead, type Stage } from '@/lib/crm';
 import { Icon } from '@/components/Icon';
+import AppShell from '@/components/AppShell';
+import { TrendChart } from '@/components/charts/TrendChart';
+import { markersFor, type Occasion } from '@/lib/occasions';
+import { CardThumb } from '@/components/cards/CardThumb';
+import { BarList, PanelEmpty, PanelHeader } from '@/components/analytics/parts';
+import { CardsView } from '@/components/analytics/CardsView';
+import { ChipsView } from '@/components/analytics/ChipsView';
+import { TeamView } from '@/components/analytics/TeamView';
+import { LeadsView } from '@/components/analytics/LeadsView';
 
-// Import workspace layouts
-import { ExecutiveDashboard } from '@/components/analytics/ExecutiveDashboard';
-import { CardAnalytics } from '@/components/analytics/CardAnalytics';
-import { ProfileAnalytics } from '@/components/analytics/ProfileAnalytics';
-import { QrAnalytics } from '@/components/analytics/QrAnalytics';
-import { NfcAnalytics } from '@/components/analytics/NfcAnalytics';
-import { LeadAnalytics } from '@/components/analytics/LeadAnalytics';
-import { AudienceAnalytics } from '@/components/analytics/AudienceAnalytics';
-import { DeviceAnalytics } from '@/components/analytics/DeviceAnalytics';
-import { GeographicAnalytics } from '@/components/analytics/GeographicAnalytics';
-import { TrafficAnalytics } from '@/components/analytics/TrafficAnalytics';
-import { AiInsights } from '@/components/analytics/AiInsights';
-import { ReportsCenter } from '@/components/analytics/ReportsCenter';
+type Period = 7 | 30 | 90;
+type View = 'overview' | 'cards' | 'chips' | 'team' | 'leads';
+type Metric = EventType | 'LEADS';
 
-type WorkspaceView =
-  | 'overview'
-  | 'cards'
-  | 'profile'
-  | 'qr'
-  | 'nfc'
-  | 'leads'
-  | 'audience'
-  | 'devices'
-  | 'geography'
-  | 'traffic'
-  | 'ai'
-  | 'reports';
+const PERIODS: Period[] = [7, 30, 90];
+const VIEWS: View[] = ['overview', 'cards', 'chips', 'team', 'leads'];
+const METRICS: Metric[] = ['VIEW', 'CLICK', 'SAVE', 'NFC_SCAN', 'LEADS'];
 
-const TABS = [
-  { id: 'overview', label: 'Executive Dashboard', icon: 'gauge' },
-  { id: 'cards', label: 'Card Performance', icon: 'columns' },
-  { id: 'profile', label: 'Profile Interaction', icon: 'eye' },
-  { id: 'qr', label: 'QR Analytics', icon: 'grid' },
-  { id: 'nfc', label: 'NFC Intelligence', icon: 'zap' },
-  { id: 'leads', label: 'Lead Funnel', icon: 'briefcase' },
-  { id: 'audience', label: 'Audience Demographics', icon: 'users' },
-  { id: 'devices', label: 'Devices & Tech', icon: 'list' },
-  { id: 'geography', label: 'Geographic Map', icon: 'map' },
-  { id: 'traffic', label: 'Traffic Sources', icon: 'globe' },
-  { id: 'ai', label: 'AI Diagnostics', icon: 'sparkle' },
-  { id: 'reports', label: 'Reports Scheduler', icon: 'check-circle' },
-] as const;
+interface TopCard {
+  cardId: string;
+  slug: string;
+  events: number;
+}
+interface Referrer {
+  referrer: string;
+  events: number;
+}
+interface PeriodData {
+  ov: Overview | null;
+  ovPrev: Overview | null;
+  ts: Point[];
+  tsPrev: Point[];
+  top: TopCard[];
+  refs: Referrer[];
+}
+
+/** "https://www.linkedin.com/feed" → "linkedin.com"; anything unparseable is shown as sent. */
+function referrerHost(ref: string): string {
+  try {
+    return new URL(ref).hostname.replace(/^www\./, '');
+  } catch {
+    return ref;
+  }
+}
 
 export default function AnalyticsPage() {
   const router = useRouter();
   const { t } = useTranslation('analytics');
-  const [view, setView] = useState<WorkspaceView>('overview');
-  const [dateRange, setDateRange] = useState('30d');
-  const [compareMode, setCompareMode] = useState(false);
+  const { locale } = useLocale();
+  const fmt = (n: number) => formatNumber(n, locale);
 
-  const [overview, setOverview] = useState<any>(null);
-  const [series, setSeries] = useState<any[]>([]);
-  const [top, setTop] = useState<any[]>([]);
-  const [refs, setRefs] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<View>('overview');
+  const [period, setPeriod] = useState<Period>(30);
+  const [metric, setMetric] = useState<Metric>('VIEW');
+  const [data, setData] = useState<PeriodData | null>(null);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [leads, setLeads] = useState<Lead[] | null>(null);
+  const [stages, setStages] = useState<(Stage & { isWon?: boolean; isLost?: boolean })[]>([]);
+  // null until known: the Team view only exists when several people share the workspace.
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+  const [occasions, setOccasions] = useState<Occasion[]>([]);
   const [error, setError] = useState('');
 
+  const windows = useMemo(() => periodWindows(period), [period]);
+
+  // The tab lives in the address so a view can be linked to and survives a reload.
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get('view') as View | null;
+    if (v && VIEWS.includes(v)) setView(v);
+  }, []);
+  function chooseView(next: View) {
+    setView(next);
+    const url = new URL(window.location.href);
+    if (next === 'overview') url.searchParams.delete('view');
+    else url.searchParams.set('view', next);
+    window.history.replaceState(null, '', url);
+  }
+
+  // Things that do not depend on the period.
   useEffect(() => {
     if (!getToken()) {
       router.replace('/login');
       return;
     }
+    authFetch<Card[]>('/cards').then(setCards).catch(() => setCards([]));
+    authFetch<Lead[]>('/leads').then(setLeads).catch(() => setLeads([]));
+    authFetch<(Stage & { isWon?: boolean; isLost?: boolean })[]>('/leads/stages').then(setStages).catch(() => setStages([]));
+    authFetch<Member[]>('/orgs/members').then((m) => setMemberCount(m.length)).catch(() => setMemberCount(0));
+    authFetch<Occasion[]>('/orgs/occasions').then(setOccasions).catch(() => setOccasions([]));
+  }, [router]);
 
-    setLoading(true);
+  // Everything measured over the chosen period, plus the period before it.
+  useEffect(() => {
+    if (!getToken()) return;
+    const now = new Date();
+    const cur = rangeQuery(windows.from, now);
+    const prev = rangeQuery(windows.prevFrom, windows.from);
+    let alive = true;
+    setData(null);
     Promise.all([
-      authFetch<any>('/analytics/overview'),
-      authFetch<any[]>('/analytics/timeseries'),
-      authFetch<any[]>('/analytics/top-cards'),
-      authFetch<any[]>('/analytics/referrers'),
-      authFetch<any[]>('/leads'),
-      authFetch<any[]>('/tasks'),
+      authFetch<Overview>('/analytics/overview' + cur),
+      authFetch<Overview>('/analytics/overview' + prev).catch(() => null),
+      authFetch<Point[]>('/analytics/timeseries' + cur).catch(() => []),
+      authFetch<Point[]>('/analytics/timeseries' + prev).catch(() => []),
+      authFetch<TopCard[]>('/analytics/top-cards' + cur).catch(() => []),
+      authFetch<Referrer[]>('/analytics/referrers' + cur).catch(() => []),
     ])
-      .then(([o, s, t, r, l, tk]) => {
-        setOverview(o);
-        setSeries(s);
-        setTop(t);
-        setRefs(r);
-        setLeads(l);
-        setTasks(tk);
+      .then(([ov, ovPrev, ts, tsPrev, top, refs]) => {
+        if (!alive) return;
+        setData({ ov, ovPrev, ts, tsPrev, top, refs });
         setError('');
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [router, dateRange]);
+      .catch((e) => alive && setError((e as Error).message));
+    return () => {
+      alive = false;
+    };
+  }, [windows]);
+
+  const periodLeads = useMemo(() => (leads ?? []).filter((l) => new Date(l.createdAt) >= windows.from), [leads, windows]);
+
+  /** The period's numbers, day by day, as a spreadsheet. */
+  function exportCsv() {
+    if (!data) return;
+    const leadDays = countByDay(leads ?? [], windows.keys);
+    const types: EventType[] = ['VIEW', 'CLICK', 'SAVE', 'SHARE', 'NFC_SCAN'];
+    const series = types.map((type) => eventSeries(data.ts, windows.keys, type));
+    const header = [t('csv.day'), ...types.map((type) => t(`metrics.${type}`)), t('metrics.LEADS')];
+    const rows = windows.keys.map((day, i) => [day, ...series.map((s) => s[i]), leadDays[i]]);
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    // The byte-order mark makes spreadsheet apps read Arabic headers correctly.
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vertex-analytics-${windows.keys[0]}-${windows.keys[windows.keys.length - 1]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const teamAvailable = (memberCount ?? 0) > 1;
+  const views: { id: View; label: string }[] = VIEWS.filter((v) => v !== 'team' || teamAvailable).map((id) => ({ id, label: t(`views.${id}`) }));
+  // A link to the Team view in a one-person workspace lands on the overview.
+  const shown: View = view === 'team' && memberCount !== null && !teamAvailable ? 'overview' : view;
+
+  const totals = data?.ov?.totals ?? {};
+  const people = data?.ov?.uniqueVisitors ?? 0;
 
   return (
     <AppShell
-      title={t('title', 'Real-Time Enterprise Analytics')}
+      title={t('title')}
+      fluid
       action={
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Compare mode toggle switch */}
-          <button
-            onClick={() => setCompareMode(!compareMode)}
-            className="flex items-center gap-1.5 v-btn v-btn-ghost !h-11 text-[11.5px] font-bold sm:!h-9"
-            style={{ background: compareMode ? 'var(--v-accent-soft)' : 'transparent', color: compareMode ? 'var(--v-accent)' : 'hsl(var(--v-muted))' }}
-          >
-            <Icon name="refresh" size={13} />
-            {compareMode ? t('comparingOn') : t('compareMode')}
-          </button>
-
-          {/* Date Range dropdown selector */}
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="v-field !h-11 !w-auto text-[12px] font-semibold sm:!h-9"
-          >
-            <option value="today">{t('period.today')}</option>
-            <option value="yesterday">{t('period.yesterday')}</option>
-            <option value="7d">{t('period.last7days')}</option>
-            <option value="30d">{t('period.last30days')}</option>
-            <option value="90d">{t('period.last90days')}</option>
-            <option value="ytd">{t('period.thisYear')}</option>
-          </select>
-        </div>
+        <button onClick={exportCsv} disabled={!data} className="v-btn v-btn-ghost disabled:opacity-50">
+          <Icon name="download" size={14} /> {t('export')}
+        </button>
       }
     >
-      {/* Subnav tab bar */}
-      <div className="no-scrollbar mb-6 flex gap-1.5 overflow-x-auto border-b border-line pb-3">
-        {TABS.map((tabItem) => {
-          const active = view === tabItem.id;
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <p className="min-h-[22px] text-[14px] text-muted">
+          {data ? (
+            <>
+              <span className="font-medium text-ink">{t(`summary.period${period}`)}</span>
+              {': '}
+              {t('summary.views', { count: totals.VIEW ?? 0, value: fmt(totals.VIEW ?? 0) })}
+              {people > 0 && ` ${t('summary.people', { count: people, value: fmt(people) })}`}
+              {locale === 'ar' ? '، ' : ', '}
+              {t('summary.leads', { count: data.ov?.leads ?? 0, value: fmt(data.ov?.leads ?? 0) })}
+            </>
+          ) : (
+            <span className="v-skeleton inline-block h-4 w-72 align-middle" />
+          )}
+        </p>
+        <div role="radiogroup" aria-label={t('period.label')} className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+          {PERIODS.map((p) => (
+            <button
+              key={p}
+              role="radio"
+              aria-checked={period === p}
+              onClick={() => setPeriod(p)}
+              className={`h-11 rounded-md px-3 text-[12.5px] font-medium transition-colors sm:h-7 ${
+                period === p ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
+              }`}
+            >
+              {t(`period.d${p}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <nav role="tablist" aria-label={t('views.label')} className="no-scrollbar -mx-5 mt-4 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
+        {views.map((v) => {
+          const active = shown === v.id;
           return (
             <button
-              key={tabItem.id}
-              onClick={() => setView(tabItem.id)}
-              className={`flex items-center gap-2 rounded-[10px] px-3.5 py-3.5 sm:py-2 text-[12.5px] font-bold transition-all shrink-0 ${
-                active ? 'text-white' : 'text-muted hover:text-ink hover:bg-ink/5'
+              key={v.id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => chooseView(v.id)}
+              className={`relative flex min-h-11 shrink-0 items-center text-[13.5px] font-medium transition-colors sm:min-h-10 ${
+                active ? 'text-ink' : 'text-muted hover:text-ink'
               }`}
-              style={active ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : undefined}
             >
-              <Icon name={tabItem.icon === 'check-circle' ? 'check' : tabItem.icon} size={13} /> {t(`tabs.${tabItem.id}`, tabItem.label)}
+              {v.label}
+              {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
             </button>
           );
         })}
-      </div>
+      </nav>
 
       {error && (
-        <div className="mb-5 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3.5 text-sm font-semibold text-red-500">
-          <Icon name="x" size={15} /> {error}
+        <div role="alert" className="mt-4 rounded-lg bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+          {error}
         </div>
       )}
 
-      {loading ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="v-skeleton h-24 rounded-2xl" />
-            ))}
-          </div>
-          <div className="v-skeleton h-60 rounded-2xl w-full" />
-        </div>
-      ) : (
-        <div className="min-h-[400px]">
-          {view === 'overview' && (
-            <ExecutiveDashboard
-              overview={overview}
-              series={series}
-              leads={leads}
-              tasks={tasks}
-              top={top}
-              compareMode={compareMode}
-            />
-          )}
-
-          {view === 'cards' && (
-            <CardAnalytics
-              top={top}
-              overview={overview}
-            />
-          )}
-
-          {view === 'profile' && (
-            <ProfileAnalytics overview={overview} series={series} />
-          )}
-
-          {view === 'qr' && (
-            <QrAnalytics />
-          )}
-
-          {view === 'nfc' && (
-            <NfcAnalytics
-              series={series}
-              overview={overview}
-            />
-          )}
-
-          {view === 'leads' && (
-            <LeadAnalytics
-              leads={leads}
-              overview={overview}
-            />
-          )}
-
-          {view === 'audience' && (
-            <AudienceAnalytics />
-          )}
-
-          {view === 'devices' && (
-            <DeviceAnalytics />
-          )}
-
-          {view === 'geography' && (
-            <GeographicAnalytics />
-          )}
-
-          {view === 'traffic' && (
-            <TrafficAnalytics
-              refs={refs}
-            />
-          )}
-
-          {view === 'ai' && (
-            <AiInsights overview={overview} leads={leads} series={series} />
-          )}
-
-          {view === 'reports' && (
-            <ReportsCenter
-              overview={overview}
-              leads={leads}
-            />
-          )}
-        </div>
-      )}
+      <div className="mt-5">
+        {shown === 'overview' && (
+          <OverviewView data={data} leads={leads} periodLeads={periodLeads} cards={cards} windows={windows} period={period} metric={metric} onMetric={setMetric} onView={chooseView} occasions={occasions} />
+        )}
+        {shown === 'cards' && <CardsView cards={cards} leads={leads} />}
+        {shown === 'chips' && <ChipsView from={windows.from} />}
+        {shown === 'team' && (memberCount === null ? <div className="v-skeleton h-64 w-full rounded-xl" /> : <TeamView from={windows.from} />)}
+        {shown === 'leads' && <LeadsView leads={leads === null ? null : periodLeads} stages={stages} />}
+      </div>
     </AppShell>
+  );
+}
+
+/* ------------------------------------------------------------------------- */
+
+function OverviewView({
+  data,
+  leads,
+  periodLeads,
+  cards,
+  windows,
+  period,
+  metric,
+  onMetric,
+  onView,
+  occasions,
+}: {
+  data: PeriodData | null;
+  leads: Lead[] | null;
+  periodLeads: Lead[];
+  cards: Card[];
+  windows: ReturnType<typeof periodWindows>;
+  period: Period;
+  metric: Metric;
+  onMetric: (m: Metric) => void;
+  onView: (v: View) => void;
+  occasions: Occasion[];
+}) {
+  const { t } = useTranslation('analytics');
+  const { locale } = useLocale();
+  const fmt = (n: number) => formatNumber(n, locale);
+
+  if (!data) {
+    return (
+      <div className="space-y-4">
+        <div className="v-skeleton h-[360px] w-full rounded-xl" />
+        <div className="grid gap-4 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="v-skeleton h-56 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const cur = data.ov?.totals ?? {};
+  const prev = data.ovPrev?.totals ?? {};
+  const valueOf = (m: Metric, which: 'cur' | 'prev') =>
+    m === 'LEADS' ? (which === 'cur' ? data.ov?.leads : data.ovPrev?.leads) ?? 0 : (which === 'cur' ? cur : prev)[m] ?? 0;
+
+  const series =
+    metric === 'LEADS'
+      ? { current: countByDay(leads ?? [], windows.keys), previous: countByDay(leads ?? [], windows.prevKeys) }
+      : { current: eventSeries(data.ts, windows.keys, metric), previous: eventSeries(data.tsPrev, windows.prevKeys, metric) };
+  const labels = windows.keys.map((k) => formatDate(`${k}T12:00:00Z`, locale, { day: 'numeric', month: 'short' }));
+  const hasActivity = series.current.some((v) => v > 0) || series.previous.some((v) => v > 0);
+
+  // From a view to a lead: each step as a share of views.
+  const views = cur.VIEW ?? 0;
+  const funnel = (['VIEW', 'CLICK', 'SAVE', 'LEADS'] as const).map((m) => ({ key: m, value: valueOf(m, 'cur') }));
+
+  const cardById = new Map(cards.map((c) => [c.id, c]));
+  const cardName = (c: Card) => ((c.vcardData?.fullName as string) || '').trim() || `/c/${c.slug}`;
+  const refTotal = data.refs.reduce((s, r) => s + r.events, 0);
+
+  return (
+    <div className="space-y-4">
+      <section className="v-card overflow-hidden">
+        <div role="tablist" aria-label={t('metrics.label')} className="grid grid-cols-2 gap-px bg-line lg:grid-cols-5">
+          {METRICS.map((m, i) => {
+            const active = m === metric;
+            const value = valueOf(m, 'cur');
+            const before = valueOf(m, 'prev');
+            const pct = change(value, before);
+            return (
+              <button
+                key={m}
+                role="tab"
+                aria-selected={active}
+                onClick={() => onMetric(m)}
+                className={`relative min-w-0 px-4 py-3.5 text-start transition-colors ${active ? 'bg-surface' : 'bg-elevated hover:bg-surface'} ${
+                  i === METRICS.length - 1 ? 'col-span-2 lg:col-span-1' : ''
+                }`}
+              >
+                {active && <span className="absolute inset-x-0 top-0 h-0.5 bg-accent" />}
+                <span className="block truncate text-[12.5px] font-medium text-muted">{t(`metrics.${m}`)}</span>
+                <span className="mt-2 flex items-baseline gap-2">
+                  <span className="tabular text-[26px] font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(value)}</span>
+                  {pct !== null && (
+                    <span dir="ltr" className={`v-badge ${pct >= 0 ? 'v-badge-success' : 'v-badge-danger'}`}>
+                      {formatChange(pct)}
+                    </span>
+                  )}
+                </span>
+                <span className="mt-1.5 block truncate text-[12px] text-faint">{t('metrics.before', { value: fmt(before) })}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="px-4 pb-2 pt-5 sm:px-5">
+          {hasActivity ? (
+            <TrendChart
+              current={series.current}
+              previous={series.previous}
+              labels={labels}
+              currentLabel={t(`metrics.${metric}`)}
+              previousLabel={t('metrics.previous')}
+              formatDelta={formatChange}
+              markers={markersFor(occasions, windows.keys)}
+            />
+          ) : (
+            <div className="flex h-[232px] items-center justify-center px-6 text-center text-[13px] leading-relaxed text-muted">
+              <p className="max-w-sm">{t('metrics.noActivity')}</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <section className="v-card">
+          <PanelHeader title={t('funnel.title')} meta={t('funnel.meta')} />
+          {views === 0 ? (
+            <PanelEmpty>{t('funnel.empty')}</PanelEmpty>
+          ) : (
+            <BarList
+              max={views}
+              rows={funnel.map((f) => ({
+                key: f.key,
+                label: t(`funnel.steps.${f.key}`),
+                value: f.value,
+                aside: `${fmt(Math.round(shareOf(f.value, views)))}%`,
+              }))}
+            />
+          )}
+        </section>
+
+        <section className="v-card">
+          <PanelHeader title={t('sources.title')} />
+          {data.refs.length === 0 ? (
+            <PanelEmpty>{t('sources.empty')}</PanelEmpty>
+          ) : (
+            <>
+              <BarList
+                rows={data.refs.map((r) => ({
+                  key: r.referrer,
+                  label: r.referrer === 'direct' ? t('sources.direct') : <span dir="ltr">{referrerHost(r.referrer)}</span>,
+                  value: r.events,
+                  aside: `${fmt(Math.round(shareOf(r.events, refTotal)))}%`,
+                }))}
+              />
+              <p className="border-t border-line px-4 py-2.5 text-[12px] text-faint">{t('sources.note')}</p>
+            </>
+          )}
+        </section>
+
+        <section className="v-card lg:col-span-2 xl:col-span-1">
+          <PanelHeader
+            title={t('topCards.title')}
+            action={
+              <button onClick={() => onView('cards')} className="text-[12.5px] font-medium text-accent hover:underline">
+                {t('topCards.all')}
+              </button>
+            }
+          />
+          {data.top.length === 0 ? (
+            <PanelEmpty action={<Link href="/cards" className="v-btn v-btn-ghost">{t('topCards.open')}</Link>}>{t('topCards.empty')}</PanelEmpty>
+          ) : (
+            <BarList
+              rows={data.top.map((row) => {
+                const card = cardById.get(row.cardId);
+                return {
+                  key: row.cardId,
+                  href: card ? `/cards/${card.id}` : undefined,
+                  label: (
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      {card && <CardThumb card={card} />}
+                      <span className="truncate">{card ? cardName(card) : `/c/${row.slug}`}</span>
+                    </span>
+                  ),
+                  value: row.events,
+                  aside: t('topCards.leads', { count: periodLeads.filter((l) => l.card?.slug === row.slug).length }),
+                };
+              })}
+            />
+          )}
+        </section>
+      </div>
+    </div>
   );
 }

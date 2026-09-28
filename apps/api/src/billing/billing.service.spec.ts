@@ -237,6 +237,134 @@ describe('BillingService.handleWebhook — downgrades', () => {
   });
 });
 
+describe('BillingService.handleWebhook — subscription lifecycle', () => {
+  function subEvent(type: string, object: Record<string, unknown>, db: Record<string, unknown> = {}) {
+    const made = makeService(undefined, db);
+    made.stripe.webhooks.constructEvent.mockReturnValue({ type, data: { object } });
+    return made;
+  }
+  const item = (price: string, end = 1_792_540_800) => ({ data: [{ price: { id: price }, current_period_end: end }] });
+
+  it('finds the org by the stored subscription when the event carries no metadata', async () => {
+    // Subscriptions created before checkout stamped their metadata still have
+    // to downgrade when they are cancelled.
+    const findFirst = jest.fn().mockResolvedValue({ orgId: 'org_acme' });
+    const { service, orgUpdate } = subEvent(
+      'customer.subscription.deleted',
+      { metadata: {}, customer: 'cus_1', id: 'sub_1', status: 'canceled' },
+      { subscription: { findFirst } },
+    );
+    await service.handleWebhook(body, 'sig');
+    expect(findFirst.mock.calls[0][0].where).toEqual({ stripeSubId: 'sub_1' });
+    expect(orgUpdate).toHaveBeenCalledWith({ where: { id: 'org_acme' }, data: { plan: 'FREE' } });
+  });
+
+  it('ignores a late event about an older subscription once a newer one is live', async () => {
+    const findFirst = jest.fn().mockResolvedValue({ orgId: 'org_acme', stripeSubId: 'sub_new', status: 'ACTIVE' });
+    const { service, orgUpdate } = subEvent(
+      'customer.subscription.deleted',
+      { metadata: { orgId: 'org_acme', plan: 'PRO' }, customer: 'cus_1', id: 'sub_old', status: 'canceled' },
+      { subscription: { findFirst } },
+    );
+    await service.handleWebhook(body, 'sig');
+    expect(orgUpdate).not.toHaveBeenCalled();
+  });
+
+  it('applies an event about the subscription the org has on file', async () => {
+    const findFirst = jest.fn().mockResolvedValue({ orgId: 'org_acme', stripeSubId: 'sub_1', status: 'ACTIVE' });
+    const { service, orgUpdate } = subEvent(
+      'customer.subscription.deleted',
+      { metadata: { orgId: 'org_acme', plan: 'PRO' }, customer: 'cus_1', id: 'sub_1', status: 'canceled' },
+      { subscription: { findFirst } },
+    );
+    await service.handleWebhook(body, 'sig');
+    expect(orgUpdate.mock.calls[0][0].data.plan).toBe('FREE');
+  });
+
+  it('ignores a subscription it cannot tie to any org', async () => {
+    const { service, orgUpdate } = subEvent('customer.subscription.updated', {
+      metadata: {},
+      customer: 'cus_x',
+      id: 'sub_x',
+      status: 'active',
+    });
+    await service.handleWebhook(body, 'sig');
+    expect(orgUpdate).not.toHaveBeenCalled();
+  });
+
+  it('follows the price when the plan was switched in the portal', async () => {
+    // The metadata still names the plan bought at checkout.
+    const { service, orgUpdate } = subEvent('customer.subscription.updated', {
+      metadata: { orgId: 'org_acme', plan: 'PRO' },
+      items: item('price_biz'),
+      customer: 'cus_1',
+      id: 'sub_1',
+      status: 'active',
+    });
+    await service.handleWebhook(body, 'sig');
+    expect(orgUpdate.mock.calls[0][0].data.plan).toBe('BUSINESS');
+  });
+
+  it('keeps the plan but records a failed payment as past due', async () => {
+    const { service, orgUpdate, subUpsert } = subEvent('customer.subscription.updated', {
+      metadata: { orgId: 'org_acme', plan: 'PRO' },
+      items: item('price_pro'),
+      customer: 'cus_1',
+      id: 'sub_1',
+      status: 'past_due',
+    });
+    await service.handleWebhook(body, 'sig');
+    expect(orgUpdate.mock.calls[0][0].data.plan).toBe('PRO');
+    expect(subUpsert.mock.calls[0][0].update.status).toBe('PAST_DUE');
+  });
+
+  it('grants nothing while the first payment is still pending', async () => {
+    const { service, orgUpdate } = subEvent('customer.subscription.created', {
+      metadata: { orgId: 'org_acme', plan: 'BUSINESS' },
+      items: item('price_biz'),
+      customer: 'cus_1',
+      id: 'sub_1',
+      status: 'incomplete',
+    });
+    await service.handleWebhook(body, 'sig');
+    expect(orgUpdate).not.toHaveBeenCalled();
+  });
+
+  it('records the paid period as soon as the subscription starts', async () => {
+    const { service, subUpsert } = subEvent('customer.subscription.created', {
+      metadata: { orgId: 'org_acme', plan: 'PRO' },
+      items: item('price_pro', 1_792_540_800),
+      customer: 'cus_1',
+      id: 'sub_1',
+      status: 'active',
+    });
+    await service.handleWebhook(body, 'sig');
+    expect(subUpsert.mock.calls[0][0].create).toMatchObject({ plan: 'PRO', status: 'ACTIVE', currentPeriodEnd: new Date(1_792_540_800_000) });
+  });
+
+  it('records when the paid period ends, and clears it on cancellation', async () => {
+    const live = subEvent('customer.subscription.updated', {
+      metadata: { orgId: 'org_acme' },
+      items: item('price_pro', 1_792_540_800),
+      customer: 'cus_1',
+      id: 'sub_1',
+      status: 'active',
+    });
+    await live.service.handleWebhook(body, 'sig');
+    expect(live.subUpsert.mock.calls[0][0].update.currentPeriodEnd).toEqual(new Date(1_792_540_800_000));
+
+    const gone = subEvent('customer.subscription.deleted', {
+      metadata: { orgId: 'org_acme' },
+      items: item('price_pro'),
+      customer: 'cus_1',
+      id: 'sub_1',
+      status: 'canceled',
+    });
+    await gone.service.handleWebhook(body, 'sig');
+    expect(gone.subUpsert.mock.calls[0][0].update.currentPeriodEnd).toBeNull();
+  });
+});
+
 describe('BillingService.createCheckout', () => {
   it('refuses when billing is not configured', async () => {
     const { service } = makeService({});
@@ -263,6 +391,39 @@ describe('BillingService.createCheckout', () => {
       metadata: { orgId: 'org_acme', plan: 'PRO' },
       line_items: [{ price: 'price_pro', quantity: 1 }],
     });
+  });
+
+  it('stamps the subscription itself with the org, so its later updates can be applied', async () => {
+    const { service, stripe } = makeService();
+    stripe.checkout.sessions.create.mockResolvedValue({ url: 'https://pay/x' });
+    await service.createCheckout('org_acme', 'BUSINESS', 'a@b.co');
+    expect(stripe.checkout.sessions.create.mock.calls[0][0].subscription_data).toEqual({
+      metadata: { orgId: 'org_acme', plan: 'BUSINESS' },
+    });
+  });
+
+  it('refuses a second subscription for an org that is already paying', async () => {
+    // A new checkout would bill both subscriptions every month.
+    for (const status of ['ACTIVE', 'TRIALING', 'PAST_DUE']) {
+      const { service, stripe } = makeService(undefined, {
+        subscription: {
+          findFirst: jest.fn().mockResolvedValue({ stripeCustomerId: 'cus_1', stripeSubId: 'sub_1', plan: 'PRO', status }),
+        },
+      });
+      await expect(service.createCheckout('org_acme', 'BUSINESS', 'a@b.co')).rejects.toThrow(/billing portal/);
+      expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
+    }
+  });
+
+  it('lets an org whose subscription was cancelled subscribe again', async () => {
+    const { service, stripe } = makeService(undefined, {
+      subscription: {
+        findFirst: jest.fn().mockResolvedValue({ stripeCustomerId: 'cus_1', stripeSubId: 'sub_1', plan: 'FREE', status: 'CANCELED' }),
+      },
+    });
+    stripe.checkout.sessions.create.mockResolvedValue({ url: 'https://pay/x' });
+    await expect(service.createCheckout('org_acme', 'PRO', 'a@b.co')).resolves.toEqual({ url: 'https://pay/x' });
+    expect(stripe.checkout.sessions.create.mock.calls[0][0].customer).toBe('cus_1');
   });
 
   it('reuses an existing Stripe customer instead of creating a duplicate', async () => {

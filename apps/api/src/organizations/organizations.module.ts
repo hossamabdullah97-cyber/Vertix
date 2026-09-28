@@ -14,6 +14,8 @@ import { DepartmentsController } from './departments.controller';
 import { DepartmentsService } from './departments.service';
 import { ApprovalsController } from './approvals.controller';
 import { ApprovalsService } from './approvals.service';
+import { OccasionsController } from './occasions.controller';
+import { OccasionsService } from './occasions.service';
 
 @Module({
   imports: [BillingModule, IntegrationsModule],
@@ -24,6 +26,7 @@ import { ApprovalsService } from './approvals.service';
     AssetsController,
     DepartmentsController,
     ApprovalsController,
+    OccasionsController,
   ],
   providers: [
     OrganizationsService,
@@ -33,6 +36,7 @@ import { ApprovalsService } from './approvals.service';
     AssetsService,
     DepartmentsService,
     ApprovalsService,
+    OccasionsService,
   ],
 })
 export class OrganizationsModule {}
