@@ -507,5 +507,10 @@
         "VIDEO": "رابط YouTube أو Vimeo"
       }
     }
+  },
+  "presence": {
+    "one": "{{name}} هنا أيضاً",
+    "two": "{{names}} هنا أيضاً",
+    "many": "{{names}} وآخرون هنا أيضاً"
   }
 }

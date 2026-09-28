@@ -25,6 +25,7 @@ const LivePreview = nextDynamic(() => import('@/components/preview/LivePreview')
 import ShareCard from '@/components/ShareCard';
 import { LINK_STYLES, linkStyleOf, type LinkStyle } from '@/lib/profile';
 import { Toggle } from '@/components/ui/Toggle';
+import { PresenceBadge, useCardPresence } from '@/components/cards/Presence';
 import { Icon } from '@/components/Icon';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -212,6 +213,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [cover, setCover] = useState<'gradient' | 'constellation' | 'solid'>('gradient');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [linkStyle, setLinkStyle] = useState<LinkStyle>('list');
+  // Teammates with this card open right now.
+  const others = useCardPresence(id);
   const [openInApp, setOpenInApp] = useState(false);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -639,6 +642,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       <span className={`v-badge shrink-0 ${card.isPublished ? 'v-badge-success' : 'v-badge-neutral'}`}>
         {card.isPublished ? t('status.live') : t('status.draft')}
       </span>
+      <PresenceBadge people={others} />
     </>
   );
 

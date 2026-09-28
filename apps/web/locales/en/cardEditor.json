@@ -495,5 +495,10 @@
         "VIDEO": "YouTube or Vimeo link"
       }
     }
+  },
+  "presence": {
+    "one": "{{name}} is here too",
+    "two": "{{names}} are here too",
+    "many": "{{names}} and others are here too"
   }
 }

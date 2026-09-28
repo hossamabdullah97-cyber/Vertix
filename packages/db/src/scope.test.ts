@@ -236,7 +236,7 @@ describe('applyScope — isolation between two tenants', () => {
 
 describe('applyScope — every model that belongs to a workspace', () => {
   it('scopes departments and approval requests, which leaked across workspaces', () => {
-    for (const model of ['Department', 'ApprovalRequest', 'Occasion']) {
+    for (const model of ['Department', 'ApprovalRequest', 'Occasion', 'CardPresence']) {
       expect(TENANT_MODELS.has(model)).toBe(true);
       expect(applyScope(model, 'findMany', {}, acme).where?.orgId).toBe('org_acme');
       expect(applyScope(model, 'findFirst', { where: { id: 'x' } }, acme).where).toEqual({ id: 'x', orgId: 'org_acme' });

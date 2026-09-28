@@ -51,6 +51,7 @@ model User {
   requestedApprovals ApprovalRequest[] @relation("ApprovalRequester")
   resolvedApprovals  ApprovalRequest[] @relation("ApprovalResolver")
   personalTokens     PersonalAccessToken[] @relation("PatOwner")
+  cardPresence       CardPresence[]
   createdApiKeys     ApiKey[]              @relation("ApiKeyCreator")
   createdWebhooks    WebhookEndpoint[]     @relation("WebhookCreator")
   userIntegrations   IntegrationConnection[] @relation("IntegrationConnector")
@@ -98,6 +99,7 @@ model Organization {
   oauthApps         IntegrationOAuthApp[]
   crmSyncRecords    CrmSyncRecord[]
   occasions         Occasion[]
+  cardPresence      CardPresence[]
 
   @@index([deletedAt])
   @@map("organizations")
@@ -174,6 +176,7 @@ model Card {
   leads    Lead[]
   events   Event[]
   paymentLinks PaymentLink[]
+  presence     CardPresence[]
 
   @@index([orgId])
   @@index([ownerId])
@@ -1077,4 +1080,23 @@ model Occasion {
 
   @@index([orgId, startsOn])
   @@map("occasions")
+}
+
+/// Who has a card open in the Studio right now. The page refreshes its row
+/// while it stays open, and a row counts as "here" for a short while after
+/// its last refresh, so a closed laptop drops out on its own.
+model CardPresence {
+  id         String   @id @default(cuid())
+  orgId      String
+  cardId     String
+  userId     String
+  lastSeenAt DateTime @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  card Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId])
+  @@index([cardId, lastSeenAt])
+  @@map("card_presence")
 }
