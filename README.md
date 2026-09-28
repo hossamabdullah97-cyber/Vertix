@@ -42,13 +42,15 @@ pnpm db:up               # يشغّل PostgreSQL محلياً على 5432 (يب�
 # 4) ولّد عميل Prisma وطبّق المخطط (في طرفية أخرى)
 pnpm db:generate
 pnpm db:migrate          # ينشئ أول migration
-pnpm db:seed             # مؤسسة تجريبية + 7 مراحل + قواعد تسجيل
+pnpm db:seed             # مؤسسة تجريبية + 7 مراحل + قواعد تسجيل (قاعدة بيانات محلية فقط)
 
 # 5) شغّل الـ API + الويب
 pnpm dev                 # API: http://localhost:4000/api · Web: http://localhost:3000
 ```
 
 تحقّق: `GET http://localhost:4000/api/health`
+
+> البيانات التجريبية تنشئ الحساب `owner@vertex.dev` كمدير للمنصة، وكلمة مروره مكتوبة في `packages/db/prisma/seed.ts`. لذلك يرفض `pnpm db:seed` العمل في الإنتاج (`NODE_ENV=production`) أو على قاعدة بيانات ليست على جهازك. إن كانت القاعدة للتجربة فقط، شغّله مع `ALLOW_DEMO_SEED=1`.
 
 ## نقاط النهاية الحالية
 | الطريقة | المسار | الوصف | الحماية |

@@ -1,11 +1,13 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../src/index';
+import { assertSeedAllowed } from './seed-guard';
 
 /**
  * Development seed: demo organization + owner + 7 sales stages + scoring rules.
  * Idempotent via upsert.
  */
 async function main() {
+  assertSeedAllowed();
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
   const owner = await prisma.user.upsert({

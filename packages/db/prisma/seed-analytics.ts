@@ -1,7 +1,9 @@
 import { prisma } from '../src/index';
+import { assertSeedAllowed } from './seed-guard';
 
 /** Backfills ~14 days of demo analytics so the Command Center charts look alive. */
 async function main() {
+  assertSeedAllowed();
   const org = await prisma.organization.findFirst({ where: { slug: 'demo' } });
   if (!org) throw new Error('demo org not found');
   const card = await prisma.card.findFirst({
