@@ -7,7 +7,7 @@ import { resolveAction } from '@/lib/brandIcons';
 import { paymentBrand } from '@/lib/paymentBrands';
 import { embedUrl, externalUrl, pick, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
 import { fill, profileStrings, type ProfileStrings } from '@/lib/profileI18n';
-import { readableOn, shade } from '@/lib/color';
+import { brandInk, readableOn, shade } from '@/lib/color';
 import { Icon } from '@/components/Icon';
 import { VerifiedBadge } from '@/components/Avatar';
 import { VMark } from '@/components/brand/VMark';
@@ -178,24 +178,65 @@ export function PublicProfile({
 
         {rest.length > 0 && (
           <Block title={t.links}>
-            <List>
-              {rest.map((l) => (
-                <Row
-                  key={l.a.id}
-                  href={l.href}
-                  onClick={(e) => onLink(e, l)}
-                  icon={
-                    <Tile>
-                      <span style={{ color: l.color }} className="flex">
+            {profile.linkStyle === 'icons' ? (
+              <ul className="flex flex-wrap gap-2.5">
+                {rest.map((l) => (
+                  <li key={l.a.id}>
+                    <a
+                      href={l.href}
+                      target={/^https?:/.test(l.href) ? '_blank' : undefined}
+                      rel="noreferrer"
+                      onClick={(e) => onLink(e, l)}
+                      aria-label={l.label}
+                      title={l.label}
+                      className="flex h-12 w-12 items-center justify-center rounded-[12px] bg-[var(--p-elevated)] ring-1 ring-inset ring-[var(--p-line)] transition-opacity active:opacity-80"
+                    >
+                      <span style={{ color: brandInk(l.color, profile.mode) }} className="flex">
+                        <Icon name={l.icon} size={20} />
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : profile.linkStyle === 'buttons' ? (
+              <ul className="space-y-2">
+                {rest.map((l) => (
+                  <li key={l.a.id}>
+                    <a
+                      href={l.href}
+                      target={/^https?:/.test(l.href) ? '_blank' : undefined}
+                      rel="noreferrer"
+                      onClick={(e) => onLink(e, l)}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] px-4 text-[15px] font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+                    >
+                      <span style={{ color: brandInk(l.color, profile.mode) }} className="flex shrink-0">
                         <Icon name={l.icon} size={18} />
                       </span>
-                    </Tile>
-                  }
-                  label={l.label}
-                  sub={l.sub}
-                />
-              ))}
-            </List>
+                      <span className="truncate">{l.label}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <List>
+                {rest.map((l) => (
+                  <Row
+                    key={l.a.id}
+                    href={l.href}
+                    onClick={(e) => onLink(e, l)}
+                    icon={
+                      <Tile>
+                        <span style={{ color: brandInk(l.color, profile.mode) }} className="flex">
+                          <Icon name={l.icon} size={18} />
+                        </span>
+                      </Tile>
+                    }
+                    label={l.label}
+                    sub={l.sub}
+                  />
+                ))}
+              </List>
+            )}
           </Block>
         )}
 

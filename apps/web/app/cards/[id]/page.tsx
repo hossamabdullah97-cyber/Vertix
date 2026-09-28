@@ -23,6 +23,7 @@ const LivePreview = nextDynamic(() => import('@/components/preview/LivePreview')
   loading: () => <div className="v-skeleton mx-auto h-[620px] w-[320px] rounded-[44px]" />,
 });
 import ShareCard from '@/components/ShareCard';
+import { LINK_STYLES, linkStyleOf, type LinkStyle } from '@/lib/profile';
 import { Icon } from '@/components/Icon';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -38,7 +39,7 @@ function identityPayload(
   slug: string,
   templateId: string,
   vcard: Record<string, string>,
-  theme: { accent: string; mode: string; cover: string; lang: string },
+  theme: { accent: string; mode: string; cover: string; lang: string; links: LinkStyle },
 ) {
   return { slug, templateId, theme, vcardData: vcard };
 }
@@ -209,6 +210,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [mode, setMode] = useState<'light' | 'dark'>('light');
   const [cover, setCover] = useState<'gradient' | 'constellation' | 'solid'>('gradient');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
+  const [linkStyle, setLinkStyle] = useState<LinkStyle>('list');
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -258,6 +260,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     const modeV = th.mode === 'dark' ? 'dark' : 'light';
     const coverV = (th.cover as 'gradient' | 'constellation' | 'solid') ?? (modeV === 'dark' ? 'constellation' : 'gradient');
     const langV = (th.lang as 'en' | 'ar') === 'ar' ? 'ar' : 'en';
+    const linksV = linkStyleOf(th.links);
     setCard(c);
     setSlug(c.slug);
     setTemplateId(c.templateId);
@@ -266,10 +269,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     setMode(modeV);
     setCover(coverV);
     setLang(langV);
+    setLinkStyle(linksV);
     setSections([...(c.sections ?? [])].sort((a, b) => a.order - b.order));
     setActions([...(c.actions ?? [])].sort((a, b) => a.order - b.order));
     lastSavedRef.current = JSON.stringify(
-      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV }),
+      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV, links: linksV }),
     );
   }, []);
 
@@ -307,7 +311,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   useEffect(() => {
     if (!loadedRef.current) return; // don't save before the first load lands
     if (suppressSaveRef.current) { suppressSaveRef.current = false; return; } // ignore server echoes
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle }));
     if (body === lastSavedRef.current) return; // nothing actually changed
     setAutoSaveStatus('Saving...');
     const handle = setTimeout(async () => {
@@ -322,7 +326,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       }
     }, 700);
     return () => clearTimeout(handle);
-  }, [slug, templateId, vcard, accent, mode, cover, lang, id]);
+  }, [slug, templateId, vcard, accent, mode, cover, lang, linkStyle, id]);
 
   // Load favorites & recentlyUsed from localStorage
   useEffect(() => {
@@ -379,7 +383,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
    * structural mutation pulls fresh server state, so nothing is lost).
    */
   const flushIdentity = async () => {
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle }));
     if (body === lastSavedRef.current) return;
     await authFetch(`/cards/${id}`, { method: 'PATCH', body });
     lastSavedRef.current = body;
@@ -947,6 +951,33 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           </div>
                         );
                       })}
+
+                      <div>
+                        <div className="mb-2 flex items-baseline justify-between gap-3">
+                          <h3 id="links-display" className="text-[13px] font-medium text-ink">
+                            {t('links.display.title')}
+                          </h3>
+                          <span className="text-[12px] text-faint">{t('links.display.hint')}</span>
+                        </div>
+                        <div role="radiogroup" aria-labelledby="links-display" className="grid grid-cols-3 gap-2.5">
+                          {LINK_STYLES.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              role="radio"
+                              aria-checked={linkStyle === s}
+                              onClick={() => setLinkStyle(s)}
+                              className={`min-w-0 rounded-xl p-3 text-start transition-colors ${
+                                linkStyle === s ? 'bg-accent/[0.05] ring-2 ring-inset ring-accent' : 'ring-1 ring-inset ring-line hover:bg-elevated'
+                              }`}
+                            >
+                              <LinkStyleSketch style={s} />
+                              <span className="mt-2.5 block truncate text-[13px] font-medium text-ink">{t(`links.display.${s}.label`)}</span>
+                              <span className="block truncate text-[12px] text-faint">{t(`links.display.${s}.desc`)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </StudioSection>
@@ -1437,7 +1468,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 {
                   ...card,
                   vcardData: vcard,
-                  theme: { ...card.theme, accent, mode, cover, lang },
+                  theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle },
                 } as any
               }
               sections={sections}
@@ -1658,5 +1689,29 @@ function ScoreRing({ value }: { value: number }) {
         strokeDasharray={`${(value / 100) * c} ${c}`}
       />
     </svg>
+  );
+}
+
+/** A small drawing of each link layout, so the choice reads before its name. */
+function LinkStyleSketch({ style }: { style: LinkStyle }) {
+  return (
+    <span aria-hidden className="flex h-12 flex-col justify-center gap-1.5 rounded-lg bg-elevated px-2.5 ring-1 ring-inset ring-line">
+      {style === 'icons' ? (
+        <span className="flex gap-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <span key={i} className="h-4 w-4 rounded-[4px] bg-ink/15" />
+          ))}
+        </span>
+      ) : style === 'buttons' ? (
+        [0, 1].map((i) => <span key={i} className="block h-3.5 w-full rounded-[4px] ring-1 ring-inset ring-ink/20" />)
+      ) : (
+        [0, 1].map((i) => (
+          <span key={i} className="flex items-center gap-1.5">
+            <span className="h-3 w-3 shrink-0 rounded-[3px] bg-ink/15" />
+            <span className="h-1.5 w-2/3 rounded-full bg-ink/15" />
+          </span>
+        ))
+      )}
+    </span>
   );
 }

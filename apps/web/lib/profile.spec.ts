@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildProfile, embedUrl, externalUrl, pick } from './profile';
+import { buildProfile, embedUrl, externalUrl, linkStyleOf, pick } from './profile';
 
 const base = { slug: 's', sections: [], actions: [], paymentLinks: [] };
 
@@ -58,5 +58,18 @@ describe('externalUrl and pick', () => {
   it('skips blank values', () => {
     expect(pick({ a: '  ', b: 'x' }, 'a', 'b')).toBe('x');
     expect(pick(null, 'a')).toBe('');
+  });
+});
+
+describe('link layout', () => {
+  it('reads the layout the owner chose, and lists links by default', () => {
+    expect(buildProfile({ ...base, theme: { links: 'icons' }, vcardData: null }).linkStyle).toBe('icons');
+    expect(buildProfile({ ...base, theme: { links: 'buttons' }, vcardData: null }).linkStyle).toBe('buttons');
+    expect(buildProfile({ ...base, theme: null, vcardData: null }).linkStyle).toBe('list');
+  });
+
+  it('treats anything unknown as a list', () => {
+    expect(linkStyleOf('grid')).toBe('list');
+    expect(linkStyleOf(3)).toBe('list');
   });
 });

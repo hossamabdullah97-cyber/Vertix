@@ -9,6 +9,13 @@ import { hexChannels, readableOn } from './color';
 
 export type CoverStyle = 'constellation' | 'gradient' | 'solid';
 
+/** How the card's links (all but the quick-contact tiles) are laid out. */
+export type LinkStyle = 'list' | 'icons' | 'buttons';
+export const LINK_STYLES: LinkStyle[] = ['list', 'icons', 'buttons'];
+export function linkStyleOf(v: unknown): LinkStyle {
+  return v === 'icons' || v === 'buttons' ? v : 'list';
+}
+
 export interface ProfileSection {
   id: string;
   type: string;
@@ -30,6 +37,7 @@ export interface ProfileData {
   lang: Lang;
   circle: boolean;
   verified: boolean;
+  linkStyle: LinkStyle;
   /** Optional identity details, shown only when the owner filled them in. */
   meta: { available: string; location: string; languages: string; responseTime: string };
   /** The active profile variant's name, when one is being served. */
@@ -86,6 +94,7 @@ export function buildProfile(input: {
     mode,
     lang: theme.lang === 'ar' ? 'ar' : 'en',
     circle: theme.avatarShape !== 'square',
+    linkStyle: linkStyleOf(theme.links),
     verified: input.verified === true,
     meta: {
       available,

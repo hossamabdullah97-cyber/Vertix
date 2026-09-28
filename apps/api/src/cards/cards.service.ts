@@ -15,6 +15,19 @@ function isManager(role: string): boolean {
   return MANAGER_ROLES.includes(role);
 }
 
+/**
+ * A card's theme is one JSON object that several editors write parts of (the
+ * Design tab, a template, the link display settings). A write names only the
+ * keys it changes, so it is laid over what is stored rather than replacing it;
+ * otherwise each editor erased the others' keys (the card language was lost
+ * this way). A variant's theme is laid over its card's the same way, so a
+ * setting added to the card after the variant was made still applies to it.
+ */
+export function mergeTheme(base: unknown, over: unknown): Record<string, unknown> {
+  const obj = (v: unknown) => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+  return { ...obj(base), ...obj(over) };
+}
+
 @Injectable()
 export class CardsService {
   constructor(
@@ -135,11 +148,12 @@ export class CardsService {
   }
 
   async update(tenant: TenantContext, id: string, input: UpdateCardInput) {
-    await this.ensureEditable(tenant, id);
+    const card = await this.ensureEditable(tenant, id);
+    const data = input.theme ? { ...input, theme: mergeTheme(card.theme, input.theme) } : input;
     try {
       return await this.db.card.update({
         where: { id },
-        data: input as Prisma.CardUpdateInput,
+        data: data as Prisma.CardUpdateInput,
       });
     } catch (err) {
       throw this.mapSlugConflict(err);
@@ -344,7 +358,7 @@ export class CardsService {
       id: card.id,
       slug: card.slug,
       templateId: chosen.templateId,
-      theme: chosen.theme ?? card.theme,
+      theme: chosen.theme ? mergeTheme(card.theme, chosen.theme) : card.theme,
       vcardData: chosen.vcardData ?? card.vcardData,
       sections,
       actions,

@@ -117,6 +117,22 @@
       "grid": "Links grid",
       "gridHint": "Shown in the page body",
       "gridEmpty": "No links added yet."
+    },
+    "display": {
+      "title": "How links look",
+      "hint": "On your public card",
+      "list": {
+        "label": "List",
+        "desc": "Name and handle"
+      },
+      "icons": {
+        "label": "Icons",
+        "desc": "One compact row"
+      },
+      "buttons": {
+        "label": "Buttons",
+        "desc": "Full width"
+      }
     }
   },
   "platformPicker": {

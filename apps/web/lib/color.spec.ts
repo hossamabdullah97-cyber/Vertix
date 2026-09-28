@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hexChannels, readableOn, shade } from './color';
+import { brandInk, hexChannels, luminance, readableOn, shade } from './color';
 
 describe('hexChannels', () => {
   it('splits a hex colour into space-separated channels', () => {
@@ -32,5 +32,24 @@ describe('readableOn', () => {
     expect(readableOn('#e5e5e5')).toBe('#141414');
     expect(readableOn('#2563eb')).toBe('#ffffff');
     expect(readableOn('#09090b')).toBe('#ffffff');
+  });
+});
+
+describe('brandInk', () => {
+  it('keeps a brand colour that reads on the card', () => {
+    expect(brandInk('#0A66C2', 'light')).toBe('#0A66C2');
+    expect(brandInk('#0A66C2', 'dark')).toBe('#0A66C2');
+    expect(brandInk('#010101', 'light')).toBe('#010101');
+  });
+
+  it('swaps a near-black mark on a dark card, and a white one on a light card, for the card text colour', () => {
+    expect(brandInk('#010101', 'dark')).toBe('var(--p-fg)');
+    expect(brandInk('#181717', 'dark')).toBe('var(--p-fg)');
+    expect(brandInk('#ffffff', 'light')).toBe('var(--p-fg)');
+  });
+
+  it('measures luminance from black to white', () => {
+    expect(luminance('#000000')).toBe(0);
+    expect(luminance('#ffffff')).toBeCloseTo(1);
   });
 });
