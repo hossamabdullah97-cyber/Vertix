@@ -269,3 +269,18 @@ describe('when a session cannot be renewed', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('a sign-in lockout', () => {
+  it('carries how long to wait, so the page can say when to try again', async () => {
+    const { login } = await import('./client');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(429, { statusCode: 429, message: 'Too many attempts. Try again in 7 minutes.', retryAfter: 420 })));
+    await expect(login('a@b.co', 'pw')).rejects.toMatchObject({ status: 429, retryAfter: 420 });
+  });
+
+  it('has no wait when the API gave none', async () => {
+    const { login } = await import('./client');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(429, { statusCode: 429, message: 'ThrottlerException: Too Many Requests' })));
+    const err = await login('a@b.co', 'pw').catch((e) => e);
+    expect(err.retryAfter).toBeUndefined();
+  });
+});

@@ -209,6 +209,8 @@ export class AuthError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    /** Seconds until the API accepts another attempt, when it said. */
+    readonly retryAfter?: number,
   ) {
     super(message);
   }
@@ -231,7 +233,7 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
       Array.isArray(data?.errors) && data.errors.length
         ? data.errors.map((e: { message: string }) => e.message).join(', ')
         : data?.message || `Request failed (${res.status})`;
-    throw new AuthError(message, res.status);
+    throw new AuthError(message, res.status, typeof data?.retryAfter === 'number' ? data.retryAfter : undefined);
   }
   return data as T;
 }

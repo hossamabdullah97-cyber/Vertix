@@ -20,6 +20,15 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { TokensService } from '../mail/tokens.service';
 import { MailService } from '../mail/mail.service';
+import {
+  AuthThrottleService,
+  RESET_LIMIT,
+  RESET_WINDOW_MS,
+  SIGN_IN_LIMIT_PER_ACCOUNT,
+  SIGN_IN_LIMIT_PER_ADDRESS,
+  SIGN_IN_WINDOW_MS,
+  tooManyAttempts,
+} from './auth-throttle.service';
 
 function slugify(input: string): string {
   const base = input
@@ -53,6 +62,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly tokens: TokensService,
     private readonly mail: MailService,
+    private readonly throttle: AuthThrottleService,
   ) {}
 
   async register(input: RegisterInput): Promise<AuthTokens> {
@@ -98,17 +108,37 @@ export class AuthService {
     });
   }
 
-  async login(input: LoginInput): Promise<AuthTokens> {
+  /**
+   * `ip` is the caller's address as Express sees it (see TRUST_PROXY). Failed
+   * attempts are counted per account and per account from that address;
+   * once either is over its limit the account refuses sign-in, even with the
+   * right password, until the window ends. Unknown emails are counted the
+   * same way, so the limit says nothing about which accounts exist.
+   */
+  async login(input: LoginInput, ip = 'unknown'): Promise<AuthTokens> {
+    const email = normalizeEmail(input.email);
+    const keys = { address: `sign-in:${ip}:${email}`, account: `sign-in:${email}` };
+    const wait = Math.max(
+      await this.throttle.blockedFor(keys.address, SIGN_IN_LIMIT_PER_ADDRESS, SIGN_IN_WINDOW_MS),
+      await this.throttle.blockedFor(keys.account, SIGN_IN_LIMIT_PER_ACCOUNT, SIGN_IN_WINDOW_MS),
+    );
+    if (wait > 0) throw tooManyAttempts(wait);
+
+    const refuse = async () => {
+      await Promise.all([this.throttle.hit(keys.address, SIGN_IN_WINDOW_MS), this.throttle.hit(keys.account, SIGN_IN_WINDOW_MS)]);
+      return new UnauthorizedException('Invalid credentials');
+    };
     const user = await this.prisma.client.user.findFirst({
       where: { email: emailIs(input.email), deletedAt: null },
     });
     if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw await refuse();
     }
     const ok = await bcrypt.compare(input.password, user.passwordHash);
     if (!ok) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw await refuse();
     }
+    await this.throttle.clear(keys.address, keys.account);
 
     const membership = await this.defaultMembership(user.id);
 
@@ -185,6 +215,12 @@ export class AuthService {
 
   /** Sends a password-reset link. Always succeeds (does not reveal account existence). */
   async forgotPassword(email: string): Promise<{ ok: true }> {
+    // Counted per address asked for, whether or not it has an account.
+    const key = `reset:${normalizeEmail(email)}`;
+    const wait = await this.throttle.blockedFor(key, RESET_LIMIT, RESET_WINDOW_MS);
+    if (wait > 0) throw tooManyAttempts(wait);
+    await this.throttle.hit(key, RESET_WINDOW_MS);
+
     const user = await this.prisma.client.user.findFirst({
       where: { email: emailIs(email), deletedAt: null },
     });

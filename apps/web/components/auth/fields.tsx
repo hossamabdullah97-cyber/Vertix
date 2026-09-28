@@ -4,6 +4,8 @@ import { useId, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { AuthError } from '@/lib/client';
+import { formatTime } from '@/lib/format';
+import type { Locale } from '@/lib/i18n/config';
 import { Icon } from '@/components/Icon';
 
 /** A labelled field; `aside` sits across from the label (the "forgot" link). */
@@ -126,13 +128,16 @@ export function SubmitButton({ busy, label, busyLabel }: { busy: boolean; label:
  * A refused call, in words the person can act on and in their language. The
  * API speaks English; the status says what happened.
  */
-export function authErrorText(err: unknown, t: TFunction, context: 'login' | 'register' | 'link'): string {
+export function authErrorText(err: unknown, t: TFunction, context: 'login' | 'register' | 'link', locale: Locale): string {
   if (!(err instanceof AuthError)) return t('auth:errors.generic');
   switch (err.status) {
     case 0:
       return t('auth:errors.offline');
     case 429:
-      return t('auth:errors.tooMany');
+      // A lockout says when it ends; the per-minute limit does not, and is short.
+      return err.retryAfter
+        ? t('auth:errors.tooManyUntil', { time: formatTime(Date.now() + err.retryAfter * 1000, locale) })
+        : t('auth:errors.tooMany');
     case 401:
       return context === 'login' ? t('auth:errors.invalidCredentials') : t('auth:errors.linkInvalid');
     case 403:

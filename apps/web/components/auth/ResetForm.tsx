@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { useLocale } from '@/components/i18n/LanguageProvider';
 import { resetPassword } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { AuthShell } from './AuthShell';
@@ -10,6 +11,7 @@ import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText } from '
 
 export function ResetForm({ token }: { token: string }) {
   const { t } = useTranslation('auth');
+  const { locale } = useLocale();
   const [password, setPassword] = useState('');
   const [done, setDone] = useState(false);
   const [error, setError] = useState<{ text: string; link: boolean } | null>(null);
@@ -23,7 +25,7 @@ export function ResetForm({ token }: { token: string }) {
       await resetPassword(token, password);
       setDone(true);
     } catch (err) {
-      const text = authErrorText(err, t, 'link');
+      const text = authErrorText(err, t, 'link', locale);
       setError({ text, link: text === t('errors.linkInvalid') });
     } finally {
       setBusy(false);

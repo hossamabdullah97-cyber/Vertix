@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Trans, useTranslation } from 'react-i18next';
+import { useLocale } from '@/components/i18n/LanguageProvider';
 import { forgotPassword } from '@/lib/client';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { Field, FormMessage, SubmitButton, authErrorText, emailProps } from '@/components/auth/fields';
@@ -11,6 +12,7 @@ import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation('auth');
+  const { locale } = useLocale();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -24,7 +26,7 @@ export default function ForgotPasswordPage() {
       await forgotPassword(email);
       setSent(true);
     } catch (err) {
-      setError(authErrorText(err, t, 'link'));
+      setError(authErrorText(err, t, 'link', locale));
     } finally {
       setBusy(false);
     }

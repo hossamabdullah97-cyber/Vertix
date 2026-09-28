@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { useLocale } from '@/components/i18n/LanguageProvider';
 import { login, register, safeNext } from '@/lib/client';
 import { AuthShell } from './AuthShell';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText, emailProps } from './fields';
@@ -16,6 +17,7 @@ type Mode = 'login' | 'register';
  */
 export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; next: string | null; expired: boolean }) {
   const { t } = useTranslation('auth');
+  const { locale } = useLocale();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +49,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
         window.location.href = '/dashboard';
       }
     } catch (err) {
-      setError({ text: authErrorText(err, t, mode), taken: (err as { status?: number }).status === 409 });
+      setError({ text: authErrorText(err, t, mode, locale), taken: (err as { status?: number }).status === 409 });
       setBusy(false);
     }
   }

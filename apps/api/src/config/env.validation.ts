@@ -17,6 +17,13 @@ export const envSchema = z.object({
 
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
 
+  // Proxies in front of the API: a count ("1") or their addresses. Unset when
+  // the API is reached directly. See config/trust-proxy.ts.
+  TRUST_PROXY: z
+    .string()
+    .optional()
+    .refine((v) => !v || !/^(true|false)$/i.test(v.trim()), 'Give the number of proxies (e.g. 1) or their addresses, not true/false'),
+
   // Public web origin used to build card page / vCard URLs in NFC redirects.
   APP_PUBLIC_URL: z.string().url().default('http://localhost:3000'),
 
