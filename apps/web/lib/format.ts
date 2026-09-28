@@ -7,10 +7,11 @@ import type { Locale } from '@/lib/i18n/config';
 
 const localeTag: Record<Locale, string> = {
   // Arabic-Egypt with Latin digits keeps numbers readable while localizing
-  // month/day names; swap to 'ar-EG' (default) if Arabic-Indic digits are
-  // desired platform-wide.
+  // month/day names; drop the `-u-nu-latn` extension if Arabic-Indic digits
+  // are desired platform-wide. Without it, ar-EG formats ٣٠ rather than 30,
+  // which disagreed with every number interpolated straight into a string.
   en: 'en-US',
-  ar: 'ar-EG',
+  ar: 'ar-EG-u-nu-latn',
 };
 
 export function formatDate(

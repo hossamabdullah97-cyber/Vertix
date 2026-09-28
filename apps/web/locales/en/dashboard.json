@@ -1,106 +1,147 @@
 {
   "titles": {
-    "command": "Executive Command Center",
-    "personal": "Personal Workspace"
+    "command": "Home",
+    "personal": "Home"
+  },
+  "greeting": {
+    "morning": "Good morning, {{name}}",
+    "afternoon": "Good afternoon, {{name}}",
+    "evening": "Good evening, {{name}}"
+  },
+  "summary": {
+    "newLeads_one": "{{count}} new lead this week",
+    "newLeads_other": "{{count}} new leads this week",
+    "noNewLeads": "No new leads this week",
+    "waiting_one": "{{count}} still waiting for a reply.",
+    "waiting_other": "{{count}} still waiting for a reply.",
+    "allAnswered": "every one has been picked up."
+  },
+  "newCard": "New card",
+  "period": {
+    "label": "Period",
+    "d7": "7 days",
+    "d30": "30 days",
+    "d90": "90 days"
+  },
+  "metrics": {
+    "views": "Card views",
+    "taps": "NFC taps",
+    "saves": "Contacts saved",
+    "leads": "New leads",
+    "viewsSub": "vs {{value}} in the previous period",
+    "tapsSub": "{{active}} of {{total}} chips active",
+    "savesSub": "{{pct}} of views",
+    "leadsSub": "Conversion {{pct}}",
+    "previous": "Previous period",
+    "noActivity": "Nothing recorded in this period yet. Views, taps and saves appear here as people open your cards.",
+    "busiest": "Busiest day: <b>{{date}}</b>, with {{count}} {{metric}}.",
+    "insight": "Insight",
+    "openAnalytics": "Open analytics"
+  },
+  "recent": {
+    "title": "Latest leads",
+    "empty": "No leads yet. They appear here the moment someone shares their details on one of your cards.",
+    "all": "View all leads",
+    "unnamed": "Unnamed lead",
+    "sources": {
+      "nfc_scan": "NFC tap",
+      "card_form": "Card form",
+      "meeting": "Meeting request",
+      "quote": "Quote request",
+      "other": "Card"
+    }
+  },
+  "attention": {
+    "title": "Needs your attention",
+    "clear": "You're all caught up.",
+    "newLeads_one": "Reply to {{count}} new lead",
+    "newLeads_other": "Reply to {{count}} new leads",
+    "oldestWaiting": "Oldest arrived {{time}}",
+    "openLeads": "Open leads",
+    "requestedBy": "Requested by {{name}}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "unlinked_one": "{{count}} chip isn't linked to a card",
+    "unlinked_other": "{{count}} chips aren't linked to a card",
+    "link": "Link",
+    "drafts_one": "{{count}} card is still a draft",
+    "drafts_other": "{{count}} cards are still drafts",
+    "review": "Review"
+  },
+  "top": {
+    "title": "Top cards",
+    "all": "View all",
+    "card": "Card",
+    "interactions": "Interactions",
+    "leads": "Leads",
+    "empty": "Once your cards are opened, the busiest ones show up here."
+  },
+  "activity": {
+    "title": "Workspace activity",
+    "empty": "Nothing has happened in this workspace yet.",
+    "target": "{{type}} {{id}}"
+  },
+  "team": {
+    "title": "Team",
+    "members": "Members",
+    "teams": "Teams",
+    "departments": "Departments",
+    "largest": "Largest teams",
+    "noTeams": "No teams yet.",
+    "seat_one": "{{count}} member",
+    "seat_other": "{{count}} members",
+    "manage": "Manage team"
   },
   "personal": {
-    "heroSubtitle": "Manage your digital cards, NFC devices and private CRM leads. Switch to an organization to collaborate.",
-    "createCard": "Create Card",
+    "subtitle": "Your personal workspace. Switch to an organization from the sidebar to work with a team.",
     "kpi": {
-      "myCards": "My Cards",
+      "cards": "Cards",
       "published": "{{count}} published",
-      "leadsCaptured": "Leads Captured",
-      "crmContacts": "CRM contacts",
-      "nfcDevices": "NFC Devices",
-      "registered": "registered",
-      "nfcTaps": "NFC Taps",
-      "lifetimeScans": "lifetime scans"
+      "leads": "Leads",
+      "leadsSub": "in your CRM",
+      "chips": "NFC chips",
+      "chipsSub": "registered",
+      "taps": "NFC taps",
+      "tapsSub": "all time"
     },
-    "creatorProfile": "Creator Profile",
-    "emailAddress": "Email Address",
-    "workspaceLevel": "Workspace Level",
-    "freeDeveloper": "Free Developer",
-    "userTokenId": "User Token ID",
-    "activeCards": "Active Cards ({{count}})",
-    "noCards": "No cards created yet",
+    "cards": "Your cards",
+    "noCards": "No cards yet.",
     "live": "Live",
     "draft": "Draft",
-    "personalTasks": "Personal Tasks ({{count}})",
-    "allTasksDone": "All tasks completed!",
-    "upcomingMeetings": "Upcoming Meetings ({{count}})",
-    "noMeetings": "No scheduled meetings",
-    "scheduled": "Scheduled",
-    "notifications": "Notifications ({{count}})",
-    "allClear": "All clear! No alerts",
-    "quickActions": "Quick Actions",
-    "qaCards": "My Cards",
-    "qaLinkNfc": "Link NFC",
-    "qaCrm": "View CRM Contacts"
-  },
-  "org": {
-    "planConnected": "{{plan}} Plan · Connected",
-    "welcome": "Welcome back, Administrator",
-    "activeWorkspace": "Active workspace:",
-    "systemOnline": "System online",
-    "newCard": "New Card",
-    "engagementLast30": "Engagement · last 30 days",
-    "vsPrior": "vs prior period",
-    "kpi": {
-      "profileViews": "Profile Views",
-      "nfcTaps": "NFC Taps",
-      "linkClicks": "Link Clicks",
-      "contactSaves": "Contact Saves",
-      "leads": "Leads",
-      "inPipeline": "in CRM pipeline",
-      "conversion": "Conversion",
-      "leadsPerViews": "leads / views",
-      "members": "Members",
-      "inWorkspace": "in workspace",
-      "teams": "Teams",
-      "depts": "{{count}} depts",
-      "cards": "Cards",
-      "publishedCount": "{{count}} published",
-      "meetings": "Meetings",
-      "booked": "booked"
-    },
-    "workspace": "Workspace",
-    "timeline": "Engagement Timeline",
-    "timelineSub": "Daily profile views vs NFC taps",
-    "views": "Views",
-    "taps": "Taps",
-    "noInteractions": "No interactions recorded in the current period.",
-    "approvalCenter": "Approval Center",
-    "approvalSub": "Card publishing & template updates awaiting review",
-    "allCaughtUp": "All caught up! No approvals pending.",
-    "requestedBy": "Requested by {{name}} ({{email}})",
-    "reject": "Reject",
-    "approve": "Approve",
-    "composition": "Workspace Composition",
-    "compositionSub": "Largest teams and current members",
-    "largestTeams": "Largest teams",
-    "seat_one": "{{count}} seat",
-    "seat_other": "{{count}} seats",
-    "noTeams": "No teams created yet.",
-    "members": "Members",
-    "pendingInvite": "Pending invite",
-    "noMembers": "No members yet.",
-    "activityFeed": "Activity Feed",
-    "activitySub": "Real-time system audit logs",
-    "noEvents": "No recent events logged.",
-    "target": "Target:"
+    "tasks": "Tasks",
+    "noTasks": "No open tasks.",
+    "meetings": "Meeting requests",
+    "noMeetings": "No meeting requests yet.",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications."
   },
   "onboarding": {
-    "showChecklist": "Show Onboarding Checklist ({{progress}}% Done)",
-    "title": "Getting Started Checklist",
-    "complete": "({{progress}}% Complete)",
-    "subtitle": "Complete these 4 key tasks to unleash the full power of Vertex Connect NFC platform.",
-    "hide": "Hide Checklist",
-    "step": "Step {{number}}",
+    "title": "Get set up",
+    "progress": "{{done}} of {{total}} done",
+    "hide": "Hide",
+    "show": "Show setup checklist ({{done}} of {{total}} done)",
     "steps": {
-      "createCard": { "label": "Create Your Digital Card", "desc": "Build your first digital profile card with your name, job title, and bio.", "link": "Create Card" },
-      "publishCard": { "label": "Customize & Publish", "desc": "Customize colors, templates, add social links, and publish it live.", "link": "Edit Card", "linkAlt": "Go to Cards" },
-      "linkTag": { "label": "Link NFC Device", "desc": "Register a physical NFC chip and bind it to your business card.", "link": "Link Tag" },
-      "captureLead": { "label": "Capture CRM Leads", "desc": "Share your card, scan it, and capture your first lead details.", "link": "Go to CRM" }
+      "createCard": {
+        "label": "Create your first card",
+        "desc": "Your name, title and the ways people can reach you.",
+        "link": "Create card"
+      },
+      "publishCard": {
+        "label": "Publish it",
+        "desc": "Pick a template, add your links and make it live.",
+        "link": "Edit card",
+        "linkAlt": "Go to cards"
+      },
+      "linkTag": {
+        "label": "Link an NFC chip",
+        "desc": "Register a chip and point it at your card.",
+        "link": "Link chip"
+      },
+      "captureLead": {
+        "label": "Capture your first lead",
+        "desc": "Share your card; details people leave arrive in Leads.",
+        "link": "Open leads"
+      }
     }
   }
 }
