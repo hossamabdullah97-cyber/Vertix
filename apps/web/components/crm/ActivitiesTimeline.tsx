@@ -4,7 +4,9 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, type Stage, type LeadActivity, type ActivityType, ACTIVITY_META, sourceMeta, initials, hueFor, relativeTime, formatMoney } from '@/lib/crm';
+import { type Lead, type Stage, type LeadActivity, type ActivityType, ACTIVITY_META, sourceMeta, initials, hueFor, formatMoney } from '@/lib/crm';
+import { useLocale } from '@/components/i18n/LanguageProvider';
+import { formatRelativeTime } from '@/lib/format';
 
 interface FlatActivity extends LeadActivity {
   leadId: string;
@@ -22,6 +24,7 @@ export function ActivitiesTimeline({
   onOpenLead: (id: string) => void;
 }) {
   const { t } = useTranslation('crm');
+  const { locale } = useLocale();
   const [filterType, setFilterType] = useState<ActivityType | 'ALL'>('ALL');
 
   // Timeline of real lead-capture events. There is no per-lead activity API yet,
@@ -56,7 +59,7 @@ export function ActivitiesTimeline({
       {/* Header and Filter */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div>
-          <h2 className="text-[16px] font-bold text-ink">{t('activity.title')}</h2>
+          <h2 className="text-[16px] font-semibold text-ink">{t('activity.title')}</h2>
           <p className="text-[12.5px] text-muted">{t('activity.subtitle')}</p>
         </div>
         
@@ -68,7 +71,7 @@ export function ActivitiesTimeline({
               <button
                 key={ty}
                 onClick={() => setFilterType(ty)}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-bold transition-all"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-all"
                 style={
                   active
                     ? {
@@ -93,7 +96,7 @@ export function ActivitiesTimeline({
             <Icon name="clock" size={28} />
           </span>
           <div>
-            <p className="text-[15px] font-bold text-ink">{t('activity.noMatch')}</p>
+            <p className="text-[15px] font-semibold text-ink">{t('activity.noMatch')}</p>
             <p className="mt-1 text-[12.5px] text-muted">{t('activity.noMatchDesc')}</p>
           </div>
         </div>
@@ -128,7 +131,7 @@ export function ActivitiesTimeline({
                       <div className="flex items-center gap-2.5">
                         <button
                           onClick={() => onOpenLead(a.leadId)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white transition-opacity hover:opacity-90"
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold text-white transition-opacity hover:opacity-90"
                           style={{ background: `hsl(${hue} 62% 48%)` }}
                         >
                           {initials(a.leadName)}
@@ -136,7 +139,7 @@ export function ActivitiesTimeline({
                         <div>
                           <button
                             onClick={() => onOpenLead(a.leadId)}
-                            className="text-[13px] font-bold text-ink hover:text-accent"
+                            className="text-[13px] font-semibold text-ink hover:text-accent"
                           >
                             {a.leadName}
                           </button>
@@ -146,11 +149,11 @@ export function ActivitiesTimeline({
                         </div>
                       </div>
 
-                      <span className="text-[11px] font-semibold text-faint">{relativeTime(a.createdAt)}</span>
+                      <span className="text-[11px] font-semibold text-faint">{formatRelativeTime(a.createdAt, locale, 'narrow')}</span>
                     </div>
 
                     <div className="mt-3">
-                      <span className="v-chip !px-2 !py-0.5 !text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: meta.color, backgroundColor: meta.color + '0c', borderColor: meta.color + '1a' }}>
+                      <span className="v-chip mb-2 !px-2 !py-0.5 !text-[11.5px] !font-medium">
                         {typeLabel}
                       </span>
                       <p className="text-[13px] text-muted leading-relaxed whitespace-pre-wrap">{noteText}</p>

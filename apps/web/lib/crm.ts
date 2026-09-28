@@ -33,6 +33,14 @@ export interface Stage {
   color?: string | null;
 }
 
+/**
+ * Translation key for a stage. The default pipeline's names (New, Contacted…)
+ * have translations; a stage an org named itself falls back to its own name.
+ */
+export function stageKey(name: string): string {
+  return `stages.${name.trim().toLowerCase()}`;
+}
+
 export type ActivityType = 'NOTE' | 'CALL' | 'EMAIL' | 'MEETING' | 'STAGE_CHANGE' | 'SCORE_CHANGE' | 'SCAN';
 
 export interface LeadActivity {

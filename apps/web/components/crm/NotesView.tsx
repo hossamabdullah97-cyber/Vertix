@@ -145,12 +145,12 @@ export function NotesView() {
         {/* Search & Actions */}
         <div className="p-3 border-b border-line space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-bold text-ink flex items-center gap-1.5">
+            <span className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
               <Icon name="file-text" size={14} className="text-accent" /> {t('notes.heading')}
             </span>
             <button
               onClick={() => handleCreateNew()}
-              className="v-btn !h-7 !px-2.5 text-[11px] font-bold"
+              className="v-btn !h-7 !px-2.5 text-[11px] font-semibold"
               title={t('notes.newTitle')}
             >
               <Icon name="plus" size={12} /> {t('notes.new')}
@@ -174,7 +174,7 @@ export function NotesView() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider transition-colors shrink-0"
+              className="h-11 shrink-0 rounded-md px-2.5 text-[12px] font-medium transition-colors sm:h-7"
               style={{
                 backgroundColor: activeCategory === cat ? 'var(--v-accent)' : 'transparent',
                 color: activeCategory === cat ? 'var(--v-accent-contrast)' : 'hsl(var(--v-muted))',
@@ -203,7 +203,7 @@ export function NotesView() {
                         <Icon name="sparkle" size={10} />
                       </span>
                     )}
-                    <h4 className={`truncate text-[12.5px] font-bold leading-snug ${isSelected ? 'text-accent' : 'text-ink'}`}>
+                    <h4 className={`truncate text-[12.5px] font-semibold leading-snug ${isSelected ? 'text-accent' : 'text-ink'}`}>
                       {n.title || t('notes.untitled')}
                     </h4>
                   </div>
@@ -242,7 +242,7 @@ export function NotesView() {
                 </button>
                 <button
                   onClick={() => setIsPreview(!isPreview)}
-                  className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-[11px] font-bold text-muted hover:text-ink"
+                  className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-[11px] font-semibold text-muted hover:text-ink"
                 >
                   <Icon name={isPreview ? 'file-text' : 'eye'} size={12} />
                   {isPreview ? t('notes.editEditor') : t('notes.previewMd')}
@@ -251,7 +251,7 @@ export function NotesView() {
 
               {/* Template dropdown list */}
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-faint">{t('notes.templates')}</span>
+                <span className="text-[12px] text-faint">{t('notes.templates')}</span>
                 <div className="flex gap-1">
                   {(Object.keys(NOTE_TEMPLATES) as Array<keyof typeof NOTE_TEMPLATES>).map((key) => (
                     <button
@@ -282,7 +282,7 @@ export function NotesView() {
             <div className="flex-1 overflow-y-auto p-5 no-scrollbar">
               {isPreview ? (
                 <div className="prose max-w-none text-[13px] text-muted space-y-4">
-                  <h1 className="text-[18px] font-black text-ink border-b border-line pb-2">{editTitle || t('notes.untitled')}</h1>
+                  <h1 className="text-[18px] font-semibold text-ink border-b border-line pb-2">{editTitle || t('notes.untitled')}</h1>
                   <div className="whitespace-pre-wrap leading-relaxed">
                     {editContent || <span className="text-faint italic">{t('notes.noContent')}</span>}
                   </div>
@@ -296,7 +296,7 @@ export function NotesView() {
                       saveNote({ title: e.target.value });
                     }}
                     placeholder={t('notes.titlePlaceholder')}
-                    className="w-full bg-transparent text-[18px] font-black text-ink outline-none placeholder:text-faint border-b border-line pb-2"
+                    className="w-full bg-transparent text-[18px] font-semibold text-ink outline-none placeholder:text-faint border-b border-line pb-2"
                   />
                   <textarea
                     value={editContent}
@@ -314,7 +314,7 @@ export function NotesView() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <Icon name="file-text" size={32} className="text-faint mb-3" />
-            <h3 className="text-[14px] font-bold text-ink">{t('notes.noneSelected')}</h3>
+            <h3 className="text-[14px] font-semibold text-ink">{t('notes.noneSelected')}</h3>
             <p className="text-[12px] text-muted mt-1 max-w-xs">{t('notes.noneSelectedDesc')}</p>
           </div>
         )}

@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, type Temp } from '@/lib/crm';
+import { type Lead, type Temp, sourceMeta } from '@/lib/crm';
 
 interface SavedFilter {
   id: string;
@@ -14,6 +13,13 @@ interface SavedFilter {
   minDealValue: number;
 }
 
+const STORAGE_KEY = 'crm_saved_filters';
+
+/**
+ * Source and value filters plus saved combinations, in a menu anchored to its
+ * button. Saved filters live in this browser; the first visit seeds three
+ * starting points the user can delete.
+ */
 export function SmartFilters({
   leads,
   tempFilter,
@@ -37,51 +43,69 @@ export function SmartFilters({
   const [open, setOpen] = useState(false);
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [newFilterName, setNewFilterName] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
 
-  // Load saved filters on mount
   useEffect(() => {
-    const saved = localStorage.getItem('crm_saved_filters');
+    const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         setSavedFilters(JSON.parse(saved));
+        return;
       } catch {
-        // Fallback
+        // fall through to the defaults
       }
-    } else {
-      const defaults: SavedFilter[] = [
-        { id: '1', name: '🔥 Hot Priority', tempFilter: 'HOT', sourceFilter: 'ALL', minDealValue: 0 },
-        { id: '2', name: '💰 High Value (+$10k)', tempFilter: 'ALL', sourceFilter: 'ALL', minDealValue: 10000 },
-        { id: '3', name: '📱 NFC scan taps', tempFilter: 'ALL', sourceFilter: 'nfc_scan', minDealValue: 0 },
-      ];
-      setSavedFilters(defaults);
-      localStorage.setItem('crm_saved_filters', JSON.stringify(defaults));
     }
+    const defaults: SavedFilter[] = [
+      { id: '1', name: t('filters.defaults.hot'), tempFilter: 'HOT', sourceFilter: 'ALL', minDealValue: 0 },
+      { id: '2', name: t('filters.defaults.highValue'), tempFilter: 'ALL', sourceFilter: 'ALL', minDealValue: 10000 },
+      { id: '3', name: t('filters.defaults.nfc'), tempFilter: 'ALL', sourceFilter: 'nfc_scan', minDealValue: 0 },
+    ];
+    setSavedFilters(defaults);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+    // Seed once, in the language in use on first visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Save a custom filter
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  function persist(next: SavedFilter[]) {
+    setSavedFilters(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  }
+
   function handleSaveFilter(e: React.FormEvent) {
     e.preventDefault();
     if (!newFilterName.trim()) return;
-
-    const newFilter: SavedFilter = {
-      id: `filter-${Date.now()}`,
-      name: newFilterName.trim(),
-      tempFilter: tempFilter || 'ALL',
-      sourceFilter: sourceFilter || 'ALL',
-      minDealValue: minDealValue,
-    };
-
-    const next = [...savedFilters, newFilter];
-    setSavedFilters(next);
-    localStorage.setItem('crm_saved_filters', JSON.stringify(next));
+    persist([
+      ...savedFilters,
+      {
+        id: `filter-${Date.now()}`,
+        name: newFilterName.trim(),
+        tempFilter: tempFilter || 'ALL',
+        sourceFilter: sourceFilter || 'ALL',
+        minDealValue,
+      },
+    ]);
     setNewFilterName('');
   }
 
   function handleRemoveFilter(id: string, e: React.MouseEvent) {
     e.stopPropagation();
-    const next = savedFilters.filter((f) => f.id !== id);
-    setSavedFilters(next);
-    localStorage.setItem('crm_saved_filters', JSON.stringify(next));
+    persist(savedFilters.filter((f) => f.id !== id));
   }
 
   function applySavedFilter(f: SavedFilter) {
@@ -92,162 +116,110 @@ export function SmartFilters({
   }
 
   const sources = useMemo(() => Array.from(new Set(leads.map((l) => l.source))), [leads]);
-
-  const activeFiltersCount = (tempFilter ? 1 : 0) + (sourceFilter ? 1 : 0) + (minDealValue > 0 ? 1 : 0);
+  const activeCount = (tempFilter ? 1 : 0) + (sourceFilter ? 1 : 0) + (minDealValue > 0 ? 1 : 0);
 
   return (
-    <>
-      {/* Trigger Button */}
+    <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(true)}
-        className="flex h-11 items-center gap-1.5 rounded-xl border border-line bg-canvas px-3.5 text-[12.5px] font-bold text-muted hover:border-line-strong hover:text-ink relative shadow-sm sm:h-9"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={`flex h-11 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium ring-1 ring-inset transition-colors sm:h-8 ${
+          activeCount ? 'bg-accent/[0.06] text-accent ring-accent/30' : 'text-muted ring-line hover:bg-elevated hover:text-ink'
+        }`}
       >
-        <Icon name="filter" size={14} /> {t('filters.smartFilters')}
-        {activeFiltersCount > 0 && (
-          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 text-[9.5px] font-bold text-accent-contrast">
-            {activeFiltersCount}
+        <Icon name="filter" size={13} /> {t('filters.smartFilters')}
+        {activeCount > 0 && (
+          <span className="tabular flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white">
+            {activeCount}
           </span>
         )}
       </button>
 
-      {/* Popover overlay */}
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
-              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-xs"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed right-6 top-24 z-50 w-[300px] rounded-2xl border border-line bg-surface p-4.5 shadow-2xl space-y-4"
-            >
-              <div className="flex items-center justify-between border-b border-line pb-2.5">
-                <span className="text-[13px] font-bold text-ink flex items-center gap-1.5"><Icon name="filter" size={13} /> {t('filters.dashboard')}</span>
-                <button onClick={() => setOpen(false)} className="text-muted hover:text-ink"><Icon name="x" size={15} /></button>
-              </div>
+      {open && (
+        <div className="absolute end-0 top-full z-40 mt-2 w-[300px] max-w-[calc(100vw-2.5rem)] rounded-xl border border-line bg-surface p-1.5 shadow-lg">
+          <div className="space-y-3 p-2.5">
+            <label className="block">
+              <span className="mb-1.5 block text-[12px] text-faint">{t('filters.priority')}</span>
+              <select value={tempFilter || ''} onChange={(e) => setTempFilter((e.target.value as Temp) || null)} className="v-field !text-[13px]">
+                <option value="">{t('filters.allPriorities')}</option>
+                <option value="HOT">{t('temperature.hot')}</option>
+                <option value="WARM">{t('temperature.warm')}</option>
+                <option value="COLD">{t('temperature.cold')}</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[12px] text-faint">{t('filters.captureSource')}</span>
+              <select value={sourceFilter || ''} onChange={(e) => setSourceFilter(e.target.value || null)} className="v-field !text-[13px]">
+                <option value="">{t('filters.allSources')}</option>
+                {sources.map((s) => (
+                  <option key={s} value={s}>
+                    {t(`sources.${s}`, sourceMeta(s).label)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[12px] text-faint">{t('filters.minDealValue')}</span>
+              <input
+                type="number"
+                min={0}
+                dir="ltr"
+                value={minDealValue || ''}
+                onChange={(e) => setMinDealValue(Number(e.target.value) || 0)}
+                placeholder={t('filters.valuePlaceholder')}
+                className="v-field tabular !text-[13px]"
+              />
+            </label>
+          </div>
 
-              {/* Filters Form */}
-              <div className="space-y-3.5">
-                {/* Temp Priority */}
-                <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">{t('filters.priority')}</label>
-                  <select
-                    value={tempFilter || ''}
-                    onChange={(e) => setTempFilter((e.target.value as Temp) || null)}
-                    className="v-field text-[12px] font-semibold"
+          <div className="border-t border-line p-2.5">
+            <p className="mb-2 text-[12px] text-faint">{t('filters.savedFilters')}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {savedFilters.map((f) => (
+                <span key={f.id} className="group inline-flex items-center rounded-md ring-1 ring-inset ring-line">
+                  <button onClick={() => applySavedFilter(f)} className="h-11 ps-2.5 pe-1.5 text-[12.5px] text-ink hover:text-accent sm:h-7">
+                    {f.name}
+                  </button>
+                  <button
+                    onClick={(e) => handleRemoveFilter(f.id, e)}
+                    aria-label={t('filters.remove', { name: f.name })}
+                    className="flex h-11 w-7 items-center justify-center text-faint hover:text-ink sm:h-7"
                   >
-                    <option value="">{t('filters.allPriorities')}</option>
-                    <option value="HOT">{t('temperature.hot')}</option>
-                    <option value="WARM">{t('temperature.warm')}</option>
-                    <option value="COLD">{t('temperature.cold')}</option>
-                  </select>
-                </div>
-
-                {/* Source */}
-                <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">{t('filters.captureSource')}</label>
-                  <select
-                    value={sourceFilter || ''}
-                    onChange={(e) => setSourceFilter(e.target.value || null)}
-                    className="v-field text-[12px] font-semibold"
-                  >
-                    <option value="">{t('filters.allSources')}</option>
-                    {sources.map((s) => (
-                      <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Min Value */}
-                <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">{t('filters.minDealValue')}</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={0}
-                      dir="ltr"
-                      value={minDealValue || ''}
-                      onChange={(e) => setMinDealValue(Number(e.target.value) || 0)}
-                      placeholder={t('filters.valuePlaceholder')}
-                      className="v-field text-[12.5px] font-bold"
-                    />
-                    {minDealValue > 0 && (
-                      <button
-                        onClick={() => setMinDealValue(0)}
-                        className="text-faint hover:text-red-500"
-                        title={t('filters.clearValue')}
-                      >
-                        <Icon name="x" size={14} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Saved Filters Area */}
-              <div className="border-t border-line pt-3.5 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">{t('filters.savedFilters')}</span>
-                
-                <div className="flex flex-wrap gap-1.5 max-h-[100px] overflow-y-auto no-scrollbar py-0.5">
-                  {savedFilters.map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => applySavedFilter(f)}
-                      className="group/btn inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas/30 px-3 py-1 text-[11px] font-semibold text-muted hover:border-line-strong hover:text-ink"
-                    >
-                      {f.name}
-                      <span
-                        onClick={(e) => handleRemoveFilter(f.id, e)}
-                        className="h-3 w-3 items-center justify-center rounded-full bg-line text-faint hover:bg-red-500 hover:text-white hidden group-hover/btn:inline-flex"
-                      >
-                        <Icon name="x" size={8} />
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Save Current Filter Form */}
-                {activeFiltersCount > 0 && (
-                  <form onSubmit={handleSaveFilter} className="flex gap-1.5 pt-1.5">
-                    <input
-                      value={newFilterName}
-                      onChange={(e) => setNewFilterName(e.target.value)}
-                      placeholder={t('filters.nameFilter')}
-                      className="v-field !h-8 px-2.5 text-[11.5px] font-semibold flex-1"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!newFilterName.trim()}
-                      className="v-btn !h-8 !px-3 text-[11.5px] font-bold disabled:opacity-50"
-                    >
-                      {t('filters.save')}
-                    </button>
-                  </form>
-                )}
-              </div>
-
-              {/* Clear Options */}
-              {activeFiltersCount > 0 && (
-                <button
-                  onClick={() => {
-                    onClear();
-                    setOpen(false);
-                  }}
-                  className="v-btn v-btn-ghost w-full !h-8.5 text-[12px] font-bold border border-red-500/20 text-red-500 hover:bg-red-500/5 mt-2"
-                >
-                  <Icon name="x" size={12} /> {t('filters.clearAll')}
+                    <Icon name="x" size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            {activeCount > 0 && (
+              <form onSubmit={handleSaveFilter} className="mt-2.5 flex gap-1.5">
+                <input
+                  value={newFilterName}
+                  onChange={(e) => setNewFilterName(e.target.value)}
+                  placeholder={t('filters.nameFilter')}
+                  className="v-field !text-[12.5px]"
+                />
+                <button type="submit" disabled={!newFilterName.trim()} className="v-btn shrink-0 !text-[12.5px]">
+                  {t('filters.save')}
                 </button>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+              </form>
+            )}
+          </div>
+
+          {activeCount > 0 && (
+            <div className="border-t border-line p-1">
+              <button
+                onClick={() => {
+                  onClear();
+                  setOpen(false);
+                }}
+                className="flex h-11 w-full items-center gap-2 rounded-lg px-2.5 text-[12.5px] text-muted hover:bg-elevated hover:text-ink sm:h-8"
+              >
+                <Icon name="x" size={12} /> {t('filters.clearAll')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, type Stage, type Temp, TEMP_META, initials, hueFor, formatMoney, wonStage, relativeTime } from '@/lib/crm';
+import { type Lead, type Stage, type Temp, TEMP_META, initials, hueFor, formatMoney, wonStage } from '@/lib/crm';
+import { useLocale } from '@/components/i18n/LanguageProvider';
+import { formatRelativeTime } from '@/lib/format';
 
 interface CompanyAgg {
   name: string;
@@ -19,6 +21,7 @@ interface CompanyAgg {
 /** Companies workspace — aggregated from the real lead list (grouped by company). */
 export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[]; stages: Stage[]; onOpenCompany: (name: string) => void }) {
   const { t } = useTranslation('crm');
+  const { locale } = useLocale();
   const wonId = wonStage(stages)?.id;
 
   const companies = useMemo(() => {
@@ -58,11 +61,11 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
             className="group flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 text-left shadow-sm transition-shadow hover:shadow-md hover:border-line-strong"
           >
             <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[14px] font-black text-white" style={{ background: `linear-gradient(140deg, hsl(${hue} 62% 55%), hsl(${hue} 62% 42%))` }}>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[14px] font-semibold text-white" style={{ background: `hsl(${hue} 45% 42%)` }}>
                 {companyInitials(c.name)}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-bold text-ink transition-colors group-hover:text-accent">{c.name === 'No company' ? t('companies.noCompany') : c.name}</p>
+                <p className="truncate text-[14px] font-semibold text-ink transition-colors group-hover:text-accent">{c.name === 'No company' ? t('companies.noCompany') : c.name}</p>
                 <p className="text-[11.5px] font-semibold text-muted">
                   {c.name === 'No company' ? t('companies.individualLeads') : t('companies.wonSummary', { won: c.won, contacts: t('companies.contact', { count: total }) })}
                 </p>
@@ -78,7 +81,7 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
                   return (
                     <span
                       key={contact.id}
-                      className="inline-block h-6.5 w-6.5 rounded-full ring-2 ring-surface text-[8.5px] font-bold text-white text-center flex items-center justify-center"
+                      className="inline-block h-6.5 w-6.5 rounded-full ring-2 ring-surface text-[8.5px] font-semibold text-white text-center flex items-center justify-center"
                       style={{ background: `hsl(${contactHue} 62% 48%)` }}
                       title={contact.name || ''}
                     >
@@ -87,20 +90,20 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
                   );
                 })}
                 {total > 4 && (
-                  <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-canvas text-[8px] font-black text-muted ring-2 ring-surface">
+                  <span className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-elevated text-[8px] font-semibold text-muted ring-2 ring-surface">
                     +{total - 4}
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-bold text-muted">{t('companies.contact', { count: total })}</span>
+              <span className="text-[11px] font-semibold text-muted">{t('companies.contact', { count: total })}</span>
             </div>
 
             <div className="flex items-end justify-between border-t border-line/50 pt-2.5">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-faint">{t('companies.pipelineValue')}</p>
-                <p className="text-[16px] font-black tabular-nums text-emerald-600">{formatMoney(c.value)}</p>
+                <p className="text-[12px] text-faint">{t('companies.pipelineValue')}</p>
+                <p className="text-[16px] font-semibold tabular-nums text-ink">{formatMoney(c.value)}</p>
               </div>
-              <span className="text-[10.5px] font-semibold text-faint">{relativeTime(c.lastAt)}</span>
+              <span className="text-[10.5px] font-semibold text-faint">{formatRelativeTime(c.lastAt, locale, 'narrow')}</span>
             </div>
 
             {/* temperature mix */}
@@ -128,7 +131,7 @@ function EmptyCompanies() {
         <Icon name="briefcase" size={28} />
       </span>
       <div>
-        <p className="text-[16px] font-bold text-ink">{t('companies.emptyTitle')}</p>
+        <p className="text-[16px] font-semibold text-ink">{t('companies.emptyTitle')}</p>
         <p className="mt-1 max-w-sm text-[13px] text-muted">{t('companies.emptyDesc')}</p>
       </div>
       <Link href="/cards" className="v-btn"><Icon name="grid" size={15} /> {t('openCards')}</Link>

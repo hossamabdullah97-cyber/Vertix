@@ -48,6 +48,9 @@ const GROUPS: { labelKey: string; showLabel: boolean; items: { href: string; lab
 
 type Theme = 'light' | 'dark';
 
+/** Fired when the command menu picks a lead; the leads page opens its panel. */
+export const OPEN_LEAD_EVENT = 'vertex:open-lead';
+
 type SearchIndex = {
   cards: any[];
   teams: any[];
@@ -80,6 +83,8 @@ type PaletteItem = {
   metaMono?: boolean;
   href: string;
   external?: boolean;
+  /** A lead to open in its panel once on /leads. */
+  leadId?: string;
 };
 
 function initialsOf(name: string) {
@@ -368,7 +373,8 @@ export default function AppShell({
           icon: 'inbox',
           label: l.name || t('unnamedLead'),
           meta: l.company || l.email || undefined,
-          href: '/leads',
+          href: `/leads?lead=${l.id}`,
+          leadId: l.id,
         })),
     );
     push(
@@ -463,6 +469,8 @@ export default function AppShell({
     setPaletteOpen(false);
     if (item.external) window.open(item.href, '_blank', 'noopener,noreferrer');
     else router.push(item.href);
+    // Already on /leads the page does not remount, so tell it which lead to open.
+    if (item.leadId) window.dispatchEvent(new CustomEvent(OPEN_LEAD_EVENT, { detail: item.leadId }));
   };
 
   const handlePaletteKeyDown = (e: React.KeyboardEvent) => {

@@ -39,10 +39,14 @@ export function formatDateTime(date: Date | string | number, locale: Locale): st
 }
 
 /** Relative time, e.g. "3 days ago" / "منذ ٣ أيام". */
-export function formatRelativeTime(date: Date | string | number, locale: Locale): string {
+export function formatRelativeTime(
+  date: Date | string | number,
+  locale: Locale,
+  style: Intl.RelativeTimeFormatStyle = 'long',
+): string {
   const d = date instanceof Date ? date : new Date(date);
   if (Number.isNaN(d.getTime())) return '';
-  const rtf = new Intl.RelativeTimeFormat(localeTag[locale], { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat(localeTag[locale], { numeric: 'auto', style });
   const diffMs = d.getTime() - Date.now();
   const abs = Math.abs(diffMs);
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
