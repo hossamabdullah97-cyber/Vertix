@@ -281,16 +281,5 @@
       "crm_sync_config_updated": "changed CRM sync settings",
       "crm_sync_now": "ran a CRM sync"
     }
-  },
-  "workspace": {
-    "title": "Workspace settings",
-    "personal": "Workspace settings belong to an organization. Switch to one from the menu at the top of the sidebar.",
-    "sections": {
-      "general": "General",
-      "brand": "Brand",
-      "assets": "Files"
-    },
-    "saved": "Settings saved.",
-    "brandSaved": "Brand saved."
   }
 }

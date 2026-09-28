@@ -9,6 +9,7 @@ import { authFetch, logout, getActiveOrgId, setActiveOrgId, type Me } from '@/li
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { PROFILE_UPDATED } from '@/components/ProfilePhotoCard';
+import { OrgMark, ORG_UPDATED } from '@/components/OrgMark';
 import { NotificationBell } from '@/components/NotificationBell';
 import { VMark } from '@/components/brand/VMark';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -88,11 +89,6 @@ type PaletteItem = {
   leadId?: string;
 };
 
-function initialsOf(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '·';
-}
-
 export default function AppShell({
   title,
   action,
@@ -117,7 +113,7 @@ export default function AppShell({
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
   // Workspace switcher
-  const [orgs, setOrgs] = useState<{ org: { id: string; name: string; slug: string }; role: string }[]>([]);
+  const [orgs, setOrgs] = useState<{ org: { id: string; name: string; slug: string; branding?: Record<string, unknown> | null }; role: string }[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [switcherSearch, setSwitcherSearch] = useState('');
@@ -201,11 +197,15 @@ export default function AppShell({
     // Keep the sidebar identity in step when the user edits their profile.
     const onProfile = (e: Event) => setMe((e as CustomEvent<Me>).detail);
     window.addEventListener(PROFILE_UPDATED, onProfile);
+    // And the workspace's name and mark when its settings are saved.
+    const onOrg = () => authFetch<any[]>('/orgs').then(setOrgs).catch(() => {});
+    window.addEventListener(ORG_UPDATED, onOrg);
 
     return () => {
       document.removeEventListener('mousedown', clickOutside);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener(PROFILE_UPDATED, onProfile);
+      window.removeEventListener(ORG_UPDATED, onOrg);
     };
   }, []);
 
@@ -245,8 +245,8 @@ export default function AppShell({
 
   // Switcher Items filtering
   const allWorkspaceItems = useMemo(() => [
-    { id: 'personal', name: t('switcher.personal'), isOrg: false, slug: 'personal' },
-    ...orgs.map((o) => ({ id: o.org.id, name: o.org.name, isOrg: true, slug: o.org.slug })),
+    { id: 'personal', name: t('switcher.personal'), isOrg: false, slug: 'personal', branding: null as Record<string, unknown> | null },
+    ...orgs.map((o) => ({ id: o.org.id, name: o.org.name, isOrg: true, slug: o.org.slug, branding: o.org.branding ?? null })),
   ], [orgs, t]);
 
   const filteredItems = useMemo(() => allWorkspaceItems.filter((item) =>
@@ -595,13 +595,13 @@ export default function AppShell({
             aria-expanded={switcherOpen}
             className="flex w-full items-center gap-2.5 rounded-lg bg-surface px-2 py-1.5 text-start shadow-sm ring-1 ring-line transition-colors hover:bg-elevated"
           >
-            <span
-              className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md text-[10px] font-semibold ${
-                selectedOrgId ? 'bg-[#1f2a44] text-white' : 'bg-elevated text-muted ring-1 ring-inset ring-line'
-              }`}
-            >
-              {selectedOrgId ? initialsOf(activeOrgName) : <Icon name="user" size={12} />}
-            </span>
+            {selectedOrgId ? (
+              <OrgMark name={activeOrgName} branding={orgs.find((o) => o.org.id === selectedOrgId)?.org.branding} size={22} />
+            ) : (
+              <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-elevated text-muted ring-1 ring-inset ring-line">
+                <Icon name="user" size={12} />
+              </span>
+            )}
             <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{activeOrgName}</span>
             <span className="text-faint">
               <Icon name="chevron-down" size={14} />
@@ -702,13 +702,13 @@ export default function AppShell({
                             onClick={() => handleSwitchOrg(item.isOrg ? item.id : null)}
                           >
                             <span className="flex min-w-0 items-center gap-2">
-                              <span
-                                className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded text-[8.5px] font-semibold ${
-                                  item.isOrg ? 'bg-[#1f2a44] text-white' : 'bg-elevated text-muted ring-1 ring-inset ring-line'
-                                }`}
-                              >
-                                {item.isOrg ? initialsOf(item.name) : <Icon name="user" size={10} />}
-                              </span>
+                              {item.isOrg ? (
+                                <OrgMark name={item.name} branding={item.branding} size={18} />
+                              ) : (
+                                <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded bg-elevated text-muted ring-1 ring-inset ring-line">
+                                  <Icon name="user" size={10} />
+                                </span>
+                              )}
                               <span className="truncate">{item.name}</span>
                             </span>
                             <span className="flex items-center gap-1.5">

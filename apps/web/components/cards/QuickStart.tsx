@@ -22,13 +22,14 @@ const CHANNELS = [
 type ChannelKey = (typeof CHANNELS)[number]['key'];
 
 /** A deliberately short list — the full 19 live in the Templates tab. */
-const LOOKS = [
-  { id: 'swiss-blue',   accent: '#2563eb', mode: 'light' as const },
-  { id: 'swiss-green',  accent: '#15803d', mode: 'light' as const },
-  { id: 'swiss-violet', accent: '#7c3aed', mode: 'light' as const },
-  { id: 'noir-blue',    accent: '#60a5fa', mode: 'dark'  as const },
-  { id: 'noir-amber',   accent: '#fbbf24', mode: 'dark'  as const },
-  { id: 'carbon',       accent: '#ffffff', mode: 'dark'  as const },
+type Look = { key: string; id: string; accent: string; mode: 'light' | 'dark' };
+const LOOKS: Look[] = [
+  { key: 'swiss-blue', id: 'swiss-blue',   accent: '#2563eb', mode: 'light' as const },
+  { key: 'swiss-green', id: 'swiss-green',  accent: '#15803d', mode: 'light' as const },
+  { key: 'swiss-violet', id: 'swiss-violet', accent: '#7c3aed', mode: 'light' as const },
+  { key: 'noir-blue', id: 'noir-blue',    accent: '#60a5fa', mode: 'dark'  as const },
+  { key: 'noir-amber', id: 'noir-amber',   accent: '#fbbf24', mode: 'dark'  as const },
+  { key: 'carbon', id: 'carbon',       accent: '#ffffff', mode: 'dark'  as const },
 ];
 
 const STEPS = ['identity', 'channels', 'look'] as const;
@@ -61,7 +62,19 @@ export default function QuickStart({
   const [org, setOrg] = useState(existing.org ?? '');
   const [avatar, setAvatar] = useState(existing.avatar ?? '');
   const [values, setValues] = useState<Partial<Record<ChannelKey, string>>>({});
-  const [look, setLook] = useState(LOOKS[0]);
+  // A card created in a workspace starts in its brand colour and language
+  // (see createBlankCard); offer that colour first so finishing keeps it.
+  const startTheme = (card.theme ?? {}) as Record<string, unknown>;
+  const startAccent = typeof startTheme.accent === 'string' ? startTheme.accent.toLowerCase() : '';
+  const looks = useMemo<Look[]>(
+    () =>
+      startAccent && !LOOKS.some((l) => l.accent === startAccent && l.mode === 'light')
+        ? [{ key: 'workspace', id: 'swiss-blue', accent: startAccent, mode: 'light' }, ...LOOKS.slice(0, 5)]
+        : LOOKS,
+    [startAccent],
+  );
+  const [look, setLook] = useState<Look>(() => looks.find((l) => l.accent === startAccent) ?? looks[0]);
+  const lang = startTheme.lang === 'ar' ? 'ar' : 'en';
 
   const chosen = useMemo(
     () => CHANNELS.filter((c) => (values[c.key] ?? '').trim().length > 0),
@@ -78,7 +91,7 @@ export default function QuickStart({
         method: 'PATCH',
         body: JSON.stringify({
           templateId: look.id,
-          theme: { accent: look.accent, mode: look.mode, cover: 'gradient', lang: 'en' },
+          theme: { accent: look.accent, mode: look.mode, cover: 'gradient', lang },
           vcardData: { ...existing, fullName: fullName.trim(), org: org.trim(), avatar },
         }),
       });
@@ -222,13 +235,13 @@ export default function QuickStart({
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-                    {LOOKS.map((l) => (
+                    {looks.map((l) => (
                       <button
-                        key={l.id}
+                        key={l.key}
                         onClick={() => setLook(l)}
-                        aria-pressed={look.id === l.id}
+                        aria-pressed={look.key === l.key}
                         className={`aspect-[3/4] rounded-xl border-2 transition-all ${
-                          look.id === l.id ? 'border-accent scale-105 shadow-md' : 'border-line hover:border-line-strong'
+                          look.key === l.key ? 'border-accent scale-105 shadow-md' : 'border-line hover:border-line-strong'
                         }`}
                         style={{ background: l.mode === 'dark' ? '#0f1115' : '#ffffff' }}
                       >

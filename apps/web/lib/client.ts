@@ -123,10 +123,27 @@ export async function uploadImage(file: File): Promise<string> {
  * the editor's guided start collects the name, contact channels, and style, so
  * there is one place that onboards a card rather than two.
  */
+/**
+ * A new, empty card. In an organization it starts from the workspace's
+ * defaults (brand colour and card language, set in Workspace settings); if
+ * those cannot be read, it starts from the house defaults as before.
+ */
 export async function createBlankCard(): Promise<Card> {
+  const theme: Record<string, unknown> = {};
+  if (getActiveOrgId()) {
+    try {
+      const org = await authFetch<{ branding: Record<string, unknown> | null; settings: Record<string, unknown> | null }>('/orgs/current');
+      const accent = org.branding?.accent;
+      const lang = org.settings?.language;
+      if (typeof accent === 'string' && /^#[0-9a-f]{6}$/i.test(accent)) theme.accent = accent;
+      if (lang === 'en' || lang === 'ar') theme.lang = lang;
+    } catch {
+      // Defaults are a convenience; never block creating a card on them.
+    }
+  }
   return authFetch<Card>('/cards', {
     method: 'POST',
-    body: JSON.stringify({ templateId: 'swiss-blue' }),
+    body: JSON.stringify({ templateId: 'swiss-blue', ...(Object.keys(theme).length ? { theme } : {}) }),
   });
 }
 
