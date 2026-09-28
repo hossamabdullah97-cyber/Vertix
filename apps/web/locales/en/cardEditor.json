@@ -133,6 +133,10 @@
         "label": "Buttons",
         "desc": "Full width"
       }
+    },
+    "openInApp": {
+      "title": "Open in the visitor's app",
+      "hint": "On a phone, WhatsApp and LinkedIn links open their apps instead of a browser tab."
     }
   },
   "platformPicker": {

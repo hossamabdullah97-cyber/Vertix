@@ -73,3 +73,11 @@ describe('link layout', () => {
     expect(linkStyleOf(3)).toBe('list');
   });
 });
+
+describe('open in app', () => {
+  it('is on only when the owner switched it on', () => {
+    expect(buildProfile({ ...base, theme: { openInApp: true }, vcardData: null }).openInApp).toBe(true);
+    expect(buildProfile({ ...base, theme: { openInApp: 'yes' }, vcardData: null }).openInApp).toBe(false);
+    expect(buildProfile({ ...base, theme: null, vcardData: null }).openInApp).toBe(false);
+  });
+});

@@ -24,6 +24,7 @@ const LivePreview = nextDynamic(() => import('@/components/preview/LivePreview')
 });
 import ShareCard from '@/components/ShareCard';
 import { LINK_STYLES, linkStyleOf, type LinkStyle } from '@/lib/profile';
+import { Toggle } from '@/components/ui/Toggle';
 import { Icon } from '@/components/Icon';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -39,7 +40,7 @@ function identityPayload(
   slug: string,
   templateId: string,
   vcard: Record<string, string>,
-  theme: { accent: string; mode: string; cover: string; lang: string; links: LinkStyle },
+  theme: { accent: string; mode: string; cover: string; lang: string; links: LinkStyle; openInApp: boolean },
 ) {
   return { slug, templateId, theme, vcardData: vcard };
 }
@@ -211,6 +212,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [cover, setCover] = useState<'gradient' | 'constellation' | 'solid'>('gradient');
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [linkStyle, setLinkStyle] = useState<LinkStyle>('list');
+  const [openInApp, setOpenInApp] = useState(false);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -261,6 +263,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     const coverV = (th.cover as 'gradient' | 'constellation' | 'solid') ?? (modeV === 'dark' ? 'constellation' : 'gradient');
     const langV = (th.lang as 'en' | 'ar') === 'ar' ? 'ar' : 'en';
     const linksV = linkStyleOf(th.links);
+    const inAppV = (th as Record<string, unknown>).openInApp === true;
     setCard(c);
     setSlug(c.slug);
     setTemplateId(c.templateId);
@@ -270,10 +273,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     setCover(coverV);
     setLang(langV);
     setLinkStyle(linksV);
+    setOpenInApp(inAppV);
     setSections([...(c.sections ?? [])].sort((a, b) => a.order - b.order));
     setActions([...(c.actions ?? [])].sort((a, b) => a.order - b.order));
     lastSavedRef.current = JSON.stringify(
-      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV, links: linksV }),
+      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV, links: linksV, openInApp: inAppV }),
     );
   }, []);
 
@@ -311,7 +315,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   useEffect(() => {
     if (!loadedRef.current) return; // don't save before the first load lands
     if (suppressSaveRef.current) { suppressSaveRef.current = false; return; } // ignore server echoes
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp }));
     if (body === lastSavedRef.current) return; // nothing actually changed
     setAutoSaveStatus('Saving...');
     const handle = setTimeout(async () => {
@@ -326,7 +330,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       }
     }, 700);
     return () => clearTimeout(handle);
-  }, [slug, templateId, vcard, accent, mode, cover, lang, linkStyle, id]);
+  }, [slug, templateId, vcard, accent, mode, cover, lang, linkStyle, openInApp, id]);
 
   // Load favorites & recentlyUsed from localStorage
   useEffect(() => {
@@ -383,7 +387,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
    * structural mutation pulls fresh server state, so nothing is lost).
    */
   const flushIdentity = async () => {
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp }));
     if (body === lastSavedRef.current) return;
     await authFetch(`/cards/${id}`, { method: 'PATCH', body });
     lastSavedRef.current = body;
@@ -977,6 +981,13 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             </button>
                           ))}
                         </div>
+                        <div className="mt-3 flex items-center justify-between gap-4 rounded-xl px-3.5 py-3 ring-1 ring-inset ring-line">
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-medium text-ink">{t('links.openInApp.title')}</p>
+                            <p className="mt-0.5 text-[12px] leading-snug text-faint">{t('links.openInApp.hint')}</p>
+                          </div>
+                          <Toggle on={openInApp} onChange={() => setOpenInApp((v) => !v)} label={t('links.openInApp.title')} />
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1468,7 +1479,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 {
                   ...card,
                   vcardData: vcard,
-                  theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle },
+                  theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle, openInApp },
                 } as any
               }
               sections={sections}

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { API_URL, type PublicCardAction } from '@/lib/api';
 import { resolveAction } from '@/lib/brandIcons';
+import { appLink, platformOf } from '@/lib/appLinks';
 import { paymentBrand } from '@/lib/paymentBrands';
 import { embedUrl, externalUrl, pick, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
 import { fill, profileStrings, type ProfileStrings } from '@/lib/profileI18n';
@@ -86,6 +87,11 @@ export function PublicProfile({
   const onLink = (e: React.MouseEvent, l: Resolved) => {
     if (preview) return e.preventDefault();
     track(profile.slug, 'CLICK', { kind: 'link', type: l.a.type, actionId: l.a.id });
+    if (!profile.openInApp) return;
+    const target = appLink(l.href, platformOf(navigator.userAgent, navigator.maxTouchPoints));
+    if (!target) return;
+    e.preventDefault();
+    window.location.href = target;
   };
 
   const metaItems: { key: string; label: React.ReactNode; icon?: string; dot?: boolean }[] = [];

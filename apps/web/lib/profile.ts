@@ -38,6 +38,8 @@ export interface ProfileData {
   circle: boolean;
   verified: boolean;
   linkStyle: LinkStyle;
+  /** WhatsApp and LinkedIn links open their apps on a phone. */
+  openInApp: boolean;
   /** Optional identity details, shown only when the owner filled them in. */
   meta: { available: string; location: string; languages: string; responseTime: string };
   /** The active profile variant's name, when one is being served. */
@@ -95,6 +97,7 @@ export function buildProfile(input: {
     lang: theme.lang === 'ar' ? 'ar' : 'en',
     circle: theme.avatarShape !== 'square',
     linkStyle: linkStyleOf(theme.links),
+    openInApp: theme.openInApp === true,
     verified: input.verified === true,
     meta: {
       available,

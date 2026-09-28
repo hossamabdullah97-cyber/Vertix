@@ -48,6 +48,7 @@ export function HeroVisual() {
       circle: true,
       verified: true,
       linkStyle: 'list',
+      openInApp: false,
       meta: { available: 'now', location: t('sample.location'), languages: '', responseTime: '' },
       profileName: null,
       actions: [
