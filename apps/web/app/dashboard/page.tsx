@@ -11,6 +11,8 @@ import { formatDate, formatNumber, formatRelativeTime } from '@/lib/format';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { TrendChart } from '@/components/charts/TrendChart';
+import { OccasionsSheet } from '@/components/occasions/OccasionsSheet';
+import { countDuring, markersFor, occasionOn, type Occasion } from '@/lib/occasions';
 import AppShell from '@/components/AppShell';
 import { CardThumb } from '@/components/cards/CardThumb';
 import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
@@ -108,6 +110,9 @@ export default function HomePage() {
   const [ts, setTs] = useState<Point[]>([]);
   const [tsPrev, setTsPrev] = useState<Point[]>([]);
   const [topCards, setTopCards] = useState<TopCard[]>([]);
+  const [occasions, setOccasions] = useState<Occasion[]>([]);
+  const [showOccasions, setShowOccasions] = useState(false);
+  const loadOccasions = useCallback(() => authFetch<Occasion[]>('/orgs/occasions').then(setOccasions).catch(() => setOccasions([])), []);
 
   const [showOnboarding, setShowOnboarding] = useState(true);
 
@@ -155,13 +160,14 @@ export default function HomePage() {
         setDepartments(dept);
         setApprovals(appList);
         setAuditLogs(logs);
+        loadOccasions();
       }
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadOccasions]);
 
   useEffect(() => {
     if (!getToken()) {
@@ -508,6 +514,11 @@ export default function HomePage() {
   const labels = windows.keys.map(dayLabel);
   const hasActivity = series.current.some((v) => v > 0) || series.previous.some((v) => v > 0);
   const peak = series.current.reduce((best, v, i) => (v > series.current[best] ? i : best), 0);
+  const markers = markersFor(occasions, windows.keys);
+  const peakOccasion = occasionOn(occasions, windows.keys[peak]);
+  const leadsDuringPeak = peakOccasion ? countDuring(peakOccasion.occasion, leads.map((l) => l.createdAt)) : 0;
+  const myRole = members.find((m) => m.user.id === me?.id)?.role;
+  const canManageOccasions = !!me?.isSuperAdmin || myRole === 'OWNER' || myRole === 'ADMIN' || myRole === 'MANAGER';
 
   // The headline: this week's new leads, and how many of them nobody has picked up yet.
   const weekAgo = Date.now() - 7 * DAY;
@@ -547,6 +558,10 @@ export default function HomePage() {
             )}
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <button onClick={() => setShowOccasions(true)} className="v-btn v-btn-ghost sm:!h-8">
+          <Icon name="calendar" size={14} /> {t('occasions.button')}
+        </button>
         <div role="radiogroup" aria-label={t('period.label')} className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
           {PERIODS.map((p) => (
             <button
@@ -561,6 +576,7 @@ export default function HomePage() {
               {t(`period.d${p}`)}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
@@ -608,6 +624,7 @@ export default function HomePage() {
                 currentLabel={selected.label}
                 previousLabel={t('metrics.previous')}
                 formatDelta={formatChange}
+                markers={markers}
               />
             ) : (
               <div className="flex h-[232px] items-center justify-center px-6 text-center text-[13px] leading-relaxed text-muted">
@@ -620,12 +637,35 @@ export default function HomePage() {
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-line bg-elevated px-4 py-3 text-[13px] text-muted sm:px-5">
               <span className="v-badge v-badge-neutral">{t('metrics.insight')}</span>
               <span className="min-w-0 flex-1">
-                <Trans
-                  t={t}
-                  i18nKey="metrics.busiest"
-                  values={{ date: dayLabel(windows.keys[peak]), count: fmt(series.current[peak]), metric: selected.label.toLocaleLowerCase(locale) }}
-                  components={{ b: <b className="font-medium text-ink" /> }}
-                />
+                {peakOccasion ? (
+                  <>
+                    <Trans
+                      t={t}
+                      i18nKey="metrics.busiestDuring"
+                      values={{
+                        date: dayLabel(windows.keys[peak]),
+                        count: fmt(series.current[peak]),
+                        metric: selected.label.toLocaleLowerCase(locale),
+                        day: fmt(peakOccasion.day),
+                        occasion: peakOccasion.occasion.name,
+                      }}
+                      components={{ b: <b className="font-medium text-ink" /> }}
+                    />
+                    {leadsDuringPeak > 0 && (
+                      <>
+                        {' '}
+                        <Trans t={t} i18nKey="metrics.leadsDuring" values={{ count: fmt(leadsDuringPeak) }} components={{ b: <b className="font-medium text-ink" /> }} />
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Trans
+                    t={t}
+                    i18nKey="metrics.busiest"
+                    values={{ date: dayLabel(windows.keys[peak]), count: fmt(series.current[peak]), metric: selected.label.toLocaleLowerCase(locale) }}
+                    components={{ b: <b className="font-medium text-ink" /> }}
+                  />
+                )}
               </span>
               <Link href="/analytics" className="text-[12.5px] font-medium text-accent hover:underline">
                 {t('metrics.openAnalytics')}
@@ -835,6 +875,7 @@ export default function HomePage() {
           </Link>
         </section>
       </div>
+      <OccasionsSheet open={showOccasions} onClose={() => setShowOccasions(false)} occasions={occasions} canManage={canManageOccasions} onChanged={loadOccasions} />
     </AppShell>
   );
 }

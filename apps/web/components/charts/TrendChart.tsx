@@ -16,6 +16,7 @@ export function TrendChart({
   currentLabel,
   previousLabel,
   formatDelta,
+  markers = [],
   height = 232,
 }: {
   current: number[];
@@ -26,6 +27,8 @@ export function TrendChart({
   currentLabel: string;
   previousLabel: string;
   formatDelta: (pct: number) => string;
+  /** Occasions to mark: a band over their points, named at its foot and in the readout. */
+  markers?: { from: number; to: number; label: string }[];
   height?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -75,6 +78,14 @@ export function TrendChart({
   const pct = prev ? ((cur - prev) / prev) * 100 : null;
   // Keep the readout inside the plot: after the point in the first half, before it in the second.
   const readoutAfter = hover !== null && hx < w / 2;
+  const hoverMarker = hover === null ? null : markers.find((m) => hover >= m.from && hover <= m.to) ?? null;
+  // A band spans half a step either side of its points, so a one-day occasion is visible too.
+  const half = n > 1 ? (w - gutter - 4) / (n - 1) / 2 : 0;
+  const bands = markers.map((m) => {
+    const x1 = Math.max(gutter, xAt(m.from) - half);
+    const x2 = Math.min(w, xAt(m.to) + half);
+    return { ...m, x1, x2, mid: (x1 + x2) / 2 };
+  });
 
   return (
     <div
@@ -97,6 +108,9 @@ export function TrendChart({
             <stop offset="100%" stopColor="var(--v-accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
+        {bands.map((b) => (
+          <rect key={`${b.from}-${b.label}`} x={b.x1} y={padT} width={Math.max(2, b.x2 - b.x1)} height={innerH} style={{ fill: 'rgba(var(--v-accent-rgb), 0.07)' }} />
+        ))}
         {ticks.map((v) => (
           <line
             key={v}
@@ -138,6 +152,31 @@ export function TrendChart({
         </span>
       ))}
 
+      {/* Occasion names, at the foot of their bands */}
+      {bands.map((b) => {
+        // Centred under its band, unless that would run off either edge of the plot.
+        const edge = 96;
+        const place: React.CSSProperties =
+          b.mid > w - edge
+            ? { insetInlineEnd: Math.max(0, w - b.x2) }
+            : b.mid < gutter + edge
+              ? { insetInlineStart: b.x1 }
+              : { insetInlineStart: b.mid };
+        const centred = 'insetInlineStart' in place && place.insetInlineStart === b.mid;
+        return (
+        <span
+          key={`${b.from}-${b.label}`}
+          className={`pointer-events-none absolute flex ${centred ? 'w-0 justify-center' : ''}`}
+          style={{ ...place, top: yAt(0) - 26 }}
+        >
+          <span className="flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md bg-surface px-1.5 py-0.5 text-[11px] font-medium text-accent shadow-sm ring-1 ring-inset ring-accent/25">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+            <span className="truncate">{b.label}</span>
+          </span>
+        </span>
+        );
+      })}
+
       {/* Hover markers and readout */}
       {hover !== null && (
         <>
@@ -160,6 +199,12 @@ export function TrendChart({
             style={readoutAfter ? { insetInlineStart: hx + 16 } : { insetInlineEnd: w - hx + 16 }}
           >
             <p className="mb-1.5 text-[11.5px] text-faint">{labels[hover]}</p>
+            {hoverMarker && (
+              <p className="-mt-1 mb-1.5 flex items-center gap-1 text-[11.5px] font-medium text-accent">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                <span className="truncate">{hoverMarker.label}</span>
+              </p>
+            )}
             <p className="flex items-center gap-2">
               <span className="h-0.5 w-2.5 rounded-full bg-accent" />
               <span className="text-muted">{currentLabel}</span>

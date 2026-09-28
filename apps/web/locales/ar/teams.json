@@ -315,7 +315,10 @@
       "automation_updated": "عدّل أتمتة",
       "automation_deleted": "حذف أتمتة",
       "crm_sync_config_updated": "غيّر إعدادات مزامنة CRM",
-      "crm_sync_now": "شغّل مزامنة CRM"
+      "crm_sync_now": "شغّل مزامنة CRM",
+      "occasion_created": "أضاف المناسبة",
+      "occasion_updated": "عدّل المناسبة",
+      "occasion_deleted": "حذف المناسبة"
     }
   }
 }

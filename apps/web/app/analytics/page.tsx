@@ -23,6 +23,7 @@ import { type Lead, type Stage } from '@/lib/crm';
 import { Icon } from '@/components/Icon';
 import AppShell from '@/components/AppShell';
 import { TrendChart } from '@/components/charts/TrendChart';
+import { markersFor, type Occasion } from '@/lib/occasions';
 import { CardThumb } from '@/components/cards/CardThumb';
 import { BarList, PanelEmpty, PanelHeader } from '@/components/analytics/parts';
 import { CardsView } from '@/components/analytics/CardsView';
@@ -80,6 +81,7 @@ export default function AnalyticsPage() {
   const [stages, setStages] = useState<(Stage & { isWon?: boolean; isLost?: boolean })[]>([]);
   // null until known: the Team view only exists when several people share the workspace.
   const [memberCount, setMemberCount] = useState<number | null>(null);
+  const [occasions, setOccasions] = useState<Occasion[]>([]);
   const [error, setError] = useState('');
 
   const windows = useMemo(() => periodWindows(period), [period]);
@@ -107,6 +109,7 @@ export default function AnalyticsPage() {
     authFetch<Lead[]>('/leads').then(setLeads).catch(() => setLeads([]));
     authFetch<(Stage & { isWon?: boolean; isLost?: boolean })[]>('/leads/stages').then(setStages).catch(() => setStages([]));
     authFetch<Member[]>('/orgs/members').then((m) => setMemberCount(m.length)).catch(() => setMemberCount(0));
+    authFetch<Occasion[]>('/orgs/occasions').then(setOccasions).catch(() => setOccasions([]));
   }, [router]);
 
   // Everything measured over the chosen period, plus the period before it.
@@ -235,7 +238,7 @@ export default function AnalyticsPage() {
 
       <div className="mt-5">
         {shown === 'overview' && (
-          <OverviewView data={data} leads={leads} periodLeads={periodLeads} cards={cards} windows={windows} period={period} metric={metric} onMetric={setMetric} onView={chooseView} />
+          <OverviewView data={data} leads={leads} periodLeads={periodLeads} cards={cards} windows={windows} period={period} metric={metric} onMetric={setMetric} onView={chooseView} occasions={occasions} />
         )}
         {shown === 'cards' && <CardsView cards={cards} leads={leads} />}
         {shown === 'chips' && <ChipsView from={windows.from} />}
@@ -258,6 +261,7 @@ function OverviewView({
   metric,
   onMetric,
   onView,
+  occasions,
 }: {
   data: PeriodData | null;
   leads: Lead[] | null;
@@ -268,6 +272,7 @@ function OverviewView({
   metric: Metric;
   onMetric: (m: Metric) => void;
   onView: (v: View) => void;
+  occasions: Occasion[];
 }) {
   const { t } = useTranslation('analytics');
   const { locale } = useLocale();
@@ -349,6 +354,7 @@ function OverviewView({
               currentLabel={t(`metrics.${metric}`)}
               previousLabel={t('metrics.previous')}
               formatDelta={formatChange}
+              markers={markersFor(occasions, windows.keys)}
             />
           ) : (
             <div className="flex h-[232px] items-center justify-center px-6 text-center text-[13px] leading-relaxed text-muted">

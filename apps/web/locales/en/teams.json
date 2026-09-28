@@ -279,7 +279,10 @@
       "automation_updated": "updated an automation",
       "automation_deleted": "deleted an automation",
       "crm_sync_config_updated": "changed CRM sync settings",
-      "crm_sync_now": "ran a CRM sync"
+      "crm_sync_now": "ran a CRM sync",
+      "occasion_created": "added the occasion",
+      "occasion_updated": "changed the occasion",
+      "occasion_deleted": "deleted the occasion"
     }
   }
 }

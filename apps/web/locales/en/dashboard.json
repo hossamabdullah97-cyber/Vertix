@@ -36,7 +36,9 @@
     "noActivity": "Nothing recorded in this period yet. Views, taps and saves appear here as people open your cards.",
     "busiest": "Busiest day: <b>{{date}}</b>, with {{count}} {{metric}}.",
     "insight": "Insight",
-    "openAnalytics": "Open analytics"
+    "openAnalytics": "Open analytics",
+    "busiestDuring": "Busiest day: <b>{{date}}</b>, with {{count}} {{metric}}, day {{day}} of <b>{{occasion}}</b>.",
+    "leadsDuring": "New leads during it: <b>{{count}}</b>."
   },
   "recent": {
     "title": "Latest leads",
@@ -142,6 +144,41 @@
         "desc": "Share your card; details people leave arrive in Leads.",
         "link": "Open leads"
       }
+    }
+  },
+  "occasions": {
+    "button": "Occasions",
+    "title": "Occasions",
+    "close": "Close",
+    "subtitle": "Exhibitions, launches and campaigns, marked on your charts so you can see what brought the visits.",
+    "addTitle": "Add an occasion",
+    "editTitle": "Change this occasion",
+    "name": "Name",
+    "namePlaceholder": "Cairo ICT Expo",
+    "from": "From",
+    "to": "To",
+    "add": "Add occasion",
+    "adding": "Adding…",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "edit": "Change",
+    "delete": "Delete",
+    "more": "More actions",
+    "deleting": "Deleting…",
+    "deleteTitle": "Delete this occasion?",
+    "deleteBody": "“{{name}}” will no longer be marked on the charts. Your numbers stay as they are.",
+    "empty": "No occasions yet. Add the next exhibition or launch, and it will be marked on the charts.",
+    "emptyViewer": "No occasions yet.",
+    "viewerHint": "Owners, admins and managers can add and change occasions.",
+    "range": "{{from}} – {{to}}",
+    "groups": {
+      "now": "Happening now",
+      "upcoming": "Coming up",
+      "past": "Past"
+    },
+    "errors": {
+      "range": "The end date is before the start date."
     }
   }
 }

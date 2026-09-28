@@ -97,6 +97,7 @@ model Organization {
   automationRuns    AutomationRun[]
   oauthApps         IntegrationOAuthApp[]
   crmSyncRecords    CrmSyncRecord[]
+  occasions         Occasion[]
 
   @@index([deletedAt])
   @@map("organizations")
@@ -1057,4 +1058,23 @@ model PaymentLink {
   @@index([cardId])
   @@index([variantId])
   @@map("payment_links")
+}
+
+/// A dated occasion a workspace marks on its charts (an exhibition, a launch,
+/// a campaign), so a rise in views or leads can be read against its cause.
+/// Dates are whole days, the same UTC days the charts count in.
+model Occasion {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  startsOn    DateTime @db.Date
+  endsOn      DateTime @db.Date
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, startsOn])
+  @@map("occasions")
 }
