@@ -12,21 +12,9 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { TrendChart } from '@/components/charts/TrendChart';
 import AppShell from '@/components/AppShell';
+import { CardThumb } from '@/components/cards/CardThumb';
+import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
 
-interface Overview {
-  totals: Record<string, number>;
-  uniqueVisitors: number;
-  leads: number;
-}
-
-interface Point {
-  day: string;
-  VIEW: number;
-  CLICK: number;
-  SAVE: number;
-  SHARE: number;
-  NFC_SCAN: number;
-}
 
 interface Lead {
   id: string;
@@ -78,42 +66,7 @@ interface AuditLog {
 type Period = 7 | 30 | 90;
 type MetricKey = 'VIEW' | 'NFC_SCAN' | 'SAVE' | 'LEADS';
 
-const DAY = 86_400_000;
 const PERIODS: Period[] = [7, 30, 90];
-
-/** UTC calendar days, oldest first — the same keys the timeseries endpoint groups by. */
-function dayKeys(from: Date, days: number): string[] {
-  return Array.from({ length: days }, (_, i) => new Date(from.getTime() + i * DAY).toISOString().slice(0, 10));
-}
-
-function startOfUtcDay(d: Date) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
-
-/** The timeseries only returns days that had events; missing days are zero. */
-function eventSeries(points: Point[], keys: string[], metric: Exclude<MetricKey, 'LEADS'>) {
-  const byDay = new Map(points.map((p) => [p.day, p]));
-  return keys.map((k) => byDay.get(k)?.[metric] ?? 0);
-}
-
-function leadSeries(leads: Lead[], keys: string[]) {
-  const counts = new Map<string, number>();
-  for (const l of leads) {
-    const k = l.createdAt.slice(0, 10);
-    counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
-  return keys.map((k) => counts.get(k) ?? 0);
-}
-
-/** A period-over-period change, or null when there is nothing to compare against. */
-function change(current: number, previous: number): number | null {
-  return previous > 0 ? ((current - previous) / previous) * 100 : null;
-}
-
-function formatChange(pct: number) {
-  const abs = Math.abs(pct);
-  return `${pct >= 0 ? '+' : '−'}${abs < 10 ? abs.toFixed(1) : Math.round(abs)}%`;
-}
 
 /** "org.branding_updated" → "Branding updated". */
 function humanizeAction(action: string) {
@@ -222,17 +175,12 @@ export default function HomePage() {
 
   // The window is whole UTC days ending today; the comparison window is the
   // same number of days immediately before it.
-  const windows = useMemo(() => {
-    const today = startOfUtcDay(new Date());
-    const from = new Date(today.getTime() - (period - 1) * DAY);
-    const prevFrom = new Date(from.getTime() - period * DAY);
-    return { from, prevFrom, keys: dayKeys(from, period), prevKeys: dayKeys(prevFrom, period) };
-  }, [period]);
+  const windows = useMemo(() => periodWindows(period), [period]);
 
   useEffect(() => {
     if (!activeOrgId) return;
     const now = new Date();
-    const q = (f: Date, to: Date) => `?from=${encodeURIComponent(f.toISOString())}&to=${encodeURIComponent(to.toISOString())}`;
+    const q = rangeQuery;
     let alive = true;
     Promise.all([
       authFetch<Overview>('/analytics/overview' + q(windows.from, now)).catch(() => null),
@@ -554,7 +502,7 @@ export default function HomePage() {
 
   const series =
     metric === 'LEADS'
-      ? { current: leadSeries(leads, windows.keys), previous: leadSeries(leads, windows.prevKeys) }
+      ? { current: countByDay(leads, windows.keys), previous: countByDay(leads, windows.prevKeys) }
       : { current: eventSeries(ts, windows.keys, metric), previous: eventSeries(tsPrev, windows.prevKeys, metric) };
   const dayLabel = (key: string) => formatDate(`${key}T12:00:00Z`, locale, { day: 'numeric', month: 'short' });
   const labels = windows.keys.map(dayLabel);
@@ -900,24 +848,6 @@ function cardName(card: CardType) {
 }
 
 /** A tiny rendition of the card in its own colours, so a list reads at a glance. */
-function CardThumb({ card }: { card: CardType }) {
-  const theme = card.theme ?? {};
-  const dark = theme.mode === 'dark';
-  const accent = typeof theme.accent === 'string' ? theme.accent : '#2563eb';
-  return (
-    <span
-      aria-hidden
-      className="relative h-[25px] w-10 shrink-0 overflow-hidden rounded-[4px] ring-1 ring-inset ring-black/10"
-      style={{ background: dark ? '#16161a' : accent }}
-      dir="ltr"
-    >
-      <span className="absolute left-[5px] top-[5px] h-[7px] w-[7px] rounded-full bg-white/90" />
-      <span className="absolute bottom-[9px] left-[5px] h-[2px] w-[18px] rounded-full bg-white/70" />
-      <span className="absolute bottom-[5px] left-[5px] h-[2px] w-[12px] rounded-full bg-white/50" />
-    </span>
-  );
-}
-
 function auditIcon(action: string) {
   const a = action.toLowerCase();
   if (a.includes('card')) return 'grid';
