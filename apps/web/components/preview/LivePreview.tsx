@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Card, Section, CardAction } from '@/lib/client';
-import CardPreview, { type PreviewPaymentLink } from '@/components/CardPreview';
+import { PublicProfile } from '@/components/profile/PublicProfile';
+import { buildProfile, profileStyle, type ProfileData } from '@/lib/profile';
+import { profileStrings } from '@/lib/profileI18n';
 import { Icon } from '@/components/Icon';
 import { IPhoneFrame, AndroidFrame, TabletFrame, DesktopFrame, WatchFrame } from './frames';
 import { NfcProduct, type NfcVariant } from './NfcProduct';
@@ -53,6 +55,58 @@ const GROUPS: { label: 'phones' | 'screens' | 'nfc' | 'qr'; items: { id: Device;
     items: [{ id: 'qr', icon: 'qr', name: 'QR Page' }],
   },
 ];
+
+/** The payment links the Studio holds; only what the card shows is needed. */
+export interface PreviewPaymentLink {
+  id: string;
+  platform: string;
+  displayName: string;
+  url?: string;
+  description?: string | null;
+  isActive?: boolean;
+  order?: number;
+}
+
+/** The width a phone lays the card out at; narrower frames scale it down. */
+const PHONE_WIDTH = 390;
+const CARD_MAX = 440;
+
+/**
+ * The published card, drawn at a real phone's width and scaled to fit the
+ * frame, so the preview matches what a visitor gets instead of approximating it.
+ */
+function ScaledProfile({ profile }: { profile: ProfileData }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setSize({ w: entry.contentRect.width, h: entry.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const z = size.w && size.w < PHONE_WIDTH ? size.w / PHONE_WIDTH : 1;
+  const wide = size.w > CARD_MAX + 40;
+  return (
+    <div ref={ref} className="h-full w-full">
+      {size.w > 0 &&
+        (wide ? (
+          // A screen wider than a phone sees the card as a card, like the live page.
+          <div style={profileStyle(profile)} className="flex h-full justify-center overflow-hidden bg-[var(--p-bg)] px-6 pt-6">
+            <div className="h-full w-full max-w-[440px] overflow-hidden rounded-t-[20px] shadow-[0_0_0_1px_var(--p-line)]">
+              <PublicProfile profile={profile} preview />
+            </div>
+          </div>
+        ) : (
+          <div style={{ width: size.w / z, height: size.h / z, zoom: z }}>
+            <PublicProfile profile={profile} preview />
+          </div>
+        ))}
+    </div>
+  );
+}
 
 const HANDHELD = new Set<Device>(['iphone', 'android', 'tablet']);
 const IS_NFC = (d: Device): d is NfcVariant =>
@@ -154,9 +208,23 @@ export default function LivePreview({
   const canRotate = HANDHELD.has(device);
   const canZoom = device !== 'qr' && !IS_NFC(device);
 
-  const screen = (
-    <CardPreview card={previewCard as Card} sections={sections} actions={actions} paymentLinks={paymentLinks} />
+  const profile = useMemo(
+    () =>
+      buildProfile({
+        slug,
+        theme: previewCard.theme,
+        vcardData: card.vcardData,
+        sections,
+        actions: actions.filter((a) => a.isActive),
+        paymentLinks: paymentLinks
+          .filter((l) => l.isActive !== false)
+          .map((l, i) => ({ id: l.id, platform: l.platform, displayName: l.displayName, url: l.url ?? '#', description: l.description ?? null, order: l.order ?? i })),
+        fallbackName: profileStrings(previewCard.theme?.lang === 'ar' ? 'ar' : 'en').yourName,
+      }),
+    [slug, previewCard.theme, card.vcardData, sections, actions, paymentLinks],
   );
+
+  const screen = <ScaledProfile profile={profile} />;
 
   const stage = (
     <div
