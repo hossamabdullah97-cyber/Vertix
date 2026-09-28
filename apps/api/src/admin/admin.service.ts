@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { runWithTenant } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { PLAN_LIMITS, defaultStageRows, type Plan, type Role } from '@vertex/shared';
@@ -11,6 +11,20 @@ import { PLAN_LIMITS, defaultStageRows, type Plan, type Role } from '@vertex/sha
  */
 function asPlatformAdmin<T>(actorId: string, fn: () => Promise<T>): Promise<T> {
   return runWithTenant({ orgId: 'admin', userId: actorId, role: 'OWNER' }, fn);
+}
+
+/**
+ * The password for an account the console creates. There used to be a fixed
+ * fallback, so an owner email typed without a password, or mistyped, quietly
+ * created an account anyone could sign in to with the well-known default.
+ */
+function newAccountPassword(password?: string): string {
+  if (!password || password.length < 8) {
+    throw new BadRequestException(
+      'There is no account with this email yet. Set a password of at least 8 characters to create one.',
+    );
+  }
+  return password;
 }
 
 /** Delivery states mapped onto the queue vocabulary the console renders. */
@@ -76,11 +90,11 @@ export class AdminService {
       where: { email: data.email },
     });
     if (existing) {
-      throw new Error('Email is already in use');
+      throw new ConflictException('Email is already in use');
     }
 
     const bcrypt = await import('bcryptjs');
-    const passwordHash = await bcrypt.default.hash(data.password || 'Password123!', 10);
+    const passwordHash = await bcrypt.default.hash(newAccountPassword(data.password), 10);
 
     // Bypass tenant orgId injection: this creates a NEW org's membership/stages,
     // not rows scoped to the acting admin's organization.
@@ -136,6 +150,7 @@ export class AdminService {
       activeTags,
       totalLeads,
       totalEvents,
+      totalViews,
     ] = await Promise.all([
       this.prisma.client.user.count({ where: { deletedAt: null } }),
       this.prisma.client.organization.count({ where: { deletedAt: null } }),
@@ -145,6 +160,7 @@ export class AdminService {
       this.prisma.client.nfcTag.count({ where: { deletedAt: null, status: 'ACTIVE' } }),
       this.prisma.client.lead.count({ where: { deletedAt: null } }),
       this.prisma.client.event.count(),
+      this.prisma.client.event.count({ where: { type: 'VIEW' } }),
     ]);
 
     // Users who actually hold an active membership somewhere.
@@ -197,7 +213,11 @@ export class AdminService {
         nfcDevices: totalTags,
         activeNfc: activeTags,
         leads: totalLeads,
+        // Every tracked event (views, taps, clicks, saves, shares); `views` is
+        // the page views alone.
         profileViews: totalEvents,
+        events: totalEvents,
+        views: totalViews,
         mrr,
         arr,
         enterpriseSubs,
@@ -358,7 +378,7 @@ export class AdminService {
 
     if (!user) {
       const bcrypt = await import('bcryptjs');
-      const passwordHash = await bcrypt.default.hash(data.ownerPassword || 'Password123!', 10);
+      const passwordHash = await bcrypt.default.hash(newAccountPassword(data.ownerPassword), 10);
       user = await this.prisma.client.user.create({
         data: {
           email: data.ownerEmail,
@@ -444,7 +464,7 @@ export class AdminService {
 
     if (!user) {
       const bcrypt = await import('bcryptjs');
-      const passwordHash = await bcrypt.default.hash(data.ownerPassword || 'Password123!', 10);
+      const passwordHash = await bcrypt.default.hash(newAccountPassword(data.ownerPassword), 10);
       user = await this.prisma.client.user.create({
         data: {
           email: data.ownerEmail,
@@ -912,7 +932,22 @@ export class AdminService {
   }
 
   async getAuditLogs(search = '') {
+    // The search box used to be sent here and ignored, so only the latest 100
+    // entries could ever be searched, whatever was typed.
+    const q = search.trim();
     const logs = await this.prisma.client.auditLog.findMany({
+      where: q
+        ? {
+            OR: [
+              { action: { contains: q, mode: 'insensitive' } },
+              { targetType: { contains: q, mode: 'insensitive' } },
+              { targetId: { contains: q, mode: 'insensitive' } },
+              { actor: { email: { contains: q, mode: 'insensitive' } } },
+              { actor: { name: { contains: q, mode: 'insensitive' } } },
+              { org: { name: { contains: q, mode: 'insensitive' } } },
+            ],
+          }
+        : undefined,
       include: {
         actor: { select: { name: true, email: true, avatarUrl: true } },
         org: { select: { name: true } }
@@ -928,6 +963,7 @@ export class AdminService {
       targetId: l.targetId,
       createdAt: l.createdAt,
       actor: l.actor ? { name: l.actor.name, email: l.actor.email } : null,
+      orgId: l.orgId,
       orgName: l.org.name,
       metadata: l.metadata,
     }));

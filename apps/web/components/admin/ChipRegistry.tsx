@@ -1,19 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '@/lib/client';
+import { formatNumber } from '@/lib/format';
+import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Icon } from '@/components/Icon';
+import { Sheet } from '@/components/ui/Sheet';
+import { ActionMenu } from '@/components/ui/ActionMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useNfcScanner } from '@/components/nfc/useNfcScanner';
-import {
-  Badge,
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Input,
-  Select,
-} from '@/design-system';
+import { Field, Notice, Pills, SearchField, type AdminOrg } from './shared';
 
 export interface Chip {
   id: string;
@@ -42,12 +39,9 @@ interface ChipStats {
   unallocated: number;
 }
 
-interface AdminOrg {
-  id: string;
-  name: string;
-}
-
-type HardwareType = 'CARD' | 'STICKER' | 'KEYCHAIN' | 'WRISTBAND';
+type Status = 'ALL' | Chip['status'];
+const TYPES = ['CARD', 'STICKER', 'KEYCHAIN', 'WRISTBAND'] as const;
+const DOT: Record<Chip['status'], string> = { AVAILABLE: 'bg-emerald-500', CLAIMED: 'bg-accent', BLOCKED: 'bg-red-500' };
 
 /** One tap's outcome, kept so a whole box of chips can be worked through. */
 interface ScanResult {
@@ -56,532 +50,486 @@ interface ScanResult {
   message?: string;
 }
 
-const STATUS_STYLE: Record<Chip['status'], string> = {
-  AVAILABLE: 'text-emerald-500',
-  CLAIMED: 'text-blue-500',
-  BLOCKED: 'text-red-500',
-};
+/** A colon-separated serial that may break only between its groups. */
+function Serial({ uid }: { uid: string }) {
+  return (
+    <>
+      {uid.split(':').map((part, i) => (
+        <Fragment key={i}>
+          {i > 0 && (
+            <>
+              :<wbr />
+            </>
+          )}
+          {part}
+        </Fragment>
+      ))}
+    </>
+  );
+}
 
 /**
- * The platform's chip registry — the super-admin's own inventory of physical
- * hardware.
- *
- * Only a UID listed here can be bound by a workspace, so this screen is what
- * decides which physical chips work with the product at all. Registration is a
- * tap: the admin holds each chip to the phone and its serial is recorded.
- *
- * Reading is deliberately all this does to the chip — the customer's own editor
- * writes the profile URL when they claim it, so stock can be registered before
- * anyone knows which card it will carry.
+ * The platform's chip registry: the hardware this business issued. Only a UID
+ * listed here can be added by a workspace, so this is what decides which
+ * physical chips work with the product at all.
  */
-export default function ChipRegistry() {
+export default function ChipRegistry({ orgs }: { orgs: AdminOrg[] }) {
   const { t } = useTranslation('admin');
-
-  const [chips, setChips] = useState<Chip[]>([]);
+  const { locale } = useLocale();
+  const [chips, setChips] = useState<Chip[] | null>(null);
   const [stats, setStats] = useState<ChipStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [status, setStatus] = useState<Status>('ALL');
   const [search, setSearch] = useState('');
-
-  const [hardwareType, setHardwareType] = useState<HardwareType>('CARD');
-  const [batchId, setBatchId] = useState('');
-  const [bulkText, setBulkText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [results, setResults] = useState<ScanResult[]>([]);
-
-  // Allocation: which workspace the stock being taken in was sold to.
-  const [orgs, setOrgs] = useState<AdminOrg[]>([]);
-  const [allocateTo, setAllocateTo] = useState('');
-  const [allocBatch, setAllocBatch] = useState('');
-  const [allocOrg, setAllocOrg] = useState('');
-
-  // The tap handler must see the current type/batch/buyer without the scan
-  // being restarted between taps.
-  const settings = useRef({ hardwareType, batchId, allocateTo });
-  settings.current = { hardwareType, batchId, allocateTo };
+  const [notice, setNotice] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [removing, setRemoving] = useState<Chip | null>(null);
 
   const load = useCallback(async () => {
-    const query = new URLSearchParams();
-    if (statusFilter !== 'ALL') query.set('status', statusFilter);
-    if (search.trim()) query.set('search', search.trim());
-    const [list, counts] = await Promise.all([
-      authFetch<Chip[]>(`/admin/nfc-chips?${query.toString()}`),
-      authFetch<ChipStats>('/admin/nfc-chips/stats'),
-    ]);
+    const q = new URLSearchParams();
+    if (status !== 'ALL') q.set('status', status);
+    if (search.trim()) q.set('search', search.trim());
+    const [list, counts] = await Promise.all([authFetch<Chip[]>(`/admin/nfc-chips?${q}`), authFetch<ChipStats>('/admin/nfc-chips/stats')]);
     setChips(list);
     setStats(counts);
-    setLoading(false);
-  }, [statusFilter, search]);
-
-  // The buyer picker needs the workspaces; the console already has an endpoint.
-  useEffect(() => {
-    authFetch<AdminOrg[]>('/admin/organizations')
-      .then((rows) => setOrgs(rows.map((o) => ({ id: o.id, name: o.name }))))
-      .catch(() => setOrgs([]));
-  }, []);
+  }, [status, search]);
 
   useEffect(() => {
-    // Debounced so typing in the search box does not fire a request per letter.
-    const id = setTimeout(() => {
-      load().catch((e) => setNotice((e as Error).message));
-    }, 250);
+    // Debounced so typing does not fire a request per letter.
+    const id = setTimeout(() => load().catch((e) => setNotice({ tone: 'danger', text: (e as Error).message })), 250);
     return () => clearTimeout(id);
   }, [load]);
 
-  /** Records one tapped chip, then leaves the reader running for the next one. */
+  async function setChipStatus(chip: Chip, next: Chip['status']) {
+    try {
+      await authFetch(`/admin/nfc-chips/${chip.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: next }) });
+      await load();
+    } catch (e) {
+      setNotice({ tone: 'danger', text: (e as Error).message });
+    }
+  }
+
+  const n = (v: number) => formatNumber(v, locale);
+  const counts: [keyof ChipStats, string][] = [
+    ['total', ''],
+    ['available', ''],
+    ['claimed', ''],
+    ['blocked', ''],
+    // Open stock is a standing risk, not a neutral figure: any workspace that
+    // learns one of these UIDs can claim it.
+    ['unallocated', 'text-amber-600 dark:text-amber-400'],
+  ];
+
+  return (
+    <div className="max-w-[1180px]">
+      <dl className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-3 lg:grid-cols-5">
+        {counts.map(([key, tone]) => (
+          <div key={key} className="bg-surface px-5 py-4">
+            <dt className="text-[12.5px] text-muted">{t(`chips.stats.${key}`)}</dt>
+            <dd className={`tabular mt-1 text-[22px] font-semibold leading-none tracking-[-0.01em] ${tone && stats?.[key] ? tone : 'text-ink'}`}>{stats ? n(stats[key]) : '—'}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {notice && (
+        <Notice tone={notice.tone} onDismiss={() => setNotice(null)}>
+          {notice.text}
+        </Notice>
+      )}
+
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <SearchField value={search} onChange={setSearch} placeholder={t('chips.searchPlaceholder')} className="lg:w-64" />
+        <Pills
+          label={t('chips.filter.all')}
+          value={status}
+          onChange={setStatus}
+          options={[{ key: 'ALL' as Status, label: t('chips.filter.all') }, ...(['AVAILABLE', 'CLAIMED', 'BLOCKED'] as const).map((s) => ({ key: s as Status, label: t(`chips.status.${s}`) }))]}
+        />
+        <div className="flex gap-2 lg:ms-auto">
+          <button onClick={() => setAssigning(true)} className="v-btn v-btn-ghost">
+            {t('chips.assign')}
+          </button>
+          <button onClick={() => setAdding(true)} className="v-btn">
+            <Icon name="plus" size={14} /> {t('chips.add')}
+          </button>
+        </div>
+      </div>
+
+      {!chips ? (
+        <div className="v-skeleton h-72 rounded-xl" />
+      ) : chips.length === 0 ? (
+        <p className="rounded-xl py-14 text-center text-[13.5px] text-muted ring-1 ring-inset ring-line">{search || status !== 'ALL' ? t('chips.noMatch') : t('chips.empty')}</p>
+      ) : (
+        <div className="v-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="v-table">
+              <thead>
+                <tr>
+                  <th>{t('chips.uid')}</th>
+                  <th>{t('chips.statusCol')}</th>
+                  <th className="hidden md:table-cell">{t('chips.soldTo')}</th>
+                  <th className="hidden lg:table-cell">{t('chips.claimedBy')}</th>
+                  <th className="hidden xl:table-cell">{t('chips.batchLabel')}</th>
+                  <th className="hidden !text-end sm:table-cell">{t('chips.taps')}</th>
+                  <th className="w-12">
+                    <span className="sr-only">{t('chips.more')}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {chips.map((c) => (
+                  <tr key={c.id}>
+                    <td className="w-full max-w-0">
+                      <span dir="ltr" className="block font-mono text-[12.5px] text-ink rtl:text-right">
+                        <Serial uid={c.uid} />
+                      </span>
+                      <span className="block text-[12px] text-faint">{t(`nfc:hardwareType.${c.hardwareType.toLowerCase()}`, { defaultValue: c.hardwareType })}</span>
+                    </td>
+                    <td className="whitespace-nowrap">
+                      <span className="flex items-center gap-2 text-[13px] text-ink">
+                        <span className={`h-2 w-2 rounded-full ${DOT[c.status]}`} />
+                        {t(`chips.status.${c.status}`)}
+                      </span>
+                    </td>
+                    <td className="hidden max-w-[200px] md:table-cell">
+                      {c.allocatedToOrgName ? (
+                        <span className="block truncate text-[13px] text-muted">{c.allocatedToOrgName}</span>
+                      ) : (
+                        <span className="text-[13px] text-amber-700 dark:text-amber-400">{t('chips.openStock')}</span>
+                      )}
+                    </td>
+                    <td className="hidden max-w-[200px] lg:table-cell">
+                      <span className={`block truncate text-[13px] ${c.orgName ? 'text-muted' : 'text-faint'}`}>{c.orgName ?? t('chips.notInUse')}</span>
+                    </td>
+                    <td className="hidden xl:table-cell">
+                      <span dir="ltr" className="whitespace-nowrap font-mono text-[12.5px] text-muted">
+                        {c.batchId ?? '—'}
+                      </span>
+                    </td>
+                    <td className="tabular hidden !text-end sm:table-cell">{n(c.activationCount)}</td>
+                    <td>
+                      <ActionMenu
+                        label={t('chips.more')}
+                        items={[
+                          c.status === 'BLOCKED'
+                            ? { key: 'unblock', label: t('chips.unblock'), icon: 'check', onSelect: () => setChipStatus(c, 'AVAILABLE') }
+                            : { key: 'block', label: t('chips.block'), icon: 'lock', onSelect: () => setChipStatus(c, 'BLOCKED') },
+                          ...(c.status !== 'CLAIMED' ? [{ key: 'delete', label: t('chips.delete'), icon: 'trash', danger: true, separated: true, onSelect: () => setRemoving(c) }] : []),
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <AddChips
+        open={adding}
+        orgs={orgs}
+        onClose={() => setAdding(false)}
+        onAdded={() => load().catch(() => {})}
+      />
+      <AssignBatch
+        open={assigning}
+        orgs={orgs}
+        onClose={() => setAssigning(false)}
+        onDone={(text) => {
+          setAssigning(false);
+          setNotice({ tone: 'success', text });
+          load().catch(() => {});
+        }}
+      />
+      <ConfirmDialog
+        open={!!removing}
+        title={t('chips.deleteTitle', { uid: removing?.uid ?? '' })}
+        body={t('chips.deleteBody')}
+        confirmLabel={t('chips.delete')}
+        busyLabel={t('chips.deleting')}
+        cancelLabel={t('cancel')}
+        danger
+        onCancel={() => setRemoving(null)}
+        onConfirm={async () => {
+          await authFetch(`/admin/nfc-chips/${removing!.id}`, { method: 'DELETE' });
+          setRemoving(null);
+          await load();
+        }}
+      />
+    </div>
+  );
+}
+
+/** What a batch is and who bought it, shared by both ways of adding chips. */
+function StockFields({
+  orgs,
+  type,
+  setType,
+  batch,
+  setBatch,
+  buyer,
+  setBuyer,
+}: {
+  orgs: AdminOrg[];
+  type: string;
+  setType: (v: string) => void;
+  batch: string;
+  setBatch: (v: string) => void;
+  buyer: string;
+  setBuyer: (v: string) => void;
+}) {
+  const { t } = useTranslation('admin');
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label={t('chips.type')} htmlFor="chip-type">
+        <select id="chip-type" value={type} onChange={(e) => setType(e.target.value)} className="v-field w-full">
+          {TYPES.map((ty) => (
+            <option key={ty} value={ty}>
+              {t(`nfc:hardwareType.${ty.toLowerCase()}`)}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label={t('chips.batchLabel')} htmlFor="chip-batch">
+        <input id="chip-batch" dir="ltr" value={batch} onChange={(e) => setBatch(e.target.value)} placeholder={t('chips.batchPlaceholder')} className="v-field w-full font-mono text-[13px] rtl:text-right" />
+      </Field>
+      <div className="sm:col-span-2">
+        <Field label={t('chips.soldTo')} htmlFor="chip-buyer" hint={t('chips.soldToHint')}>
+          <select id="chip-buyer" value={buyer} onChange={(e) => setBuyer(e.target.value)} className="v-field w-full">
+            <option value="">{t('chips.openStock')}</option>
+            {orgs.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+    </div>
+  );
+}
+
+function AddChips({ open, orgs, onClose, onAdded }: { open: boolean; orgs: AdminOrg[]; onClose: () => void; onAdded: () => void }) {
+  const { t } = useTranslation('admin');
+  const [how, setHow] = useState<'tap' | 'list'>('tap');
+  const [type, setType] = useState('CARD');
+  const [batch, setBatch] = useState('');
+  const [buyer, setBuyer] = useState('');
+  const [list, setList] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const [results, setResults] = useState<ScanResult[]>([]);
+
+  // The tap handler must see the current type, batch and buyer without the
+  // scan restarting between taps.
+  const settings = useRef({ type, batch, buyer });
+  settings.current = { type, batch, buyer };
+
   const registerTapped = useCallback(
     async (uid: string) => {
       try {
         const res = await authFetch<{ alreadyRegistered: boolean }>('/admin/nfc-chips', {
           method: 'POST',
-          body: JSON.stringify({
-            uid,
-            hardwareType: settings.current.hardwareType,
-            batchId: settings.current.batchId.trim() || undefined,
-            allocatedToOrgId: settings.current.allocateTo || null,
-          }),
+          body: JSON.stringify({ uid, hardwareType: settings.current.type, batchId: settings.current.batch.trim() || undefined, allocatedToOrgId: settings.current.buyer || null }),
         });
-        setResults((prev) => [
-          { uid, state: res.alreadyRegistered ? 'duplicate' : 'registered' },
-          ...prev,
-        ]);
-        if (!res.alreadyRegistered) load().catch(() => {});
+        setResults((prev) => [{ uid, state: res.alreadyRegistered ? 'duplicate' : 'registered' }, ...prev]);
+        if (!res.alreadyRegistered) onAdded();
       } catch (e) {
-        setResults((prev) => [
-          { uid, state: 'error', message: (e as Error).message },
-          ...prev,
-        ]);
+        setResults((prev) => [{ uid, state: 'error', message: (e as Error).message }, ...prev]);
       }
     },
-    [load],
+    [onAdded],
   );
 
   const scanner = useNfcScanner((serial) => void registerTapped(serial));
-  const { blocker, scanning } = scanner;
 
-  // 'read' is the hook's signal for a chip it could not decode; anything else is
-  // already a message from the browser.
   useEffect(() => {
-    if (scanner.error === 'read') setNotice(t('chips.readError'));
-    else if (scanner.error) setNotice(scanner.error);
+    if (!open) {
+      scanner.stop();
+      return;
+    }
+    setMsg(null);
+    setResults([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => {
+    if (scanner.error === 'read') setMsg({ tone: 'danger', text: t('chips.readError') });
+    else if (scanner.error) setMsg({ tone: 'danger', text: scanner.error });
   }, [scanner.error, t]);
 
-  const registerBulk = useCallback(async () => {
-    const uids = bulkText
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean);
-    if (uids.length === 0) return;
-
+  async function registerList() {
+    const uids = list.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (!uids.length) return;
     setBusy(true);
-    setNotice('');
+    setMsg(null);
     try {
-      const res = await authFetch<{ requested: number; created: number; skipped: number }>(
-        '/admin/nfc-chips/batch',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            uids,
-            hardwareType,
-            batchId: batchId.trim() || undefined,
-            allocatedToOrgId: allocateTo || null,
-          }),
-        },
-      );
-      setBulkText('');
-      setNotice(t('chips.bulkDone', { created: res.created, skipped: res.skipped }));
-      await load();
-    } catch (e) {
-      setNotice((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }, [bulkText, hardwareType, batchId, allocateTo, load, t]);
-
-  /**
-   * Records who a whole batch was sold to after the fact. Allocation is what
-   * makes the purchase enforceable: only that workspace can claim those chips,
-   * so nobody who works out a neighbouring batch's UIDs can take them.
-   */
-  const allocateBatch = useCallback(async () => {
-    if (!allocBatch.trim()) return;
-    setBusy(true);
-    setNotice('');
-    try {
-      const res = await authFetch<{ allocated: number }>('/admin/nfc-chips/allocate', {
+      const res = await authFetch<{ created: number; skipped: number }>('/admin/nfc-chips/batch', {
         method: 'POST',
-        body: JSON.stringify({ batchId: allocBatch.trim(), orgId: allocOrg || null }),
+        body: JSON.stringify({ uids, hardwareType: type, batchId: batch.trim() || undefined, allocatedToOrgId: buyer || null }),
       });
-      setNotice(t('chips.allocateDone', { count: res.allocated }));
-      await load();
+      setList('');
+      setMsg({ tone: 'success', text: t('chips.bulkDone', { created: res.created, skipped: res.skipped }) });
+      onAdded();
     } catch (e) {
-      setNotice((e as Error).message);
+      setMsg({ tone: 'danger', text: (e as Error).message });
     } finally {
       setBusy(false);
     }
-  }, [allocBatch, allocOrg, load, t]);
-
-  const setStatus = useCallback(
-    async (chip: Chip, status: Chip['status']) => {
-      setBusy(true);
-      try {
-        await authFetch(`/admin/nfc-chips/${chip.id}/status`, {
-          method: 'PATCH',
-          body: JSON.stringify({ status }),
-        });
-        await load();
-      } catch (e) {
-        setNotice((e as Error).message);
-      } finally {
-        setBusy(false);
-      }
-    },
-    [load],
-  );
-
-  const remove = useCallback(
-    async (chip: Chip) => {
-      if (!window.confirm(t('chips.confirmDelete', { uid: chip.uid }))) return;
-      setBusy(true);
-      try {
-        await authFetch(`/admin/nfc-chips/${chip.id}`, { method: 'DELETE' });
-        await load();
-      } catch (e) {
-        setNotice((e as Error).message);
-      } finally {
-        setBusy(false);
-      }
-    },
-    [load, t],
-  );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Counts: how much stock exists, and how much of it is actually out. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {(
-          [
-            ['total', stats?.total, 'text-ink'],
-            ['available', stats?.available, 'text-emerald-500'],
-            ['claimed', stats?.claimed, 'text-blue-500'],
-            ['blocked', stats?.blocked, 'text-red-500'],
-            // Open stock is a standing risk, not a neutral figure: these are
-            // claimable by any workspace that learns the UID.
-            ['unallocated', stats?.unallocated, 'text-amber-500'],
-          ] as const
-        ).map(([key, value, tone]) => (
-          <div key={key} className="min-w-0 rounded-xl border border-line bg-surface p-4">
-            <span className="block text-[10.5px] font-extrabold uppercase tracking-wider text-muted">
-              {t(`chips.stats.${key}`)}
-            </span>
-            <span className={`mt-1 block text-[24px] font-extrabold leading-none ${tone}`}>
-              {value ?? '—'}
-            </span>
-          </div>
-        ))}
-      </div>
+    <Sheet open={open} onClose={onClose} closeLabel={t('close')} title={t('chips.add')}>
+      <div className="space-y-5">
+        <StockFields orgs={orgs} type={type} setType={setType} batch={batch} setBatch={setBatch} buyer={buyer} setBuyer={setBuyer} />
 
-      {notice && (
-        <div className="rounded-xl border border-line bg-canvas/40 px-4 py-3 text-[12.5px] text-ink">
-          {notice}
+        <div role="radiogroup" className="grid grid-cols-2 rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+          {(['tap', 'list'] as const).map((h) => (
+            <button
+              key={h}
+              type="button"
+              role="radio"
+              aria-checked={how === h}
+              onClick={() => setHow(h)}
+              className={`h-9 rounded-md text-[13px] font-medium sm:h-8 ${how === h ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+            >
+              {h === 'tap' ? t('chips.byTapping') : t('chips.byList')}
+            </button>
+          ))}
         </div>
-      )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Tap to register */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="border-b border-line px-6 py-4">
-            <span className="text-[13.5px] font-extrabold text-ink">{t('chips.tapTitle')}</span>
-          </CardHeader>
-          <CardBody className="space-y-4 p-6">
-            <p className="text-[12.5px] leading-relaxed text-muted">{t('chips.tapHint')}</p>
+        {msg && (
+          <Notice tone={msg.tone} onDismiss={() => setMsg(null)}>
+            {msg.text}
+          </Notice>
+        )}
 
-            <div>
-              <label className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-wider text-muted">
-                {t('nfc.hardwareType')}
-              </label>
-              <Select
-                value={hardwareType}
-                onChange={(e) => setHardwareType(e.target.value as HardwareType)}
-                className="w-full"
-              >
-                <option value="CARD">{t('nfc.card')}</option>
-                <option value="STICKER">{t('nfc.sticker')}</option>
-                <option value="KEYCHAIN">{t('nfc.keychain')}</option>
-                <option value="WRISTBAND">{t('nfc.wristband')}</option>
-              </Select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-wider text-muted">
-                {t('chips.batchLabel')}
-              </label>
-              <Input
-                value={batchId}
-                onChange={(e) => setBatchId(e.target.value)}
-                placeholder={t('chips.batchPlaceholder')}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-wider text-muted">
-                {t('chips.soldTo')}
-              </label>
-              <Select
-                value={allocateTo}
-                onChange={(e) => setAllocateTo(e.target.value)}
-                className="w-full"
-              >
-                <option value="">{t('chips.openStock')}</option>
-                {orgs.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </Select>
-              <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted">
-                {t('chips.soldToHint')}
+        {how === 'tap' ? (
+          <div className="space-y-4">
+            <p className="text-[13px] leading-relaxed text-muted">{t('chips.tapHint')}</p>
+            {scanner.blocker !== 'none' ? (
+              <p className="rounded-lg bg-amber-500/[0.07] px-4 py-3 text-[13px] leading-relaxed text-amber-800 ring-1 ring-inset ring-amber-500/20 dark:text-amber-300">
+                {scanner.blocker === 'insecure' ? t('chips.insecure') : t('chips.unsupported')}
               </p>
-            </div>
-
-            {blocker !== 'none' ? (
-              <p className="rounded-xl bg-amber-500/10 px-4 py-3 text-[12.5px] leading-relaxed text-amber-600">
-                {blocker === 'insecure' ? t('chips.insecure') : t('chips.unsupported')}
-              </p>
-            ) : scanning ? (
-              <div className="space-y-3">
-                <span className="flex items-center gap-2 text-[12.5px] font-bold text-accent">
-                  <Icon name="loader" size={14} className="animate-spin" />
-                  {t('chips.holdChip')}
+            ) : scanner.scanning ? (
+              <div className="flex items-center justify-between gap-3 rounded-lg px-4 py-3 ring-1 ring-inset ring-accent/40">
+                <span className="flex items-center gap-2 text-[13px] font-medium text-accent">
+                  <Icon name="loader" size={15} className="animate-spin" /> {t('chips.holdChip')}
                 </span>
-                <Button variant="outline" className="w-full" onClick={scanner.stop}>
+                <button onClick={scanner.stop} className="v-btn v-btn-ghost">
                   {t('chips.stop')}
-                </Button>
+                </button>
               </div>
             ) : (
-              <Button variant="primary" className="w-full" onClick={scanner.start}>
+              <button onClick={scanner.start} className="v-btn w-full">
                 {t('chips.start')}
-              </Button>
+              </button>
             )}
-
             {results.length > 0 && (
-              <div className="max-h-52 space-y-1.5 overflow-y-auto border-t border-line pt-3">
+              <ul className="max-h-64 divide-y divide-line overflow-y-auto rounded-lg ring-1 ring-inset ring-line">
                 {results.map((r, i) => (
-                  <div key={`${r.uid}-${i}`} className="flex items-start gap-2 text-[11.5px]">
+                  <li key={`${r.uid}-${i}`} className="flex items-center gap-2.5 px-3 py-2 text-[12.5px]">
                     <Icon
                       name={r.state === 'registered' ? 'check' : r.state === 'duplicate' ? 'tag' : 'x'}
-                      size={13}
-                      className={
-                        r.state === 'registered'
-                          ? 'mt-0.5 shrink-0 text-emerald-500'
-                          : r.state === 'duplicate'
-                            ? 'mt-0.5 shrink-0 text-muted'
-                            : 'mt-0.5 shrink-0 text-red-500'
-                      }
+                      size={14}
+                      className={r.state === 'registered' ? 'text-emerald-600' : r.state === 'duplicate' ? 'text-muted' : 'text-red-600'}
                     />
-                    <span className="min-w-0 flex-1">
-                      <span dir="ltr" className="font-mono text-ink">
-                        {r.uid}
-                      </span>
-                      <span className="ms-2 text-muted">
-                        {r.state === 'error' ? r.message : t(`chips.result.${r.state}`)}
-                      </span>
+                    <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-ink rtl:text-right">
+                      {r.uid}
                     </span>
-                  </div>
+                    <span className="shrink-0 text-muted">{r.state === 'error' ? r.message : t(`chips.result.${r.state}`)}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </CardBody>
-        </Card>
-
-        {/* Bulk registration, for UID lists that come from the supplier */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="border-b border-line px-6 py-4">
-            <span className="text-[13.5px] font-extrabold text-ink">{t('chips.bulkTitle')}</span>
-          </CardHeader>
-          <CardBody className="space-y-4 p-6">
-            <p className="text-[12.5px] leading-relaxed text-muted">{t('chips.bulkHint')}</p>
-            <textarea
-              value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
-              rows={6}
-              dir="ltr"
-              placeholder="04:DE:5F:AA:BB:CC:11&#10;04:DE:5F:AA:BB:CC:12"
-              className="w-full rounded-xl border border-line bg-canvas p-3.5 font-mono text-[12.5px] focus:outline-none focus:ring-1 focus:ring-accent"
-            />
-            <Button
-              variant="primary"
-              className="w-full sm:w-auto"
-              onClick={registerBulk}
-              disabled={busy || !bulkText.trim()}
-            >
-              {t('chips.bulkSubmit')}
-            </Button>
-
-            {/* Allocating an existing batch after the fact - the usual case when
-                a shipment is registered first and sold later. */}
-            <div className="space-y-3 border-t border-line pt-4">
-              <span className="block text-[12.5px] font-extrabold text-ink">
-                {t('chips.allocateTitle')}
-              </span>
-              <p className="text-[12.5px] leading-relaxed text-muted">
-                {t('chips.allocateHint')}
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  value={allocBatch}
-                  onChange={(e) => setAllocBatch(e.target.value)}
-                  placeholder={t('chips.batchPlaceholder')}
-                  className="w-full sm:flex-1"
-                />
-                <Select
-                  value={allocOrg}
-                  onChange={(e) => setAllocOrg(e.target.value)}
-                  className="w-full sm:w-52"
-                >
-                  <option value="">{t('chips.openStock')}</option>
-                  {orgs.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </Select>
-                <Button
-                  variant="outline"
-                  onClick={allocateBatch}
-                  disabled={busy || !allocBatch.trim()}
-                >
-                  {t('chips.allocateSubmit')}
-                </Button>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* The registry itself */}
-      <Card>
-        <CardHeader className="flex flex-wrap items-center gap-3 border-b border-line px-6 py-4">
-          <span className="text-[13.5px] font-extrabold text-ink">{t('chips.listTitle')}</span>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('chips.searchPlaceholder')}
-              className="w-full sm:w-52"
-            />
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-40"
-            >
-              <option value="ALL">{t('chips.filter.all')}</option>
-              <option value="AVAILABLE">{t('chips.status.AVAILABLE')}</option>
-              <option value="CLAIMED">{t('chips.status.CLAIMED')}</option>
-              <option value="BLOCKED">{t('chips.status.BLOCKED')}</option>
-            </Select>
           </div>
-        </CardHeader>
-        <CardBody className="p-0">
-          {loading ? (
-            <p className="p-6 text-[12.5px] text-muted">{t('common.loading')}</p>
-          ) : chips.length === 0 ? (
-            <p className="p-6 text-[12.5px] text-muted">{t('chips.empty')}</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-start text-[12px]">
-                <thead>
-                  <tr className="border-b border-line bg-surface/50 text-[10px] font-extrabold uppercase tracking-wider text-muted">
-                    <th className="p-3 text-start">UID</th>
-                    <th className="p-3 text-start">{t('nfc.deviceModel')}</th>
-                    <th className="p-3 text-start">{t('common.status')}</th>
-                    <th className="p-3 text-start">{t('chips.soldTo')}</th>
-                    <th className="p-3 text-start">{t('chips.workspace')}</th>
-                    <th className="p-3 text-start">{t('chips.batchLabel')}</th>
-                    <th className="p-3 text-start">{t('nfc.scans')}</th>
-                    <th className="p-3 text-end">{t('users.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chips.map((chip) => (
-                    <tr key={chip.id} className="border-b border-line hover:bg-surface/30">
-                      <td className="p-3 font-mono text-ink" dir="ltr">
-                        {chip.uid}
-                      </td>
-                      <td className="p-3">
-                        <Badge variant="neutral" className="text-[9px]">
-                          {chip.hardwareType}
-                        </Badge>
-                      </td>
-                      <td className="p-3">
-                        <span
-                          className={`inline-flex items-center gap-1 text-[11px] font-bold ${STATUS_STYLE[chip.status]}`}
-                        >
-                          ● {t(`chips.status.${chip.status}`)}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        {chip.allocatedToOrgName ? (
-                          <span className="text-muted">{chip.allocatedToOrgName}</span>
-                        ) : (
-                          <span className="text-[11px] font-bold text-amber-500">
-                            {t('chips.openStock')}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3 text-muted">{chip.orgName ?? '—'}</td>
-                      <td className="p-3 text-muted" dir="ltr">
-                        {chip.batchId ?? '—'}
-                      </td>
-                      <td className="p-3 font-bold text-ink">{chip.activationCount}</td>
-                      <td className="p-3">
-                        <div className="flex items-center justify-end gap-2">
-                          {chip.status === 'BLOCKED' ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="min-h-11 px-3 text-[11px] sm:min-h-0"
-                              disabled={busy}
-                              onClick={() => setStatus(chip, 'AVAILABLE')}
-                            >
-                              {t('chips.unblock')}
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="min-h-11 px-3 text-[11px] sm:min-h-0"
-                              disabled={busy}
-                              onClick={() => setStatus(chip, 'BLOCKED')}
-                            >
-                              {t('chips.block')}
-                            </Button>
-                          )}
-                          {/* A claimed chip has a customer's tag behind it, so
-                              the server refuses the delete — don't offer it. */}
-                          {!chip.orgName && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="min-h-11 px-3 text-[11px] text-red-500 sm:min-h-0"
-                              disabled={busy}
-                              onClick={() => remove(chip)}
-                            >
-                              {t('chips.delete')}
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardBody>
-      </Card>
-    </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-[13px] leading-relaxed text-muted">{t('chips.bulkHint')}</p>
+            <textarea
+              value={list}
+              onChange={(e) => setList(e.target.value)}
+              rows={8}
+              dir="ltr"
+              spellCheck={false}
+              placeholder={'04:DE:5F:AA:BB:CC:11\n04:DE:5F:AA:BB:CC:12'}
+              aria-label={t('chips.byList')}
+              className="v-field w-full py-3 font-mono text-[12.5px]"
+            />
+            <button onClick={registerList} disabled={busy || !list.trim()} className="v-btn w-full disabled:opacity-50">
+              {busy ? t('saving') : t('chips.bulkSubmit')}
+            </button>
+          </div>
+        )}
+      </div>
+    </Sheet>
+  );
+}
+
+function AssignBatch({ open, orgs, onClose, onDone }: { open: boolean; orgs: AdminOrg[]; onClose: () => void; onDone: (text: string) => void }) {
+  const { t } = useTranslation('admin');
+  const [batch, setBatch] = useState('');
+  const [buyer, setBuyer] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setBatch('');
+    setBuyer('');
+    setErr('');
+    setBusy(false);
+  }, [open]);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!batch.trim()) return;
+    setBusy(true);
+    setErr('');
+    try {
+      const res = await authFetch<{ allocated: number }>('/admin/nfc-chips/allocate', { method: 'POST', body: JSON.stringify({ batchId: batch.trim(), orgId: buyer || null }) });
+      onDone(t('chips.allocateDone', { count: res.allocated }));
+    } catch (x) {
+      setErr((x as Error).message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      closeLabel={t('close')}
+      title={t('chips.allocateTitle')}
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          {err && <p className="me-auto text-[12.5px] text-red-600 dark:text-red-400">{err}</p>}
+          <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
+            {t('cancel')}
+          </button>
+          <button type="submit" form="assign-batch" disabled={busy || !batch.trim()} className="v-btn disabled:opacity-50">
+            {busy ? t('saving') : t('chips.allocateSubmit')}
+          </button>
+        </div>
+      }
+    >
+      <form id="assign-batch" onSubmit={save} className="space-y-5">
+        <p className="text-[13px] leading-relaxed text-muted">{t('chips.allocateHint')}</p>
+        <Field label={t('chips.batchLabel')} htmlFor="assign-batch-id">
+          <input id="assign-batch-id" dir="ltr" value={batch} onChange={(e) => setBatch(e.target.value)} placeholder={t('chips.batchPlaceholder')} className="v-field w-full font-mono text-[13px] rtl:text-right" />
+        </Field>
+        <Field label={t('chips.soldTo')} htmlFor="assign-buyer" hint={t('chips.soldToHint')}>
+          <select id="assign-buyer" value={buyer} onChange={(e) => setBuyer(e.target.value)} className="v-field w-full">
+            <option value="">{t('chips.openStock')}</option>
+            {orgs.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </form>
+    </Sheet>
   );
 }

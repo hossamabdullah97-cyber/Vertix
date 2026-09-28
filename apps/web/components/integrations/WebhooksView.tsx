@@ -317,7 +317,7 @@ function EndpointSheet({ form, onClose, onSaved }: { form: Form | null; onClose:
 function Check({ label, hint, checked, disabled, strong, onChange }: { label: string; hint?: string; checked: boolean; disabled?: boolean; strong?: boolean; onChange: () => void }) {
   return (
     <label className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2.5 sm:min-h-9 ${strong ? 'px-3.5' : ''} ${disabled ? 'cursor-default opacity-60' : 'hover:bg-elevated'}`}>
-      <input type="checkbox" checked={checked} disabled={disabled} onChange={onChange} className="h-4 w-4 shrink-0 accent-[hsl(var(--v-accent))]" />
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={onChange} className="h-4 w-4 shrink-0 accent-accent" />
       <span className={`flex-1 text-[13px] ${strong ? 'font-medium' : ''} text-ink`}>{label}</span>
       {hint && (
         <span dir="ltr" className="hidden font-mono text-[11.5px] text-faint sm:inline">
