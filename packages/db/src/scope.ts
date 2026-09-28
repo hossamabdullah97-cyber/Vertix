@@ -63,6 +63,10 @@ export const TENANT_MODELS = new Set<string>([
   'AutomationRun',
   'IntegrationOAuthApp',
   'CrmSyncRecord',
+  // Both were missing, so any workspace could list, open, edit or delete
+  // another's departments, and see or resolve its approval requests.
+  'Department',
+  'ApprovalRequest',
 ]);
 
 /** Operations that take a where clause; orgId is injected (extendedWhereUnique is on in Prisma 6). */
