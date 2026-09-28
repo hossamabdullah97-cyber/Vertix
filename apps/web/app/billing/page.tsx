@@ -10,6 +10,7 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format';
 import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
+import { SALES_MAILTO } from '@/lib/contact';
 
 type Plan = 'FREE' | 'PRO' | 'BUSINESS' | 'ENTERPRISE';
 type Resource = 'cards' | 'members' | 'nfcTags';
@@ -28,7 +29,6 @@ const RESOURCES: { key: Resource; href: string; icon: string; page: string }[] =
   { key: 'members', href: '/team', icon: 'users', page: 'nav:items.team' },
   { key: 'nfcTags', href: '/tags', icon: 'tag', page: 'nfc:title' },
 ];
-const SALES = 'mailto:sales@vertex.dev';
 /** Subscribed, and still billed: plan changes go through the billing portal. */
 const LIVE = new Set(['ACTIVE', 'TRIALING', 'PAST_DUE']);
 const rank = (p: string) => ORDER.indexOf(p as Plan);
@@ -365,7 +365,7 @@ function Current({
             </button>
           ) : (
             next === 'ENTERPRISE' && (
-              <a href={SALES} className="v-btn v-btn-ghost !h-9 shrink-0">
+              <a href={SALES_MAILTO} className="v-btn v-btn-ghost !h-9 shrink-0">
                 {t('plan.contactSales')}
               </a>
             )
@@ -452,7 +452,7 @@ function PlanColumn({ plan, def, name, current, action, busy }: { plan: Plan; de
             <Icon name="check" size={14} /> {t('plan.currentPlan')}
           </span>
         ) : action.kind === 'sales' ? (
-          <a href={SALES} className="v-btn v-btn-ghost !h-10 w-full sm:!h-9">
+          <a href={SALES_MAILTO} className="v-btn v-btn-ghost !h-10 w-full sm:!h-9">
             {t('plan.contactSales')}
           </a>
         ) : action.kind === 'button' ? (

@@ -137,20 +137,6 @@ body {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.v-card-hover:hover {
-  border-color: hsl(var(--v-border-strong));
-  box-shadow: var(--v-shadow-md);
-}
-
-/* Emphasis panel. Flat accent, no sheen or glow. */
-.v-hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--v-radius-lg);
-  background: var(--v-accent);
-  color: #fff;
-}
-
 .v-glass {
   background: hsl(var(--v-surface) / 0.85);
   backdrop-filter: blur(16px) saturate(1.4);

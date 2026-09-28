@@ -1,0 +1,53 @@
+'use client';
+
+import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
+import { Brand, REGISTER, WRAP } from './shared';
+
+export function Footer() {
+  const { t } = useTranslation('landing');
+  const link = 'inline-flex min-h-9 items-center text-[13.5px] text-muted transition-colors hover:text-ink';
+
+  return (
+    <footer className="border-t border-line">
+      <div className={`${WRAP} grid grid-cols-2 gap-10 py-12 sm:grid-cols-[2fr_1fr_1fr]`}>
+        <div className="col-span-2 sm:col-span-1">
+          <Brand />
+          <p className="mt-2 max-w-xs text-[13.5px] leading-relaxed text-muted">{t('footer.tagline')}</p>
+        </div>
+        <nav aria-label={t('footer.product')}>
+          <p className="text-[12.5px] font-medium text-faint">{t('footer.product')}</p>
+          <ul className="mt-2">
+            {(['product', 'how', 'pricing', 'faq'] as const).map((k) => (
+              <li key={k}>
+                <a href={`#${k}`} className={link}>
+                  {t(`nav.${k}`)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <nav aria-label={t('footer.account')}>
+          <p className="text-[12.5px] font-medium text-faint">{t('footer.account')}</p>
+          <ul className="mt-2">
+            <li>
+              <Link href="/login" className={link}>
+                {t('nav.signIn')}
+              </Link>
+            </li>
+            <li>
+              <Link href={REGISTER} className={link}>
+                {t('footer.createAccount')}
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      <div className={`${WRAP} flex items-center justify-between gap-4 border-t border-line py-5`}>
+        <p className="text-[12.5px] text-faint">{t('footer.rights', { year: new Date().getFullYear() })}</p>
+        <LanguageSwitcher />
+      </div>
+    </footer>
+  );
+}

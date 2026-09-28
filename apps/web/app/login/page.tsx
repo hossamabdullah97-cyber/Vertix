@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { login, register } from '@/lib/client';
@@ -18,6 +18,11 @@ export default function LoginPage() {
   const [org, setOrg] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // The landing page's sign-up buttons open this page on its "create an account" side.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('mode') === 'register') setMode('register');
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
