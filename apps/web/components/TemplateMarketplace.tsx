@@ -5,23 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
 import { TEMPLATES, type Template } from '@/lib/templates';
+import { readableOn, shade } from '@/lib/color';
 
 /* ---------- metadata derived from the template itself (no invented ratings) ---------- */
-function shade(hex: string, amt: number): string {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!m) return hex;
-  const c = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
-  return `#${c(parseInt(m[1], 16) + amt)}${c(parseInt(m[2], 16) + amt)}${c(parseInt(m[3], 16) + amt)}`;
-}
-function contrastOf(hex: string): string {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!m) return '#ffffff';
-  const L = [1, 2, 3].map((i) => {
-    const c = parseInt(m[i], 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * L[0] + 0.7152 * L[1] + 0.0722 * L[2] > 0.6 ? '#141414' : '#ffffff';
-}
 /** Style family, a product name shown as-is in every language. */
 function family(t: Template): string {
   if (t.id.startsWith('swiss')) return 'Swiss';
@@ -39,7 +25,7 @@ const MAX_COMPARE = 4;
 /* ---------- a small drawing of the card in the template's real colours ---------- */
 function MiniPreview({ t, cta }: { t: Template; cta: string }) {
   const accent = t.accent;
-  const contrast = contrastOf(accent);
+  const contrast = readableOn(accent);
   const dark = t.mode === 'dark';
   const cover = coverOf(t);
   const round = t.avatar === 'square' ? 'rounded-[9px]' : 'rounded-full';
