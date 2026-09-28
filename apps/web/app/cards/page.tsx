@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -11,6 +11,8 @@ import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { readableOn, shade } from '@/lib/color';
 import { Icon, actionIcon } from '@/components/Icon';
 import AppShell from '@/components/AppShell';
+import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /** The list endpoint returns a little more than the shared Card type declares. */
 type ListCard = Card & { updatedAt?: string; _count?: { variants: number } };
@@ -208,6 +210,8 @@ export default function CardsPage() {
     flash(t('toasts.deleted'));
   }
 
+  const closeDelete = useCallback(() => setDeleting(null), []);
+
   const filtersActive = query.trim() !== '' || status !== 'all';
   const clearFilters = () => {
     setQuery('');
@@ -365,7 +369,17 @@ export default function CardsPage() {
         </>
       )}
 
-      <DeleteDialog card={deleting} onCancel={() => setDeleting(null)} onConfirm={remove} />
+      <ConfirmDialog
+        open={deleting !== null}
+        title={deleting ? t('delete.title', { name: nameOf(deleting) || deleting.slug }) : ''}
+        body={t('delete.body')}
+        confirmLabel={t('actions.delete')}
+        busyLabel={t('actions.deleting')}
+        cancelLabel={t('actions.cancel')}
+        danger
+        onConfirm={() => (deleting ? remove(deleting) : undefined)}
+        onCancel={closeDelete}
+      />
 
       <AnimatePresence>
         {toast && (
@@ -621,9 +635,7 @@ function CardsTable({ rows, showOwner }: { rows: RowProps[]; showOwner: boolean 
   );
 }
 
-/* ---------------------------------------------------------------------------
- * Everything else you can do to a card, behind one button.
- * ------------------------------------------------------------------------- */
+/** Everything else you can do to a card, behind one button. */
 function RowMenu({
   card,
   onCopy,
@@ -636,183 +648,19 @@ function RowMenu({
   onDelete: () => void;
 }) {
   const { t } = useTranslation('cards');
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<React.CSSProperties>({});
-  const ref = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // Placed against the viewport, so the table's scroll container cannot clip
-  // it; opens upwards when there is no room below.
-  function toggle() {
-    if (open) return setOpen(false);
-    const r = buttonRef.current?.getBoundingClientRect();
-    if (r) {
-      const rtl = document.documentElement.dir === 'rtl';
-      const below = window.innerHeight - r.bottom > 260;
-      setPos({
-        ...(below ? { top: r.bottom + 4 } : { bottom: window.innerHeight - r.top + 4 }),
-        ...(rtl ? { left: r.left } : { right: window.innerWidth - r.right }),
-      });
-    }
-    setOpen(true);
-  }
-
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener('resize', close);
-    window.addEventListener('scroll', close, true);
-    return () => {
-      window.removeEventListener('resize', close);
-      window.removeEventListener('scroll', close, true);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const items = () => Array.from(ref.current?.querySelectorAll<HTMLElement>('[role=menuitem]') ?? []);
-    items()[0]?.focus();
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpen(false);
-        buttonRef.current?.focus();
-      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        const list = items();
-        const i = list.indexOf(document.activeElement as HTMLElement);
-        const next = e.key === 'ArrowDown' ? (i + 1) % list.length : (i - 1 + list.length) % list.length;
-        list[next]?.focus();
-      }
-    };
-    document.addEventListener('mousedown', onDoc);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  const item = 'flex min-h-11 w-full items-center gap-2.5 rounded-md px-2.5 text-start text-[13px] text-ink outline-none hover:bg-elevated focus:bg-elevated sm:min-h-8';
-  const run = (fn: () => void) => () => {
-    setOpen(false);
-    fn();
-  };
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        ref={buttonRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggle();
-        }}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={t('actions.more')}
-        className="flex h-11 w-11 items-center justify-center rounded-md text-faint transition-colors hover:bg-elevated hover:text-ink sm:h-7 sm:w-7"
-      >
-        <Icon name="dots" size={15} />
-      </button>
-      {open && (
-        <div role="menu" style={pos} className="fixed z-[70] w-56 rounded-xl border border-line bg-surface p-1 shadow-lg" onClick={(e) => e.stopPropagation()}>
-          <Link role="menuitem" href={`/cards/${card.id}`} className={item}>
-            <Icon name="settings" size={14} className="text-faint" /> {t('actions.edit')}
-          </Link>
-          {card.isPublished && (
-            <a role="menuitem" href={`/c/${card.slug}`} target="_blank" rel="noreferrer" className={item} onClick={() => setOpen(false)}>
-              <Icon name="external-link" size={14} className="text-faint" /> {t('actions.view')}
-            </a>
-          )}
-          <button role="menuitem" onClick={run(onCopy)} className={item}>
-            <Icon name="copy" size={14} className="text-faint" /> {t('actions.copyLink')}
-          </button>
-          <button role="menuitem" onClick={run(() => onPublish(!card.isPublished))} className={item}>
-            <Icon name={card.isPublished ? 'eye-off' : 'globe'} size={14} className="text-faint" />
-            {card.isPublished ? t('actions.unpublish') : t('actions.publish')}
-          </button>
-          <div className="my-1 h-px bg-line" />
-          <button role="menuitem" onClick={run(onDelete)} className={`${item} !text-red-600 dark:!text-red-400`}>
-            <Icon name="trash" size={14} /> {t('actions.delete')}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DeleteDialog({ card, onCancel, onConfirm }: { card: ListCard | null; onCancel: () => void; onConfirm: (card: ListCard) => Promise<void> }) {
-  const { t } = useTranslation('cards');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const cancelRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!card) return;
-    setError('');
-    setBusy(false);
-    cancelRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [card, onCancel]);
-
-  return (
-    <AnimatePresence>
-      {card && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onCancel}
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
-        >
-          <motion.div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="delete-card-title"
-            aria-describedby="delete-card-body"
-            initial={{ y: 8, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 8, opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[420px] rounded-xl border border-line bg-surface p-5 shadow-lg"
-          >
-            <h2 id="delete-card-title" className="text-[15px] font-semibold text-ink">
-              {t('delete.title', { name: nameOf(card) || card.slug })}
-            </h2>
-            <p id="delete-card-body" className="mt-1.5 text-[13px] leading-relaxed text-muted">
-              {t('delete.body')}
-            </p>
-            {error && <p className="mt-3 text-[12.5px] text-red-600 dark:text-red-400">{error}</p>}
-            <div className="mt-5 flex justify-end gap-2">
-              <button ref={cancelRef} onClick={onCancel} className="v-btn v-btn-ghost">
-                {t('actions.cancel')}
-              </button>
-              <button
-                onClick={async () => {
-                  setBusy(true);
-                  try {
-                    await onConfirm(card);
-                  } catch (e) {
-                    setError((e as Error).message);
-                    setBusy(false);
-                  }
-                }}
-                disabled={busy}
-                className="v-btn v-btn-danger disabled:opacity-60"
-              >
-                {busy ? t('actions.deleting') : t('actions.delete')}
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+  const items: ActionItem[] = [
+    { key: 'edit', label: t('actions.edit'), icon: 'settings', href: `/cards/${card.id}` },
+    ...(card.isPublished ? [{ key: 'view', label: t('actions.view'), icon: 'external-link', externalHref: `/c/${card.slug}` }] : []),
+    { key: 'copy', label: t('actions.copyLink'), icon: 'copy', onSelect: onCopy },
+    {
+      key: 'publish',
+      label: card.isPublished ? t('actions.unpublish') : t('actions.publish'),
+      icon: card.isPublished ? 'eye-off' : 'globe',
+      onSelect: () => onPublish(!card.isPublished),
+    },
+    { key: 'delete', label: t('actions.delete'), icon: 'trash', onSelect: onDelete, danger: true, separated: true },
+  ];
+  return <ActionMenu label={t('actions.more')} items={items} />;
 }
 
 function GridSkeleton() {
