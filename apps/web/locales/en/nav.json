@@ -13,7 +13,8 @@
     "tags": "NFC Tags",
     "team": "Team",
     "integrations": "Integrations",
-    "adminConsole": "Admin Console"
+    "adminConsole": "Admin Console",
+    "settings": "Settings"
   },
   "searchWorkspace": "Search workspace…",
   "darkMode": "Dark mode",

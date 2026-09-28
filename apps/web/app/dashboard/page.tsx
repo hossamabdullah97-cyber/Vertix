@@ -821,7 +821,7 @@ export default function HomePage() {
               <ul className="mt-1">
                 {largestTeams.map((tm) => (
                   <li key={tm.id} className="flex items-center justify-between gap-3 py-1.5 text-[13px]">
-                    <Link href={`/workspace/teams/${tm.id}`} className="truncate text-ink hover:underline">
+                    <Link href={`/team?team=${tm.id}`} className="truncate text-ink hover:underline">
                       {tm.name}
                     </Link>
                     <span className="shrink-0 text-faint">{t('team.seat', { count: tm.seats })}</span>

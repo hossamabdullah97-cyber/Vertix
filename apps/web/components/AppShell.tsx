@@ -42,6 +42,7 @@ const GROUPS: { labelKey: string; showLabel: boolean; items: { href: string; lab
     items: [
       { href: '/team', labelKey: 'items.team', icon: 'users' },
       { href: '/integrations', labelKey: 'items.integrations', icon: 'layers' },
+      { href: '/workspace', labelKey: 'items.settings', icon: 'settings' },
     ],
   },
 ];
@@ -390,7 +391,7 @@ export default function AppShell({
           icon: 'user',
           label: m.user?.name || t('pendingMember'),
           meta: m.user?.email,
-          href: '/team',
+          href: `/team?member=${m.id}`,
         })),
     );
     push(
@@ -402,7 +403,7 @@ export default function AppShell({
           icon: 'layers',
           label: d.name,
           meta: t('teamsCount', { count: d._count?.teams ?? 0 }),
-          href: `/workspace/departments/${d.id}`,
+          href: `/team?department=${d.id}`,
         })),
     );
     push(
@@ -414,7 +415,7 @@ export default function AppShell({
           icon: 'users',
           label: tm.name,
           meta: t('membersCount', { count: tm._count?.memberships ?? 0 }),
-          href: `/workspace/teams/${tm.id}`,
+          href: `/team?team=${tm.id}`,
         })),
     );
     push(
