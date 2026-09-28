@@ -97,11 +97,15 @@ export default function AppShell({
   action,
   children,
   fluid = false,
+  bleed = false,
 }: {
-  title?: string;
+  /** Plain text, or a breadcrumb for pages nested under another. */
+  title?: React.ReactNode;
   action?: React.ReactNode;
   children: React.ReactNode;
   fluid?: boolean;
+  /** Drop the content padding and width cap so the page can lay out edge to edge. */
+  bleed?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -885,7 +889,7 @@ export default function AppShell({
       <div className="min-w-0 flex-1 md:py-2 md:pe-2">
         <div className="bg-surface md:h-full md:overflow-y-auto md:rounded-[14px] md:shadow-[0_0_0_1px_hsl(var(--v-border)),0_1px_2px_rgba(23,23,26,0.04)]">
           <header className="sticky top-0 z-20 hidden h-14 items-center gap-3 border-b border-line bg-surface/90 px-7 backdrop-blur-md md:flex">
-            <h1 className="min-w-0 flex-1 truncate text-[14.5px] font-semibold text-ink">{title}</h1>
+            <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-[14.5px] font-semibold text-ink">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <NotificationBell />
               {action}
@@ -893,13 +897,13 @@ export default function AppShell({
           </header>
 
           {(title || action) && (
-            <div className="flex items-center justify-between gap-4 px-5 pt-5 md:hidden">
-              <h1 className="text-[20px] font-semibold tracking-tight text-ink">{title}</h1>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">
+              <h1 className="flex min-w-0 items-center gap-2 text-[20px] font-semibold tracking-tight text-ink">{title}</h1>
               {action}
             </div>
           )}
 
-          <main className={`mx-auto px-5 py-6 md:px-8 md:py-7 ${fluid ? 'w-full max-w-[1560px]' : 'max-w-[1240px]'}`}>
+          <main className={bleed ? '' : `mx-auto px-5 py-6 md:px-8 md:py-7 ${fluid ? 'w-full max-w-[1560px]' : 'max-w-[1240px]'}`}>
             {children}
           </main>
         </div>

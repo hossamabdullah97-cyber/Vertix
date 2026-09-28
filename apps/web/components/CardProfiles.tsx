@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authFetch } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import PaymentLinksManager from '@/components/cards/PaymentLinksManager';
@@ -41,32 +42,26 @@ interface Conflict {
   message: string;
 }
 
-/** Curated link types with their single primary config field (mirrors lib/actions.ts). */
-const LINK_TYPES: { type: string; label: string; field: string; placeholder: string }[] = [
-  { type: 'CALL', label: 'Phone call', field: 'phone', placeholder: '+9665…' },
-  { type: 'WHATSAPP', label: 'WhatsApp', field: 'phone', placeholder: '+9665…' },
-  { type: 'EMAIL', label: 'Email', field: 'email', placeholder: 'name@company.com' },
-  { type: 'WEBSITE', label: 'Website', field: 'url', placeholder: 'https://…' },
-  { type: 'LINKEDIN', label: 'LinkedIn', field: 'url', placeholder: 'https://linkedin.com/in/…' },
-  { type: 'BOOK_MEETING', label: 'Book meeting', field: 'url', placeholder: 'https://calendly.com/…' },
+/** Link types a profile can add, with the one config field each edits (mirrors lib/actions.ts). */
+const LINK_TYPES: { type: string; icon: string; field: string; placeholder: string }[] = [
+  { type: 'CALL', icon: 'phone', field: 'phone', placeholder: '+20 1…' },
+  { type: 'WHATSAPP', icon: 'whatsapp', field: 'phone', placeholder: '+20 1…' },
+  { type: 'EMAIL', icon: 'mail', field: 'email', placeholder: 'name@company.com' },
+  { type: 'WEBSITE', icon: 'globe', field: 'url', placeholder: 'https://…' },
+  { type: 'LINKEDIN', icon: 'linkedin', field: 'url', placeholder: 'https://linkedin.com/in/…' },
+  { type: 'BOOK_MEETING', icon: 'calendar', field: 'url', placeholder: 'https://calendly.com/…' },
 ];
-const linkMeta = (type: string) =>
-  LINK_TYPES.find((l) => l.type === type) ?? { type, label: type, field: 'url', placeholder: 'https://…' };
-const linkIcon: Record<string, string> = {
-  CALL: 'phone', WHATSAPP: 'whatsapp', EMAIL: 'mail', WEBSITE: 'globe', LINKEDIN: 'linkedin', BOOK_MEETING: 'calendar',
-};
+const linkMeta = (type: string) => LINK_TYPES.find((l) => l.type === type) ?? { type, icon: 'link', field: 'url', placeholder: 'https://…' };
 
-/** Content section types with their primary editable field. */
-const SECTION_TYPES: { type: string; label: string; field: string; placeholder: string; multiline?: boolean }[] = [
-  { type: 'BIO', label: 'About / Bio', field: 'body', placeholder: 'Short bio shown on this profile…', multiline: true },
-  { type: 'BOOKING', label: 'Booking button', field: 'bookingUrl', placeholder: 'https://calendly.com/…' },
-  { type: 'VIDEO', label: 'Video', field: 'videoUrl', placeholder: 'YouTube / Vimeo URL' },
+/** Section types a profile can add, with their main editable field. */
+const SECTION_TYPES: { type: string; icon: string; field: string; multiline?: boolean }[] = [
+  { type: 'BIO', icon: 'user', field: 'body', multiline: true },
+  { type: 'BOOKING', icon: 'calendar', field: 'bookingUrl' },
+  { type: 'VIDEO', icon: 'youtube', field: 'videoUrl' },
 ];
-const sectionMeta = (type: string) =>
-  SECTION_TYPES.find((s) => s.type === type) ?? { type, label: type, field: 'body', placeholder: '', multiline: true };
-const sectionIcon: Record<string, string> = { BIO: 'user', BOOKING: 'calendar', VIDEO: 'youtube', SOCIAL: 'users', PORTFOLIO: 'grid' };
+const sectionMeta = (type: string) => SECTION_TYPES.find((s) => s.type === type) ?? { type, icon: 'file-text', field: 'body', multiline: true };
 
-/** Is a public (non-keyed) variant live right now — manual occasion or schedule window. */
+/** Is a public (non-keyed) variant live right now: switched on, or inside its schedule. */
 function isLiveNow(v: Variant): boolean {
   if (v.accessKey) return false;
   if (v.manualActive) return true;
@@ -83,7 +78,46 @@ const toLocalInput = (iso: string | null) => {
 };
 const fromLocalInput = (v: string) => (v ? new Date(v).toISOString() : null);
 
+function Switch({ on, onChange, label }: { on: boolean; onChange: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={onChange}
+      className={`relative inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent before:absolute before:-inset-3 before:content-[''] sm:before:hidden ${
+        on ? 'bg-accent' : ''
+      }`}
+      style={on ? undefined : { background: 'hsl(var(--v-border-strong))' }}
+    >
+      <span
+        className={`pointer-events-none absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-[inset-inline-start] ${
+          on ? 'start-[14px]' : 'start-[2px]'
+        }`}
+      />
+    </button>
+  );
+}
+
+function LinkRow({ href, onCopy, label, note }: { href: string; onCopy: () => void; label: string; note?: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg bg-elevated px-3 ring-1 ring-inset ring-line">
+        <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-[12px] text-muted rtl:text-right">
+          {href}
+        </span>
+        {note && <span className="shrink-0 text-[11.5px] text-faint">{note}</span>}
+      </div>
+      <button onClick={onCopy} className="v-btn v-btn-ghost shrink-0 !h-11 sm:!h-9">
+        <Icon name="copy" size={13} /> {label}
+      </button>
+    </div>
+  );
+}
+
 export function CardProfiles({ cardId, slug }: { cardId: string; slug: string }) {
+  const { t } = useTranslation('cardEditor');
   const [variants, setVariants] = useState<Variant[] | null>(null);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [error, setError] = useState('');
@@ -137,10 +171,10 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
     try {
       await authFetch(`/cards/${cardId}/variants`, {
         method: 'POST',
-        body: JSON.stringify({ name: `Profile ${(variants?.length ?? 0) + 1}`, cloneDefault: true }),
+        body: JSON.stringify({ name: t('variants.newName', { n: (variants?.length ?? 0) + 1 }), cloneDefault: true }),
       });
       await load();
-      flash('Profile added — starts as a copy of your default');
+      flash(t('variants.added'));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -149,84 +183,87 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
   };
 
   const removeVariant = async (id: string) => {
-    if (!window.confirm('Delete this profile? Its link and content will stop working.')) return;
+    if (!window.confirm(t('variants.deleteConfirm'))) return;
     try {
       await authFetch(`/cards/${cardId}/variants/${id}`, { method: 'DELETE' });
       await load();
-      flash('Profile deleted');
+      flash(t('variants.deleted'));
     } catch (e) {
       setError((e as Error).message);
     }
   };
 
-  const copy = (text: string) => navigator.clipboard?.writeText(text).then(() => flash('Link copied!'));
+  const copy = (text: string) => navigator.clipboard?.writeText(text).then(() => flash(t('variants.copied')));
+
+  // The API explains conflicts in English; rebuild them from their parts so they read in the UI language.
+  const nameOf = (id: string) => variants?.find((v) => v.id === id)?.name ?? '';
+  const conflictText = (c: Conflict) => {
+    if (c.type === 'multiple-active') return t('variants.conflictMultiple', { count: c.variantIds.length, name: nameOf(c.variantIds[0]) });
+    if (c.type === 'schedule-overlap') return t('variants.conflictOverlap', { a: nameOf(c.variantIds[0]), b: nameOf(c.variantIds[1]) });
+    return c.message;
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="v-hero p-6">
-        <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="v-display text-[19px] font-extrabold tracking-tight text-white">Profiles on one link</h3>
-            <p className="mt-1 max-w-xl text-[12.5px] font-medium text-white/80">
-              Your card has one public link. Add profiles with different info, look, sections &amp; links — targeted by a
-              private key, a passcode, a schedule, or a manual occasion. If none is active, your default profile shows.
-            </p>
-          </div>
-          <button
-            onClick={addVariant}
-            disabled={busy}
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-[13px] font-bold text-[#1d4ed8] shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-          >
-            <Icon name="plus" size={15} /> Add profile
-          </button>
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-[16px] font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{t('variants.title')}</h2>
+          <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-muted">{t('variants.subtitle')}</p>
         </div>
+        <button onClick={addVariant} disabled={busy} className="v-btn v-btn-ghost shrink-0">
+          <Icon name={busy ? 'loader' : 'plus'} size={14} className={busy ? 'animate-spin' : undefined} /> {t('variants.add')}
+        </button>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-semibold text-red-500">
-          <Icon name="x" size={15} /> {error}
+        <div role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-400">
+          {error}
         </div>
       )}
 
-      {/* Real resolution conflicts (from the backend) */}
       {conflicts.length > 0 && (
-        <div className="space-y-1.5 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
-          <p className="flex items-center gap-2 text-[13px] font-bold text-amber-600">
-            <Icon name="zap" size={15} /> Overlapping profiles
-          </p>
-          <ul className="ms-1 space-y-1 text-[12px] font-medium text-muted">
-            {conflicts.map((c, i) => <li key={i}>• {c.message}</li>)}
+        <div className="rounded-lg bg-amber-500/[0.06] px-3.5 py-3 ring-1 ring-inset ring-amber-500/25">
+          <p className="text-[13px] font-medium text-amber-800 dark:text-amber-300">{t('variants.conflictsTitle')}</p>
+          <ul className="mt-1 list-disc space-y-0.5 ps-5 text-[12.5px] text-muted">
+            {conflicts.map((c, i) => (
+              <li key={i}>{conflictText(c)}</li>
+            ))}
           </ul>
         </div>
       )}
 
-      {/* Default profile (the base card) */}
-      <div className="v-card p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="v-icon-tile"><Icon name="user" size={16} /></span>
-            <div>
-              <p className="text-[14px] font-extrabold tracking-tight text-ink">Default profile</p>
-              <p className="text-[11.5px] font-medium text-muted">Shown when no other profile is active. Edit it in the Content &amp; Design tabs.</p>
-            </div>
+      {/* The default profile is the card itself. */}
+      <div className="rounded-xl p-4 ring-1 ring-inset ring-line">
+        <div className="flex items-start gap-3">
+          <span className="v-icon-tile">
+            <Icon name="user" size={15} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-2 text-[14px] font-medium text-ink">
+              {t('variants.default.title')}
+              <span className="v-badge v-badge-neutral">{t('variants.default.badge')}</span>
+            </p>
+            <p className="mt-0.5 text-[12.5px] text-muted">{t('variants.default.hint')}</p>
           </div>
-          <span className="v-badge v-badge-neutral shrink-0">base</span>
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-lg border border-line bg-canvas/40 px-2.5 py-1.5 font-mono text-[11.5px] text-muted">{baseLink}</code>
-          <button onClick={() => copy(baseLink)} className="v-btn v-btn-ghost !h-9 shrink-0 px-3 text-[12px] font-bold"><Icon name="copy" size={13} /> Copy</button>
+        <div className="mt-3">
+          <LinkRow href={baseLink} onCopy={() => copy(baseLink)} label={t('variants.copy')} />
         </div>
       </div>
 
       {variants === null ? (
-        <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="v-skeleton h-40 rounded-2xl" />)}</div>
+        <div className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="v-skeleton h-40 rounded-xl" />
+          ))}
+        </div>
       ) : variants.length === 0 ? (
-        <div className="v-card flex flex-col items-center gap-3 py-14 text-center">
-          <span className="v-icon-tile"><Icon name="layers" size={18} /></span>
-          <div>
-            <p className="text-[15px] font-bold text-ink">No extra profiles yet</p>
-            <p className="mt-1 max-w-sm text-[12.5px] text-muted">Add a profile to show a different version of your card to specific people, at a specific time, or for an occasion.</p>
-          </div>
+        <div className="rounded-xl border border-dashed border-line px-6 py-10 text-center">
+          <p className="text-[14px] font-medium text-ink">{t('variants.emptyTitle')}</p>
+          <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{t('variants.emptyBody')}</p>
+          <button onClick={addVariant} disabled={busy} className="v-btn v-btn-ghost mt-4">
+            <Icon name="plus" size={14} /> {t('variants.add')}
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
@@ -237,8 +274,8 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
       )}
 
       {toast && (
-        <div className="fixed inset-x-0 bottom-6 z-[60] mx-auto flex w-fit items-center gap-2 rounded-full bg-[#16161a] px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg">
-          <Icon name="check" size={15} /> {toast}
+        <div role="status" className="fixed inset-x-0 bottom-6 z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-[13px] text-surface shadow-lg">
+          <Icon name="check" size={14} /> {toast}
         </div>
       )}
     </div>
@@ -246,7 +283,14 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
 }
 
 function VariantCard({
-  cardId, v, baseLink, onSaveLocal, onSave, onDelete, onCopy, onChanged,
+  cardId,
+  v,
+  baseLink,
+  onSaveLocal,
+  onSave,
+  onDelete,
+  onCopy,
+  onChanged,
 }: {
   cardId: string;
   v: Variant;
@@ -257,124 +301,169 @@ function VariantCard({
   onCopy: (t: string) => void;
   onChanged: () => void | Promise<void>;
 }) {
+  const { t } = useTranslation('cardEditor');
   const [showContent, setShowContent] = useState(false);
   const live = isLiveNow(v);
   const vcard = (v.vcardData ?? {}) as Record<string, string>;
   const shareLink = v.accessKey ? `${baseLink}?p=${encodeURIComponent(v.accessKey)}` : baseLink;
-  const field = 'v-field !h-9 text-[13px]';
-  const label = 'block text-[10.5px] font-bold uppercase tracking-wider text-muted mb-1';
+  const label = 'mb-1.5 flex items-baseline gap-1.5 text-[12.5px] text-muted';
 
   return (
-    <div className="v-card p-5">
-      <div className="mb-4 flex items-center justify-between gap-3 border-b border-line pb-3.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="v-icon-tile !h-8 !w-8"><Icon name="columns" size={15} /></span>
-          <input
-            value={v.name}
-            onChange={(e) => onSaveLocal(v.id, { name: e.target.value })}
-            onBlur={(e) => onSave(v.id, { name: e.target.value.trim() || 'Profile' })}
-            className="min-w-0 flex-1 bg-transparent text-[15px] font-extrabold tracking-tight text-ink outline-none"
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {v.accessKey ? (
-            <span className="v-badge v-badge-accent"><Icon name="lock" size={11} /> Private link</span>
-          ) : live ? (
-            <span className="v-badge v-badge-success"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Active now</span>
-          ) : (
-            <span className="v-badge v-badge-neutral">Idle</span>
-          )}
-          <button onClick={() => onDelete(v.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-red-500/10 hover:text-red-500" title="Delete profile">
-            <Icon name="trash" size={15} />
-          </button>
-        </div>
+    <div className="rounded-xl ring-1 ring-inset ring-line">
+      <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+        <input
+          value={v.name}
+          aria-label={t('variants.nameLabel')}
+          onChange={(e) => onSaveLocal(v.id, { name: e.target.value })}
+          onBlur={(e) => onSave(v.id, { name: e.target.value.trim() || t('variants.fallbackName') })}
+          className="-ms-1.5 min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-[14px] font-medium text-ink outline-none hover:bg-elevated focus:bg-elevated"
+        />
+        {v.accessKey ? (
+          <span className="v-badge v-badge-neutral shrink-0">
+            <Icon name="lock" size={11} /> {t('variants.status.private')}
+          </span>
+        ) : live ? (
+          <span className="v-badge v-badge-success shrink-0">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {t('variants.status.live')}
+          </span>
+        ) : (
+          <span className="v-badge v-badge-neutral shrink-0">{t('variants.status.idle')}</span>
+        )}
+        <button
+          onClick={() => onDelete(v.id)}
+          aria-label={t('variants.deleteProfile')}
+          title={t('variants.deleteProfile')}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-red-500/10 hover:text-red-600 sm:h-8 sm:w-8"
+        >
+          <Icon name="trash" size={14} />
+        </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="space-y-3.5">
-          <p className="v-section-label">Look &amp; info</p>
+      <div className="grid gap-5 p-4 lg:grid-cols-2">
+        <div className="space-y-3">
+          <p className="text-[12.5px] font-medium text-ink">{t('variants.look')}</p>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={label}>Display name</label>
-              <input className={field} value={vcard.fullName ?? ''} onChange={(e) => onSaveLocal(v.id, { vcardData: { ...vcard, fullName: e.target.value } })} onBlur={(e) => onSave(v.id, { vcardData: { ...vcard, fullName: e.target.value } })} placeholder="Ahmed — VIP" />
-            </div>
-            <div>
-              <label className={label}>Job title</label>
-              <input className={field} value={vcard.org ?? ''} onChange={(e) => onSaveLocal(v.id, { vcardData: { ...vcard, org: e.target.value } })} onBlur={(e) => onSave(v.id, { vcardData: { ...vcard, org: e.target.value } })} placeholder="Founder & CEO" />
-            </div>
+            <label className="block">
+              <span className={label}>{t('variants.displayName')}</span>
+              <input
+                className="v-field"
+                value={vcard.fullName ?? ''}
+                onChange={(e) => onSaveLocal(v.id, { vcardData: { ...vcard, fullName: e.target.value } })}
+                onBlur={(e) => onSave(v.id, { vcardData: { ...vcard, fullName: e.target.value } })}
+                placeholder={t('variants.displayNamePlaceholder')}
+              />
+            </label>
+            <label className="block">
+              <span className={label}>{t('variants.jobTitle')}</span>
+              <input
+                className="v-field"
+                value={vcard.org ?? ''}
+                onChange={(e) => onSaveLocal(v.id, { vcardData: { ...vcard, org: e.target.value } })}
+                onBlur={(e) => onSave(v.id, { vcardData: { ...vcard, org: e.target.value } })}
+                placeholder={t('variants.jobTitlePlaceholder')}
+              />
+            </label>
           </div>
-          <div>
-            <label className={label}>Template</label>
-            <select className={`${field} font-semibold`} value={v.templateId} onChange={(e) => onSave(v.id, { templateId: e.target.value })}>
-              {TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          <label className="block">
+            <span className={label}>{t('variants.template')}</span>
+            <select className="v-field" value={v.templateId} onChange={(e) => onSave(v.id, { templateId: e.target.value })}>
+              {TEMPLATES.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
+                </option>
+              ))}
             </select>
-          </div>
+          </label>
         </div>
 
-        <div className="space-y-3.5 lg:border-s lg:border-line lg:ps-5">
-          <p className="v-section-label">Who sees it &amp; when</p>
-          <label className="flex items-center justify-between gap-3 rounded-xl border border-line bg-canvas/30 p-2.5">
-            <span className="flex items-center gap-2 text-[12.5px] font-bold text-ink"><Icon name="sparkle" size={14} className="text-accent" /> Activate now (occasion)</span>
-            <button role="switch" aria-checked={v.manualActive} onClick={() => onSave(v.id, { manualActive: !v.manualActive })} className="relative h-6 w-11 shrink-0 rounded-full transition-colors" style={{ background: v.manualActive ? 'var(--v-accent)' : 'hsl(var(--v-border-strong))' }}>
-              <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all" style={{ insetInlineStart: v.manualActive ? '22px' : '2px' }} />
-            </button>
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={label}>Schedule from</label>
-              <input type="datetime-local" className={field} value={toLocalInput(v.scheduleStart)} onChange={(e) => onSave(v.id, { scheduleStart: fromLocalInput(e.target.value) })} />
-            </div>
-            <div>
-              <label className={label}>Until</label>
-              <input type="datetime-local" className={field} value={toLocalInput(v.scheduleEnd)} onChange={(e) => onSave(v.id, { scheduleEnd: fromLocalInput(e.target.value) })} />
-            </div>
+        <div className="space-y-3 lg:border-s lg:border-line lg:ps-5">
+          <p className="text-[12.5px] font-medium text-ink">{t('variants.audience')}</p>
+          <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 ring-1 ring-inset ring-line">
+            <span className="min-w-0">
+              <span className="block text-[13px] text-ink">{t('variants.manual')}</span>
+              <span className="block text-[12px] text-faint">{t('variants.manualHint')}</span>
+            </span>
+            <Switch on={v.manualActive} onChange={() => onSave(v.id, { manualActive: !v.manualActive })} label={t('variants.manual')} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={label}>Private key (?p=)</label>
-              <input className={`${field} font-mono`} value={v.accessKey ?? ''} onChange={(e) => onSaveLocal(v.id, { accessKey: e.target.value })} onBlur={(e) => onSave(v.id, { accessKey: e.target.value.trim() || null })} placeholder="vip" />
-            </div>
-            <div>
-              <label className={label}>Passcode (PIN)</label>
-              <input className={`${field} font-mono`} value={v.passcode ?? ''} onChange={(e) => onSaveLocal(v.id, { passcode: e.target.value })} onBlur={(e) => onSave(v.id, { passcode: e.target.value.trim() || null })} placeholder="optional" />
-            </div>
+            <label className="block">
+              <span className={label}>{t('variants.from')}</span>
+              <input
+                type="datetime-local"
+                dir="ltr"
+                className="v-field tabular !text-[12.5px] rtl:text-right"
+                value={toLocalInput(v.scheduleStart)}
+                onChange={(e) => onSave(v.id, { scheduleStart: fromLocalInput(e.target.value) })}
+              />
+            </label>
+            <label className="block">
+              <span className={label}>{t('variants.until')}</span>
+              <input
+                type="datetime-local"
+                dir="ltr"
+                className="v-field tabular !text-[12.5px] rtl:text-right"
+                value={toLocalInput(v.scheduleEnd)}
+                onChange={(e) => onSave(v.id, { scheduleEnd: fromLocalInput(e.target.value) })}
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className={label}>
+                {t('variants.key')} <span className="text-[12px] text-faint">· ?p=</span>
+              </span>
+              <input
+                dir="ltr"
+                className="v-field font-mono !text-[12.5px] rtl:text-right"
+                value={v.accessKey ?? ''}
+                onChange={(e) => onSaveLocal(v.id, { accessKey: e.target.value })}
+                onBlur={(e) => onSave(v.id, { accessKey: e.target.value.trim() || null })}
+                placeholder="vip"
+              />
+            </label>
+            <label className="block">
+              <span className={label}>{t('variants.passcode')}</span>
+              <input
+                dir="ltr"
+                className="v-field font-mono !text-[12.5px] rtl:text-right"
+                value={v.passcode ?? ''}
+                onChange={(e) => onSaveLocal(v.id, { passcode: e.target.value })}
+                onBlur={(e) => onSave(v.id, { passcode: e.target.value.trim() || null })}
+                placeholder={t('variants.optional')}
+              />
+            </label>
           </div>
         </div>
       </div>
 
-      {/* Per-variant sections & links editor */}
-      <div className="mt-4 border-t border-line pt-3.5">
+      {/* This profile's own links and sections */}
+      <div className="border-t border-line">
         <button
           onClick={() => setShowContent((s) => !s)}
-          className="flex w-full items-center justify-between rounded-lg px-1 py-1 text-[12.5px] font-bold text-ink hover:bg-ink/[0.03]"
+          aria-expanded={showContent}
+          className="flex min-h-11 w-full items-center gap-2 px-4 py-2.5 text-start text-[13px] text-ink hover:bg-elevated"
         >
-          <span className="flex items-center gap-2">
-            <Icon name={showContent ? 'chevron-down' : 'arrow'} size={13} className="text-muted" />
-            Sections &amp; links for this profile
-          </span>
-          <span className="text-[11px] font-semibold text-muted">
-            {v.actions.length} links · {v.sections.length} sections
-          </span>
+          <Icon name="chevron-down" size={14} className={`shrink-0 text-faint transition-transform ${showContent ? '' : '-rotate-90 rtl:rotate-90'}`} />
+          <span className="flex-1">{t('variants.contentToggle')}</span>
+          <span className="tabular text-[12px] text-faint">{t('variants.contentCount', { links: v.actions.length, sections: v.sections.length })}</span>
         </button>
-
         {showContent && (
-          <div className="mt-3">
+          <div className="px-4 pb-4">
             <VariantContent cardId={cardId} v={v} onChanged={onChanged} />
           </div>
         )}
       </div>
 
-      <div className="mt-4 flex items-center gap-2 border-t border-line pt-3.5">
-        <Icon name={v.accessKey ? 'lock' : 'globe'} size={14} className="shrink-0 text-muted" />
-        <code className="min-w-0 flex-1 truncate rounded-lg border border-line bg-canvas/40 px-2.5 py-1.5 font-mono text-[11.5px] text-muted">{shareLink}{v.passcode ? '  · PIN required' : ''}</code>
-        <button onClick={() => onCopy(shareLink)} className="v-btn v-btn-ghost !h-9 shrink-0 px-3 text-[12px] font-bold"><Icon name="copy" size={13} /> Copy</button>
+      <div className="border-t border-line px-4 py-3">
+        <LinkRow href={shareLink} onCopy={() => onCopy(shareLink)} label={t('variants.copy')} note={v.passcode ? t('variants.pinRequired') : undefined} />
       </div>
     </div>
   );
 }
 
-/** Real CRUD for a variant's own links (actions) and content sections. */
+/** Create, edit and delete a profile's own links (actions) and content sections. */
 function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; onChanged: () => void | Promise<void> }) {
+  const { t } = useTranslation('cardEditor');
   const [addLinkType, setAddLinkType] = useState('WEBSITE');
   const [addSecType, setAddSecType] = useState('BIO');
   const [busy, setBusy] = useState(false);
@@ -393,103 +482,142 @@ function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; 
     const m = linkMeta(addLinkType);
     req(`/cards/${cardId}/actions?variantId=${v.id}`, 'POST', { type: addLinkType, config: { [m.field]: '' }, isActive: true });
   };
-  const patchLink = (a: ActionRow, config: Record<string, unknown>) =>
-    req(`/cards/${cardId}/actions/${a.id}`, 'PATCH', { config });
+  const patchLink = (a: ActionRow, config: Record<string, unknown>) => req(`/cards/${cardId}/actions/${a.id}`, 'PATCH', { config });
   const toggleLink = (a: ActionRow) => req(`/cards/${cardId}/actions/${a.id}`, 'PATCH', { isActive: !a.isActive });
   const delLink = (a: ActionRow) => req(`/cards/${cardId}/actions/${a.id}`, 'DELETE');
 
-  const addSection = () =>
-    req(`/cards/${cardId}/sections?variantId=${v.id}`, 'POST', { type: addSecType, content: {}, isVisible: true });
-  const patchSection = (s: SectionRow, content: Record<string, unknown>) =>
-    req(`/cards/${cardId}/sections/${s.id}`, 'PATCH', { content });
+  const addSection = () => req(`/cards/${cardId}/sections?variantId=${v.id}`, 'POST', { type: addSecType, content: {}, isVisible: true });
+  const patchSection = (s: SectionRow, content: Record<string, unknown>) => req(`/cards/${cardId}/sections/${s.id}`, 'PATCH', { content });
   const toggleSection = (s: SectionRow) => req(`/cards/${cardId}/sections/${s.id}`, 'PATCH', { isVisible: !s.isVisible });
   const delSection = (s: SectionRow) => req(`/cards/${cardId}/sections/${s.id}`, 'DELETE');
 
-  const smallField = 'v-field !h-8 text-[12.5px]';
+  const linkLabel = (type: string) => t(`variants.links.types.${type}`, type);
+  const sectionLabel = (type: string) => t(`variants.sections.types.${type}`, type);
+  const iconBtn = 'flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-colors sm:h-8 sm:w-8';
 
   return (
-    <div className="grid gap-5 rounded-xl border border-line bg-canvas/20 p-4 lg:grid-cols-2">
-      {/* Links */}
-      <div className="space-y-2.5">
-        <p className="v-section-label">Quick links</p>
-        {v.actions.length === 0 && <p className="text-[11.5px] text-faint">No links on this profile yet.</p>}
+    <div className="grid gap-5 rounded-lg bg-elevated/60 p-3.5 ring-1 ring-inset ring-line lg:grid-cols-2">
+      <div className="space-y-2">
+        <p className="text-[12.5px] font-medium text-ink">{t('variants.links.title')}</p>
+        {v.actions.length === 0 && <p className="text-[12.5px] text-faint">{t('variants.links.empty')}</p>}
         {v.actions.map((a) => {
           const m = linkMeta(a.type);
           return (
-            <div key={a.id} className="flex items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface border border-line text-muted" title={m.label}>
-                <Icon name={linkIcon[a.type] ?? 'link'} size={14} />
+            <div key={a.id} className="flex items-center gap-1.5">
+              <span className="v-icon-tile !h-9 !w-9" title={linkLabel(a.type)}>
+                <Icon name={m.icon} size={14} />
               </span>
               <input
-                className={`${smallField} flex-1`}
+                dir="ltr"
+                aria-label={linkLabel(a.type)}
+                className="v-field min-w-0 flex-1 !text-[12.5px] rtl:text-right"
                 defaultValue={(a.config[m.field] as string) ?? ''}
                 placeholder={m.placeholder}
                 onBlur={(e) => patchLink(a, { ...a.config, [m.field]: e.target.value })}
               />
-              <button onClick={() => toggleLink(a)} title={a.isActive ? 'Active' : 'Hidden'} className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${a.isActive ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5' : 'border-line text-faint'}`}>
-                <Icon name={a.isActive ? 'eye' : 'eye-off'} size={13} />
+              <button
+                onClick={() => toggleLink(a)}
+                aria-pressed={!a.isActive}
+                aria-label={a.isActive ? t('variants.links.active') : t('variants.links.hidden')}
+                title={a.isActive ? t('variants.links.active') : t('variants.links.hidden')}
+                className={`${iconBtn} ${a.isActive ? 'text-muted hover:bg-surface hover:text-ink' : 'text-faint hover:bg-surface'}`}
+              >
+                <Icon name={a.isActive ? 'eye' : 'eye-off'} size={14} />
               </button>
-              <button onClick={() => delLink(a)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500"><Icon name="trash" size={13} /></button>
+              <button
+                onClick={() => delLink(a)}
+                aria-label={t('variants.links.delete')}
+                title={t('variants.links.delete')}
+                className={`${iconBtn} text-faint hover:bg-red-500/10 hover:text-red-600`}
+              >
+                <Icon name="trash" size={14} />
+              </button>
             </div>
           );
         })}
-        <div className="flex items-center gap-2 pt-1">
-          <select value={addLinkType} onChange={(e) => setAddLinkType(e.target.value)} className={`${smallField} flex-1 font-semibold`}>
-            {LINK_TYPES.map((l) => <option key={l.type} value={l.type}>{l.label}</option>)}
+        <div className="flex items-center gap-1.5 pt-1">
+          <select value={addLinkType} onChange={(e) => setAddLinkType(e.target.value)} aria-label={t('variants.links.add')} className="v-field min-w-0 flex-1">
+            {LINK_TYPES.map((l) => (
+              <option key={l.type} value={l.type}>
+                {linkLabel(l.type)}
+              </option>
+            ))}
           </select>
-          <button onClick={addLink} disabled={busy} className="v-btn !h-8 shrink-0 px-3 text-[12px] font-bold"><Icon name="plus" size={13} /> Add link</button>
+          <button onClick={addLink} disabled={busy} className="v-btn v-btn-ghost shrink-0 !h-11 sm:!h-9">
+            <Icon name="plus" size={13} /> {t('variants.links.add')}
+          </button>
         </div>
       </div>
 
-      {/* Sections */}
-      <div className="space-y-2.5 lg:border-s lg:border-line lg:ps-5">
-        <p className="v-section-label">Content sections</p>
-        {v.sections.length === 0 && <p className="text-[11.5px] text-faint">No sections on this profile yet.</p>}
+      <div className="space-y-2 lg:border-s lg:border-line lg:ps-5">
+        <p className="text-[12.5px] font-medium text-ink">{t('variants.sections.title')}</p>
+        {v.sections.length === 0 && <p className="text-[12.5px] text-faint">{t('variants.sections.empty')}</p>}
         {v.sections.map((s) => {
           const m = sectionMeta(s.type);
+          const placeholder = t(`variants.sections.placeholders.${s.type}`, '');
+          const url = m.field !== 'body';
           return (
-            <div key={s.id} className="rounded-lg border border-line bg-surface p-2.5">
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[12px] font-bold text-ink">
-                  <Icon name={sectionIcon[s.type] ?? 'file-text'} size={13} className="text-accent" /> {m.label}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => toggleSection(s)} title={s.isVisible ? 'Visible' : 'Hidden'} className={`flex h-7 w-7 items-center justify-center rounded-md ${s.isVisible ? 'text-emerald-500' : 'text-faint'}`}>
-                    <Icon name={s.isVisible ? 'eye' : 'eye-off'} size={13} />
-                  </button>
-                  <button onClick={() => delSection(s)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-red-500/10 hover:text-red-500"><Icon name="trash" size={13} /></button>
-                </div>
+            <div key={s.id} className="rounded-lg bg-surface p-2.5 ring-1 ring-inset ring-line">
+              <div className="mb-1.5 flex items-center gap-1">
+                <Icon name={m.icon} size={13} className="shrink-0 text-faint" />
+                <span className="flex-1 text-[12.5px] font-medium text-ink">{sectionLabel(s.type)}</span>
+                <button
+                  onClick={() => toggleSection(s)}
+                  aria-pressed={!s.isVisible}
+                  aria-label={s.isVisible ? t('variants.sections.visible') : t('variants.sections.hidden')}
+                  title={s.isVisible ? t('variants.sections.visible') : t('variants.sections.hidden')}
+                  className={`${iconBtn} !h-11 !w-11 sm:!h-7 sm:!w-7 ${s.isVisible ? 'text-muted hover:bg-elevated hover:text-ink' : 'text-faint hover:bg-elevated'}`}
+                >
+                  <Icon name={s.isVisible ? 'eye' : 'eye-off'} size={13} />
+                </button>
+                <button
+                  onClick={() => delSection(s)}
+                  aria-label={t('variants.sections.delete')}
+                  title={t('variants.sections.delete')}
+                  className={`${iconBtn} !h-11 !w-11 text-faint hover:bg-red-500/10 hover:text-red-600 sm:!h-7 sm:!w-7`}
+                >
+                  <Icon name="trash" size={13} />
+                </button>
               </div>
               {m.multiline ? (
                 <textarea
-                  className="v-field h-auto py-2 text-[12.5px]"
+                  className="v-field !h-auto py-2 !text-[12.5px]"
                   rows={2}
+                  aria-label={sectionLabel(s.type)}
                   defaultValue={(s.content[m.field] as string) ?? ''}
-                  placeholder={m.placeholder}
+                  placeholder={placeholder}
                   onBlur={(e) => patchSection(s, { ...s.content, [m.field]: e.target.value })}
                 />
               ) : (
                 <input
-                  className={smallField}
+                  dir={url ? 'ltr' : undefined}
+                  aria-label={sectionLabel(s.type)}
+                  className={`v-field !text-[12.5px] ${url ? 'rtl:text-right' : ''}`}
                   defaultValue={(s.content[m.field] as string) ?? ''}
-                  placeholder={m.placeholder}
+                  placeholder={placeholder}
                   onBlur={(e) => patchSection(s, { ...s.content, [m.field]: e.target.value })}
                 />
               )}
             </div>
           );
         })}
-        <div className="flex items-center gap-2 pt-1">
-          <select value={addSecType} onChange={(e) => setAddSecType(e.target.value)} className={`${smallField} flex-1 font-semibold`}>
-            {SECTION_TYPES.map((s) => <option key={s.type} value={s.type}>{s.label}</option>)}
+        <div className="flex items-center gap-1.5 pt-1">
+          <select value={addSecType} onChange={(e) => setAddSecType(e.target.value)} aria-label={t('variants.sections.add')} className="v-field min-w-0 flex-1">
+            {SECTION_TYPES.map((s) => (
+              <option key={s.type} value={s.type}>
+                {sectionLabel(s.type)}
+              </option>
+            ))}
           </select>
-          <button onClick={addSection} disabled={busy} className="v-btn !h-8 shrink-0 px-3 text-[12px] font-bold"><Icon name="plus" size={13} /> Add section</button>
+          <button onClick={addSection} disabled={busy} className="v-btn v-btn-ghost shrink-0 !h-11 sm:!h-9">
+            <Icon name="plus" size={13} /> {t('variants.sections.add')}
+          </button>
         </div>
       </div>
 
-      {/* Payment links for this identity — external link-sharing only.
-          Self-contained: it persists via its own API, so it needs no onChange
-          (wiring the variant reload here would loop on every links change). */}
+      {/* Payment links for this profile, sharing external links only.
+          Self-contained: it saves through its own API, so it needs no onChange
+          (reloading the profile here would loop on every change). */}
       <div className="lg:col-span-2">
         <PaymentLinksManager cardId={cardId} variantId={v.id} compact />
       </div>

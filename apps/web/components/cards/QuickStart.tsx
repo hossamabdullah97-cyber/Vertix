@@ -114,7 +114,7 @@ export default function QuickStart({
                   i <= step ? 'bg-accent' : 'bg-line'
                 }`}
               />
-              <p className={`mt-2 text-[11px] font-bold ${i === step ? 'text-ink' : 'text-faint'}`}>
+              <p className={`mt-2 text-[11px] font-semibold ${i === step ? 'text-ink' : 'text-faint'}`}>
                 {t(`quickStart.steps.${s}`)}
               </p>
             </div>
@@ -136,12 +136,12 @@ export default function QuickStart({
               {step === 0 && (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="text-[22px] font-extrabold tracking-tight text-ink">{t('quickStart.identity.title')}</h2>
+                    <h2 className="text-[22px] font-semibold tracking-tight text-ink">{t('quickStart.identity.title')}</h2>
                     <p className="mt-1 text-[14px] text-muted">{t('quickStart.identity.subtitle')}</p>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11.5px] font-bold uppercase tracking-wider text-muted">
+                    <label className="text-[11.5px] font-semibold text-muted">
                       {t('profile.fullName')}
                     </label>
                     <input
@@ -154,7 +154,7 @@ export default function QuickStart({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11.5px] font-bold uppercase tracking-wider text-muted">
+                    <label className="text-[11.5px] font-semibold text-muted">
                       {t('profile.jobTitle')}
                     </label>
                     <input
@@ -174,7 +174,7 @@ export default function QuickStart({
               {step === 1 && (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="text-[22px] font-extrabold tracking-tight text-ink">{t('quickStart.channels.title')}</h2>
+                    <h2 className="text-[22px] font-semibold tracking-tight text-ink">{t('quickStart.channels.title')}</h2>
                     <p className="mt-1 text-[14px] text-muted">{t('quickStart.channels.subtitle')}</p>
                   </div>
 
@@ -195,7 +195,7 @@ export default function QuickStart({
                           >
                             <Icon name={c.icon} size={16} />
                           </span>
-                          <label className="w-24 shrink-0 text-[13px] font-bold text-ink">
+                          <label className="w-24 shrink-0 text-[13px] font-semibold text-ink">
                             {t(`quickStart.channels.${c.key}`)}
                           </label>
                           <input
@@ -217,7 +217,7 @@ export default function QuickStart({
               {step === 2 && (
                 <div className="space-y-5">
                   <div>
-                    <h2 className="text-[22px] font-extrabold tracking-tight text-ink">{t('quickStart.look.title')}</h2>
+                    <h2 className="text-[22px] font-semibold tracking-tight text-ink">{t('quickStart.look.title')}</h2>
                     <p className="mt-1 text-[14px] text-muted">{t('quickStart.look.subtitle')}</p>
                   </div>
 
@@ -253,7 +253,7 @@ export default function QuickStart({
           {/* Navigation */}
           <div className="mt-8 flex items-center gap-3 border-t border-line pt-5">
             {step > 0 && (
-              <button onClick={() => setStep(step - 1)} className="v-btn v-btn-ghost !h-10 px-5 text-[13.5px] font-bold">
+              <button onClick={() => setStep(step - 1)} className="v-btn v-btn-ghost !h-10 px-5 text-[13.5px] font-semibold">
                 {t('quickStart.back')}
               </button>
             )}
@@ -262,7 +262,7 @@ export default function QuickStart({
               <button
                 onClick={() => setStep(step + 1)}
                 disabled={!canContinue}
-                className="v-btn !h-10 px-6 text-[13.5px] font-bold disabled:opacity-40"
+                className="v-btn !h-10 px-6 text-[13.5px] font-semibold disabled:opacity-40"
               >
                 {t('quickStart.next')}
               </button>
@@ -270,7 +270,7 @@ export default function QuickStart({
               <button
                 onClick={commit}
                 disabled={saving}
-                className="v-btn !h-10 px-6 text-[13.5px] font-bold disabled:opacity-50"
+                className="v-btn !h-10 px-6 text-[13.5px] font-semibold disabled:opacity-50"
               >
                 {saving ? t('quickStart.saving') : t('quickStart.finish')}
               </button>
@@ -287,7 +287,7 @@ export default function QuickStart({
 
         {/* ---------- live mini preview ---------- */}
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-faint">
+          <p className="mb-2 text-[11px] font-semibold text-faint">
             {t('quickStart.preview')}
           </p>
           <div
@@ -297,7 +297,7 @@ export default function QuickStart({
             <div className="h-20" style={{ background: `linear-gradient(135deg, ${look.accent}, ${look.accent}bb)` }} />
             <div className="px-5 pb-6 text-center">
               <div
-                className="mx-auto -mt-9 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 text-[22px] font-extrabold text-white"
+                className="mx-auto -mt-9 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 text-[22px] font-semibold text-white"
                 style={{ background: look.accent, borderColor: look.mode === 'dark' ? '#0f1115' : '#fff' }}
               >
                 {avatar ? (
@@ -309,7 +309,7 @@ export default function QuickStart({
               </div>
 
               <h3
-                className="mt-3 text-[16px] font-extrabold"
+                className="mt-3 text-[16px] font-semibold"
                 style={{ color: look.mode === 'dark' ? '#f4f6fa' : '#0f172a' }}
               >
                 {fullName.trim() || t('quickStart.previewName')}

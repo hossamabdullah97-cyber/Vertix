@@ -65,7 +65,7 @@ export function LiveCounters({ cardId }: { cardId: string }) {
                 <span style={{ color: m.accentDot }}>
                   <Icon name={m.icon} size={13} />
                 </span>
-                <span className="truncate text-[10px] font-semibold uppercase tracking-wide">
+                <span className="truncate text-[10px] font-semibold">
                   {t(`engagement.metrics.${m.key}`)}
                 </span>
               </div>

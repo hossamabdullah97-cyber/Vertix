@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { Card, Section, CardAction } from '@/lib/client';
 import CardPreview, { type PreviewPaymentLink } from '@/components/CardPreview';
 import { Icon } from '@/components/Icon';
@@ -22,16 +23,16 @@ type Device =
   | 'sticker'
   | 'qr';
 
-const GROUPS: { label: string; items: { id: Device; icon: string; name: string }[] }[] = [
+const GROUPS: { label: 'phones' | 'screens' | 'nfc' | 'qr'; items: { id: Device; icon: string; name: string }[] }[] = [
   {
-    label: 'Phones',
+    label: 'phones',
     items: [
       { id: 'iphone', icon: 'phone', name: 'iPhone' },
       { id: 'android', icon: 'phone', name: 'Android' },
     ],
   },
   {
-    label: 'Screens',
+    label: 'screens',
     items: [
       { id: 'tablet', icon: 'grid', name: 'Tablet' },
       { id: 'desktop', icon: 'gauge', name: 'Desktop' },
@@ -39,7 +40,7 @@ const GROUPS: { label: string; items: { id: Device; icon: string; name: string }
     ],
   },
   {
-    label: 'NFC',
+    label: 'nfc',
     items: [
       { id: 'smart-card', icon: 'sparkle', name: 'Smart Card' },
       { id: 'metal-card', icon: 'sparkle', name: 'Metal Card' },
@@ -48,7 +49,7 @@ const GROUPS: { label: string; items: { id: Device; icon: string; name: string }
     ],
   },
   {
-    label: 'QR',
+    label: 'qr',
     items: [{ id: 'qr', icon: 'qr', name: 'QR Page' }],
   },
 ];
@@ -72,6 +73,7 @@ export default function LivePreview({
   slug: string;
   qrUrl: string;
 }) {
+  const { t } = useTranslation('cardEditor');
   const [device, setDevice] = useState<Device>('iphone');
   const [zoom, setZoom] = useState(1);
   const [landscape, setLandscape] = useState(false);
@@ -132,9 +134,9 @@ export default function LivePreview({
       a.href = dataUrl;
       a.download = `${slug}-${device}.png`;
       a.click();
-      flash('Screenshot saved');
+      flash(t('preview.saved'));
     } catch {
-      flash('Screenshot failed');
+      flash(t('preview.failed'));
     } finally {
       setShooting(false);
     }
@@ -145,7 +147,7 @@ export default function LivePreview({
     if (typeof navigator !== 'undefined' && navigator.share) {
       navigator.share({ title: name, url }).catch(() => {});
     } else {
-      navigator.clipboard?.writeText(url).then(() => flash('Preview link copied')).catch(() => {});
+      navigator.clipboard?.writeText(url).then(() => flash(t('preview.copied'))).catch(() => {});
     }
   }
 
@@ -193,94 +195,70 @@ export default function LivePreview({
   );
 
   const toolbar = (
-    <div className="flex flex-wrap items-center justify-center gap-1.5">
-      {/* Zoom cluster — one segmented control, uniform cell sizes */}
-      <div className="inline-flex items-center rounded-lg border border-line bg-canvas/60 p-0.5">
-        <button
-          onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)))}
-          disabled={!canZoom}
-          title="Zoom out"
-          aria-label="Zoom out"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[15px] font-bold text-ink hover:bg-canvas disabled:opacity-40"
-        >
-          −
-        </button>
-        <button
-          onClick={() => setZoom(1)}
-          disabled={!canZoom}
-          title="Fit to 100%"
-          className="h-7 w-11 rounded-md text-[11px] font-bold tabular-nums text-muted hover:bg-canvas disabled:opacity-40"
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <button
-          onClick={() => setZoom((z) => Math.min(1.2, +(z + 0.1).toFixed(2)))}
-          disabled={!canZoom}
-          title="Zoom in"
-          aria-label="Zoom in"
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[15px] font-bold text-ink hover:bg-canvas disabled:opacity-40"
-        >
-          +
-        </button>
-      </div>
-
+    <div className="flex flex-wrap items-center justify-center gap-0.5">
+      <ToolButton label={t('preview.zoomOut')} onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)))} disabled={!canZoom}>
+        <span className="text-[15px] leading-none">−</span>
+      </ToolButton>
+      <button
+        onClick={() => setZoom(1)}
+        disabled={!canZoom}
+        title={t('preview.zoomReset')}
+        className="tabular h-8 min-w-11 rounded-md px-1 text-[12px] text-muted hover:bg-surface hover:text-ink disabled:opacity-40"
+      >
+        {Math.round(zoom * 100)}%
+      </button>
+      <ToolButton label={t('preview.zoomIn')} onClick={() => setZoom((z) => Math.min(1.2, +(z + 0.1).toFixed(2)))} disabled={!canZoom}>
+        <span className="text-[15px] leading-none">+</span>
+      </ToolButton>
       <Divider />
-
-      <ToolButton label="Rotate device" onClick={() => setLandscape((l) => !l)} active={landscape} disabled={!canRotate}>
-        <Icon name="external-link" size={15} />
+      <ToolButton label={t('preview.rotate')} onClick={() => setLandscape((l) => !l)} active={landscape} disabled={!canRotate}>
+        <Icon name="refresh" size={14} />
       </ToolButton>
-      <ToolButton label="Dark mode" onClick={() => setDarkOverride((d) => !(d ?? cardMode === 'dark'))} active={effDark}>
-        <Icon name={effDark ? 'moon' : 'sun'} size={15} />
+      <ToolButton label={t('preview.dark')} onClick={() => setDarkOverride((d) => !(d ?? cardMode === 'dark'))} active={effDark}>
+        <Icon name={effDark ? 'moon' : 'sun'} size={14} />
       </ToolButton>
-      <ToolButton label="Right-to-left" onClick={() => setRtlOverride((r) => !(r ?? cardLang === 'ar'))} active={effRtl}>
-        <span className="text-[12px] font-black leading-none">{effRtl ? 'ع' : 'A'}</span>
+      <ToolButton label={t('preview.rtl')} onClick={() => setRtlOverride((r) => !(r ?? cardLang === 'ar'))} active={effRtl}>
+        <span className="text-[12px] font-semibold leading-none">{effRtl ? 'ع' : 'A'}</span>
       </ToolButton>
-      <ToolButton label="Reload preview" onClick={reload}>
-        <Icon name="logout" size={15} className="rotate-180" />
-      </ToolButton>
-
       <Divider />
-
-      <ToolButton label="Screenshot" onClick={screenshot} disabled={shooting}>
-        <Icon name={shooting ? 'loader' : 'image'} size={15} className={shooting ? 'animate-spin' : ''} />
+      <ToolButton label={t('preview.screenshot')} onClick={screenshot} disabled={shooting}>
+        <Icon name={shooting ? 'loader' : 'image'} size={14} className={shooting ? 'animate-spin' : ''} />
       </ToolButton>
-      <ToolButton label="Share preview" onClick={sharePreview}>
-        <Icon name="send" size={15} />
+      <ToolButton label={t('preview.share')} onClick={sharePreview}>
+        <Icon name="send" size={14} />
       </ToolButton>
-      <ToolButton label="Open published view" href={publicUrl}>
-        <Icon name="external-link" size={15} />
-      </ToolButton>
-      <ToolButton label="Fullscreen" onClick={() => setFullscreen(true)}>
-        <Icon name="grid" size={15} />
+      <ToolButton label={t('preview.fullscreen')} onClick={() => setFullscreen(true)}>
+        <Icon name="columns" size={14} />
       </ToolButton>
     </div>
   );
 
   const deviceSelector = (
-    <div className="no-scrollbar flex items-center gap-1 overflow-x-auto rounded-full border border-line bg-canvas/60 p-1 shadow-sm">
-      {GROUPS.map((g, gi) => (
-        <div key={g.label} className="flex items-center gap-1">
-          {gi > 0 && <span className="mx-0.5 h-4 w-px bg-line" />}
-          {g.items.map((it) => (
-            <button
-              key={it.id}
-              onClick={() => {
-                setDevice(it.id);
-                setLandscape(false);
-                setZoom(1);
-              }}
-              className={`flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[10.5px] font-bold transition-all ${
-                device === it.id ? 'bg-[var(--ds-accent)] text-white shadow-sm' : 'text-muted hover:text-ink'
-              }`}
-              title={it.name}
-            >
-              <Icon name={it.icon} size={12} />
-              <span className="hidden sm:inline">{it.name}</span>
-            </button>
-          ))}
-        </div>
-      ))}
-    </div>
+    <label className="relative inline-flex items-center">
+      <span className="sr-only">{t('preview.device')}</span>
+      <select
+        value={device}
+        onChange={(e) => {
+          setDevice(e.target.value as Device);
+          setLandscape(false);
+          setZoom(1);
+        }}
+        className="h-8 appearance-none rounded-lg bg-surface pe-8 ps-3 text-[13px] font-medium text-ink shadow-sm ring-1 ring-inset ring-line outline-none focus:ring-accent"
+      >
+        {GROUPS.map((g) => (
+          <optgroup key={g.label} label={t(`preview.groups.${g.label}`)}>
+            {g.items.map((it) => (
+              <option key={it.id} value={it.id}>
+                {t(`preview.devices.${it.id}`, it.name)}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <span className="pointer-events-none absolute end-2.5 text-faint">
+        <Icon name="chevron-down" size={14} />
+      </span>
+    </label>
   );
 
   return (
@@ -289,11 +267,11 @@ export default function LivePreview({
         {/* Choosing a device to simulate and zooming it is a desktop job —
             on a phone you are already looking at the real thing. Hiding this
             also removes ~20 sub-40px controls from the phone layout. */}
-        <div className="sticky top-0 z-10 w-full hidden lg:flex flex-col items-center gap-2.5 bg-surface/95 backdrop-blur-md py-3.5 border-b border-line shadow-[0_2px_8px_-3px_rgba(0,0,0,0.05)] rounded-t-2xl">
+        <div className="hidden w-full flex-wrap items-center justify-between gap-2 lg:flex">
           {deviceSelector}
           {toolbar}
         </div>
-        <div className="flex min-h-[680px] w-full items-center justify-center overflow-hidden py-4">{stage}</div>
+        <div className="flex min-h-[640px] w-full items-center justify-center overflow-hidden py-2">{stage}</div>
         <LiveCounters cardId={card.id} />
       </div>
 
@@ -308,7 +286,7 @@ export default function LivePreview({
           >
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
               <div className="flex items-center gap-2 text-white/80">{deviceSelector}</div>
-              <button onClick={() => setFullscreen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20" title="Exit fullscreen">
+              <button onClick={() => setFullscreen(false)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20" title={t('preview.exitFullscreen')} aria-label={t('preview.exitFullscreen')}>
                 <Icon name="x" size={16} />
               </button>
             </div>
@@ -325,7 +303,7 @@ export default function LivePreview({
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed inset-x-0 bottom-6 z-[110] mx-auto flex w-fit items-center gap-2 rounded-full bg-[#16161a] px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg"
+            className="fixed inset-x-0 bottom-6 z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
           >
             <Icon name="check" size={15} /> {toast}
           </motion.div>
@@ -336,7 +314,7 @@ export default function LivePreview({
 }
 
 function Divider() {
-  return <span className="mx-0.5 h-5 w-px bg-line" />;
+  return <span className="mx-1 h-4 w-px bg-line-strong" style={{ background: 'hsl(var(--v-border-strong))' }} />;
 }
 
 function ToolButton({
@@ -354,8 +332,8 @@ function ToolButton({
   active?: boolean;
   disabled?: boolean;
 }) {
-  const cls = `inline-flex h-8 w-8 items-center justify-center rounded-lg border text-ink transition-all disabled:opacity-40 ${
-    active ? 'border-[var(--ds-accent)] bg-accent-soft text-accent' : 'border-line bg-canvas/60 hover:bg-canvas'
+  const cls = `inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:opacity-40 ${
+    active ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:bg-surface hover:text-ink'
   }`;
   if (href) {
     return (

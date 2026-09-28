@@ -1,81 +1,76 @@
 {
   "shell": {
-    "title": "Vertex Design Studio",
-    "loadingTitle": "Card Studio Builder",
-    "loading": "Initializing digital card studio…",
-    "errorTitle": "Studio Error",
-    "version": "Vertex Connect Studio v3"
+    "title": "Card studio",
+    "loadingTitle": "Card studio",
+    "loading": "Loading card…",
+    "errorTitle": "Something went wrong"
   },
   "commandBar": {
     "backToCards": "Cards",
-    "cardLabel": "Card:",
-    "statusLabel": "Status:",
-    "autoSave": "Auto-save:",
-    "searchPlaceholder": "Search studio fields...",
     "undo": "Undo",
     "redo": "Redo",
-    "viewProfile": "View Profile",
-    "publish": "Publish Live",
+    "viewProfile": "View card",
+    "publish": "Publish",
     "unpublish": "Unpublish"
   },
   "status": {
     "live": "Live",
     "draft": "Draft",
     "saved": "Saved",
-    "saving": "Saving...",
-    "offline": "Offline"
+    "saving": "Saving…",
+    "offline": "Not saved"
   },
   "tabs": {
-    "heading": "Card Builder Studio",
-    "content": "Content & Layout",
-    "design": "Design Studio",
+    "heading": "Card",
+    "content": "Content",
+    "design": "Design",
     "templates": "Templates",
-    "profiles": "Profiles & Links",
-    "nfc": "NFC Hardware",
-    "settings": "Card Settings"
+    "profiles": "Variants",
+    "nfc": "NFC chips",
+    "settings": "Settings"
   },
   "quickNav": {
-    "title": "Quick Navigation",
-    "profile": "Profile Details",
-    "links": "Quick Tap Links",
-    "sections": "Content Sections"
+    "title": "On this page",
+    "profile": "Profile",
+    "links": "Links",
+    "payments": "Payment links",
+    "sections": "Sections"
   },
   "profile": {
-    "title": "Profile Information",
-    "subtitle": "Customize primary display credentials on your card.",
-    "fullName": "Full Display Name",
+    "title": "Profile",
+    "subtitle": "Who you are, as the card shows it. Changes save as you type.",
+    "fullName": "Full name",
     "fullNamePlaceholder": "Sarah Chen",
-    "jobTitle": "Job Title / Company",
+    "jobTitle": "Title and company",
     "jobTitlePlaceholder": "Product Designer",
-    "phone": "Primary Phone",
+    "phone": "Phone",
     "phonePlaceholder": "+201001234567",
-    "email": "Primary Email",
+    "email": "Email",
     "emailPlaceholder": "sarah@vertex.dev",
-    "avatarLabel": "Profile Avatar Photo",
-    "coverLabel": "Cover Banner Image",
-    "save": "Save Profile Settings"
+    "avatarLabel": "Photo",
+    "coverLabel": "Cover image"
   },
   "quality": {
-    "title": "Profile Quality Score",
-    "assistant": "Profile Completion Assistant",
-    "recommendationsTitle": "Recommendations:",
-    "complete": "Fantastic! Your digital profile card is 100% complete.",
+    "title": "Card completeness",
+    "assistant": "Completeness",
+    "complete": "Everything a card needs is here.",
     "recommendations": {
       "fullName": "Add your full display name",
       "phone": "Link a contact phone number",
       "email": "Provide a primary email address",
       "sections": "Add an About bio or widgets section",
       "actions": "Add direct tap actions (WhatsApp, LinkedIn)"
-    }
+    },
+    "next": "Next: {{step}}"
   },
   "links": {
-    "title": "Direct Tap Links",
-    "subtitle": "Configure active clickable links and NFC instant redirects.",
-    "add": "Add Link or Social Media",
-    "emptyTitle": "No Direct Links Yet",
-    "emptyDesc": "Start building your profile by adding your first action or select one of the quick shortcuts below.",
-    "addShort": "Add Link",
-    "addFirst": "Add Your First Link",
+    "title": "Links",
+    "subtitle": "Buttons on your card. Drag to reorder; switch one off to hide it without deleting it.",
+    "add": "Add a link",
+    "emptyTitle": "No links yet",
+    "emptyDesc": "Add the ways people should reach you. Start with one of these, or browse every platform.",
+    "addShort": "Add link",
+    "addFirst": "Add a link",
     "shortcuts": {
       "phone": "Phone",
       "email": "Email",
@@ -83,33 +78,33 @@
       "website": "Website",
       "linkedin": "LinkedIn"
     },
-    "buttonLabel": "Button Label",
-    "destination": "Link Destination",
-    "destinationFor": "{{name}} Link Destination",
-    "targetDestination": "Target Destination Link",
-    "destinationPlaceholder": "Enter link target address...",
-    "phoneNumber": "Phone Number",
+    "buttonLabel": "Button text",
+    "destination": "Link",
+    "destinationFor": "{{name}} link",
+    "targetDestination": "Link",
+    "destinationPlaceholder": "https://…",
+    "phoneNumber": "Phone number",
     "phonePlaceholder": "+201012345678",
-    "emailAddress": "Email Address",
+    "emailAddress": "Email address",
     "emailPlaceholder": "name@domain.com",
-    "whatsappPhone": "WhatsApp Phone",
-    "whatsappMessage": "Pre-filled Chat Message",
-    "whatsappMessagePlaceholder": "Hello, I got your card...",
-    "linkedinUrl": "LinkedIn URL",
+    "whatsappPhone": "WhatsApp number",
+    "whatsappMessage": "Pre-filled message",
+    "whatsappMessagePlaceholder": "Hello, I got your card…",
+    "linkedinUrl": "LinkedIn profile",
     "linkedinPlaceholder": "https://linkedin.com/in/username",
-    "bookingUrl": "Booking Page URL",
+    "bookingUrl": "Booking page",
     "bookingPlaceholder": "https://calendly.com/your-name",
-    "primaryRedirect": "Set as Primary NFC Tap Redirect Action (Opens instantly on card scan)",
-    "quickContact": "Show as Quick Contact button (circular icon below profile header)",
-    "topRow": "Top Row",
-    "bottomGrid": "Bottom Grid",
-    "topRowHint": "Circular buttons shown directly below display name/title.",
-    "bottomGridHint": "Large circular branded icon buttons shown in the main links grid.",
-    "moveUp": "Move Up",
-    "moveDown": "Move Down",
-    "duplicate": "Duplicate action",
-    "delete": "Delete action",
-    "toggleVisibility": "Toggle visibility",
+    "primaryRedirect": "Open this directly when someone taps an NFC chip",
+    "quickContact": "Show as a quick contact button under your name",
+    "topRow": "Top row",
+    "bottomGrid": "Links grid",
+    "topRowHint": "Round buttons right under your name and title.",
+    "bottomGridHint": "Larger buttons in the main links grid.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "duplicate": "Duplicate link",
+    "delete": "Delete link",
+    "toggleVisibility": "Show or hide on the card",
     "status": {
       "draft": "Draft",
       "active": "Active",
@@ -125,61 +120,61 @@
     }
   },
   "platformPicker": {
-    "searchPlaceholder": "Search platforms... (↑/↓ to navigate, Enter to add, Esc to close)",
+    "searchPlaceholder": "Search platforms",
     "empty": "No matching platforms found.",
-    "hint": "Select a platform or search to add credentials to your card.",
-    "suggested": "Suggested Shortcuts",
-    "favorite": "Favorite",
-    "unfavorite": "Unfavorite",
+    "hint": "Pick where the button should lead. ↑ ↓ to move, Enter to add.",
+    "suggested": "Suggested",
+    "favorite": "Add to favourites",
+    "unfavorite": "Remove from favourites",
     "categories": {
-      "favorites": "⭐ Favorites",
-      "recentlyUsed": "Recently Used",
-      "quickActions": "⭐ Quick Actions",
-      "socialMedia": "🌐 Social Media",
-      "business": "💼 Business",
-      "media": "🎥 Media",
-      "custom": "⚙ Custom"
+      "favorites": "Favorites",
+      "recentlyUsed": "Recently used",
+      "quickActions": "Contact",
+      "socialMedia": "Social media",
+      "business": "Business",
+      "media": "Media and files",
+      "custom": "Custom"
     }
   },
   "sections": {
-    "title": "Page Layout Sections",
-    "subtitle": "Manage additional content layout grids (Bio, Portfolios, etc.).",
-    "available": "Available Section Blocks",
+    "title": "Sections",
+    "subtitle": "Longer content below the buttons: a bio, a gallery, a video, a booking link.",
+    "available": "Add a section",
     "types": {
       "BIO": {
-        "label": "About Bio",
-        "desc": "A custom text description block"
+        "label": "About",
+        "desc": "A few lines about you or your business"
       },
       "SOCIAL": {
-        "label": "Social Grid",
-        "desc": "Grid layout of social profiles"
+        "label": "Social profiles",
+        "desc": "Your social accounts in a grid"
       },
       "PORTFOLIO": {
-        "label": "Portfolio Gallery",
-        "desc": "Visual grid block of projects"
+        "label": "Gallery",
+        "desc": "Photos of your work in a grid"
       },
       "BOOKING": {
-        "label": "Booking Widget",
-        "desc": "Interactive booking calendar"
+        "label": "Booking",
+        "desc": "A button to book time with you"
       },
       "VIDEO": {
-        "label": "Video Player",
-        "desc": "Embed YouTube or Vimeo video"
+        "label": "Video",
+        "desc": "A YouTube or Vimeo video"
       }
     },
-    "sectionTitle": "Section Title",
-    "sectionHeading": "Section Title Heading",
-    "bioTitle": "Bio Content Details",
+    "sectionTitle": "Title",
+    "sectionHeading": "Heading",
+    "bioTitle": "About text",
     "bioLabel": "Biography / Introduction",
     "bioHelpBefore": "Profile details (name and job role) are automatically imported. Use this block to add a ",
     "bioHelpAfter": " text segment on your profile card.",
-    "bioPlaceholder": "Write something about your business or services...",
-    "bodyContent": "Body Details Content",
-    "bodyPlaceholder": "Describe the content of this block in details...",
-    "subtitleField": "Subtitle / Extra Info",
-    "galleryTitle": "Gallery Title",
-    "galleryTitlePlaceholder": "e.g. My Work, Projects, Portfolio",
-    "galleryImages": "Gallery Images",
+    "bioPlaceholder": "A few lines about you or your business…",
+    "bodyContent": "Text",
+    "bodyPlaceholder": "What should visitors know?",
+    "subtitleField": "Subtitle",
+    "galleryTitle": "Gallery title",
+    "galleryTitlePlaceholder": "e.g. My work",
+    "galleryImages": "Images",
     "addGalleryImage": "Add image to gallery",
     "photoGallery": "photo gallery",
     "galleryHelpBefore": "Upload images to display as a ",
@@ -190,39 +185,56 @@
     "servicesPlaceholder": "e.g. My Services",
     "offerPlaceholder": "e.g. What I offer",
     "bookingPlaceholder": "Book a meeting with me",
-    "deleteBlock": "Delete block"
+    "deleteBlock": "Delete section",
+    "empty": "No sections yet. Add one below.",
+    "optional": "optional",
+    "videoHelp": "Paste a YouTube or Vimeo link; the video plays on your card.",
+    "videoInvalid": "That doesn’t look like a YouTube or Vimeo link.",
+    "bookingHelp": "Link your Calendly, Cal.com or any booking page; it shows as a button on your card."
   },
   "design": {
-    "title": "Design Studio",
-    "subtitle": "Customize the visual theme layout, accent swatches, and covers.",
-    "accent": "Accent Palette Color",
-    "themeMode": "Display Theme Mode",
-    "lightMode": "Light Mode",
-    "darkMode": "Dark Mode",
-    "lightPreview": "Light Preview",
-    "darkPreview": "Dark Preview",
-    "cover": "Background Cover Style",
-    "cardLanguage": "Card Language Layout"
+    "title": "Design",
+    "subtitle": "Colour, light or dark, the cover and the card’s language. Changes save as you pick them.",
+    "accent": "Accent colour",
+    "themeMode": "Appearance",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "cover": "Cover",
+    "cardLanguage": "Card language",
+    "covers": {
+      "solid": "Solid",
+      "gradient": "Gradient",
+      "constellation": "Night sky"
+    }
   },
   "nfc": {
-    "title": "Bound Physical NFC Products",
-    "subtitle": "Bind physical smart tags, stickers or wristbands directly to this profile link.",
+    "title": "Linked chips",
+    "subtitle": "Chips linked to this card. Tapping one opens the card.",
     "bound": "Bound",
     "uid": "UID",
     "hardware": "Hardware",
     "scanCount": "Scan count",
-    "empty": "No physical NFC tags bound to this profile card currently.",
-    "provisioning": "NFC Hardware Provisioning"
+    "empty": "No chips are linked to this card yet.",
+    "provisioning": "NFC chips",
+    "explain": "Tapping a linked chip on a phone opens this card straight away.",
+    "manage": "Manage all chips"
   },
   "settings": {
-    "title": "Card URL Link",
-    "subtitle": "Manage your business card URL link and visibility status.",
+    "title": "Card address",
+    "subtitle": "The card’s address and who can see it.",
     "slugHint": "Must be unique. Allowed characters: lowercase letters, numbers, and hyphens.",
-    "visibility": "Card Visibility Mode",
-    "dangerZone": "Irreversible actions for this business card.",
-    "deleteCard": "Delete Business Card",
+    "visibility": "Visibility",
+    "dangerZone": "Deleting removes the card, its links and sections. Chips linked to it become unassigned.",
+    "deleteCard": "Delete card",
     "cancel": "Cancel",
-    "confirmDelete": "Confirm Delete"
+    "confirmDelete": "Delete permanently",
+    "general": "Settings",
+    "published": "Published",
+    "publishedHint": "Anyone with the link or a chip can open it.",
+    "draft": "Draft",
+    "draftHint": "Only you and your team can see it.",
+    "danger": "Delete card",
+    "confirmPrompt": "To confirm, type the card address:"
   },
   "share": {
     "title": "Share & QR",
@@ -236,7 +248,7 @@
     "uploading": "Uploading…",
     "remove": "Remove",
     "failed": "Upload failed.",
-    "hint": "JPG, PNG, WebP or GIF · up to 5 MB · drag & drop supported",
+    "hint": "JPG, PNG, WebP or GIF up to 5 MB, or drop a file here.",
     "notImage": "Please choose an image file.",
     "tooLarge": "Image is larger than 5 MB.",
     "urlPlaceholder": "…or paste an image URL"
@@ -312,6 +324,156 @@
       "read": "Could not read the tag. Move it away and try again.",
       "register": "The tag was written but could not be registered.",
       "cancelled": "Cancelled."
+    }
+  },
+  "templates": {
+    "title": "Templates",
+    "subtitle": "Apply a finished look. Your content stays; the preview updates as you choose.",
+    "searchPlaceholder": "Search templates",
+    "all": "All",
+    "favourites": "Favourites",
+    "allStyles": "All styles",
+    "count_one": "1 template",
+    "count_other": "{{count}} templates",
+    "empty": "No templates match these filters.",
+    "clearFilters": "Clear filters",
+    "apply": "Apply",
+    "applying": "Applying…",
+    "applied": "Applied",
+    "miniCta": "Save contact",
+    "compare": "Compare",
+    "compareAdd": "Add to comparison",
+    "compareRemove": "Remove from comparison",
+    "clearCompare": "Clear comparison",
+    "selected_one": "1 selected",
+    "selected_other": "{{count}} selected",
+    "compareTitle": "Compare templates",
+    "compareCount_one": "1 template side by side",
+    "compareCount_other": "{{count}} templates side by side",
+    "close": "Close",
+    "rows": {
+      "style": "Style",
+      "avatar": "Photo shape"
+    },
+    "avatars": {
+      "circle": "Round",
+      "square": "Square"
+    }
+  },
+  "preview": {
+    "device": "Device",
+    "groups": {
+      "phones": "Phones",
+      "screens": "Screens",
+      "nfc": "NFC products",
+      "qr": "QR"
+    },
+    "devices": {
+      "iphone": "iPhone",
+      "android": "Android",
+      "tablet": "Tablet",
+      "desktop": "Desktop",
+      "watch": "Watch",
+      "smart-card": "Smart card",
+      "metal-card": "Metal card",
+      "leather-keychain": "Keychain",
+      "sticker": "Sticker",
+      "qr": "QR page"
+    },
+    "dark": "Dark mode",
+    "rtl": "Right to left",
+    "reload": "Reload",
+    "screenshot": "Screenshot",
+    "share": "Share preview",
+    "open": "Open card",
+    "fullscreen": "Full screen",
+    "exitFullscreen": "Exit full screen",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomReset": "Reset zoom",
+    "rotate": "Rotate",
+    "saved": "Screenshot saved",
+    "failed": "Screenshot failed",
+    "copied": "Link copied"
+  },
+  "variants": {
+    "title": "Profiles on one link",
+    "subtitle": "Your card keeps one public link. Each profile can change the details, look, links and sections, and shows to people with a private key or passcode, on a schedule, or when you switch it on. When none applies, the default profile shows.",
+    "add": "Add profile",
+    "newName": "Profile {{n}}",
+    "added": "Profile added as a copy of your default.",
+    "deleted": "Profile deleted.",
+    "copied": "Link copied.",
+    "deleteConfirm": "Delete this profile? Its link and content will stop working.",
+    "conflictsTitle": "Some profiles overlap",
+    "conflictMultiple": "{{count}} profiles are switched on at once, so only “{{name}}” shows.",
+    "conflictOverlap": "“{{a}}” and “{{b}}” have overlapping schedules, so “{{a}}” shows.",
+    "default": {
+      "title": "Default profile",
+      "badge": "Default",
+      "hint": "Shows when no other profile applies. Edit it in the Content and Design tabs."
+    },
+    "copy": "Copy",
+    "emptyTitle": "No extra profiles yet",
+    "emptyBody": "Add a profile to show a different version of your card to specific people, at a specific time, or for an occasion.",
+    "status": {
+      "private": "Private link",
+      "live": "Live now",
+      "idle": "Idle"
+    },
+    "deleteProfile": "Delete profile",
+    "nameLabel": "Profile name",
+    "fallbackName": "Profile",
+    "look": "Look and details",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "Ahmed, VIP",
+    "jobTitle": "Job title",
+    "jobTitlePlaceholder": "Founder & CEO",
+    "template": "Template",
+    "audience": "Who sees it and when",
+    "manual": "Switch on now",
+    "manualHint": "For an event or an occasion",
+    "from": "Show from",
+    "until": "Until",
+    "key": "Private key",
+    "passcode": "Passcode",
+    "optional": "Optional",
+    "contentToggle": "Links and sections for this profile",
+    "contentCount": "Links {{links}} · Sections {{sections}}",
+    "pinRequired": "Passcode required",
+    "links": {
+      "title": "Links",
+      "empty": "No links on this profile yet.",
+      "add": "Add link",
+      "active": "Shown, click to hide",
+      "hidden": "Hidden, click to show",
+      "delete": "Delete link",
+      "types": {
+        "CALL": "Phone call",
+        "WHATSAPP": "WhatsApp",
+        "EMAIL": "Email",
+        "WEBSITE": "Website",
+        "LINKEDIN": "LinkedIn",
+        "BOOK_MEETING": "Book a meeting"
+      }
+    },
+    "sections": {
+      "title": "Sections",
+      "empty": "No sections on this profile yet.",
+      "add": "Add section",
+      "visible": "Shown, click to hide",
+      "hidden": "Hidden, click to show",
+      "delete": "Delete section",
+      "types": {
+        "BIO": "About",
+        "BOOKING": "Booking button",
+        "VIDEO": "Video"
+      },
+      "placeholders": {
+        "BIO": "A short bio for this profile…",
+        "BOOKING": "https://calendly.com/…",
+        "VIDEO": "YouTube or Vimeo link"
+      }
     }
   }
 }

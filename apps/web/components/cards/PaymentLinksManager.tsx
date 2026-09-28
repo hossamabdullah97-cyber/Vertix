@@ -182,169 +182,180 @@ export default function PaymentLinksManager({
 
   const activeCount = links.filter((l) => l.isActive).length;
 
-  return (
-    <div
-      id={compact ? undefined : 'studio-payments'}
-      className={
-        compact
-          ? 'rounded-xl border border-line bg-canvas/20 p-4 space-y-4'
-          : 'bg-surface border border-line rounded-2xl p-6 shadow-sm space-y-6 scroll-mt-24'
-      }
+  const addButton = (
+    <button
+      onClick={() => {
+        setAdding(true);
+        setError('');
+      }}
+      className="v-btn v-btn-ghost"
     >
-      <div className={`flex items-center justify-between gap-3 ${compact ? '' : 'border-b border-line pb-3.5'}`}>
-        <div className="flex items-center gap-3">
-          {compact ? (
-            <p className="v-section-label">{t('titleCompact')}</p>
-          ) : (
-            <>
-              <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-emerald-500/10 text-emerald-500">
-                <Icon name="link" size={16} />
-              </span>
-              <div>
-                <h3 className="text-[14px] font-extrabold text-ink tracking-tight">{t('title')}</h3>
-                <p className="text-xs text-muted">{t('subtitle')}</p>
-              </div>
-            </>
-          )}
-        </div>
+      <Icon name="plus" size={14} /> {t('addLink')}
+    </button>
+  );
+
+  return (
+    <div id={compact ? undefined : 'studio-payments'} className={compact ? 'space-y-3' : 'scroll-mt-16 space-y-4'}>
+      <div className="flex items-start justify-between gap-3">
+        {compact ? (
+          <p className="text-[12.5px] font-medium text-ink">{t('titleCompact')}</p>
+        ) : (
+          <div className="min-w-0">
+            <h2 className="text-[16px] font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{t('title')}</h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">{t('subtitle')}</p>
+          </div>
+        )}
         {links.length > 0 && (
-          <span className="shrink-0 text-[11px] font-bold text-muted whitespace-nowrap">
+          <span className="tabular shrink-0 whitespace-nowrap pt-1 text-[12.5px] text-faint">
             {t('activeCount', { active: activeCount, total: links.length })}
           </span>
         )}
       </div>
 
       {loading ? (
-        <p className="text-[11px] text-muted text-center py-4">{t('loading')}</p>
+        <div className="v-skeleton h-14 rounded-xl" aria-label={t('loading')} />
       ) : (
-        <div className="space-y-4">
-          <div className="space-y-3">
-            {links.map((link) => {
-              const meta = PLATFORM_META[link.platform] ?? PLATFORM_META.custom;
-              const open = expanded === link.id;
-              return (
-                <div
-                  key={link.id}
-                  draggable
-                  onDragStart={() => (dragId.current = link.id)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => onDrop(link.id)}
-                  className={`rounded-2xl border bg-canvas/20 transition-all ${
-                    link.isActive ? 'border-line hover:border-line-strong' : 'border-dashed border-line/60 opacity-70'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 p-3.5">
-                    <span className="cursor-grab text-muted/60 active:cursor-grabbing" title={t('actions.reorder')}>
-                      <Icon name="dots" size={15} />
-                    </span>
-                    <PaymentBrandLogo platform={link.platform} size={36} />
-                    <button className="min-w-0 flex-1 text-left" onClick={() => setExpanded(open ? null : link.id)}>
-                      <span className="block truncate text-[13px] font-bold text-ink">{link.displayName}</span>
-                      <span className="block truncate text-[11px] text-muted">{meta.label}</span>
-                    </button>
+        <div className="space-y-3">
+          {links.length > 0 && (
+            <div className="divide-y divide-line overflow-hidden rounded-xl bg-surface ring-1 ring-inset ring-line">
+              {links.map((link) => {
+                const meta = PLATFORM_META[link.platform] ?? PLATFORM_META.custom;
+                const open = expanded === link.id;
+                return (
+                  <div
+                    key={link.id}
+                    draggable
+                    onDragStart={() => (dragId.current = link.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => onDrop(link.id)}
+                    className={`group ${open ? 'bg-elevated' : ''}`}
+                  >
+                    <div className="flex min-h-14 items-center gap-3 px-3 py-2.5">
+                      <span className="hidden shrink-0 cursor-grab text-faint active:cursor-grabbing sm:inline" title={t('actions.reorder')} aria-hidden>
+                        <Icon name="dots" size={14} className="rotate-90" />
+                      </span>
+                      <PaymentBrandLogo platform={link.platform} size={32} />
+                      <button
+                        className="min-w-0 flex-1 text-start"
+                        onClick={() => setExpanded(open ? null : link.id)}
+                        aria-expanded={open}
+                      >
+                        <span className={`block truncate text-[13.5px] font-medium ${link.isActive ? 'text-ink' : 'text-faint'}`}>{link.displayName}</span>
+                        <span className="block truncate text-[12px] text-faint">{meta.label}</span>
+                      </button>
 
-                    <button
-                      onClick={() => patch(link.id, { isActive: !link.isActive })}
-                      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        link.isActive ? 'bg-emerald-500' : 'bg-line-strong'
-                      }`}
-                      title={link.isActive ? t('actions.active') : t('actions.inactive')}
-                      aria-pressed={link.isActive}
-                    >
-                      <span
-                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                          link.isActive ? 'translate-x-4' : 'translate-x-0.5'
+                      <button
+                        onClick={() => remove(link.id)}
+                        className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-red-500/10 hover:text-red-600 focus-visible:opacity-100 group-hover:opacity-100 sm:flex"
+                        title={t('actions.delete')}
+                        aria-label={t('actions.delete')}
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+
+                      <button
+                        onClick={() => patch(link.id, { isActive: !link.isActive })}
+                        role="switch"
+                        aria-checked={link.isActive}
+                        aria-label={link.isActive ? t('actions.active') : t('actions.inactive')}
+                        title={link.isActive ? t('actions.active') : t('actions.inactive')}
+                        className={`relative inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent before:absolute before:-inset-3 before:content-[''] sm:before:hidden ${
+                          link.isActive ? 'bg-accent' : ''
                         }`}
-                      />
-                    </button>
+                        style={link.isActive ? undefined : { background: 'hsl(var(--v-border-strong))' }}
+                      >
+                        <span
+                          className={`pointer-events-none absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-[inset-inline-start] ${
+                            link.isActive ? 'start-[14px]' : 'start-[2px]'
+                          }`}
+                        />
+                      </button>
 
-                    <button
-                      onClick={() => setExpanded(open ? null : link.id)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink"
-                      title={t('actions.edit')}
-                    >
-                      <Icon name="settings" size={14} />
-                    </button>
-                    <button
-                      onClick={() => remove(link.id)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:bg-red-500/10 hover:text-red-500"
-                      title={t('actions.delete')}
-                    >
-                      <Icon name="trash" size={14} />
-                    </button>
-                  </div>
-
-                  {open && (
-                    <div className="space-y-3 border-t border-line px-3.5 pb-4 pt-3.5">
-                      <Field label={t('fields.method')}>
-                        <select
-                          className="v-field"
-                          value={link.platform}
-                          onChange={(e) => patch(link.id, { platform: e.target.value as PaymentPlatformKey })}
-                        >
-                          {PAYMENT_PLATFORMS.map((p) => (
-                            <option key={p.key} value={p.key}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </select>
-                      </Field>
-                      <Field label={t('fields.displayName')}>
-                        <input
-                          className="v-field"
-                          defaultValue={link.displayName}
-                          maxLength={60}
-                          onBlur={(e) => {
-                            const v = e.target.value.trim();
-                            if (v && v !== link.displayName) patch(link.id, { displayName: v });
-                          }}
-                        />
-                      </Field>
-                      <Field label={t('fields.url')}>
-                        <input
-                          className="v-field"
-                          defaultValue={link.url}
-                          placeholder={t('placeholders.url')}
-                          onBlur={(e) => {
-                            const v = e.target.value.trim();
-                            if (v === link.url) return;
-                            if (!HTTPS_LIKE.test(v)) {
-                              e.target.value = link.url;
-                              setError(t('errors.invalidUrl'));
-                              return;
-                            }
-                            setError('');
-                            patch(link.id, { url: v });
-                          }}
-                        />
-                      </Field>
-                      <Field label={t('fields.description')}>
-                        <input
-                          className="v-field"
-                          defaultValue={link.description ?? ''}
-                          maxLength={160}
-                          placeholder={t('placeholders.description')}
-                          onBlur={(e) => {
-                            const v = e.target.value.trim();
-                            if (v !== (link.description ?? '')) patch(link.id, { description: v || undefined });
-                          }}
-                        />
-                      </Field>
+                      <button
+                        onClick={() => setExpanded(open ? null : link.id)}
+                        className="flex h-11 w-8 shrink-0 items-center justify-center text-faint hover:text-ink sm:h-8"
+                        title={t('actions.edit')}
+                        aria-label={t('actions.edit')}
+                        aria-expanded={open}
+                      >
+                        <Icon name="chevron-down" size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+                      </button>
                     </div>
-                  )}
-                </div>
-              );
-            })}
 
-            {links.length === 0 && !adding && (
-              <p className="text-[11px] text-muted text-center py-3 bg-canvas/10 rounded-xl border border-dashed border-line/60">
-                {t('emptyState')}
-              </p>
-            )}
-          </div>
+                    {open && (
+                      <div className="grid gap-3 px-3 pb-3.5 sm:grid-cols-2 sm:ps-[70px]">
+                        <Field label={t('fields.method')}>
+                          <select
+                            className="v-field"
+                            value={link.platform}
+                            onChange={(e) => patch(link.id, { platform: e.target.value as PaymentPlatformKey })}
+                          >
+                            {PAYMENT_PLATFORMS.map((p) => (
+                              <option key={p.key} value={p.key}>
+                                {p.label}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        <Field label={t('fields.displayName')}>
+                          <input
+                            className="v-field"
+                            defaultValue={link.displayName}
+                            maxLength={60}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v && v !== link.displayName) patch(link.id, { displayName: v });
+                            }}
+                          />
+                        </Field>
+                        <Field label={t('fields.url')}>
+                          <input
+                            dir="ltr"
+                            className="v-field font-mono !text-[12.5px] rtl:text-right"
+                            defaultValue={link.url}
+                            placeholder={t('placeholders.url')}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v === link.url) return;
+                              if (!HTTPS_LIKE.test(v)) {
+                                e.target.value = link.url;
+                                setError(t('errors.invalidUrl'));
+                                return;
+                              }
+                              setError('');
+                              patch(link.id, { url: v });
+                            }}
+                          />
+                        </Field>
+                        <Field label={t('fields.description')}>
+                          <input
+                            className="v-field"
+                            defaultValue={link.description ?? ''}
+                            maxLength={160}
+                            placeholder={t('placeholders.description')}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v !== (link.description ?? '')) patch(link.id, { description: v || undefined });
+                            }}
+                          />
+                        </Field>
+                        <div className="border-t border-line pt-3 sm:hidden">
+                          <button onClick={() => remove(link.id)} className="v-btn v-btn-ghost !h-11 w-full !text-red-600">
+                            <Icon name="trash" size={14} /> {t('actions.delete')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {error && !adding && <p className="text-[12.5px] text-red-600 dark:text-red-400">{error}</p>}
 
           {adding ? (
-            <div className="space-y-3 rounded-2xl border border-line bg-canvas/20 p-4">
+            <div className="grid gap-3 rounded-xl p-4 ring-1 ring-inset ring-line sm:grid-cols-2">
               <Field label={t('fields.method')}>
                 <select
                   className="v-field"
@@ -375,7 +386,8 @@ export default function PaymentLinksManager({
               </Field>
               <Field label={t('fields.url')}>
                 <input
-                  className="v-field"
+                  dir="ltr"
+                  className="v-field font-mono !text-[12.5px] rtl:text-right"
                   value={draft.url}
                   onChange={(e) => setDraft({ ...draft, url: e.target.value })}
                   placeholder={t('placeholders.url')}
@@ -390,13 +402,9 @@ export default function PaymentLinksManager({
                   placeholder={t('placeholders.description')}
                 />
               </Field>
-              {error && <p className="text-[11px] font-semibold text-red-500">{error}</p>}
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  onClick={addLink}
-                  disabled={busy}
-                  className="v-btn-primary h-9 px-4 text-[12px] disabled:opacity-60"
-                >
+              {error && <p className="text-[12.5px] text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
+              <div className="flex items-center gap-2 sm:col-span-2">
+                <button onClick={addLink} disabled={busy} className="v-btn disabled:opacity-60">
                   {busy ? t('saving') : t('addLink')}
                 </button>
                 <button
@@ -405,25 +413,19 @@ export default function PaymentLinksManager({
                     setError('');
                     setDraft(blankDraft());
                   }}
-                  className="h-9 px-4 text-[12px] font-semibold text-muted hover:text-ink"
+                  className="v-btn v-btn-ghost"
                 >
                   {t('cancel')}
                 </button>
               </div>
             </div>
+          ) : links.length === 0 ? (
+            <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[13px] text-muted">{t('emptyState')}</p>
+              <div className="shrink-0">{addButton}</div>
+            </div>
           ) : (
-            <>
-              {error && !adding && <p className="text-[11px] font-semibold text-red-500">{error}</p>}
-              <button
-                onClick={() => {
-                  setAdding(true);
-                  setError('');
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line py-3 text-[12px] font-bold text-muted transition-colors hover:border-line-strong hover:text-ink"
-              >
-                <Icon name="plus" size={15} /> {t('addLink')}
-              </button>
-            </>
+            addButton
           )}
         </div>
       )}
@@ -433,9 +435,9 @@ export default function PaymentLinksManager({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-[11px] font-bold text-muted uppercase tracking-wider">{label}</label>
+    <label className="block">
+      <span className="mb-1.5 block text-[12.5px] text-muted">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
