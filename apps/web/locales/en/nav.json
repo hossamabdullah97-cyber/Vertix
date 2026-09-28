@@ -20,5 +20,57 @@
   "lightMode": "Light mode",
   "toggleTheme": "Toggle color theme",
   "signOut": "Sign out",
-  "notifications": "Notifications"
+  "notifications": "Notifications",
+  "search": "Search",
+  "searchPlaceholder": "Search cards, leads, people…",
+  "searchLoading": "Loading…",
+  "searchEmpty": "No results for “{{query}}”",
+  "searchGroups": {
+    "pages": "Go to",
+    "cards": "Cards",
+    "departments": "Departments",
+    "teams": "Teams",
+    "members": "Members",
+    "leads": "Leads",
+    "tags": "NFC tags",
+    "files": "Files",
+    "notifications": "Notifications"
+  },
+  "searchKeys": {
+    "navigate": "Navigate",
+    "open": "Open",
+    "close": "Close"
+  },
+  "teamsCount": "{{count}} teams",
+  "membersCount": "{{count}} members",
+  "unnamedLead": "Unnamed lead",
+  "pendingMember": "Pending invite",
+  "switcher": {
+    "favorites": "Favorites",
+    "recents": "Recent",
+    "workspaces": "Workspaces",
+    "personal": "Personal workspace",
+    "noResults": "No workspaces match",
+    "onlyOne": "This is your only workspace.",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites"
+  },
+  "plan": {
+    "cards": "{{used}} of {{limit}} cards",
+    "cardsUnlimited": "{{used}} cards",
+    "compare": "Compare plans"
+  },
+  "account": {
+    "menu": "Account menu",
+    "language": "Language",
+    "theme": "Appearance",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "roles": {
+    "OWNER": "Owner",
+    "ADMIN": "Admin",
+    "MANAGER": "Manager",
+    "EMPLOYEE": "Member"
+  }
 }
