@@ -1,4 +1,66 @@
 {
-  "title": "Notifications & Alerts",
-  "subtitle": "System notifications, approval requests, lead alerts, and team updates."
+  "title": "Notifications",
+  "bell": "Notifications",
+  "bellUnread_one": "Notifications, one unread",
+  "bellUnread_other": "Notifications, {{count}} unread",
+  "markAll": "Mark all as read",
+  "viewAll": "See all notifications",
+  "settings": "Notification settings",
+  "loadMore": "Show older",
+  "loading": "Loading…",
+  "more": "More actions",
+  "close": "Close",
+  "tabs": { "all": "All", "unread": "Unread", "archived": "Archived" },
+  "categories": {
+    "all": "All types",
+    "CRM": "Leads",
+    "ORGANIZATION": "Team",
+    "SECURITY": "Security",
+    "SYSTEM": "Automations",
+    "BILLING": "Billing"
+  },
+  "groups": { "today": "Today", "yesterday": "Yesterday", "week": "Earlier this week", "earlier": "Earlier" },
+  "actions": { "markRead": "Mark as read", "markUnread": "Mark as unread", "archive": "Archive", "open": "Open" },
+  "otherWorkspace": "In {{name}}",
+  "empty": {
+    "unreadTitle": "You're all caught up",
+    "allTitle": "No notifications yet",
+    "archivedTitle": "Nothing archived",
+    "body": "New leads, team changes and automation alerts show up here as they happen.",
+    "archivedBody": "Notifications you archive are kept here."
+  },
+  "prefs": {
+    "intro": "Choose what shows up here. Turning a type off stops new ones; the ones you have stay.",
+    "CRM": "When someone shares their details from one of your cards.",
+    "ORGANIZATION": "People joining or leaving, your role, teams and workspace settings.",
+    "SECURITY": "Changes to your own access, like a suspension.",
+    "SYSTEM": "Automation alerts and deliveries that failed."
+  },
+  "types": {
+    "lead": {
+      "CONTACT": "New lead",
+      "MEETING": "Meeting request",
+      "QUOTE": "Quote request"
+    },
+    "automationFailed": "An automation didn't finish",
+    "automationFailedBody": "Some of its actions failed on “{{event}}”.",
+    "webhookFailed": "A webhook couldn't be delivered",
+    "webhookFailedBody": "“{{event}}” failed after several attempts.",
+    "memberAdded": "You were added to the workspace",
+    "memberAddedBody": "Your role: {{role}}",
+    "roleChanged": "Your role changed",
+    "roleChangedBody": "You're now {{role}}.",
+    "suspended": "Your access was suspended",
+    "reactivated": "Your access is back",
+    "memberRemoved": "A member was removed",
+    "memberRemovedBy": "{{actor}} removed a member",
+    "teamCreated": "Team “{{name}}” was created",
+    "teamCreatedBy": "{{actor}} created the team “{{name}}”",
+    "teamDeleted": "Team “{{name}}” was deleted",
+    "teamDeletedBy": "{{actor}} deleted the team “{{name}}”",
+    "workspaceUpdated": "Workspace settings were updated",
+    "workspaceUpdatedBy": "{{actor}} updated the workspace settings",
+    "approved": "Your request was approved",
+    "rejected": "Your request was declined"
+  }
 }

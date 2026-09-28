@@ -2,128 +2,101 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authFetch, getToken } from '@/lib/client';
 import { useTranslation } from 'react-i18next';
+import { authFetch, getActiveOrgId, getToken } from '@/lib/client';
+import { formatNumber } from '@/lib/format';
+import { useLocale } from '@/components/i18n/LanguageProvider';
 import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { relativeTime } from '@/lib/crm';
+import { Sheet } from '@/components/ui/Sheet';
+import { NotificationRow } from '@/components/notifications/NotificationRow';
+import { CATEGORIES, CATEGORY_ICON, NOTIFS_CHANGED, announceChange, bucketOf, markRead, openNotification, type Bucket, type Notif } from '@/components/notifications/model';
 
-interface Notif {
-  id: string;
-  type: string;
-  category: string;
-  priority: string;
-  title: string;
-  body: string | null;
-  metadata: Record<string, unknown> | null;
-  readAt: string | null;
-  createdAt: string;
-  actor: { name: string | null; email: string; avatarUrl?: string | null } | null;
-}
+type Tab = 'all' | 'unread' | 'archived';
+const TABS: Tab[] = ['all', 'unread', 'archived'];
+const PAGE = 30;
+const BUCKETS: Bucket[] = ['today', 'yesterday', 'week', 'earlier'];
 
-const CATEGORY_META: Record<string, { icon: string; color: string }> = {
-  CRM: { icon: 'inbox', color: '#2563eb' },
-  ORGANIZATION: { icon: 'users', color: '#0ea5e9' },
-  SECURITY: { icon: 'lock', color: '#f43f5e' },
-  BILLING: { icon: 'chart-bar', color: '#10b981' },
-  CARD: { icon: 'columns', color: '#3b82f6' },
-  NFC: { icon: 'sparkle', color: '#ec4899' },
-  QR: { icon: 'qr', color: '#14b8a6' },
-  SYSTEM: { icon: 'sparkle', color: '#94a3b8' },
-};
-const catMeta = (c: string) => CATEGORY_META[c] ?? { icon: 'bell', color: '#94a3b8' };
-const PRIORITY_DOT: Record<string, string> = { CRITICAL: '#ef4444', HIGH: '#f59e0b', MEDIUM: '#2563eb', LOW: '#94a3b8', INFO: '#0ea5e9' };
-
-type Tab = { key: string; label: string; query: string };
-const TABS: Tab[] = [
-  { key: 'all', label: 'All', query: '' },
-  { key: 'unread', label: 'Unread', query: 'unread=true' },
-  { key: 'crm', label: 'CRM', query: 'category=CRM' },
-  { key: 'org', label: 'Organization', query: 'category=ORGANIZATION' },
-  { key: 'security', label: 'Security', query: 'category=SECURITY' },
-  { key: 'billing', label: 'Billing', query: 'category=BILLING' },
-  { key: 'system', label: 'System', query: 'category=SYSTEM' },
-  { key: 'archived', label: 'Archived', query: 'archived=true' },
-];
-
-const PREF_CATEGORIES: { key: string; label: string; desc: string }[] = [
-  { key: 'CRM', label: 'CRM', desc: 'New leads, assignments, and pipeline updates' },
-  { key: 'ORGANIZATION', label: 'Organization', desc: 'Members, teams, and workspace changes' },
-  { key: 'SECURITY', label: 'Security', desc: 'Access, suspensions, and sign-in alerts' },
-  { key: 'BILLING', label: 'Billing', desc: 'Plans, invoices, and usage limits' },
-  { key: 'SYSTEM', label: 'System', desc: 'Maintenance, releases, and incidents' },
-];
-
-function dayBucket(iso: string): 'Today' | 'Yesterday' | 'This week' | 'Earlier' {
-  const d = new Date(iso);
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const t = d.getTime();
-  if (t >= startToday) return 'Today';
-  if (t >= startToday - 86_400_000) return 'Yesterday';
-  if (t >= startToday - 6 * 86_400_000) return 'This week';
-  return 'Earlier';
-}
-
+/**
+ * Everything that happened that concerns you: new leads from your cards,
+ * changes to the team and to your access, and automation alerts. Each one
+ * opens what it is about.
+ */
 export default function NotificationsPage() {
   const router = useRouter();
   const { t } = useTranslation('notifications');
-  const [tab, setTab] = useState('all');
-  const [items, setItems] = useState<Notif[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const { locale } = useLocale();
+  const [tab, setTab] = useState<Tab>('all');
+  const [cat, setCat] = useState<string>('all');
+  const [items, setItems] = useState<Notif[] | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [orgNames, setOrgNames] = useState<Map<string, string>>(new Map());
   const [prefsOpen, setPrefsOpen] = useState(false);
-  const [prefs, setPrefs] = useState<Record<string, boolean>>({});
 
-  const activeTab = TABS.find((t) => t.key === tab)!;
-  const isArchived = tab === 'archived';
+  const query = useMemo(() => {
+    const q = new URLSearchParams();
+    if (tab === 'unread') q.set('unread', 'true');
+    if (tab === 'archived') q.set('archived', 'true');
+    if (cat !== 'all') q.set('category', cat);
+    return q.toString();
+  }, [tab, cat]);
 
-  const refreshUnread = useCallback(() => {
+  const refreshCount = useCallback(() => {
     authFetch<{ count: number }>('/notifications/unread-count').then((r) => setUnread(r.count)).catch(() => {});
   }, []);
 
-  const load = useCallback(async (q: string) => {
-    setLoading(true);
-    try {
-      const rows = await authFetch<Notif[]>(`/notifications${q ? `?${q}` : ''}`);
-      setItems(rows);
-      setHasMore(rows.length === 30);
-    } catch {
-      setItems([]);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (silent = false) => {
+      if (!silent) setItems(null);
+      try {
+        const rows = await authFetch<Notif[]>(`/notifications${query ? `?${query}` : ''}`);
+        setItems(rows);
+        setHasMore(rows.length === PAGE);
+      } catch {
+        setItems([]);
+        setHasMore(false);
+      }
+    },
+    [query],
+  );
 
   useEffect(() => {
-    if (!getToken()) { router.replace('/login'); return; }
-    refreshUnread();
-    authFetch<{ category: string; inApp: boolean }[]>('/notifications/preferences')
-      .then((rows) => setPrefs(Object.fromEntries(rows.map((r) => [r.category, r.inApp]))))
+    if (!getToken()) {
+      router.replace('/login');
+      return;
+    }
+    refreshCount();
+    authFetch<{ org: { id: string; name: string } }[]>('/orgs')
+      .then((list) => setOrgNames(new Map(list.map((m) => [m.org.id, m.org.name]))))
       .catch(() => {});
-  }, [router, refreshUnread]);
+  }, [router, refreshCount]);
 
-  function togglePref(category: string) {
-    const next = !(prefs[category] ?? true);
-    setPrefs((p) => ({ ...p, [category]: next }));
-    authFetch('/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ category, inApp: next }) }).catch(() => {});
-  }
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  useEffect(() => { load(activeTab.query); }, [activeTab.query, load]);
+  // Coming back to the tab, or acting in the bell, brings the list up to date.
+  useEffect(() => {
+    const onVisible = () => document.visibilityState === 'visible' && (load(true), refreshCount());
+    const onChanged = () => refreshCount();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener(NOTIFS_CHANGED, onChanged);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener(NOTIFS_CHANGED, onChanged);
+    };
+  }, [load, refreshCount]);
 
   async function loadMore() {
-    const last = items[items.length - 1];
+    const last = items?.[items.length - 1];
     if (!last) return;
     setLoadingMore(true);
     try {
-      const q = `${activeTab.query ? `${activeTab.query}&` : ''}cursor=${last.id}`;
-      const rows = await authFetch<Notif[]>(`/notifications?${q}`);
-      setItems((prev) => [...prev, ...rows]);
-      setHasMore(rows.length === 30);
+      const rows = await authFetch<Notif[]>(`/notifications?${query ? `${query}&` : ''}cursor=${last.id}`);
+      setItems((prev) => [...(prev ?? []), ...rows]);
+      setHasMore(rows.length === PAGE);
     } catch {
       setHasMore(false);
     } finally {
@@ -132,193 +105,210 @@ export default function NotificationsPage() {
   }
 
   function toggleRead(n: Notif) {
-    const nowRead = !n.readAt;
-    setItems((x) => x.map((i) => (i.id === n.id ? { ...i, readAt: nowRead ? new Date().toISOString() : null } : i)));
-    setUnread((c) => Math.max(0, c + (nowRead ? -1 : 1)));
-    authFetch(`/notifications/${n.id}/${nowRead ? 'read' : 'unread'}`, { method: 'PATCH' }).catch(() => {});
+    const read = !n.readAt;
+    setItems((list) => (tab === 'unread' && read ? list?.filter((x) => x.id !== n.id) : list?.map((x) => (x.id === n.id ? { ...x, readAt: read ? new Date().toISOString() : null } : x))) ?? list);
+    setUnread((c) => Math.max(0, c + (read ? -1 : 1)));
+    markRead(n, read).catch(() => load(true));
   }
 
   function archive(n: Notif) {
-    setItems((x) => x.filter((i) => i.id !== n.id));
+    setItems((list) => list?.filter((x) => x.id !== n.id) ?? list);
     if (!n.readAt) setUnread((c) => Math.max(0, c - 1));
-    authFetch(`/notifications/${n.id}/archive`, { method: 'PATCH' }).catch(() => {});
+    authFetch(`/notifications/${n.id}/archive`, { method: 'PATCH' }).then(announceChange).catch(() => load(true));
   }
 
   function markAll() {
-    setItems((x) => x.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+    setItems((list) => (tab === 'unread' ? [] : list?.map((x) => ({ ...x, readAt: x.readAt ?? new Date().toISOString() }))) ?? list);
     setUnread(0);
-    authFetch('/notifications/read-all', { method: 'POST' }).catch(() => {});
+    authFetch('/notifications/read-all', { method: 'POST' }).then(announceChange).catch(() => load(true));
   }
 
-  const groups = useMemo(() => {
-    const order: string[] = ['Today', 'Yesterday', 'This week', 'Earlier'];
-    const map = new Map<string, Notif[]>();
-    for (const n of items) {
-      const b = dayBucket(n.createdAt);
-      (map.get(b) ?? map.set(b, []).get(b)!).push(n);
+  const open = (n: Notif) => {
+    if (!n.readAt && tab !== 'archived') {
+      setItems((list) => list?.map((x) => (x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x)) ?? list);
+      setUnread((c) => Math.max(0, c - 1));
     }
-    return order.filter((o) => map.has(o)).map((o) => ({ label: o, rows: map.get(o)! }));
+    openNotification(n, (href) => router.push(href));
+  };
+
+  const groups = useMemo(() => {
+    const map = new Map<Bucket, Notif[]>();
+    for (const n of items ?? []) {
+      const b = bucketOf(n.createdAt);
+      if (!map.has(b)) map.set(b, []);
+      map.get(b)!.push(n);
+    }
+    return BUCKETS.filter((b) => map.has(b)).map((b) => ({ key: b, rows: map.get(b)! }));
   }, [items]);
+
+  const activeOrg = getActiveOrgId();
+  const otherName = (n: Notif) => (n.orgId && activeOrg && n.orgId !== activeOrg && orgNames.size > 1 ? orgNames.get(n.orgId) : undefined);
 
   return (
     <AppShell
-      title={t('title', 'Notifications & Alerts')}
+      title={t('title')}
       action={
         <div className="flex items-center gap-2">
-          {unread > 0 && (
-            <button onClick={markAll} className="v-btn v-btn-ghost !h-9 text-[12.5px] font-bold">
-              <Icon name="check" size={14} /> Mark all read
+          {unread > 0 && tab !== 'archived' && (
+            <button onClick={markAll} aria-label={t('markAll')} title={t('markAll')} className="v-btn v-btn-ghost">
+              <Icon name="check" size={14} />
+              <span className="hidden sm:inline">{t('markAll')}</span>
             </button>
           )}
-          <button
-            onClick={() => setPrefsOpen((o) => !o)}
-            className="v-btn v-btn-ghost !h-9 !w-9 !p-0"
-            aria-label="Notification preferences"
-            aria-pressed={prefsOpen}
-            title="Preferences"
-          >
-            <Icon name="settings" size={16} />
+          <button onClick={() => setPrefsOpen(true)} aria-label={t('settings')} title={t('settings')} className="v-btn v-btn-ghost !px-0 w-11 sm:w-[34px]">
+            <Icon name="settings" size={15} />
           </button>
         </div>
       }
     >
-      {/* Preferences panel */}
-      {prefsOpen && (
-        <div className="v-card mb-5 p-5">
-          <div className="mb-3">
-            <h3 className="text-[14px] font-bold text-ink">In-app preferences</h3>
-            <p className="text-[11.5px] text-muted">Choose which categories deliver in-app notifications.</p>
-          </div>
-          <div className="divide-y divide-line">
-            {PREF_CATEGORIES.map((c) => {
-              const on = prefs[c.key] ?? true;
-              const meta = catMeta(c.key);
-              return (
-                <div key={c.key} className="flex items-center justify-between gap-3 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: `${meta.color}1a`, color: meta.color }}>
-                      <Icon name={meta.icon} size={15} />
-                    </span>
-                    <div>
-                      <p className="text-[13px] font-bold text-ink">{c.label}</p>
-                      <p className="text-[11px] text-muted">{c.desc}</p>
-                    </div>
+      <div className="max-w-[860px]">
+        <nav role="tablist" aria-label={t('title')} className="no-scrollbar -mx-5 flex gap-5 overflow-x-auto border-b border-line px-5 md:mx-0 md:px-0">
+          {TABS.map((id) => {
+            const active = tab === id;
+            return (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(id)}
+                className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-[13.5px] font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
+              >
+                {t(`tabs.${id}`)}
+                {id === 'unread' && unread > 0 && <span className="tabular rounded-full bg-accent/10 px-1.5 text-[11.5px] font-medium text-accent">{formatNumber(unread, locale)}</span>}
+                {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="no-scrollbar -mx-5 mt-4 flex gap-1.5 overflow-x-auto px-5 md:mx-0 md:px-0">
+          {['all', ...CATEGORIES].map((c) => (
+            <button
+              key={c}
+              onClick={() => setCat(c)}
+              aria-pressed={cat === c}
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition-colors sm:h-8 ${cat === c ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
+            >
+              {c !== 'all' && <Icon name={CATEGORY_ICON[c]} size={13} />}
+              {t(`categories.${c}`)}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-6">
+          {!items ? (
+            <div className="v-card divide-y divide-line overflow-hidden">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex gap-3 px-5 py-4">
+                  <div className="v-skeleton h-9 w-9 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="v-skeleton h-3 w-2/5 rounded" />
+                    <div className="v-skeleton h-3 w-3/5 rounded" />
                   </div>
-                  <button
-                    role="switch"
-                    aria-checked={on}
-                    aria-label={`${c.label} in-app notifications`}
-                    onClick={() => togglePref(c.key)}
-                    className="relative h-6 w-11 shrink-0 rounded-full transition-colors"
-                    style={{ background: on ? 'var(--v-accent)' : 'hsl(var(--v-border-strong))' }}
-                  >
-                    <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all" style={{ left: on ? '22px' : '2px' }} />
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center rounded-xl px-6 py-16 text-center ring-1 ring-inset ring-line">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-elevated text-muted">
+                <Icon name={tab === 'unread' ? 'check' : tab === 'archived' ? 'inbox' : 'bell'} size={19} />
+              </span>
+              <p className="mt-3 text-[14.5px] font-medium text-ink">{t(`empty.${tab}Title`)}</p>
+              <p className="mt-1 max-w-[380px] text-[13px] leading-relaxed text-muted">{tab === 'archived' ? t('empty.archivedBody') : t('empty.body')}</p>
+            </div>
+          ) : (
+            <div className="space-y-7">
+              {groups.map((g) => (
+                <section key={g.key} aria-labelledby={`notif-${g.key}`}>
+                  <h2 id={`notif-${g.key}`} className="mb-2 text-[12.5px] font-medium text-muted">
+                    {t(`groups.${g.key}`)}
+                  </h2>
+                  <ul className="v-card divide-y divide-line overflow-hidden">
+                    {g.rows.map((n) => (
+                      <li key={n.id}>
+                        <NotificationRow
+                          n={n}
+                          archived={tab === 'archived'}
+                          otherWorkspace={otherName(n)}
+                          onOpen={open}
+                          onToggleRead={toggleRead}
+                          onArchive={archive}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+              {hasMore && (
+                <div className="flex justify-center">
+                  <button onClick={loadMore} disabled={loadingMore} className="v-btn v-btn-ghost disabled:opacity-60">
+                    {loadingMore ? t('loading') : t('loadMore')}
                   </button>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {/* Category tabs */}
-      <div className="no-scrollbar mb-5 flex gap-1.5 overflow-x-auto border-b border-line pb-3">
-        {TABS.map((t) => {
-          const active = tab === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-[10px] px-3.5 py-3.5 sm:py-2 text-[12.5px] font-bold transition-all ${
-                active ? 'text-white' : 'text-muted hover:text-ink hover:bg-ink/5'
-              }`}
-              style={active ? { background: 'var(--v-gradient-brand)', boxShadow: 'var(--v-shadow-accent)' } : undefined}
-            >
-              {t.label}
-              {t.key === 'unread' && unread > 0 && (
-                <span className={`rounded-full px-1.5 text-[10px] font-black ${active ? 'bg-white/25 text-white' : 'bg-red-500 text-white'}`}>{unread}</span>
               )}
-            </button>
-          );
-        })}
-      </div>
-
-      {loading ? (
-        <div className="space-y-2.5">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="v-skeleton h-[70px] w-full rounded-2xl" />)}</div>
-      ) : items.length === 0 ? (
-        <div className="v-card flex flex-col items-center gap-3 py-20 text-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: 'var(--v-accent-soft)', color: 'var(--v-accent)' }}>
-            <Icon name="bell" size={28} />
-          </span>
-          <div>
-            <p className="text-[16px] font-bold text-ink">{isArchived ? 'Nothing archived' : tab === 'unread' ? "You're all caught up" : 'No notifications yet'}</p>
-            <p className="mt-1 max-w-sm text-[13px] text-muted">Events across your cards, CRM, and organization show up here as they happen.</p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {groups.map((g) => (
-            <div key={g.label}>
-              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.12em] text-faint">{g.label}</p>
-              <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm divide-y divide-line">
-                {g.rows.map((n) => {
-                  const meta = catMeta(n.category);
-                  return (
-                    <div key={n.id} className="group flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-canvas/30" style={{ background: n.readAt || isArchived ? undefined : 'var(--v-accent-soft)' }}>
-                      {n.actor ? (
-                        // A person triggered this — lead with their face and
-                        // demote the category to a badge on the corner.
-                        <span className="relative mt-0.5 shrink-0">
-                          <Avatar user={n.actor} size={36} />
-                          <span
-                            className="absolute -bottom-0.5 -end-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full ring-2 ring-[hsl(var(--v-surface))]"
-                            style={{ background: meta.color, color: '#fff' }}
-                          >
-                            <Icon name={meta.icon} size={10} />
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${meta.color}1a`, color: meta.color }}>
-                          <Icon name={meta.icon} size={16} />
-                        </span>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: PRIORITY_DOT[n.priority] ?? '#94a3b8' }} title={n.priority} />
-                          <p className={`truncate text-[13.5px] ${n.readAt ? 'font-semibold text-ink' : 'font-bold text-ink'}`}>{n.title}</p>
-                        </div>
-                        {n.body && <p className="mt-0.5 text-[12px] text-muted">{n.body}</p>}
-                        <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-wider text-faint">
-                          {n.category.toLowerCase()} · {relativeTime(n.createdAt)}{n.actor?.name ? ` · ${n.actor.name}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        {!isArchived && (
-                          <button onClick={() => toggleRead(n)} title={n.readAt ? 'Mark unread' : 'Mark read'} aria-label={n.readAt ? 'Mark unread' : 'Mark read'} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-ink/5 hover:text-ink">
-                            <Icon name={n.readAt ? 'eye-off' : 'check'} size={14} />
-                          </button>
-                        )}
-                        {!isArchived && (
-                          <button onClick={() => archive(n)} title="Archive" aria-label="Archive" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-ink/5 hover:text-ink">
-                            <Icon name="inbox" size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-
-          {hasMore && (
-            <div className="flex justify-center pt-1">
-              <button onClick={loadMore} disabled={loadingMore} className="v-btn v-btn-ghost !h-9 text-[12.5px] font-bold disabled:opacity-60">
-                {loadingMore ? 'Loading…' : 'Load more'}
-              </button>
             </div>
           )}
         </div>
-      )}
+      </div>
+
+      <Preferences open={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </AppShell>
+  );
+}
+
+/** Which kinds of notification to receive, one switch per kind. */
+function Preferences({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation('notifications');
+  const [prefs, setPrefs] = useState<Record<string, boolean> | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    authFetch<{ category: string; inApp: boolean }[]>('/notifications/preferences')
+      .then((rows) => setPrefs(Object.fromEntries(rows.map((r) => [r.category, r.inApp]))))
+      .catch(() => setPrefs({}));
+  }, [open]);
+
+  function flip(category: string) {
+    const next = !(prefs?.[category] ?? true);
+    setPrefs((p) => ({ ...(p ?? {}), [category]: next }));
+    authFetch('/notifications/preferences', { method: 'PATCH', body: JSON.stringify({ category, inApp: next }) }).catch(() =>
+      setPrefs((p) => ({ ...(p ?? {}), [category]: !next })),
+    );
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title={t('settings')} closeLabel={t('close')}>
+      <p className="text-[13px] leading-relaxed text-muted">{t('prefs.intro')}</p>
+      <ul className="-mx-5 mt-4 divide-y divide-line border-y border-line">
+        {CATEGORIES.map((c) => {
+          const on = prefs?.[c] ?? true;
+          return (
+            <li key={c}>
+              <label className="flex cursor-pointer items-start gap-3 px-5 py-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated text-muted ring-1 ring-inset ring-line">
+                  <Icon name={CATEGORY_ICON[c]} size={15} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13.5px] font-medium text-ink">{t(`categories.${c}`)}</span>
+                  <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{t(`prefs.${c}`)}</span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={on}
+                  aria-label={t(`categories.${c}`)}
+                  disabled={!prefs}
+                  onClick={() => flip(c)}
+                  className={`relative mt-1 inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors before:absolute before:-inset-3 before:content-[''] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60 sm:before:hidden ${on ? 'bg-accent' : ''}`}
+                  style={on ? undefined : { background: 'hsl(var(--v-border-strong))' }}
+                >
+                  <span className={`pointer-events-none absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-[inset-inline-start] ${on ? 'start-[14px]' : 'start-[2px]'}`} />
+                </button>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </Sheet>
   );
 }

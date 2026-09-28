@@ -1,100 +1,96 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { authFetch } from '@/lib/client';
 import { Icon } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
-import { relativeTime } from '@/lib/crm';
+import { NotificationRow } from '@/components/notifications/NotificationRow';
+import { NOTIFS_CHANGED, announceChange, openNotification, type Notif } from '@/components/notifications/model';
 
-interface Notif {
-  id: string;
-  type: string;
-  category: string;
-  priority: string;
-  title: string;
-  body: string | null;
-  metadata: Record<string, unknown> | null;
-  readAt: string | null;
-  createdAt: string;
-  actor: { name: string | null; email: string; avatarUrl?: string | null } | null;
-}
-
-const CATEGORY_META: Record<string, { icon: string; color: string }> = {
-  CRM: { icon: 'inbox', color: '#2563eb' },
-  ORGANIZATION: { icon: 'users', color: '#0ea5e9' },
-  SECURITY: { icon: 'lock', color: '#f43f5e' },
-  BILLING: { icon: 'chart-bar', color: '#10b981' },
-  CARD: { icon: 'columns', color: '#3b82f6' },
-  NFC: { icon: 'sparkle', color: '#ec4899' },
-  QR: { icon: 'qr', color: '#14b8a6' },
-  SYSTEM: { icon: 'sparkle', color: '#94a3b8' },
-};
-function catMeta(c: string) {
-  return CATEGORY_META[c] ?? { icon: 'bell', color: '#94a3b8' };
-}
-
-const PRIORITY_DOT: Record<string, string> = { CRITICAL: '#ef4444', HIGH: '#f59e0b', MEDIUM: '#2563eb', LOW: '#94a3b8', INFO: '#0ea5e9' };
-
+/**
+ * The bell in the top bar: how many are unread, and the latest few. Opening
+ * one takes you to what it is about; the full list lives on /notifications.
+ */
 export function NotificationBell() {
+  const { t } = useTranslation('notifications');
+  const router = useRouter();
+  const pathname = usePathname();
   const [count, setCount] = useState(0);
-  const [items, setItems] = useState<Notif[]>([]);
+  const [items, setItems] = useState<Notif[] | null>(null);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'all' | 'unread'>('all');
+  const [unreadOnly, setUnreadOnly] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Poll the unread counter (real-time approximation without a socket layer).
-  useEffect(() => {
-    let alive = true;
-    const fetchCount = () =>
-      authFetch<{ count: number }>('/notifications/unread-count').then((r) => { if (alive) setCount(r.count); }).catch(() => {});
-    fetchCount();
-    const iv = setInterval(fetchCount, 20000);
-    return () => { alive = false; clearInterval(iv); };
+  const fetchCount = useCallback(() => {
+    authFetch<{ count: number }>('/notifications/unread-count')
+      .then((r) => setCount(r.count))
+      .catch(() => {});
   }, []);
 
-  // Close on outside click.
+  // No socket layer yet: poll the counter, and recount after any change.
+  useEffect(() => {
+    fetchCount();
+    const iv = setInterval(fetchCount, 20000);
+    window.addEventListener(NOTIFS_CHANGED, fetchCount);
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener(NOTIFS_CHANGED, fetchCount);
+    };
+  }, [fetchCount]);
+
+  useEffect(() => setOpen(false), [pathname]);
+
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
-
-  async function loadList() {
-    setLoading(true);
-    try { setItems(await authFetch<Notif[]>('/notifications')); }
-    catch { setItems([]); }
-    finally { setLoading(false); }
-  }
 
   function toggle() {
     const next = !open;
     setOpen(next);
-    if (next) loadList();
-  }
-
-  function markRead(id: string) {
-    setItems((x) => x.map((n) => (n.id === id ? { ...n, readAt: n.readAt ?? new Date().toISOString() } : n)));
-    setCount((c) => Math.max(0, c - 1));
-    authFetch(`/notifications/${id}/read`, { method: 'PATCH' }).catch(() => {});
+    if (next) {
+      setItems(null);
+      authFetch<Notif[]>('/notifications')
+        .then(setItems)
+        .catch(() => setItems([]));
+    }
   }
 
   function markAll() {
-    setItems((x) => x.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+    setItems((x) => x?.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })) ?? x);
     setCount(0);
-    authFetch('/notifications/read-all', { method: 'POST' }).catch(() => {});
+    authFetch('/notifications/read-all', { method: 'POST' }).then(announceChange).catch(() => {});
   }
 
-  const shown = tab === 'unread' ? items.filter((n) => !n.readAt) : items;
+  function openOne(n: Notif) {
+    if (!n.readAt) {
+      setItems((x) => x?.map((i) => (i.id === n.id ? { ...i, readAt: new Date().toISOString() } : i)) ?? x);
+      setCount((c) => Math.max(0, c - 1));
+    }
+    setOpen(false);
+    openNotification(n, (href) => router.push(href));
+  }
+
+  const shown = (unreadOnly ? items?.filter((n) => !n.readAt) : items)?.slice(0, 8) ?? null;
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={toggle}
-        aria-label={`Notifications${count ? ` (${count} unread)` : ''}`}
+        aria-label={count ? t('bellUnread', { count }) : t('bell')}
+        aria-expanded={open}
         className="relative flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-ink/5 hover:text-ink md:h-9 md:w-9"
       >
         <Icon name="bell" size={18} />
@@ -104,7 +100,7 @@ export function NotificationBell() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0 }}
-              className="absolute end-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9.5px] font-semibold text-white ring-2 ring-surface"
+              className="tabular absolute end-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9.5px] font-semibold text-white ring-2 ring-surface"
             >
               {count > 99 ? '99+' : count}
             </motion.span>
@@ -115,95 +111,72 @@ export function NotificationBell() {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.16 }}
-            className="absolute end-0 z-50 mt-2 w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl"
+            role="dialog"
+            aria-label={t('title')}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.14 }}
+            className="absolute end-0 z-50 mt-2 w-[380px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-line px-4 py-3">
-              <h3 className="text-[14px] font-bold text-ink">Notifications</h3>
-              {count > 0 && (
-                <button onClick={markAll} className="text-[11.5px] font-bold text-accent hover:underline">Mark all read</button>
-              )}
+            <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+              <h3 className="flex-1 text-[14px] font-semibold text-ink">{t('title')}</h3>
+              <div role="radiogroup" className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+                {([false, true] as const).map((u) => (
+                  <button
+                    key={String(u)}
+                    role="radio"
+                    aria-checked={unreadOnly === u}
+                    onClick={() => setUnreadOnly(u)}
+                    className={`h-7 rounded-md px-2.5 text-[12px] font-medium ${unreadOnly === u ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+                  >
+                    {u ? t('tabs.unread') : t('tabs.all')}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-1 border-b border-line px-3 py-2">
-              {(['all', 'unread'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className="rounded-lg px-2.5 py-1 text-[11.5px] font-bold capitalize transition-colors"
-                  style={tab === t ? { background: 'var(--v-gradient-brand)', color: '#fff' } : { color: 'hsl(var(--v-muted))' }}
-                >
-                  {t}{t === 'unread' && count > 0 ? ` (${count})` : ''}
-                </button>
-              ))}
-            </div>
-
-            <div className="no-scrollbar max-h-[380px] overflow-y-auto">
-              {loading ? (
-                <div className="space-y-2 p-3">{[0, 1, 2].map((i) => <div key={i} className="v-skeleton h-14 w-full rounded-xl" />)}</div>
+            <div className="max-h-[420px] overflow-y-auto">
+              {!shown ? (
+                <div className="space-y-3 p-4">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="v-skeleton h-8 w-8 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <div className="v-skeleton h-3 w-1/2 rounded" />
+                        <div className="v-skeleton h-3 w-3/4 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : shown.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-12 text-center text-faint">
-                  <Icon name="bell" size={26} />
-                  <p className="text-[12.5px] font-semibold text-muted">{tab === 'unread' ? "You're all caught up" : 'No notifications yet'}</p>
+                <div className="flex flex-col items-center px-6 py-10 text-center">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-elevated text-muted">
+                    <Icon name={unreadOnly ? 'check' : 'bell'} size={16} />
+                  </span>
+                  <p className="mt-2.5 text-[13px] font-medium text-ink">{unreadOnly ? t('empty.unreadTitle') : t('empty.allTitle')}</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-line">
-                  {shown.map((n) => {
-                    const meta = catMeta(n.category);
-                    return (
-                      <li key={n.id}>
-                        <button
-                          onClick={() => !n.readAt && markRead(n.id)}
-                          className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-canvas/40"
-                          style={{ background: n.readAt ? undefined : 'var(--v-accent-soft)' }}
-                        >
-                          {n.actor ? (
-                            // A person triggered this — lead with their face and
-                            // demote the category to a badge on the corner.
-                            <span className="relative mt-0.5 shrink-0">
-                              <Avatar user={n.actor} size={32} />
-                              <span
-                                className="absolute -bottom-0.5 -end-0.5 flex h-4 w-4 items-center justify-center rounded-full ring-2 ring-[hsl(var(--v-surface))]"
-                                style={{ background: meta.color, color: '#fff' }}
-                              >
-                                <Icon name={meta.icon} size={9} />
-                              </span>
-                            </span>
-                          ) : (
-                            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: `${meta.color}1a`, color: meta.color }}>
-                              <Icon name={meta.icon} size={15} />
-                            </span>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: PRIORITY_DOT[n.priority] ?? '#94a3b8' }} />
-                              <p className={`truncate text-[12.5px] ${n.readAt ? 'font-semibold text-ink' : 'font-bold text-ink'}`}>{n.title}</p>
-                            </div>
-                            {n.body && <p className="mt-0.5 truncate text-[11.5px] text-muted">{n.body}</p>}
-                            <p className="mt-0.5 text-[10.5px] text-faint">
-                              {n.category.toLowerCase()} · {relativeTime(n.createdAt)}
-                              {n.actor?.name ? ` · ${n.actor.name}` : ''}
-                            </p>
-                          </div>
-                          {!n.readAt && <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--v-accent)' }} />}
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {shown.map((n) => (
+                    <li key={n.id}>
+                      <NotificationRow n={n} compact onOpen={openOne} />
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>
 
-            <Link
-              href="/notifications"
-              onClick={() => setOpen(false)}
-              className="block border-t border-line px-4 py-2.5 text-center text-[12px] font-bold text-accent hover:bg-canvas/40"
-            >
-              View all notifications
-            </Link>
+            <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2">
+              <Link href="/notifications" onClick={() => setOpen(false)} className="flex h-8 items-center text-[12.5px] font-medium text-accent hover:underline">
+                {t('viewAll')}
+              </Link>
+              {count > 0 && (
+                <button onClick={markAll} className="flex h-8 items-center gap-1.5 text-[12.5px] font-medium text-muted hover:text-ink">
+                  <Icon name="check" size={13} /> {t('markAll')}
+                </button>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

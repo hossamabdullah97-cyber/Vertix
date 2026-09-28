@@ -1,4 +1,70 @@
 {
-  "title": "الإشعارات والتنبيهات",
-  "subtitle": "إشعارات النظام، طلبات الموافقة، تنبيهات العملاء المحتملين، وتحديثات الفريق."
+  "title": "الإشعارات",
+  "bell": "الإشعارات",
+  "bellUnread_zero": "الإشعارات",
+  "bellUnread_one": "الإشعارات، واحد غير مقروء",
+  "bellUnread_two": "الإشعارات، اثنان غير مقروءين",
+  "bellUnread_few": "الإشعارات، {{count}} غير مقروءة",
+  "bellUnread_many": "الإشعارات، {{count}} غير مقروء",
+  "bellUnread_other": "الإشعارات، {{count}} غير مقروء",
+  "markAll": "تحديد الكل كمقروء",
+  "viewAll": "عرض كل الإشعارات",
+  "settings": "إعدادات الإشعارات",
+  "loadMore": "عرض الأقدم",
+  "loading": "جارٍ التحميل…",
+  "more": "إجراءات أخرى",
+  "close": "إغلاق",
+  "tabs": { "all": "الكل", "unread": "غير المقروءة", "archived": "المؤرشفة" },
+  "categories": {
+    "all": "كل الأنواع",
+    "CRM": "العملاء المحتملون",
+    "ORGANIZATION": "الفريق",
+    "SECURITY": "الأمان",
+    "SYSTEM": "الأتمتة",
+    "BILLING": "الفوترة"
+  },
+  "groups": { "today": "اليوم", "yesterday": "أمس", "week": "في وقت سابق هذا الأسبوع", "earlier": "أقدم" },
+  "actions": { "markRead": "تحديد كمقروء", "markUnread": "تحديد كغير مقروء", "archive": "أرشفة", "open": "فتح" },
+  "otherWorkspace": "في {{name}}",
+  "empty": {
+    "unreadTitle": "لا جديد لديك",
+    "allTitle": "لا توجد إشعارات بعد",
+    "archivedTitle": "لا شيء في الأرشيف",
+    "body": "تظهر هنا العملاء المحتملون الجدد وتغييرات الفريق وتنبيهات الأتمتة فور حدوثها.",
+    "archivedBody": "الإشعارات التي تؤرشفها تُحفظ هنا."
+  },
+  "prefs": {
+    "intro": "اختر ما يظهر هنا. إيقاف نوع يمنع الجديد منه، ويبقى ما وصلك.",
+    "CRM": "عندما يشارك أحد بياناته من إحدى بطاقاتك.",
+    "ORGANIZATION": "انضمام الأشخاص أو مغادرتهم، ودورك، والفرق، وإعدادات مساحة العمل.",
+    "SECURITY": "التغييرات على وصولك أنت، مثل الإيقاف.",
+    "SYSTEM": "تنبيهات الأتمتة والإرسالات التي فشلت."
+  },
+  "types": {
+    "lead": {
+      "CONTACT": "عميل محتمل جديد",
+      "MEETING": "طلب اجتماع",
+      "QUOTE": "طلب عرض سعر"
+    },
+    "automationFailed": "لم تكتمل إحدى الأتمتة",
+    "automationFailedBody": "فشل بعض إجراءاتها عند «{{event}}».",
+    "webhookFailed": "تعذّر إيصال Webhook",
+    "webhookFailedBody": "فشل «{{event}}» بعد عدة محاولات.",
+    "memberAdded": "أُضفت إلى مساحة العمل",
+    "memberAddedBody": "دورك: {{role}}",
+    "roleChanged": "تغيّر دورك",
+    "roleChangedBody": "أصبحت {{role}}.",
+    "suspended": "تم إيقاف وصولك",
+    "reactivated": "عاد وصولك",
+    "memberRemoved": "تمت إزالة عضو",
+    "memberRemovedBy": "أزال {{actor}} عضواً",
+    "teamCreated": "تم إنشاء فريق «{{name}}»",
+    "teamCreatedBy": "أنشأ {{actor}} فريق «{{name}}»",
+    "teamDeleted": "تم حذف فريق «{{name}}»",
+    "teamDeletedBy": "حذف {{actor}} فريق «{{name}}»",
+    "workspaceUpdated": "تم تحديث إعدادات مساحة العمل",
+    "workspaceUpdatedBy": "حدّث {{actor}} إعدادات مساحة العمل",
+    "approved": "تمت الموافقة على طلبك",
+    "rejected": "تم رفض طلبك"
+  }
 }

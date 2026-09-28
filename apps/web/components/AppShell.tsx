@@ -11,6 +11,8 @@ import { Avatar } from '@/components/Avatar';
 import { PROFILE_UPDATED } from '@/components/ProfilePhotoCard';
 import { OrgMark, ORG_UPDATED } from '@/components/OrgMark';
 import { NotificationBell } from '@/components/NotificationBell';
+import { describe, linkOf } from '@/components/notifications/model';
+import { OPEN_LEAD_EVENT } from '@/lib/events';
 import { VMark } from '@/components/brand/VMark';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
@@ -51,7 +53,7 @@ const GROUPS: { labelKey: string; showLabel: boolean; items: { href: string; lab
 type Theme = 'light' | 'dark';
 
 /** Fired when the command menu picks a lead; the leads page opens its panel. */
-export const OPEN_LEAD_EVENT = 'vertex:open-lead';
+export { OPEN_LEAD_EVENT };
 
 type SearchIndex = {
   cards: any[];
@@ -446,13 +448,14 @@ export default function AppShell({
     push(
       t('searchGroups.notifications'),
       searchData.notifications
-        .filter((n) => has(n.title) || has(n.body))
-        .map((n) => ({
+        .map((n) => ({ n, said: describe(n, t) }))
+        .filter(({ n, said }) => has(said.title) || has(said.body) || has(n.title) || has(n.body))
+        .map(({ n, said }) => ({
           key: `notif-${n.id}`,
           icon: 'bell',
-          label: n.title,
-          meta: n.category,
-          href: '/notifications',
+          label: said.title,
+          meta: said.body || t(`notifications:categories.${n.category}`, { defaultValue: n.category }),
+          href: linkOf(n) ?? '/notifications',
         })),
     );
     return items;
