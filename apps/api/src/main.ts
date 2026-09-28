@@ -7,6 +7,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { mkdirSync } from 'node:fs';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { trustProxySetting } from './config/trust-proxy';
 import { UPLOAD_DIR } from './uploads/uploads.controller';
 
 async function bootstrap() {
@@ -16,6 +17,10 @@ async function bootstrap() {
     rawBody: true,
   });
   const config = app.get(ConfigService);
+
+  // Which address counts as the caller's, for the sign-in limits and logs.
+  const trustProxy = trustProxySetting(config.get<string>('TRUST_PROXY'));
+  if (trustProxy !== undefined) app.set('trust proxy', trustProxy);
 
   // Uploaded images are served cross-origin (web app runs on a different port),
   // so relax Cross-Origin-Resource-Policy; helmet defaults to same-origin.

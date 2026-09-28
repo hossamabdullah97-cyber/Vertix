@@ -18,6 +18,7 @@ beforeAll(async () => {
 });
 
 type Deps = {
+  throttle?: Partial<Record<string, jest.Mock>>;
   user?: Partial<Record<string, jest.Mock>>;
   membership?: Partial<Record<string, jest.Mock>>;
   organization?: Partial<Record<string, jest.Mock>>;
@@ -82,14 +83,22 @@ function makeService(d: Deps = {}) {
 
   const mail = { sendPasswordReset: jest.fn() } as unknown as MailService;
 
+  const throttle = {
+    blockedFor: jest.fn().mockResolvedValue(0),
+    hit: jest.fn().mockResolvedValue(1),
+    clear: jest.fn(),
+    ...d.throttle,
+  };
+
   const service = new AuthService(
     prisma,
     jwt as never,
     config as never,
     tokens,
     mail,
+    throttle as never,
   );
-  return { service, prisma, jwt, tokens, mail, signed };
+  return { service, prisma, jwt, tokens, mail, signed, throttle };
 }
 
 /** The access token is the first signAsync call; the refresh token is the second. */
@@ -641,5 +650,65 @@ describe('AuthService: who may start a session', () => {
     });
     expect(tokens.create).toHaveBeenCalledWith(expect.objectContaining({ email: 'omar@acme.co' }));
     expect((mail.sendPasswordReset as unknown as jest.Mock).mock.calls[0][0]).toBe('omar@acme.co');
+  });
+});
+
+describe('AuthService: sign-in limits', () => {
+  const account = { id: 'u1', email: 'omar@acme.co', passwordHash: '' };
+  beforeAll(() => {
+    account.passwordHash = HASH;
+  });
+
+  it('refuses at once while blocked, without looking at the password', async () => {
+    const findFirst = jest.fn().mockResolvedValue(account);
+    const { service, throttle } = makeService({
+      user: { findFirst },
+      throttle: { blockedFor: jest.fn().mockResolvedValueOnce(0).mockResolvedValueOnce(420) },
+    });
+    const err = await service.login({ email: 'Omar@Acme.co', password: PASSWORD }, '1.2.3.4').catch((e) => e);
+    expect(err.getStatus()).toBe(429);
+    expect(err.getResponse()).toMatchObject({ retryAfter: 420, message: expect.stringMatching(/7 minutes/) });
+    expect(findFirst).not.toHaveBeenCalled();
+    expect(throttle.blockedFor).toHaveBeenCalledWith('sign-in:1.2.3.4:omar@acme.co', 5, 15 * 60_000);
+    expect(throttle.blockedFor).toHaveBeenCalledWith('sign-in:omar@acme.co', 20, 15 * 60_000);
+  });
+
+  it('counts a wrong password against the account and against the account from this address', async () => {
+    const { service, throttle } = makeService({ user: { findFirst: jest.fn().mockResolvedValue(account) } });
+    await expect(service.login({ email: account.email, password: 'wrong-password' }, '1.2.3.4')).rejects.toThrow('Invalid credentials');
+    expect(throttle.hit).toHaveBeenCalledWith('sign-in:1.2.3.4:omar@acme.co', 15 * 60_000);
+    expect(throttle.hit).toHaveBeenCalledWith('sign-in:omar@acme.co', 15 * 60_000);
+    expect(throttle.clear).not.toHaveBeenCalled();
+  });
+
+  it('counts an unknown email the same way, so the limit reveals no accounts', async () => {
+    const { service, throttle } = makeService();
+    await expect(service.login({ email: 'ghost@acme.co', password: PASSWORD }, '1.2.3.4')).rejects.toThrow('Invalid credentials');
+    expect(throttle.hit).toHaveBeenCalledTimes(2);
+  });
+
+  it('starts the count again after a successful sign-in', async () => {
+    const { service, throttle } = makeService({ user: { findFirst: jest.fn().mockResolvedValue(account) } });
+    await service.login({ email: account.email, password: PASSWORD }, '1.2.3.4');
+    expect(throttle.clear).toHaveBeenCalledWith('sign-in:1.2.3.4:omar@acme.co', 'sign-in:omar@acme.co');
+    expect(throttle.hit).not.toHaveBeenCalled();
+  });
+
+  it('stops sending reset links to an address that asked too often, whether or not it has an account', async () => {
+    const { service, mail, tokens, throttle } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue(account) },
+      throttle: { blockedFor: jest.fn().mockResolvedValue(1800) },
+    });
+    const err = await service.forgotPassword('OMAR@acme.co').catch((e) => e);
+    expect(err.getStatus()).toBe(429);
+    expect(throttle.blockedFor).toHaveBeenCalledWith('reset:omar@acme.co', 5, 60 * 60_000);
+    expect(tokens.create).not.toHaveBeenCalled();
+    expect(mail.sendPasswordReset).not.toHaveBeenCalled();
+  });
+
+  it('counts each reset request', async () => {
+    const { service, throttle } = makeService();
+    await service.forgotPassword('ghost@acme.co');
+    expect(throttle.hit).toHaveBeenCalledWith('reset:ghost@acme.co', 60 * 60_000);
   });
 });

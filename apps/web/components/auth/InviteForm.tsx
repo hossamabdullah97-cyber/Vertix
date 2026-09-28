@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocale } from '@/components/i18n/LanguageProvider';
 import { acceptInvite } from '@/lib/client';
 import { AuthShell } from './AuthShell';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText } from './fields';
 
 export function InviteForm({ token }: { token: string }) {
   const { t } = useTranslation('auth');
+  const { locale } = useLocale();
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<{ text: string; link: boolean } | null>(null);
@@ -21,7 +23,7 @@ export function InviteForm({ token }: { token: string }) {
       await acceptInvite(token, password, name);
       window.location.href = '/dashboard';
     } catch (err) {
-      const text = authErrorText(err, t, 'link');
+      const text = authErrorText(err, t, 'link', locale);
       setError({ text, link: text === t('errors.linkInvalid') });
       setBusy(false);
     }

@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Patch, Post, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Ip, Patch, Post, UsePipes } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   registerSchema,
   loginSchema,
@@ -22,11 +23,18 @@ import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { OrgId } from './decorators/tenant.decorator';
 
+/**
+ * The pages that take a password or send a link: 20 requests a minute per
+ * address, on top of the per-account limits inside AuthService.
+ */
+const AUTH_PAGE_LIMIT = { default: { limit: 20, ttl: 60_000 } };
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
   @Post('register')
   @UsePipes(new ZodValidationPipe(registerSchema))
   register(@Body() body: RegisterInput) {
@@ -34,10 +42,10 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
   @Post('login')
-  @UsePipes(new ZodValidationPipe(loginSchema))
-  login(@Body() body: LoginInput) {
-    return this.auth.login(body);
+  login(@Body(new ZodValidationPipe(loginSchema)) body: LoginInput, @Ip() ip: string) {
+    return this.auth.login(body, ip);
   }
 
   @Public()
@@ -48,6 +56,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
   @Post('accept-invite')
   acceptInvite(
     @Body(new ZodValidationPipe(acceptInviteSchema)) body: AcceptInviteInput,
@@ -56,6 +65,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
   @Post('forgot-password')
   forgotPassword(
     @Body(new ZodValidationPipe(forgotPasswordSchema)) body: ForgotPasswordInput,
@@ -64,6 +74,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
   @Post('reset-password')
   resetPassword(
     @Body(new ZodValidationPipe(resetPasswordSchema)) body: ResetPasswordInput,

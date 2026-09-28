@@ -1100,3 +1100,15 @@ model CardPresence {
   @@index([cardId, lastSeenAt])
   @@map("card_presence")
 }
+
+/// Counters behind the sign-in limits: failed attempts per account, per
+/// account and address, and reset requests per address, each in a fixed
+/// window. Kept in the database so every API instance counts the same.
+model AuthThrottle {
+  key         String   @id
+  count       Int
+  windowStart DateTime
+
+  @@index([windowStart])
+  @@map("auth_throttles")
+}
