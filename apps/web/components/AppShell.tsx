@@ -328,7 +328,6 @@ export default function AppShell({
   return (
     <div
       data-theme={theme}
-      style={{ '--v-accent': '#2563eb', '--v-accent-contrast': '#ffffff' } as React.CSSProperties}
       className="min-h-screen bg-canvas text-ink antialiased"
     >
       {/* Sidebar (desktop) */}

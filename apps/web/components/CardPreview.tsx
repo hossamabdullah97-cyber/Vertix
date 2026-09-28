@@ -10,6 +10,7 @@ import { paymentBrand } from '@/lib/paymentBrands';
 import { Constellation } from '@/components/profile/Constellation';
 import { profileStrings, type Lang } from '@/lib/profileI18n';
 import { resolveAction } from '@/lib/brandIcons';
+import { hexChannels } from '@/lib/color';
 
 function text(content: Record<string, unknown>, ...keys: string[]): string {
   for (const k of keys) {
@@ -145,6 +146,7 @@ export default function CardPreview({
       className="overflow-hidden border text-[hsl(var(--v-fg))] transition-colors"
       style={{
         '--v-accent': accent,
+        '--v-accent-ch': hexChannels(accent),
         '--v-accent-contrast': contrast,
         '--v-bg': dark ? '240 10% 4%' : '240 14% 97%',
         '--v-surface': dark ? '240 10% 7%' : '0 0% 100%',

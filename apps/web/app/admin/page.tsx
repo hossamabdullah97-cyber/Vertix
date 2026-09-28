@@ -535,7 +535,6 @@ export default function AdminConsole() {
   return (
     <div
       data-theme={theme}
-      style={{ '--v-accent': '#2563eb', '--v-accent-contrast': '#ffffff' } as React.CSSProperties}
       className="min-h-screen bg-canvas text-ink antialiased flex"
     >
       {/* Side Navigation */}

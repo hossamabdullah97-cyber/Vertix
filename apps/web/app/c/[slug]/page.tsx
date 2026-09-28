@@ -14,6 +14,7 @@ import TrackView from '@/components/TrackView';
 import QrShareButton from '@/components/profile/QrShareButton';
 import { PortfolioGallery } from '@/components/PortfolioGallery';
 import { profileStrings, type Lang } from '@/lib/profileI18n';
+import { hexChannels } from '@/lib/color';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,7 +100,7 @@ export default async function CardPage({
     <main
       dir={dir}
       data-theme={mode}
-      style={{ '--v-accent': accent, '--v-accent-contrast': accentContrast, background: 'hsl(var(--v-bg))' } as React.CSSProperties}
+      style={{ '--v-accent': accent, '--v-accent-ch': hexChannels(accent), '--v-accent-contrast': accentContrast, background: 'hsl(var(--v-bg))' } as React.CSSProperties}
       className="min-h-screen text-[hsl(var(--v-fg))]"
     >
       <TrackView slug={card.slug} />
