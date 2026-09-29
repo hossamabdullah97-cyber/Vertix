@@ -61,6 +61,13 @@ export const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
 
+  // WhatsApp lead alerts (optional — offered only when the token and phone
+  // number id are set). WhatsApp Business Cloud API, with an approved template.
+  WHATSAPP_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_LEAD_TEMPLATE: z.string().optional(),
+  WHATSAPP_API_VERSION: z.string().regex(/^v\d+\.\d+$/, 'Like v21.0').optional(),
+
   // Integration credential encryption (optional — when unset, integrations that
   // need stored credentials are disabled and shown as unavailable, never faked).
   // Must be 32 bytes, base64-encoded (openssl rand -base64 32).

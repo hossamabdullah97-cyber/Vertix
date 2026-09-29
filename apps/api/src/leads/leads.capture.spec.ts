@@ -28,14 +28,16 @@ function setup(opts: { counts?: Record<string, number>; theme?: unknown; booked?
   };
   const notifications = { notify: jest.fn(async () => {}) };
   const webhooks = { emit: jest.fn(async () => {}), dispatch: jest.fn(async () => {}) };
+  const alerts = { leadCaptured: jest.fn(async () => {}) };
   const service = new LeadsService(
     { client: db } as never,
     notifications as never,
     webhooks as never,
     new ConfigService({ DEFAULT_TIMEZONE: 'Africa/Cairo' }),
     throttle as never,
+    alerts as never,
   );
-  return { service, db, throttle, counts };
+  return { service, db, throttle, counts, alerts };
 }
 
 const form = { slug: 'mariam', intent: 'CONTACT' as const, name: 'Omar', email: 'omar@example.com' };
@@ -48,9 +50,25 @@ describe('LeadsService.capture guards', () => {
   });
 
   it('tells a bot all went well, and keeps nothing', async () => {
-    const { service, db } = setup();
+    const { service, db, alerts } = setup();
     await expect(service.capture({ ...form, website: 'http://spam.example' }, '1.2.3.4')).resolves.toEqual({ ok: true, leadId: null });
     expect(db.lead.create).not.toHaveBeenCalled();
+    expect(alerts.leadCaptured).not.toHaveBeenCalled();
+  });
+
+  it('alerts the card owner, in the owner’s time zone', async () => {
+    const { service, alerts } = setup({ theme: { availability: { timezone: 'Asia/Dubai' } } });
+    await service.capture({ ...form, company: 'Nile Co', note: 'Call me' }, '1.2.3.4');
+    expect(alerts.leadCaptured).toHaveBeenCalledWith('u1', expect.objectContaining({
+      leadId: 'lead1',
+      intent: 'CONTACT',
+      name: 'Omar',
+      email: 'omar@example.com',
+      company: 'Nile Co',
+      note: 'Call me',
+      timezone: 'Asia/Dubai',
+      cardName: 'mariam',
+    }));
   });
 
   it('stops one visitor sending to one card over and over', async () => {

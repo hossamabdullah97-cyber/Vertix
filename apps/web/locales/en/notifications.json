@@ -29,6 +29,24 @@
     "body": "New leads, team changes and automation alerts show up here as they happen.",
     "archivedBody": "Notifications you archive are kept here."
   },
+  "alerts": {
+    "title": "New leads, outside the app",
+    "intro": "Hear about a visitor while it still matters. These are only for new leads from your cards.",
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "whatsappHint": "A message on WhatsApp for each new lead, with a button to open it.",
+    "notReady": "Not set up on this server yet. Ask whoever runs Vertex Connect to connect WhatsApp.",
+    "number": "Your WhatsApp number",
+    "save": "Save",
+    "test": "Send a test",
+    "saved": "Saved. WhatsApp alerts are on.",
+    "removed": "Number removed. WhatsApp alerts are off.",
+    "badPhone": "Enter the number with its country code, like +20 100 123 4567.",
+    "saveFailed": "That didn't save. Try again.",
+    "testSent": "Test sent. It should arrive in a few seconds.",
+    "testFailed": "WhatsApp didn't accept the message. Check the number and try again.",
+    "tooMany": "Too many tests for now. Try again later."
+  },
   "prefs": {
     "intro": "Choose what shows up here. Turning a type off stops new ones; the ones you have stay.",
     "CRM": "When someone shares their details from one of your cards.",
