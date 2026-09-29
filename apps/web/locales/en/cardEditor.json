@@ -64,12 +64,14 @@
     "complete": "Everything a card needs is here.",
     "recommendations": {
       "fullName": "Add your full display name",
+      "avatar": "Add your photo — people remember a face more than a name",
       "phone": "Link a contact phone number",
       "email": "Provide a primary email address",
       "sections": "Add an About bio or widgets section",
       "actions": "Add direct tap actions (WhatsApp, LinkedIn)"
     },
-    "next": "Next: {{step}}"
+    "next": "Next: {{step}}",
+    "go": "Do it"
   },
   "links": {
     "title": "Links",

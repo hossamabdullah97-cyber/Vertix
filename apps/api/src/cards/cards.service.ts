@@ -8,6 +8,7 @@ import { Prisma, type TenantContext } from '@vertex/db';
 import { isPaidPlan, type CreateCardInput, type UpdateCardInput } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { LimitsService } from '../billing/limits.service';
+import { isPlaceholderSlug, slugFromName } from './card-slug';
 
 const MANAGER_ROLES = ['OWNER', 'ADMIN', 'MANAGER'];
 
@@ -89,7 +90,7 @@ export class CardsService {
     }
 
     // Auto slug: derive from the name (or "card") and retry with a suffix on collision.
-    const base = this.slugify(input.fullName ?? '') || 'card';
+    const base = slugFromName(input.fullName ?? '') || 'card';
     for (let attempt = 0; attempt < 8; attempt++) {
       const candidate = attempt === 0 ? base : `${base}-${this.randomToken(4)}`;
       try {
@@ -102,15 +103,6 @@ export class CardsService {
       }
     }
     throw new ConflictException('Could not generate a unique card link');
-  }
-
-  private slugify(input: string): string {
-    return input
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40);
   }
 
   private randomToken(n = 4): string {
@@ -150,14 +142,45 @@ export class CardsService {
   async update(tenant: TenantContext, id: string, input: UpdateCardInput) {
     const card = await this.ensureEditable(tenant, id);
     const data = input.theme ? { ...input, theme: mergeTheme(card.theme, input.theme) } : input;
+    const named = await this.slugForName(card, input);
+    const save = (slug?: string) =>
+      this.db.card.update({ where: { id }, data: { ...data, ...(slug ? { slug } : {}) } as Prisma.CardUpdateInput });
     try {
-      return await this.db.card.update({
-        where: { id },
-        data: data as Prisma.CardUpdateInput,
-      });
+      return await save(named ?? undefined);
     } catch (err) {
+      // Someone took the name-made link in the meantime: keep the old one rather than fail the save.
+      if (named && err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        try {
+          return await save();
+        } catch (retry) {
+          throw this.mapSlugConflict(retry);
+        }
+      }
       throw this.mapSlugConflict(err);
     }
+  }
+
+  /**
+   * A card created before it had a name ("card-9uvt") takes a link made from
+   * the name once one is saved — only while nobody can have that link yet:
+   * never published, never viewed, and the request names no link itself.
+   */
+  private async slugForName(
+    card: { id: string; slug: string; isPublished: boolean },
+    input: UpdateCardInput,
+  ): Promise<string | null> {
+    const fullName = input.vcardData?.fullName;
+    if (input.slug || typeof fullName !== 'string' || card.isPublished || !isPlaceholderSlug(card.slug)) return null;
+    const base = slugFromName(fullName);
+    if (base.length < 2) return null;
+    if (await this.db.event.count({ where: { cardId: card.id } })) return null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = attempt === 0 ? base : `${base}-${this.randomToken(4)}`;
+      // Across every workspace and deleted cards too, as the unique index is (raw SQL skips the tenant scope).
+      const taken = await this.db.$queryRaw<unknown[]>`SELECT 1 FROM cards WHERE slug = ${candidate} LIMIT 1`;
+      if (taken.length === 0) return candidate;
+    }
+    return null;
   }
 
   async remove(tenant: TenantContext, id: string) {
