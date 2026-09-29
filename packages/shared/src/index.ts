@@ -442,6 +442,9 @@ export const leadCaptureSchema = z
     /// The chip UID the visitor arrived from, carried through the redirect. It
     /// credits the member whose hardware produced this client.
     tagUid: z.string().max(120).optional(),
+    /// A field people never see. Bots fill every field, so a value here marks
+    /// the request as one (see LeadsService.capture).
+    website: z.string().max(500).optional(),
   })
   .refine((d) => !!d.email || !!d.phone, {
     message: 'Provide an email or a phone number',

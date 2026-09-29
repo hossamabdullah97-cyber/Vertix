@@ -6,6 +6,15 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { WebhookService } from '../integrations/webhook.service';
 import { availabilityOf, isOpen } from '../cards/availability';
 import { bookedMeetings } from '../cards/booked-meetings';
+import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
+
+/**
+ * How many times an hour the public form may be sent: by one visitor to one
+ * card (a person rarely needs more than a couple), by one visitor across all
+ * cards, and to one card from everywhere (a flood spread over many addresses).
+ */
+export const CAPTURE_WINDOW_MS = 60 * 60_000;
+export const CAPTURE_LIMITS = { visitorCard: 5, visitor: 20, card: 200 } as const;
 
 @Injectable()
 export class LeadsService {
@@ -16,6 +25,7 @@ export class LeadsService {
     private readonly notifications: NotificationsService,
     private readonly webhooks: WebhookService,
     private readonly config: ConfigService,
+    private readonly throttle: AuthThrottleService,
   ) {}
 
   private get db() {
@@ -80,7 +90,26 @@ export class LeadsService {
    * Public lead capture from a card's exchange form. Runs without tenant
    * context, so orgId is resolved from the card and set explicitly.
    */
-  async capture(input: LeadCaptureInput) {
+  async capture(input: LeadCaptureInput, ip = 'unknown') {
+    // Limits first, so a flood costs one small query per request.
+    const keys: [string, number][] = [
+      [`capture:${ip}:${input.slug}`, CAPTURE_LIMITS.visitorCard],
+      [`capture:${ip}`, CAPTURE_LIMITS.visitor],
+      [`capture-card:${input.slug}`, CAPTURE_LIMITS.card],
+    ];
+    for (const [key, limit] of keys) {
+      const wait = await this.throttle.blockedFor(key, limit, CAPTURE_WINDOW_MS);
+      if (wait > 0) throw tooManyAttempts(wait);
+    }
+    for (const [key] of keys) await this.throttle.hit(key, CAPTURE_WINDOW_MS);
+
+    // Only a bot fills the hidden field. It is told all went well, so it has
+    // nothing to learn from, and nothing is kept.
+    if (input.website?.trim()) {
+      this.logger.warn(`dropped a form filled by a bot on ${input.slug}`);
+      return { ok: true as const, leadId: null };
+    }
+
     const card = await this.db.card.findFirst({
       where: { slug: input.slug, isPublished: true },
       select: { id: true, orgId: true, ownerId: true, theme: true },

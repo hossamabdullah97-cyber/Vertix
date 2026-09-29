@@ -27,6 +27,15 @@ export const envSchema = z.object({
   // Public web origin used to build card page / vCard URLs in NFC redirects.
   APP_PUBLIC_URL: z.string().url().default('http://localhost:3000'),
 
+  // Image storage (S3, Cloudflare R2, …). Required in production: without it
+  // uploads go to the container's disk and are lost on redeploy.
+  S3_ENDPOINT: z.string().optional(),
+  S3_REGION: z.string().optional(),
+  S3_ACCESS_KEY: z.string().optional(),
+  S3_SECRET_KEY: z.string().optional(),
+  S3_BUCKET: z.string().optional(),
+  S3_PUBLIC_URL: z.string().optional(),
+
   // The time zone meeting hours are in for cards whose owner has not chosen one.
   DEFAULT_TIMEZONE: z.string().default('Africa/Cairo'),
 

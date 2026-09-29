@@ -39,6 +39,13 @@ services:
       # Set to the number of proxies (e.g. 1) if a load balancer sits in front of the API.
       TRUST_PROXY: ${TRUST_PROXY:-}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
+      # Image storage (S3 / Cloudflare R2). Without it, uploads are lost on redeploy.
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-}
       # Wallet passes: each is offered on cards only when its values are set.
       APPLE_PASS_TYPE_ID: ${APPLE_PASS_TYPE_ID:-}
       APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}

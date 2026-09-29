@@ -11,8 +11,8 @@ import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { CardsService } from './cards.service';
 import { Public } from '../auth/decorators/public.decorator';
-import { UPLOAD_DIR } from '../uploads/uploads.controller';
-import { buildVCard, photoFromUpload, vcardFileName } from './vcard';
+import { StorageService } from '../uploads/storage.service';
+import { MAX_PHOTO_BYTES, buildVCard, vcardFileName, vcardPhoto } from './vcard';
 import { WalletService } from './wallet/wallet.service';
 import { availabilityOf, openSlots } from './availability';
 import { bookedMeetings } from './booked-meetings';
@@ -27,6 +27,7 @@ export class PublicCardsController {
     private readonly config: ConfigService,
     private readonly wallet: WalletService,
     private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
   ) {}
 
   private appUrl() {
@@ -83,8 +84,9 @@ export class PublicCardsController {
   ) {
     const card = await this.unlocked(slug, p, code, req);
     const pass = walletCardOf(card, { appUrl: this.appUrl(), p });
-    const photo = photoFromUpload(pass.avatar, UPLOAD_DIR);
-    const file = this.wallet.applePass(pass, photo ? { type: photo.type, bytes: new Uint8Array(Buffer.from(photo.base64, 'base64')) } : null);
+    const stored = await this.storage.readImage(pass.avatar, MAX_PHOTO_BYTES);
+    const photo = stored?.type === 'image/png' ? { type: 'PNG' as const, bytes: new Uint8Array(stored.bytes) } : null;
+    const file = this.wallet.applePass(pass, photo);
     if (!file) throw new NotFoundException('Apple Wallet is not set up');
     res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
     res.setHeader('Content-Disposition', `attachment; filename="${vcardFileName(pass.name).replace(/\.vcf$/, '.pkpass')}"`);
@@ -128,7 +130,7 @@ export class PublicCardsController {
       cardUrl,
       about: about || undefined,
       actions: card.actions,
-      photo: photoFromUpload(data.avatar, UPLOAD_DIR),
+      photo: vcardPhoto(await this.storage.readImage(data.avatar, MAX_PHOTO_BYTES)),
     });
     const name = typeof data.fullName === 'string' ? data.fullName.trim() : '';
     res.setHeader('Content-Type', 'text/vcard; charset=utf-8');

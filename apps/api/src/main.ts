@@ -8,7 +8,7 @@ import { mkdirSync } from 'node:fs';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { trustProxySetting } from './config/trust-proxy';
-import { UPLOAD_DIR } from './uploads/uploads.controller';
+import { UPLOAD_DIR } from './uploads/storage.service';
 
 async function bootstrap() {
   // rawBody enables Stripe webhook signature verification.
