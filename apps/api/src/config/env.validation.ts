@@ -65,6 +65,11 @@ export const envSchema = z.object({
   // OAuth client id of a "Web application" client in Google Cloud.
   GOOGLE_CLIENT_ID: z.string().optional(),
 
+  // Reading paper business cards (optional — the "Scan a card" button shows
+  // only when set). An Anthropic API key; the model defaults to Claude Haiku.
+  ANTHROPIC_API_KEY: z.string().optional(),
+  LEAD_SCAN_MODEL: z.string().optional(),
+
   // WhatsApp lead alerts (optional — offered only when the token and phone
   // number id are set). WhatsApp Business Cloud API, with an approved template.
   WHATSAPP_TOKEN: z.string().optional(),

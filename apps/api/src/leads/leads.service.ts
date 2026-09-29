@@ -1,9 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, ServiceUnavailableException, UnprocessableEntityException } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
 import { buildIcs, googleCalendarLink, type CalendarEvent } from './ics';
 import { meetingReplyEmail } from './meeting-mail';
 import { ConfigService } from '@nestjs/config';
-import type { AddLeadActivityInput, LeadCaptureInput, MeetingResponseInput } from '@vertex/shared';
+import type { AddLeadActivityInput, CreateLeadInput, LeadCaptureInput, MeetingResponseInput } from '@vertex/shared';
+import type { TenantContext } from '@vertex/db';
+import { CardScanError, CardScanner } from './card-scan';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LeadAlertsService } from '../notifications/lead-alerts.service';
@@ -19,6 +21,10 @@ import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.serv
  */
 export const CAPTURE_WINDOW_MS = 60 * 60_000;
 export const CAPTURE_LIMITS = { visitorCard: 5, visitor: 20, card: 200 } as const;
+
+/** Paper cards one person may have read in an hour: a busy event day, not a script. */
+export const SCAN_LIMIT = 60;
+const SCAN_WINDOW_MS = 60 * 60_000;
 
 @Injectable()
 export class LeadsService {
@@ -448,6 +454,72 @@ export class LeadsService {
   /** The accepted (or asked-for) meeting as a calendar file, for the owner. */
   async meetingIcs(id: string): Promise<string> {
     return buildIcs(this.meetingEvent(await this.meetingRequest(id)));
+  }
+
+  private scanner(): CardScanner | null {
+    const key = this.config.get<string>('ANTHROPIC_API_KEY');
+    return key ? new CardScanner(key, this.config.get<string>('LEAD_SCAN_MODEL') || 'claude-haiku-4-5-20251001') : null;
+  }
+
+  /** Whether this server can read paper cards. */
+  scanAvailable() {
+    return { available: !!this.config.get<string>('ANTHROPIC_API_KEY') };
+  }
+
+  /**
+   * Reads the contact from a photo of a paper business card. Nothing is saved:
+   * the person checks what was read, then adds the lead with create().
+   */
+  async scanCard(userId: string, image: { mediaType: string; base64: string }) {
+    const scanner = this.scanner();
+    if (!scanner) throw new ServiceUnavailableException('Card scanning is not set up on this server');
+    const key = `card-scan:${userId}`;
+    const wait = await this.throttle.blockedFor(key, SCAN_LIMIT, SCAN_WINDOW_MS);
+    if (wait > 0) throw tooManyAttempts(wait);
+    await this.throttle.hit(key, SCAN_WINDOW_MS);
+    try {
+      return await scanner.read(image);
+    } catch (err) {
+      if (err instanceof CardScanError) {
+        this.logger.warn(`card scan: ${err.message}`);
+        if (err.kind === 'not-a-card') throw new UnprocessableEntityException('No business card found in the photo');
+        throw new ServiceUnavailableException('The card could not be read right now');
+      }
+      throw err;
+    }
+  }
+
+  /** A lead someone adds themselves (typed, or read from a paper card), assigned to them. */
+  async create(tenant: TenantContext, input: CreateLeadInput) {
+    const stage = await this.db.pipelineStage.findFirst({ orderBy: { order: 'asc' }, select: { id: true } });
+    const lead = await this.db.lead.create({
+      data: {
+        orgId: tenant.orgId,
+        assignedTo: tenant.userId,
+        stageId: stage?.id,
+        name: input.name || undefined,
+        email: input.email || undefined,
+        phone: input.phone || undefined,
+        company: input.company || undefined,
+        source: input.source,
+        temperature: 'WARM',
+      },
+      select: { id: true, name: true, email: true, phone: true, company: true, score: true, value: true, temperature: true, source: true, stageId: true, createdAt: true, card: { select: { slug: true } } },
+    });
+    // What the lead record has no column for is kept as its first note.
+    const lines = [
+      input.title && `${input.title}`,
+      input.website && `${input.website}`,
+      input.address && `${input.address}`,
+      input.note && `${input.note}`,
+    ].filter(Boolean);
+    if (lines.length) {
+      await this.db.leadActivity.create({
+        data: { leadId: lead.id, type: 'NOTE', metadata: { note: lines.join('\n'), title: input.title ?? null, website: input.website ?? null, address: input.address ?? null, source: input.source } },
+      });
+    }
+    void this.webhooks.emit(tenant.orgId, 'lead.created', { leadId: lead.id, name: lead.name, email: lead.email, phone: lead.phone, company: lead.company, source: input.source }).catch(() => undefined);
+    return lead;
   }
 
   /** The org's pipeline stages (ordered). */

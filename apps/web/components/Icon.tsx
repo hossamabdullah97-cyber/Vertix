@@ -10,6 +10,7 @@ const PATHS: Record<string, string> = {
   'file-text': 'M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6',
   'map-pin': 'M12 22s7-5.5 7-12a7 7 0 1 0-14 0c0 6.5 7 12 7 12zM12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
   download: 'M12 3v12M7 11l5 5 5-5M5 21h14',
+  camera: 'M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
   'user-plus': 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21v-1a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v1M18 8v6M15 11h6',
   link: 'M9 15l6-6M10 6l1-1a4 4 0 0 1 6 6l-1 1M14 18l-1 1a4 4 0 0 1-6-6l1-1',
   send: 'M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z',

@@ -174,6 +174,27 @@ export async function authFetch<T>(
   return data as T;
 }
 
+/** Sends a file (as multipart form data, field "file") to an API route and reads the JSON answer. */
+export async function authPostFile<T>(path: string, file: Blob, filename: string): Promise<T> {
+  const orgId = getActiveOrgId();
+  const res = await withSession((token) => {
+    const form = new FormData();
+    form.append('file', file, filename);
+    return fetch(`${API_URL}${path}`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(orgId ? { 'x-organization-id': orgId } : {}) },
+      body: form,
+    });
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const err = new Error((data && (data.message || data.error)) || `Request failed (${res.status})`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
+  return data as T;
+}
+
 /**
  * Uploads an image file to the API and returns its public URL.
  * Sends multipart/form-data with the auth token — do NOT set Content-Type

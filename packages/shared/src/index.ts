@@ -493,6 +493,22 @@ export const meetingResponseSchema = z.object({
 });
 export type MeetingResponseInput = z.infer<typeof meetingResponseSchema>;
 
+// A lead someone adds themselves: typed in, or read from a paper card.
+export const createLeadSchema = z
+  .object({
+    name: z.string().trim().max(120).optional(),
+    email: z.string().trim().toLowerCase().email().optional().or(z.literal('')),
+    phone: z.string().trim().max(40).optional(),
+    company: z.string().trim().max(120).optional(),
+    title: z.string().trim().max(120).optional(),
+    website: z.string().trim().max(200).optional(),
+    address: z.string().trim().max(240).optional(),
+    note: z.string().trim().max(1000).optional(),
+    source: z.enum(['card_scan', 'manual']).default('manual'),
+  })
+  .refine((d) => !!d.name || !!d.email || !!d.phone, { message: 'Give a name, an email or a phone number', path: ['name'] });
+export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+
 // A user-logged CRM activity on a lead (note / call / email / meeting).
 export const addLeadActivitySchema = z.object({
   type: z.enum(['NOTE', 'CALL', 'EMAIL', 'MEETING']),

@@ -257,7 +257,9 @@
     "meeting": "Meeting request",
     "quote": "Quote request",
     "share": "Shared link",
-    "view": "Profile view"
+    "view": "Profile view",
+    "card_scan": "Paper card",
+    "manual": "Added by hand"
   },
   "meeting": {
     "title": "Meeting request",
@@ -292,6 +294,57 @@
       "passed": "This time has already passed.",
       "taken": "Someone else asked for this time since you declined it.",
       "generic": "That didn't go through. Try again."
+    }
+  },
+  "export": {
+    "button": "Export",
+    "all": "Download every lead as a CSV for Excel",
+    "filtered": "Download the {{count}} leads shown as a CSV for Excel",
+    "file": "leads",
+    "headers": {
+      "name": "Name",
+      "company": "Company",
+      "email": "Email",
+      "phone": "Phone",
+      "stage": "Stage",
+      "temperature": "Temperature",
+      "value": "Value",
+      "source": "Source",
+      "card": "Card",
+      "added": "Added"
+    }
+  },
+  "add": {
+    "button": "Add lead",
+    "title": "Add a lead",
+    "subtitle": "Type in the details of someone you met.",
+    "subtitleScan": "Photograph their business card, or type the details in.",
+    "scan": "Scan a business card",
+    "scanHint": "Take a photo of a paper card and the details fill themselves in. Arabic, English or both.",
+    "photoAlt": "The business card",
+    "reading": "Reading the card…",
+    "retake": "Take another",
+    "check": "Check what was read before saving. The photo isn't kept.",
+    "fields": {
+      "name": "Name",
+      "title": "Job title",
+      "company": "Company",
+      "email": "Email",
+      "phone": "Phone",
+      "website": "Website",
+      "address": "Address",
+      "note": "Notes"
+    },
+    "cancel": "Cancel",
+    "save": "Save lead",
+    "saving": "Saving…",
+    "errors": {
+      "notCard": "No business card found in that photo. Try again with the card filling the frame.",
+      "tooMany": "Too many cards read in the last hour. Type this one in, or try again later.",
+      "read": "The card couldn't be read right now. Type the details in instead.",
+      "empty": "Add at least a name, an email or a phone number.",
+      "email": "Check the email address.",
+      "save": "The lead wasn't saved. Try again."
     }
   }
 }
