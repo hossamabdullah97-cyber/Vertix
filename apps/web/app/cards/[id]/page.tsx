@@ -26,6 +26,7 @@ import ShareCard from '@/components/ShareCard';
 import { COVER_STYLES, LAYOUTS, LINK_STYLES, layoutOf, linkStyleOf, modeOf, type CoverStyle, type Layout, type LinkStyle, type ThemeMode } from '@/lib/profile';
 import { Toggle } from '@/components/ui/Toggle';
 import { MeetingHours } from '@/components/cards/MeetingHours';
+import { SecondLanguage, type AltIdentity } from '@/components/cards/SecondLanguage';
 import { shade } from '@/lib/color';
 import { PresenceBadge, useCardPresence } from '@/components/cards/Presence';
 import { Icon } from '@/components/Icon';
@@ -893,6 +894,16 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       onChange={(url) => setVcard({ ...vcard, coverImage: url })}
                     />
                   </div>
+                  <SecondLanguage
+                    primary={lang}
+                    value={(vcard as unknown as { alt?: AltIdentity }).alt}
+                    onChange={(alt) => {
+                      const next = { ...vcard } as Record<string, unknown>;
+                      if (alt) next.alt = alt;
+                      else delete next.alt;
+                      setVcard(next as Record<string, string>);
+                    }}
+                  />
                 </StudioSection>
 
                 <StudioSection

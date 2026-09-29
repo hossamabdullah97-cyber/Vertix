@@ -75,7 +75,7 @@ const CARD_MAX = 440;
  * The published card, drawn at a real phone's width and scaled to fit the
  * frame, so the preview matches what a visitor gets instead of approximating it.
  */
-function ScaledProfile({ profile }: { profile: ProfileData }) {
+function ScaledProfile({ profile, onLang }: { profile: ProfileData; onLang: (lang: 'en' | 'ar') => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
 
@@ -96,12 +96,12 @@ function ScaledProfile({ profile }: { profile: ProfileData }) {
           // A screen wider than a phone sees the card as a card, like the live page.
           <div style={profileStyle(profile)} className="flex h-full justify-center overflow-hidden bg-[var(--p-bg)] px-6 pt-6">
             <div className="h-full w-full max-w-[440px] overflow-hidden rounded-t-[20px] shadow-[0_0_0_1px_var(--p-line)]">
-              <PublicProfile profile={profile} preview />
+              <PublicProfile profile={profile} preview onLang={onLang} />
             </div>
           </div>
         ) : (
           <div style={{ width: size.w / z, height: size.h / z, zoom: z }}>
-            <PublicProfile profile={profile} preview />
+            <PublicProfile profile={profile} preview onLang={onLang} />
           </div>
         ))}
     </div>
@@ -138,6 +138,8 @@ export default function LivePreview({
   const [reloading, setReloading] = useState(false);
   const [shooting, setShooting] = useState(false);
   const [toast, setToast] = useState('');
+  // The card's language on screen, when it has two; the switch on the card sets it.
+  const [viewLang, setViewLang] = useState<'en' | 'ar' | null>(null);
   const [origin, setOrigin] = useState('');
 
   const stageRef = useRef<HTMLDivElement>(null);
@@ -230,11 +232,12 @@ export default function LivePreview({
           .filter((l) => l.isActive !== false)
           .map((l, i) => ({ id: l.id, platform: l.platform, displayName: l.displayName, url: l.url ?? '#', description: l.description ?? null, order: l.order ?? i })),
         fallbackName: profileStrings(previewCard.theme?.lang === 'ar' ? 'ar' : 'en').yourName,
+        viewLang,
       }),
-    [slug, brand, previewCard.theme, card.vcardData, sections, actions, paymentLinks],
+    [slug, brand, previewCard.theme, card.vcardData, sections, actions, paymentLinks, viewLang],
   );
 
-  const screen = <ScaledProfile profile={profile} />;
+  const screen = <ScaledProfile profile={profile} onLang={setViewLang} />;
 
   const stage = (
     <div

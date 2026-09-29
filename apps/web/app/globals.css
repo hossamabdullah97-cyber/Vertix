@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import './fonts.css';
 @import '../design-system/styles/system.css';
 
 @tailwind base;
@@ -545,5 +545,47 @@ textarea.v-field {
 @media (prefers-reduced-motion: reduce) {
   .p-rise > * {
     animation: none;
+  }
+}
+
+/* Public card: its sheets slide up from the bottom, and back down. */
+@keyframes p-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes p-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes p-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes p-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+.p-sheet {
+  animation: p-sheet-in 0.32s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+.p-sheet[data-closing] {
+  animation: p-sheet-out 0.2s ease-in both;
+}
+.p-scrim {
+  animation: p-fade-in 0.2s ease-out both;
+}
+.p-scrim[data-closing] {
+  animation: p-fade-out 0.2s ease-in both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .p-sheet,
+  .p-sheet[data-closing],
+  .p-scrim,
+  .p-scrim[data-closing] {
+    animation-duration: 1ms;
   }
 }

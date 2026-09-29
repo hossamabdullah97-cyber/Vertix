@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildProfile, embedUrl, externalUrl, initials, layoutOf, linkStyleOf, modeOf, pick, profileAttrs } from './profile';
+import { altOf, buildProfile, pickViewLang, embedUrl, externalUrl, initials, layoutOf, linkStyleOf, modeOf, pick, profileAttrs } from './profile';
 
 const base = { slug: 's', sections: [], actions: [], paymentLinks: [] };
 
@@ -134,3 +134,41 @@ describe('wallet and privacy', () => {
   });
 });
 
+
+describe('second language', () => {
+  const vcardData = {
+    fullName: 'Mariam Khaled',
+    title: 'Sales Director',
+    alt: { lang: 'ar', fullName: ' مريم خالد ', title: 'مديرة المبيعات', about: 'نبني بجودة.', company: '' },
+  };
+
+  it('reads the other language only when it is complete enough', () => {
+    expect(altOf(vcardData, 'en')).toEqual({ lang: 'ar', fields: { fullName: 'مريم خالد', title: 'مديرة المبيعات', about: 'نبني بجودة.' } });
+    // Written for the language the card is in now: not a second language.
+    expect(altOf(vcardData, 'ar')).toBeNull();
+    expect(altOf({ alt: { lang: 'ar', title: 'x' } }, 'en')).toBeNull();
+    expect(altOf({ alt: 'ar' }, 'en')).toBeNull();
+    expect(altOf(null, 'en')).toBeNull();
+  });
+
+  it('picks the asked language, else the browser, else the card', () => {
+    expect(pickViewLang(['en', 'ar'], 'ar', 'en-US')).toBe('ar');
+    expect(pickViewLang(['en'], 'ar', null)).toBe('en');
+    expect(pickViewLang(['en', 'ar'], null, 'fr-FR,ar-EG;q=0.8,en;q=0.5')).toBe('ar');
+    expect(pickViewLang(['en', 'ar'], 'xx', 'de')).toBe('en');
+  });
+
+  it('shows the card in the language chosen, keeping what was not translated', () => {
+    const card = { ...base, theme: { lang: 'en' }, vcardData };
+    const en = buildProfile({ ...card });
+    expect(en.langs).toEqual(['en', 'ar']);
+    expect(en.lang).toBe('en');
+    expect(en.name).toBe('Mariam Khaled');
+
+    const ar = buildProfile({ ...card, viewLang: 'ar' });
+    expect(ar.lang).toBe('ar');
+    expect(ar.name).toBe('مريم خالد');
+    expect(ar.title).toBe('مديرة المبيعات');
+    expect(ar.about).toBe('نبني بجودة.');
+  });
+});

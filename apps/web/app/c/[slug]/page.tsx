@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { apiGet, type PublicCard, type PublicCardLocked } from '@/lib/api';
-import { buildProfile, profileAttrs, profileStyle } from '@/lib/profile';
+import { altOf, buildProfile, pickViewLang, profileAttrs, profileStyle } from '@/lib/profile';
 import { CardCompanion } from '@/components/profile/CardCompanion';
 import { PasscodeGate } from '@/components/profile/PasscodeGate';
 import { PublicProfile } from '@/components/profile/PublicProfile';
@@ -10,13 +10,23 @@ import TrackView from '@/components/TrackView';
 
 export const dynamic = 'force-dynamic';
 
-type Search = { p?: string; code?: string; t?: string };
+type Search = { p?: string; code?: string; t?: string; lang?: string };
 
 function variantQuery(searchParams: Search) {
   const qs = new URLSearchParams();
   if (searchParams.p) qs.set('p', searchParams.p);
   if (searchParams.code) qs.set('code', searchParams.code);
   return qs.toString() ? `?${qs}` : '';
+}
+
+/**
+ * The language a visitor sees: ?lang when the card has it, else the one their
+ * browser prefers among the card's, else the card's own.
+ */
+function viewLangOf(card: PublicCard, searchParams: Search) {
+  const primary = card.theme?.lang === 'ar' ? 'ar' : 'en';
+  const alt = altOf(card.vcardData, primary);
+  return pickViewLang(alt ? [primary, alt.lang] : [primary], searchParams.lang, headers().get('accept-language'));
 }
 
 /**
@@ -43,7 +53,7 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
   const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`);
   if (!result || ('locked' in result && result.locked)) return { title: 'Vertex Connect', robots: { index: false } };
   const card = result as PublicCard;
-  const p = buildProfile({ ...card, brand: card.brand ?? null });
+  const p = buildProfile({ ...card, brand: card.brand ?? null, viewLang: viewLangOf(card, searchParams) });
   const role = [p.title, p.company || p.brand?.name].filter(Boolean).join(' · ');
   const description = role || p.about.slice(0, 160) || undefined;
   return {
@@ -65,10 +75,15 @@ function personData(profile: ReturnType<typeof buildProfile>, card: PublicCard) 
   const links = card.actions
     .map((a) => (typeof a.config?.url === 'string' ? a.config.url : ''))
     .filter((u) => /^https?:\/\//.test(u));
+  // The name in the card's other language, for search in either script.
+  const primary = card.theme?.lang === 'ar' ? 'ar' : 'en';
+  const names = [typeof v.fullName === 'string' ? v.fullName.trim() : '', altOf(card.vcardData, primary)?.fields.fullName ?? ''];
+  const alternateName = names.find((n) => n && n !== profile.name);
   return {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: profile.name,
+    ...(alternateName ? { alternateName } : {}),
     ...(profile.title ? { jobTitle: profile.title } : {}),
     ...(company ? { worksFor: { '@type': 'Organization', name: company } } : {}),
     ...(/^https?:\/\//.test(profile.avatar) ? { image: profile.avatar } : {}),
@@ -92,6 +107,7 @@ export default async function CardPage({ params, searchParams }: { params: { slu
 
   const card = result as PublicCard;
   const profile = buildProfile({
+    viewLang: viewLangOf(card, searchParams),
     slug: card.slug,
     theme: card.theme,
     vcardData: card.vcardData,
