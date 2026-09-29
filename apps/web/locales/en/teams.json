@@ -120,6 +120,66 @@
     "draft": "Draft",
     "chips": "Chips they carry"
   },
+  "import": {
+    "button": "Import from Excel",
+    "title": "Import people",
+    "subtitle": "Invite a whole team from an Excel or CSV file.",
+    "pick": "Choose an Excel or CSV file",
+    "pickHint": "Or drop it here. Up to {{max}} people at a time.",
+    "columnsTitle": "What the file needs",
+    "required": "required",
+    "columns": {
+      "email": "An Email column",
+      "others": "Name, Job title, Phone and Team are used when they're there. Teams that don't exist yet are created.",
+      "role": "Role can be Admin, Manager or Employee; anyone without one joins as an Employee."
+    },
+    "template": "Download a template",
+    "ready_one": "one person ready",
+    "ready_other": "{{value}} people ready",
+    "skipped_one": "one row skipped",
+    "skipped_other": "{{value}} rows skipped",
+    "tooMany": "Only the first {{max}} rows are shown. Import the rest in another file.",
+    "createCards": "Create a card for each person",
+    "createCardsHint": "Filled in with their name, title, company, phone and email, ready for them to add a photo and publish.",
+    "noEmail": "No email",
+    "problems": {
+      "missingEmail": "No email",
+      "badEmail": "Check email",
+      "owner": "Can't import owners",
+      "duplicate": "Repeated"
+    },
+    "back": "Back",
+    "send_one": "Invite one person",
+    "send_other": "Invite {{value}} people",
+    "sending_one": "Inviting…",
+    "sending_other": "Inviting {{value}} people…",
+    "finish": "Done",
+    "done": {
+      "title": "Import finished",
+      "invited": "Invited",
+      "cards": "Cards made",
+      "already": "Already here",
+      "next": "Each person gets an email to join. Their cards are drafts until they publish them.",
+      "problems_one": "One row needs a look",
+      "problems_other": "{{value}} rows need a look",
+      "notInvited": "Not invited: {{reason}}",
+      "noCard": "Invited, but no card: {{reason}}",
+      "emailFailed": "Invited, but the email didn't send. Resend it from their profile.",
+      "nobody": "No one was added",
+      "planLimit": "your plan is full"
+    },
+    "errors": {
+      "type": "Choose an .xlsx or .csv file.",
+      "noEmail": "No Email column found. Add a column headed \"Email\" and try again.",
+      "empty": "There's no one in this file.",
+      "read": "This file couldn't be read. Save it as .xlsx or .csv and try again.",
+      "send": "The import didn't go through. Try again."
+    },
+    "planFull": "Your plan has no room for more people, so no one here will be invited.",
+    "planRoom_one": "Your plan has room for one more person; the rest won't be invited.",
+    "planRoom_other": "Your plan has room for {{value}} more people; the rest won't be invited.",
+    "upgrade": "Upgrade"
+  },
   "invite": {
     "button": "Invite people",
     "title": "Invite people",

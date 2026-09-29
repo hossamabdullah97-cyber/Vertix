@@ -9,13 +9,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  importMembersSchema,
   inviteMemberSchema,
+  type ImportMembersInput,
   updateMemberSchema,
   type InviteMemberInput,
   type UpdateMemberInput,
 } from '@vertex/shared';
 import type { TenantContext } from '@vertex/db';
 import { MembersService } from './members.service';
+import { MembersImportService } from './members-import.service';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,7 +27,10 @@ import { Tenant } from '../auth/decorators/tenant.decorator';
 @UseGuards(RequireTenantGuard)
 @Controller('orgs/members')
 export class MembersController {
-  constructor(private readonly members: MembersService) {}
+  constructor(
+    private readonly members: MembersService,
+    private readonly importer: MembersImportService,
+  ) {}
 
   @Roles('OWNER', 'ADMIN', 'MANAGER')
   @Get()
@@ -39,6 +45,16 @@ export class MembersController {
     @Body(new ZodValidationPipe(inviteMemberSchema)) body: InviteMemberInput,
   ) {
     return this.members.invite(tenant, body);
+  }
+
+  /** Invites everyone in a spreadsheet at once, with a card each if asked. */
+  @Roles('OWNER', 'ADMIN')
+  @Post('import')
+  importMany(
+    @Tenant() tenant: TenantContext,
+    @Body(new ZodValidationPipe(importMembersSchema)) body: ImportMembersInput,
+  ) {
+    return this.importer.importMany(tenant, body);
   }
 
   @Roles('OWNER', 'ADMIN')
