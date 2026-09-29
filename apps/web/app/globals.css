@@ -589,3 +589,16 @@ textarea.v-field {
     animation-duration: 1ms;
   }
 }
+
+/* On touch screens a small text link gets a finger-sized target (about 44px)
+   without changing how it looks. */
+@media (pointer: coarse) {
+  .v-hit {
+    position: relative;
+  }
+  .v-hit::after {
+    content: '';
+    position: absolute;
+    inset: -12px -8px;
+  }
+}

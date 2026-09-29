@@ -230,10 +230,13 @@ export function TrendChart({
 
       {/* Time axis */}
       <div className="relative h-6">
-        {axisIdx.map((i) => (
+        {axisIdx.map((i, k) => (
           <span
             key={i}
-            className="absolute top-2 flex w-0 justify-center whitespace-nowrap text-[11.5px] text-faint"
+            // The first and last dates grow inwards, so neither is cut off at the edge.
+            className={`absolute top-2 flex w-0 whitespace-nowrap text-[11.5px] text-faint ${
+              k === 0 ? 'justify-start' : k === axisIdx.length - 1 ? 'justify-end' : 'justify-center'
+            }`}
             style={{ insetInlineStart: xAt(i) }}
           >
             {labels[i]}

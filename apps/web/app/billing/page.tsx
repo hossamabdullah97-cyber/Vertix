@@ -529,7 +529,7 @@ function UsageCell({ resource, used, limit, first }: { resource: (typeof RESOURC
   return (
     <li className={`p-5 sm:p-6 ${first ? '' : 'border-t border-line sm:border-t-0 sm:border-s'}`}>
       <div className="flex items-center justify-between gap-3">
-        <Link href={resource.href} className="group flex items-center gap-2 text-[13px] font-medium text-ink" aria-label={t('usage.open', { page: t(resource.page) })}>
+        <Link href={resource.href} className="v-hit group flex items-center gap-2 text-[13px] font-medium text-ink" aria-label={t('usage.open', { page: t(resource.page) })}>
           <Icon name={resource.icon} size={14} className="text-faint" />
           <span className="group-hover:underline">{t(`usage.${resource.key}`)}</span>
         </Link>

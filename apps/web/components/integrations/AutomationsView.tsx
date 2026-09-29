@@ -454,7 +454,7 @@ function Builder({
               );
             })}
           </div>
-          <button type="button" onClick={() => set({ conditions: [...d.conditions, { field: `data.${fields[0] ?? ''}`, operator: 'equals', value: '' }] })} className="mt-2 flex h-9 items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
+          <button type="button" onClick={() => set({ conditions: [...d.conditions, { field: `data.${fields[0] ?? ''}`, operator: 'equals', value: '' }] })} className="v-hit mt-2 flex h-9 items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
             <Icon name="plus" size={14} /> {t('automations.form.addCondition')}
           </button>
         </Step>
@@ -516,7 +516,7 @@ function Builder({
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => set({ actions: [...d.actions, { type: 'notify', config: {} }] })} className="mt-2 flex h-9 items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
+          <button type="button" onClick={() => set({ actions: [...d.actions, { type: 'notify', config: {} }] })} className="v-hit mt-2 flex h-9 items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
             <Icon name="plus" size={14} /> {t('automations.form.addAction')}
           </button>
         </Step>

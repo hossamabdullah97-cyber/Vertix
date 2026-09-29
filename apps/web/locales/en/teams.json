@@ -342,7 +342,8 @@
       "crm_sync_now": "ran a CRM sync",
       "occasion_created": "added the occasion",
       "occasion_updated": "changed the occasion",
-      "occasion_deleted": "deleted the occasion"
+      "occasion_deleted": "deleted the occasion",
+      "members_imported": "imported people from a file"
     }
   }
 }

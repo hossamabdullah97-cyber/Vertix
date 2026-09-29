@@ -115,7 +115,7 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
         <section className="v-card p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-[14px] font-semibold text-ink">{t('overview.recent')}</h2>
-            <button onClick={() => onOpen('workspaces')} className="text-[12.5px] font-medium text-accent hover:underline">
+            <button onClick={() => onOpen('workspaces')} className="v-hit text-[12.5px] font-medium text-accent hover:underline">
               {t('overview.seeAll')}
             </button>
           </div>
@@ -170,7 +170,7 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
                 </div>
               ))}
             </dl>
-            <button onClick={() => onOpen('jobs')} className="mt-4 flex items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline">
+            <button onClick={() => onOpen('jobs')} className="v-hit mt-4 flex items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline">
               {t('overview.seeJobs')} <Icon name="arrow" size={13} className="rtl:-scale-x-100" />
             </button>
           </section>
