@@ -49,6 +49,15 @@ function identityPayload(
 ) {
   return { slug, templateId, theme, vcardData: vcard };
 }
+/** Where each completion step is done in the Content tab. */
+const RECOMMENDATION_TARGET: Record<string, string> = {
+  fullName: 'studio-profile',
+  avatar: 'studio-profile',
+  phone: 'studio-links',
+  email: 'studio-links',
+  actions: 'studio-links',
+  sections: 'studio-sections',
+};
 const BRANDS_COLORS: Record<string, string> = {
   LINKEDIN: '#0a66c2',
   WHATSAPP: '#25d366',
@@ -476,26 +485,32 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   };
 
   // Completion analyzer scoring computation
+  // A number or address counts whether it is in the profile or on a button (the quick start adds buttons).
+  const hasPhone = !!vcard.phone || actions.some((a) => (a.type === 'CALL' || a.type === 'WHATSAPP') && !!a.config?.phone);
+  const hasEmail = !!vcard.email || actions.some((a) => a.type === 'EMAIL' && !!a.config?.email);
   const profileScore = useMemo(() => {
     let score = 20; // base profile creation
     if (vcard.fullName) score += 15;
     if (vcard.title) score += 10;
-    if (vcard.phone) score += 15;
-    if (vcard.email) score += 15;
-    if (sections.length > 0) score += 15;
+    if (vcard.avatar) score += 10;
+    if (hasPhone) score += 15;
+    if (hasEmail) score += 10;
+    if (sections.length > 0) score += 10;
     if (actions.length > 0) score += 10;
     return Math.min(100, score);
-  }, [vcard, sections, actions]);
+  }, [vcard, sections, actions, hasPhone, hasEmail]);
 
   const missingRecommendations = useMemo(() => {
     const recs: string[] = [];
+    // Most noticed first: the name and face, then ways to reach you, then more to read.
     if (!vcard.fullName) recs.push('fullName');
-    if (!vcard.phone) recs.push('phone');
-    if (!vcard.email) recs.push('email');
-    if (sections.length === 0) recs.push('sections');
+    if (!vcard.avatar) recs.push('avatar');
+    if (!hasPhone) recs.push('phone');
+    if (!hasEmail) recs.push('email');
     if (actions.length === 0) recs.push('actions');
+    if (sections.length === 0) recs.push('sections');
     return recs;
-  }, [vcard, sections, actions]);
+  }, [vcard, sections, actions, hasPhone, hasEmail]);
 
   const handleDeleteCard = async () => {
     if (!card || deleteSlugConfirm !== card.slug) {
@@ -810,7 +825,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 {missingRecommendations.length > 0 ? (
                   <div className="flex items-center gap-3 rounded-[10px] bg-elevated px-3.5 py-3 ring-1 ring-inset ring-line">
                     <ScoreRing value={profileScore} />
-                    <p className="min-w-0 text-[13px] text-muted">
+                    <p className="min-w-0 flex-1 text-[13px] text-muted">
                       <span className="font-medium text-ink">
                         {t('quality.title')} · <span className="tabular">{profileScore}%</span>
                       </span>
@@ -819,6 +834,15 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       </span>
                       {t('quality.next', { step: t(`quality.recommendations.${missingRecommendations[0]}`) })}
                     </p>
+                    {/* The next step is one tap away: it takes you to where it is done. */}
+                    <button
+                      onClick={() =>
+                        document.getElementById(RECOMMENDATION_TARGET[missingRecommendations[0]] ?? 'studio-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }
+                      className="v-btn shrink-0 !h-11 px-3 text-[12.5px] sm:!h-8"
+                    >
+                      {t('quality.go')}
+                    </button>
                   </div>
                 ) : null}
 
