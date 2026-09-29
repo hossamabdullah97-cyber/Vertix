@@ -1,12 +1,17 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import type { JwtPayload } from '@vertex/shared';
+import { leadAlertSettingsSchema, type JwtPayload, type LeadAlertSettingsInput } from '@vertex/shared';
 import { NotificationsService } from './notifications.service';
+import { LeadAlertsService } from './lead-alerts.service';
+import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 /** Notifications are recipient-scoped (per user), available in any workspace. */
 @Controller('notifications')
 export class NotificationsController {
-  constructor(private readonly notifications: NotificationsService) {}
+  constructor(
+    private readonly notifications: NotificationsService,
+    private readonly alerts: LeadAlertsService,
+  ) {}
 
   @Get()
   list(
@@ -42,6 +47,22 @@ export class NotificationsController {
     const category = String(body.category ?? '').trim();
     if (!category) return { ok: false as const };
     return this.notifications.setPreference(user.sub, category, body.inApp !== false);
+  }
+
+  /** Email and WhatsApp alerts for new leads. */
+  @Get('lead-alerts')
+  leadAlerts(@CurrentUser() user: JwtPayload) {
+    return this.alerts.settings(user.sub);
+  }
+
+  @Patch('lead-alerts')
+  setLeadAlerts(@CurrentUser() user: JwtPayload, @Body(new ZodValidationPipe(leadAlertSettingsSchema)) body: LeadAlertSettingsInput) {
+    return this.alerts.update(user.sub, body);
+  }
+
+  @Post('lead-alerts/test')
+  testLeadAlert(@CurrentUser() user: JwtPayload) {
+    return this.alerts.sendTest(user.sub);
   }
 
   @Post('read-all')

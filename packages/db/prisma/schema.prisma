@@ -47,6 +47,7 @@ model User {
   notifications  Notification[] @relation("NotificationRecipient")
   actedNotifications Notification[] @relation("NotificationActor")
   notificationPrefs NotificationPreference[] @relation("NotificationPrefs")
+  leadAlerts        LeadAlertSettings?
   managedDepartments Department[]   @relation("DepartmentManager")
   requestedApprovals ApprovalRequest[] @relation("ApprovalRequester")
   resolvedApprovals  ApprovalRequest[] @relation("ApprovalResolver")
@@ -494,6 +495,23 @@ model NotificationPreference {
   @@unique([userId, category])
   @@index([userId])
   @@map("notification_preferences")
+}
+
+/// How a card owner hears about new leads outside the app. A missing row
+/// means the defaults: email on, WhatsApp off.
+model LeadAlertSettings {
+  userId    String   @id
+  email     Boolean  @default(true)
+  whatsapp  Boolean  @default(false)
+  /// The WhatsApp number, in international form without the plus (201001234567).
+  phone     String?
+  /// The language the alerts are written in: en | ar.
+  lang      String   @default("en")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("lead_alert_settings")
 }
 
 model ScoringRule {

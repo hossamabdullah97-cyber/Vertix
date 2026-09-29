@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { AddLeadActivityInput, LeadCaptureInput } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { LeadAlertsService } from '../notifications/lead-alerts.service';
 import { WebhookService } from '../integrations/webhook.service';
 import { availabilityOf, isOpen } from '../cards/availability';
 import { bookedMeetings } from '../cards/booked-meetings';
@@ -26,6 +27,7 @@ export class LeadsService {
     private readonly webhooks: WebhookService,
     private readonly config: ConfigService,
     private readonly throttle: AuthThrottleService,
+    private readonly alerts: LeadAlertsService,
   ) {}
 
   private get db() {
@@ -112,7 +114,7 @@ export class LeadsService {
 
     const card = await this.db.card.findFirst({
       where: { slug: input.slug, isPublished: true },
-      select: { id: true, orgId: true, ownerId: true, theme: true },
+      select: { id: true, orgId: true, ownerId: true, theme: true, vcardData: true },
     });
     if (!card) throw new NotFoundException('Card not found');
 
@@ -195,6 +197,22 @@ export class LeadsService {
       title: 'New lead captured',
       body: `${input.name}${input.company ? ` · ${input.company}` : ''}`,
       metadata: { leadId: lead.id, source, intent },
+    });
+
+    // And by email / WhatsApp, as the owner chose. Not awaited: the visitor
+    // should not wait on a mail provider.
+    const vcard = (card.vcardData ?? {}) as Record<string, unknown>;
+    void this.alerts.leadCaptured(card.ownerId, {
+      leadId: lead.id,
+      intent,
+      name: input.name,
+      email: input.email || null,
+      phone: input.phone ?? null,
+      company: input.company ?? null,
+      note: input.note ?? null,
+      meetingAt: meetingAt ?? null,
+      timezone: availabilityOf(card.theme, this.config.get<string>('DEFAULT_TIMEZONE')).timezone,
+      cardName: (typeof vcard.fullName === 'string' && vcard.fullName.trim()) || input.slug,
     });
 
     // Fan the event out to any subscribed external systems (Slack, Zapier,

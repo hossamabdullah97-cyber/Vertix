@@ -1,0 +1,153 @@
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { LeadAlertSettingsInput } from '@vertex/shared';
+import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
+import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
+import { alertEmail, alertWhatsApp, normalizePhone, type AlertLang, type LeadAlert } from './lead-alert';
+import { WhatsAppClient } from './whatsapp.client';
+
+const DEFAULTS = { email: true, whatsapp: false, phone: null as string | null, lang: 'en' as AlertLang };
+
+/** Test messages one person may send an hour: enough to fix a typo, not to spam a number. */
+export const TEST_LIMIT = 5;
+const TEST_WINDOW_MS = 60 * 60_000;
+
+/**
+ * Tells a card owner about a new lead by email and on WhatsApp, as they
+ * chose. WhatsApp is off until the server has its Cloud API settings
+ * (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID and an approved template).
+ */
+@Injectable()
+export class LeadAlertsService {
+  private readonly logger = new Logger(LeadAlertsService.name);
+  private readonly wa: WhatsAppClient | null;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService,
+    private readonly throttle: AuthThrottleService,
+  ) {
+    const token = config.get<string>('WHATSAPP_TOKEN');
+    const phoneNumberId = config.get<string>('WHATSAPP_PHONE_NUMBER_ID');
+    this.wa =
+      token && phoneNumberId
+        ? new WhatsAppClient({
+            token,
+            phoneNumberId,
+            template: config.get<string>('WHATSAPP_LEAD_TEMPLATE') || 'new_lead',
+            apiVersion: config.get<string>('WHATSAPP_API_VERSION') || 'v21.0',
+          })
+        : null;
+  }
+
+  private get db() {
+    return this.prisma.client;
+  }
+
+  get whatsappReady(): boolean {
+    return !!this.wa;
+  }
+
+  async settings(userId: string) {
+    const row = await this.db.leadAlertSettings.findUnique({ where: { userId } });
+    const user = await this.db.user.findUnique({ where: { id: userId }, select: { email: true } });
+    return {
+      email: row?.email ?? DEFAULTS.email,
+      whatsapp: row?.whatsapp ?? DEFAULTS.whatsapp,
+      phone: row?.phone ?? DEFAULTS.phone,
+      lang: ((row?.lang as AlertLang) ?? DEFAULTS.lang) as AlertLang,
+      address: user?.email ?? null,
+      whatsappReady: this.whatsappReady,
+    };
+  }
+
+  async update(userId: string, input: LeadAlertSettingsInput) {
+    const data: { email?: boolean; whatsapp?: boolean; phone?: string | null; lang?: string } = {};
+    if (input.email !== undefined) data.email = input.email;
+    if (input.lang !== undefined) data.lang = input.lang;
+    if (input.phone !== undefined) {
+      if (input.phone === null || input.phone === '') data.phone = null;
+      else {
+        const phone = normalizePhone(input.phone);
+        if (!phone) throw new BadRequestException('Enter the number with its country code, like +20 100 123 4567');
+        data.phone = phone;
+      }
+    }
+    if (input.whatsapp !== undefined) {
+      if (input.whatsapp) {
+        if (!this.wa) throw new ServiceUnavailableException('WhatsApp alerts are not set up on this server');
+        const phone = data.phone !== undefined ? data.phone : (await this.settings(userId)).phone;
+        if (!phone) throw new BadRequestException('Add your WhatsApp number first');
+      }
+      data.whatsapp = input.whatsapp;
+    }
+    // Clearing the number turns WhatsApp off with it.
+    if (data.phone === null) data.whatsapp = false;
+    await this.db.leadAlertSettings.upsert({ where: { userId }, create: { userId, ...data }, update: data });
+    return this.settings(userId);
+  }
+
+  /** Sends a sample alert to the saved number, so the owner knows it arrives. */
+  async sendTest(userId: string) {
+    if (!this.wa) throw new ServiceUnavailableException('WhatsApp alerts are not set up on this server');
+    const s = await this.settings(userId);
+    if (!s.phone) throw new BadRequestException('Add your WhatsApp number first');
+    const key = `wa-test:${userId}`;
+    const wait = await this.throttle.blockedFor(key, TEST_LIMIT, TEST_WINDOW_MS);
+    if (wait > 0) throw tooManyAttempts(wait);
+    await this.throttle.hit(key, TEST_WINDOW_MS);
+    const sample: LeadAlert = {
+      leadId: 'test',
+      intent: 'MEETING',
+      name: s.lang === 'ar' ? 'زائر تجريبي' : 'Test visitor',
+      company: 'Vertex Connect',
+      timezone: this.config.get<string>('DEFAULT_TIMEZONE') || 'UTC',
+      meetingAt: new Date(Date.now() + 24 * 3600_000).toISOString(),
+      cardName: 'Vertex Connect',
+      link: this.leadLink('test'),
+    };
+    try {
+      await this.wa.sendTemplate({ to: s.phone, lang: s.lang, body: alertWhatsApp(sample, s.lang), buttonSuffix: 'test' });
+    } catch (err) {
+      this.logger.warn(`WhatsApp test failed for ${userId}: ${(err as Error).message}`);
+      throw new BadRequestException('WhatsApp did not accept the message. Check the number and try again.');
+    }
+    return { ok: true as const };
+  }
+
+  leadLink(leadId: string): string {
+    const base = (this.config.get<string>('APP_PUBLIC_URL') || 'http://localhost:3000').replace(/\/$/, '');
+    return `${base}/leads?lead=${encodeURIComponent(leadId)}`;
+  }
+
+  /** Tells the owner about a new lead on every channel they chose. Never throws. */
+  async leadCaptured(ownerId: string, alert: Omit<LeadAlert, 'link'>): Promise<void> {
+    try {
+      const [row, owner] = await Promise.all([
+        this.db.leadAlertSettings.findUnique({ where: { userId: ownerId } }),
+        this.db.user.findUnique({ where: { id: ownerId }, select: { email: true, deletedAt: true } }),
+      ]);
+      if (!owner || owner.deletedAt) return;
+      const s = { ...DEFAULTS, ...(row ?? {}) };
+      const lang: AlertLang = s.lang === 'ar' ? 'ar' : 'en';
+      const full: LeadAlert = { ...alert, link: this.leadLink(alert.leadId) };
+      const jobs: Promise<unknown>[] = [];
+      if (s.email && owner.email) {
+        const { subject, html } = alertEmail(full, lang);
+        jobs.push(this.mail.send({ to: owner.email, subject, html }));
+      }
+      if (s.whatsapp && s.phone && this.wa) {
+        jobs.push(
+          this.wa
+            .sendTemplate({ to: s.phone, lang, body: alertWhatsApp(full, lang), buttonSuffix: alert.leadId })
+            .catch((err: Error) => this.logger.warn(`WhatsApp alert failed for ${ownerId}: ${err.message}`)),
+        );
+      }
+      await Promise.allSettled(jobs);
+    } catch (err) {
+      this.logger.warn(`lead alert failed: ${(err as Error).message}`);
+    }
+  }
+}

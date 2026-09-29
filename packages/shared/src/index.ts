@@ -452,6 +452,17 @@ export const leadCaptureSchema = z
   });
 export type LeadCaptureInput = z.infer<typeof leadCaptureSchema>;
 
+// How a card owner hears about new leads outside the app.
+export const leadAlertSettingsSchema = z
+  .object({
+    email: z.boolean(),
+    whatsapp: z.boolean(),
+    phone: z.string().trim().max(32).nullable(),
+    lang: z.enum(['en', 'ar']),
+  })
+  .partial();
+export type LeadAlertSettingsInput = z.infer<typeof leadAlertSettingsSchema>;
+
 // A user-logged CRM activity on a lead (note / call / email / meeting).
 export const addLeadActivitySchema = z.object({
   type: z.enum(['NOTE', 'CALL', 'EMAIL', 'MEETING']),

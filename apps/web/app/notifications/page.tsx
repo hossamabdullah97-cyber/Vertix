@@ -10,6 +10,7 @@ import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/ui/Sheet';
 import { NotificationRow } from '@/components/notifications/NotificationRow';
+import { LeadAlerts } from '@/components/notifications/LeadAlerts';
 import { CATEGORIES, CATEGORY_ICON, NOTIFS_CHANGED, announceChange, bucketOf, markRead, openNotification, type Bucket, type Notif } from '@/components/notifications/model';
 
 type Tab = 'all' | 'unread' | 'archived';
@@ -309,6 +310,7 @@ function Preferences({ open, onClose }: { open: boolean; onClose: () => void }) 
           );
         })}
       </ul>
+      <LeadAlerts open={open} />
     </Sheet>
   );
 }
