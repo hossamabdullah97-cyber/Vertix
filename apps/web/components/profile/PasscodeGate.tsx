@@ -5,23 +5,37 @@ import { useRouter } from 'next/navigation';
 import { VMark } from '@/components/brand/VMark';
 import { Icon } from '@/components/Icon';
 import { fill, profileStrings, type Lang } from '@/lib/profileI18n';
-import { profileStyle } from '@/lib/profile';
+import { profileAttrs, profileStyle, type ThemeMode } from '@/lib/profile';
 
 /**
  * Shown when a passcode-protected profile is opened without the right code.
  * Submitting reloads the page with ?p=<key>&code=<pin>, and the server decides.
- * The card's language is not known yet, so this follows the visitor's.
+ * It wears the profile's colours and language; without them (an older API),
+ * it follows the visitor's language.
  */
-export function PasscodeGate({ slug, p, profileName, wrongCode }: { slug: string; p: string; profileName: string; wrongCode: boolean }) {
+export function PasscodeGate({
+  slug,
+  p,
+  profileName,
+  look,
+  wrongCode,
+}: {
+  slug: string;
+  p: string;
+  profileName: string;
+  look?: { accent: string | null; mode: ThemeMode; lang: Lang };
+  wrongCode: boolean;
+}) {
   const router = useRouter();
-  const [lang, setLang] = useState<Lang>('en');
+  const [lang, setLang] = useState<Lang>(look?.lang ?? 'en');
+  const theme = { accent: look?.accent ?? '#2563eb', mode: look?.mode ?? 'light' } as const;
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const t = profileStrings(lang);
 
   useEffect(() => {
-    if (navigator.language?.toLowerCase().startsWith('ar')) setLang('ar');
-  }, []);
+    if (!look && navigator.language?.toLowerCase().startsWith('ar')) setLang('ar');
+  }, [look]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +47,8 @@ export function PasscodeGate({ slug, p, profileName, wrongCode }: { slug: string
   return (
     <main
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
-      style={profileStyle({ accent: '#2563eb', mode: 'light' })}
+      style={profileStyle(theme)}
+      {...profileAttrs(theme)}
       className="flex min-h-[100dvh] items-center justify-center bg-[var(--p-bg)] px-6 text-[var(--p-fg)]"
     >
       <form onSubmit={submit} className="w-full max-w-[360px] rounded-[20px] bg-[var(--p-surface)] p-6 text-center shadow-[0_0_0_1px_var(--p-line),0_24px_48px_-24px_rgba(0,0,0,0.2)]">

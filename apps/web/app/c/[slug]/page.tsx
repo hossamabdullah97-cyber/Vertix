@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { apiGet, type PublicCard, type PublicCardLocked } from '@/lib/api';
-import { buildProfile, profileStyle } from '@/lib/profile';
+import { buildProfile, profileAttrs, profileStyle } from '@/lib/profile';
+import { CardCompanion } from '@/components/profile/CardCompanion';
 import { PasscodeGate } from '@/components/profile/PasscodeGate';
 import { PublicProfile } from '@/components/profile/PublicProfile';
 import TrackView from '@/components/TrackView';
@@ -17,18 +19,39 @@ function variantQuery(searchParams: Search) {
   return qs.toString() ? `?${qs}` : '';
 }
 
-/** Name, role and photo for link previews in messaging apps. */
+/**
+ * The site's own address, as the visitor reached it, so the preview picture's
+ * link is absolute (messaging apps need that) behind any proxy.
+ */
+function siteBase(): URL | undefined {
+  const h = headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host');
+  if (!host) return undefined;
+  const proto = h.get('x-forwarded-proto')?.split(',')[0]?.trim() ?? (host.startsWith('localhost') ? 'http' : 'https');
+  try {
+    return new URL(`${proto}://${host}`);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Name, role and company for link previews in messaging apps. The picture is
+ * drawn by opengraph-image.tsx next to this page.
+ */
 export async function generateMetadata({ params, searchParams }: { params: { slug: string }; searchParams: Search }): Promise<Metadata> {
   const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`);
   if (!result || ('locked' in result && result.locked)) return { title: 'Vertex Connect', robots: { index: false } };
   const card = result as PublicCard;
-  const p = buildProfile({ ...card, sections: card.sections, actions: card.actions, paymentLinks: card.paymentLinks });
-  const description = p.title || p.about.slice(0, 160) || undefined;
+  const p = buildProfile({ ...card, brand: card.brand ?? null });
+  const role = [p.title, p.company || p.brand?.name].filter(Boolean).join(' · ');
+  const description = role || p.about.slice(0, 160) || undefined;
   return {
+    metadataBase: siteBase(),
     title: p.name,
     description,
-    openGraph: { title: p.name, description, type: 'profile', images: p.avatar ? [{ url: p.avatar }] : undefined },
-    twitter: { card: 'summary', title: p.name, description },
+    openGraph: { title: p.name, description, type: 'profile', siteName: 'Vertex Connect' },
+    twitter: { card: 'summary_large_image', title: p.name, description },
   };
 }
 
@@ -39,7 +62,7 @@ export default async function CardPage({ params, searchParams }: { params: { slu
   if (!result) notFound();
 
   if ('locked' in result && result.locked) {
-    return <PasscodeGate slug={params.slug} p={searchParams.p ?? ''} profileName={result.profileName} wrongCode={Boolean(searchParams.code)} />;
+    return <PasscodeGate slug={params.slug} p={searchParams.p ?? ''} profileName={result.profileName} look={result.look} wrongCode={Boolean(searchParams.code)} />;
   }
 
   const card = result as PublicCard;
@@ -51,18 +74,24 @@ export default async function CardPage({ params, searchParams }: { params: { slu
     actions: card.actions,
     paymentLinks: card.paymentLinks,
     verified: card.verified,
+    brand: card.brand ?? null,
     profileName: card.profileName,
   });
 
   return (
     <main
       style={profileStyle(profile)}
+      {...profileAttrs(profile)}
       className="min-h-[100dvh] bg-[var(--p-surface)] sm:bg-[var(--p-bg)] sm:px-4 sm:py-10"
     >
       <TrackView slug={card.slug} />
-      {/* A phone gets the card edge to edge; a wider screen sees it as a card. */}
-      <div className="mx-auto w-full max-w-[440px] overflow-hidden sm:rounded-[20px] sm:shadow-[0_0_0_1px_var(--p-line),0_24px_48px_-24px_rgba(0,0,0,0.25)]">
-        <PublicProfile profile={profile} query={{ p: searchParams.p, code: searchParams.code, t: searchParams.t }} />
+      {/* A phone gets the card edge to edge; a wider screen sees it as a card,
+          and a computer also gets the code to carry it to a phone. */}
+      <div dir={profile.lang === 'ar' ? 'rtl' : 'ltr'} className="mx-auto flex w-full max-w-[440px] items-start justify-center gap-8 lg:max-w-[740px]">
+        <div className="w-full max-w-[440px] overflow-hidden sm:rounded-[20px] sm:shadow-[0_0_0_1px_var(--p-line),0_24px_48px_-24px_rgba(0,0,0,0.25)]">
+          <PublicProfile profile={profile} query={{ p: searchParams.p, code: searchParams.code, t: searchParams.t }} />
+        </div>
+        <CardCompanion slug={card.slug} lang={profile.lang} variant={searchParams.p} />
       </div>
     </main>
   );

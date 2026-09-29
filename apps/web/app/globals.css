@@ -501,3 +501,27 @@ textarea.v-field {
   outline: none;
   box-shadow: var(--v-ring);
 }
+
+/* Public card: a brand colour made readable (see inkStyle in lib/profile.ts). */
+.p-ink {
+  color: var(--ink);
+}
+
+/* An "auto" card follows the visitor's phone. Its light palette is inline, so
+   the dark one has to win over it here. */
+@media (prefers-color-scheme: dark) {
+  [data-p-auto] {
+    --p-bg: #0c0c0e !important;
+    --p-surface: #141416 !important;
+    --p-elevated: #1c1c1f !important;
+    --p-fg: #ededee !important;
+    --p-muted: #a1a1a8 !important;
+    --p-faint: #6f6f76 !important;
+    --p-line: #232327 !important;
+    --p-line-strong: #2f2f34 !important;
+    color-scheme: dark;
+  }
+  [data-p-auto] .p-ink {
+    color: var(--ink-dark);
+  }
+}

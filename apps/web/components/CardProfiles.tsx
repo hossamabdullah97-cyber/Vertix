@@ -357,9 +357,9 @@ function VariantCard({
               <span className={label}>{t('variants.jobTitle')}</span>
               <input
                 className="v-field"
-                value={vcard.org ?? ''}
-                onChange={(e) => onSaveLocal(v.id, { vcardData: { ...vcard, org: e.target.value } })}
-                onBlur={(e) => onSave(v.id, { vcardData: { ...vcard, org: e.target.value } })}
+                value={vcard.title ?? vcard.org ?? ''}
+                onChange={(e) => onSaveLocal(v.id, { vcardData: { ...vcard, title: e.target.value } })}
+                onBlur={(e) => onSave(v.id, { vcardData: { ...vcard, title: e.target.value } })}
                 placeholder={t('variants.jobTitlePlaceholder')}
               />
             </label>

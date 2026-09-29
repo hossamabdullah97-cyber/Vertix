@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildProfile, embedUrl, externalUrl, linkStyleOf, pick } from './profile';
+import { buildProfile, embedUrl, externalUrl, initials, layoutOf, linkStyleOf, modeOf, pick, profileAttrs } from './profile';
 
 const base = { slug: 's', sections: [], actions: [], paymentLinks: [] };
 
@@ -79,5 +79,48 @@ describe('open in app', () => {
     expect(buildProfile({ ...base, theme: { openInApp: true }, vcardData: null }).openInApp).toBe(true);
     expect(buildProfile({ ...base, theme: { openInApp: 'yes' }, vcardData: null }).openInApp).toBe(false);
     expect(buildProfile({ ...base, theme: null, vcardData: null }).openInApp).toBe(false);
+  });
+});
+
+describe('identity fields', () => {
+  it('keeps the job title and the company apart', () => {
+    const p = buildProfile({ ...base, theme: null, vcardData: { fullName: 'M', title: 'Sales Director', company: 'Vertex Build' } });
+    expect(p.title).toBe('Sales Director');
+    expect(p.company).toBe('Vertex Build');
+  });
+
+  it('shows the workspace unless the owner turned it off', () => {
+    const brand = { name: 'Vertex Build', logo: null };
+    expect(buildProfile({ ...base, theme: null, vcardData: null, brand }).brand).toEqual(brand);
+    expect(buildProfile({ ...base, theme: { brand: false }, vcardData: null, brand }).brand).toBeNull();
+  });
+});
+
+describe('layout, mode and cover', () => {
+  it('reads known values and falls back for the rest', () => {
+    expect(layoutOf('spotlight')).toBe('spotlight');
+    expect(layoutOf('grid')).toBe('classic');
+    expect(modeOf('auto')).toBe('auto');
+    expect(modeOf('sepia')).toBe('light');
+    expect(buildProfile({ ...base, theme: { cover: 'mesh' }, vcardData: null }).coverStyle).toBe('mesh');
+    expect(buildProfile({ ...base, theme: { cover: 'stripes' }, vcardData: null }).coverStyle).toBe('gradient');
+  });
+
+  it('marks an auto card for the stylesheet', () => {
+    expect(profileAttrs({ mode: 'auto' })).toEqual({ 'data-p-auto': '' });
+    expect(profileAttrs({ mode: 'dark' })).toEqual({});
+  });
+});
+
+describe('initials', () => {
+  it('takes the first and last names', () => {
+    expect(initials('Mariam Khaled')).toBe('MK');
+    expect(initials('mariam el sayed')).toBe('MS');
+    expect(initials('Cher')).toBe('C');
+    expect(initials('  ')).toBe('•');
+  });
+
+  it('gives one letter for an Arabic name, so it does not join into a word', () => {
+    expect(initials('حسام عبدالله')).toBe('ح');
   });
 });

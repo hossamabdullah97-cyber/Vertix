@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import type { Card, Section, CardAction } from '@/lib/client';
+import { authFetch, getActiveOrgId, type Card, type Section, type CardAction } from '@/lib/client';
 import { PublicProfile } from '@/components/profile/PublicProfile';
-import { buildProfile, profileStyle, type ProfileData } from '@/lib/profile';
+import { buildProfile, profileStyle, type CardBrand, type ProfileData } from '@/lib/profile';
 import { profileStrings } from '@/lib/profileI18n';
 import { Icon } from '@/components/Icon';
 import { IPhoneFrame, AndroidFrame, TabletFrame, DesktopFrame, WatchFrame } from './frames';
@@ -208,10 +208,20 @@ export default function LivePreview({
   const canRotate = HANDHELD.has(device);
   const canZoom = device !== 'qr' && !IS_NFC(device);
 
+  // The workspace's name and logo, as the published card shows them.
+  const [brand, setBrand] = useState<CardBrand | null>(null);
+  useEffect(() => {
+    if (!getActiveOrgId()) return;
+    authFetch<{ name: string; branding: Record<string, unknown> | null }>('/orgs/current')
+      .then((o) => setBrand({ name: o.name, logo: typeof o.branding?.logo === 'string' && o.branding.logo ? o.branding.logo : null }))
+      .catch(() => {});
+  }, []);
+
   const profile = useMemo(
     () =>
       buildProfile({
         slug,
+        brand,
         theme: previewCard.theme,
         vcardData: card.vcardData,
         sections,
@@ -221,7 +231,7 @@ export default function LivePreview({
           .map((l, i) => ({ id: l.id, platform: l.platform, displayName: l.displayName, url: l.url ?? '#', description: l.description ?? null, order: l.order ?? i })),
         fallbackName: profileStrings(previewCard.theme?.lang === 'ar' ? 'ar' : 'en').yourName,
       }),
-    [slug, previewCard.theme, card.vcardData, sections, actions, paymentLinks],
+    [slug, brand, previewCard.theme, card.vcardData, sections, actions, paymentLinks],
   );
 
   const screen = <ScaledProfile profile={profile} />;
