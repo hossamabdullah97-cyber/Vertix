@@ -55,6 +55,31 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
   };
 }
 
+/**
+ * The person on the card as schema.org data, so search engines show the name,
+ * role and company rightly. Only what the card itself shows.
+ */
+function personData(profile: ReturnType<typeof buildProfile>, card: PublicCard) {
+  const v = (card.vcardData ?? {}) as Record<string, unknown>;
+  const company = profile.company || profile.brand?.name;
+  const links = card.actions
+    .map((a) => (typeof a.config?.url === 'string' ? a.config.url : ''))
+    .filter((u) => /^https?:\/\//.test(u));
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: profile.name,
+    ...(profile.title ? { jobTitle: profile.title } : {}),
+    ...(company ? { worksFor: { '@type': 'Organization', name: company } } : {}),
+    ...(/^https?:\/\//.test(profile.avatar) ? { image: profile.avatar } : {}),
+    ...(profile.about ? { description: profile.about.slice(0, 300) } : {}),
+    ...(typeof v.email === 'string' && v.email ? { email: v.email } : {}),
+    ...(typeof v.phone === 'string' && v.phone ? { telephone: v.phone } : {}),
+    ...(profile.meta.location ? { address: { '@type': 'PostalAddress', addressLocality: profile.meta.location } } : {}),
+    ...(links.length ? { sameAs: links } : {}),
+  };
+}
+
 export default async function CardPage({ params, searchParams }: { params: { slug: string }; searchParams: Search }) {
   // ?p targets a profile variant, optionally with ?code for a passcode; ?t is
   // the chip a visitor tapped, carried into anything they send.
@@ -75,6 +100,8 @@ export default async function CardPage({ params, searchParams }: { params: { slu
     paymentLinks: card.paymentLinks,
     verified: card.verified,
     brand: card.brand ?? null,
+    wallet: card.wallet,
+    privacyUrl: card.privacyUrl ?? null,
     profileName: card.profileName,
   });
 
@@ -85,6 +112,11 @@ export default async function CardPage({ params, searchParams }: { params: { slu
       className="min-h-[100dvh] bg-[var(--p-surface)] sm:bg-[var(--p-bg)] sm:px-4 sm:py-10"
     >
       <TrackView slug={card.slug} />
+      <script
+        type="application/ld+json"
+        // "<" is escaped so nothing typed into the card can end the script.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(personData(profile, card)).replace(/</g, '\\u003c') }}
+      />
       {/* A phone gets the card edge to edge; a wider screen sees it as a card,
           and a computer also gets the code to carry it to a phone. */}
       <div dir={profile.lang === 'ar' ? 'rtl' : 'ltr'} className="mx-auto flex w-full max-w-[440px] items-start justify-center gap-8 lg:max-w-[740px]">

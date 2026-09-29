@@ -20,6 +20,8 @@ const EN = {
   showLess: 'Show less',
   links: 'Links',
   payments: 'Payments',
+  credentials: 'Certifications',
+  clients: 'Clients',
   open: 'Open',
   poweredBy: 'Made with',
   profileTag: 'Profile',
@@ -51,6 +53,13 @@ const EN = {
   needContact: 'Add an email or a phone number so they can reach you.',
   failed: 'Could not send. Check your connection and try again.',
   previewOnly: 'In the preview, nothing is sent.',
+  loadingTimes: 'Finding free times…',
+  noTimes: 'No free times in the next two weeks. Send your details and {{name}} will suggest one.',
+  timesIn: 'Times are {{zone}} time; meetings take {{length}} minutes.',
+  yourTime: 'That is {{time}} where you are.',
+  slotTaken: 'Someone just took that time. Pick another.',
+  privacy: 'Only {{name}} receives what you send here, to get back to you.',
+  privacyLink: 'Privacy policy',
 
   // Link labels for the generic kinds; brand names stay as they are.
   labels: {
@@ -73,6 +82,9 @@ const EN = {
   unlock: 'Unlock',
   unlocking: 'Unlocking…',
   wrongCode: 'That passcode is not right. Try again.',
+
+  addToAppleWallet: 'Add to Apple Wallet',
+  addToGoogleWallet: 'Save to Google Wallet',
 
   // Beside the card on a computer
   companionTitle: 'Keep this card on your phone',
@@ -97,6 +109,8 @@ const AR: ProfileStrings = {
   showLess: 'عرض أقل',
   links: 'الروابط',
   payments: 'الدفع',
+  credentials: 'الشهادات',
+  clients: 'العملاء',
   open: 'فتح',
   poweredBy: 'صُنعت باستخدام',
   profileTag: 'ملف',
@@ -126,6 +140,13 @@ const AR: ProfileStrings = {
   needContact: 'أضف بريداً إلكترونياً أو رقم هاتف ليتمكن من التواصل معك.',
   failed: 'تعذّر الإرسال. تحقق من الاتصال وحاول مرة أخرى.',
   previewOnly: 'في المعاينة لا يُرسل أي شيء.',
+  loadingTimes: 'جارٍ البحث عن مواعيد متاحة…',
+  noTimes: 'لا توجد مواعيد متاحة في الأسبوعين القادمين. أرسل بياناتك وسيقترح {{name}} موعداً.',
+  timesIn: 'المواعيد بتوقيت {{zone}}، ومدة الاجتماع {{length}} دقيقة.',
+  yourTime: 'أي {{time}} بتوقيتك.',
+  slotTaken: 'حجز شخص آخر هذا الموعد للتو. اختر موعداً آخر.',
+  privacy: 'لا يصل ما ترسله هنا إلا إلى {{name}}، ليتواصل معك.',
+  privacyLink: 'سياسة الخصوصية',
 
   labels: {
     Call: 'اتصال',
@@ -146,6 +167,9 @@ const AR: ProfileStrings = {
   unlock: 'فتح',
   unlocking: 'جارٍ الفتح…',
   wrongCode: 'رمز الدخول غير صحيح. حاول مرة أخرى.',
+
+  addToAppleWallet: 'أضف إلى Apple Wallet',
+  addToGoogleWallet: 'احفظ في Google Wallet',
 
   companionTitle: 'احتفظ بهذه البطاقة على هاتفك',
   companionHint: 'وجّه كاميرا هاتفك إلى الرمز لتفتحها عليه، ثم احفظ جهة الاتصال.',

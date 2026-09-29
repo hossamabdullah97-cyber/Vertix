@@ -25,6 +25,7 @@ const LivePreview = nextDynamic(() => import('@/components/preview/LivePreview')
 import ShareCard from '@/components/ShareCard';
 import { COVER_STYLES, LAYOUTS, LINK_STYLES, layoutOf, linkStyleOf, modeOf, type CoverStyle, type Layout, type LinkStyle, type ThemeMode } from '@/lib/profile';
 import { Toggle } from '@/components/ui/Toggle';
+import { MeetingHours } from '@/components/cards/MeetingHours';
 import { shade } from '@/lib/color';
 import { PresenceBadge, useCardPresence } from '@/components/cards/Presence';
 import { Icon } from '@/components/Icon';
@@ -75,7 +76,13 @@ const SECTION_DETAILS: Record<string, { label: string; arLabel: string; color: s
   PORTFOLIO: { label: 'Portfolio Gallery', arLabel: 'معرض الأعمال', color: '#0ea5e9', icon: 'grid', desc: 'Visual grid block of projects' },
   BOOKING: { label: 'Booking Widget', arLabel: 'جدول مواعيد', color: '#f59e0b', icon: 'calendar', desc: 'Interactive booking calendar' },
   VIDEO: { label: 'Video Player', arLabel: 'مشغل الفيديو', color: '#ef4444', icon: 'youtube', desc: 'Embed YouTube or Vimeo video' },
+  CREDENTIALS: { label: 'Certifications', arLabel: 'الشهادات', color: '#16a34a', icon: 'shield', desc: 'Certificates, licences and awards' },
+  CLIENTS: { label: 'Clients', arLabel: 'العملاء', color: '#7c3aed', icon: 'briefcase', desc: 'Logos of clients you have worked with' },
 };
+
+/** One certificate, licence or award in a Certifications block. */
+type Credential = { id: string; name: string; issuer: string; year: string };
+const newId = () => Math.random().toString(36).slice(2, 10);
 
 const SOCIAL_PRESETS: Record<
   string,
@@ -1188,6 +1195,80 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                   />
                                 </div>
                               </>
+                            ) : s.type === 'CREDENTIALS' ? (
+                              (() => {
+                                const items = (Array.isArray(s.content.items) ? s.content.items : []) as Credential[];
+                                const save = (next: Credential[]) => patchSection(s, 'items', next);
+                                const edit = (item: Credential, key: keyof Credential, value: string) => {
+                                  if ((item[key] ?? '') === value) return;
+                                  save(items.map((x) => (x.id === item.id ? { ...x, [key]: value } : x)));
+                                };
+                                return (
+                                  <>
+                                    <Field label={t('sections.sectionTitle')} hint={t('sections.optional')}>
+                                      <input className="v-field" defaultValue={(s.content.title as string) ?? ''} onBlur={(e) => patchSection(s, 'title', e.target.value)} placeholder={t('sections.credentials.titlePlaceholder')} />
+                                    </Field>
+                                    {items.map((item) => (
+                                      <div key={item.id} className="grid gap-2 rounded-lg p-3 ring-1 ring-inset ring-line sm:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)_88px_auto] sm:items-end">
+                                        <Field label={t('sections.credentials.name')}>
+                                          <input className="v-field" defaultValue={item.name} onBlur={(e) => edit(item, 'name', e.target.value.trim())} placeholder={t('sections.credentials.namePlaceholder')} />
+                                        </Field>
+                                        <Field label={t('sections.credentials.issuer')}>
+                                          <input className="v-field" defaultValue={item.issuer} onBlur={(e) => edit(item, 'issuer', e.target.value.trim())} placeholder={t('sections.credentials.issuerPlaceholder')} />
+                                        </Field>
+                                        <Field label={t('sections.credentials.year')}>
+                                          <input className="v-field tabular" inputMode="numeric" maxLength={4} defaultValue={item.year} onBlur={(e) => edit(item, 'year', e.target.value.trim())} placeholder="2024" />
+                                        </Field>
+                                        <RowButton label={t('sections.credentials.remove')} danger onClick={() => save(items.filter((x) => x.id !== item.id))}>
+                                          <Icon name="trash" size={14} />
+                                        </RowButton>
+                                      </div>
+                                    ))}
+                                    <button
+                                      type="button"
+                                      onClick={() => save([...items, { id: newId(), name: '', issuer: '', year: '' }])}
+                                      className="flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated sm:min-h-9"
+                                    >
+                                      <Icon name="plus" size={14} /> {t('sections.credentials.add')}
+                                    </button>
+                                  </>
+                                );
+                              })()
+                            ) : s.type === 'CLIENTS' ? (
+                              <>
+                                <Field label={t('sections.sectionTitle')} hint={t('sections.optional')}>
+                                  <input className="v-field" defaultValue={(s.content.title as string) ?? ''} onBlur={(e) => patchSection(s, 'title', e.target.value)} placeholder={t('sections.clients.titlePlaceholder')} />
+                                </Field>
+                                <div>
+                                  <p className="mb-2 text-[12.5px] text-muted">{t('sections.clients.help')}</p>
+                                  {Array.isArray(s.content.logos) && (s.content.logos as string[]).length > 0 && (
+                                    <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                      {(s.content.logos as string[]).map((logo, li) => (
+                                        <div key={`${logo}-${li}`} className="group relative flex aspect-[3/2] items-center justify-center overflow-hidden rounded-lg bg-white p-3 ring-1 ring-line">
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img src={logo} alt="" className="max-h-full max-w-full object-contain" />
+                                          <button
+                                            onClick={() => patchSection(s, 'logos', (s.content.logos as string[]).filter((_, x) => x !== li))}
+                                            aria-label={t('upload.remove')}
+                                            className="absolute end-1 top-1 flex h-7 w-7 items-center justify-center rounded-md bg-black/60 text-white opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
+                                          >
+                                            <Icon name="x" size={12} />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <ImageUpload
+                                    value=""
+                                    shape="wide"
+                                    label={t('sections.clients.add')}
+                                    onChange={(url) => {
+                                      if (!url) return;
+                                      patchSection(s, 'logos', [...(Array.isArray(s.content.logos) ? (s.content.logos as string[]) : []), url]);
+                                    }}
+                                  />
+                                </div>
+                              </>
                             ) : s.type === 'BOOKING' ? (
                               <>
                                 <p className="text-[12.5px] text-muted">{t('sections.bookingHelp')}</p>
@@ -1266,6 +1347,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       </button>
                     ))}
                   </div>
+                </StudioSection>
+
+                <StudioSection id="studio-meetings" title={t('meetings.title')} description={t('meetings.subtitle')}>
+                  <MeetingHours cardId={id} slug={card.slug} lang={lang} stored={(card.theme as Record<string, unknown> | null)?.availability} />
                 </StudioSection>
               </div>
             )}

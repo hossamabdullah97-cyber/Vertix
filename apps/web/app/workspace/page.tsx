@@ -251,6 +251,10 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
         </div>
       </Row>
 
+      <Row title={t('general.privacy')} hint={t('general.privacyHint')}>
+        <PrivacyLink org={org} canEdit={canEdit} onSave={onSave} />
+      </Row>
+
       <Row title={t('general.plan')} hint={t('general.planHint')}>
         <div className="flex flex-wrap items-center gap-3">
           <span className="v-badge v-badge-neutral">{t(`plans.${org.plan}`, org.plan)}</span>
@@ -282,6 +286,50 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
         </div>
       </Row>
     </div>
+  );
+}
+
+/** The privacy policy cards link to under their contact form. */
+function PrivacyLink({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave: SaveFn }) {
+  const { t } = useTranslation('organizations');
+  const stored = typeof org.settings?.privacyUrl === 'string' ? (org.settings.privacyUrl as string) : '';
+  const [url, setUrl] = useState(stored);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setUrl(stored), [stored]);
+  const value = url.trim();
+  const valid = value === '' || /^https:\/\/\S+$/.test(value);
+
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!valid || value === stored) return;
+        setBusy(true);
+        await onSave({ settings: { privacyUrl: value || null } }, t('toasts.saved')).catch(() => {});
+        setBusy(false);
+      }}
+    >
+      <div className="flex flex-wrap gap-2">
+        <input
+          type="url"
+          dir="ltr"
+          inputMode="url"
+          className="v-field min-w-0 flex-1 rtl:text-right"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://example.com/privacy"
+          disabled={!canEdit}
+          aria-invalid={!valid}
+          aria-label={t('general.privacy')}
+        />
+        {canEdit && (
+          <button disabled={!valid || value === stored || busy} className="v-btn shrink-0 disabled:opacity-50">
+            {busy ? t('saving') : t('save')}
+          </button>
+        )}
+      </div>
+      {!valid && <p className="mt-1.5 text-[12.5px] text-red-600 dark:text-red-400">{t('general.privacyInvalid')}</p>}
+    </form>
   );
 }
 

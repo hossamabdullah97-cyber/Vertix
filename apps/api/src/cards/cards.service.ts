@@ -202,7 +202,7 @@ export class CardsService {
         vcardData: true,
         // The verified badge is earned by the owning org's plan, never
         // self-declared in vcardData.
-        org: { select: { plan: true, name: true, branding: true } },
+        org: { select: { plan: true, name: true, branding: true, settings: true } },
         sections: {
           where: { isVisible: true, deletedAt: null, variantId: null },
           orderBy: { order: 'asc' },
@@ -300,6 +300,7 @@ export class CardsService {
 
     const verified = isPaidPlan(card.org?.plan);
     const brand = publicBrand(card.org);
+    const privacyUrl = publicPrivacyUrl(card.org?.settings);
 
     const base = {
       id: card.id,
@@ -312,6 +313,7 @@ export class CardsService {
       paymentLinks: card.paymentLinks,
       verified,
       brand,
+      privacyUrl,
       profileName: null as string | null,
       abTestGroup: null as string | null,
     };
@@ -369,6 +371,7 @@ export class CardsService {
       paymentLinks: resolvedPaymentLinks,
       verified,
       brand,
+      privacyUrl,
       profileName: chosen.name,
       abTestGroup: abSelection,
     };
@@ -793,4 +796,10 @@ export function lockedLook(theme: unknown) {
     mode: t.mode === 'dark' || t.mode === 'auto' ? t.mode : 'light',
     lang: t.lang === 'ar' ? 'ar' : 'en',
   };
+}
+
+/** The workspace's privacy policy, shown under the card's form; https only. */
+export function publicPrivacyUrl(settings: unknown): string | null {
+  const s = (settings && typeof settings === 'object' ? settings : {}) as Record<string, unknown>;
+  return typeof s.privacyUrl === 'string' && /^https:\/\/[^\s]+$/.test(s.privacyUrl) ? s.privacyUrl : null;
 }

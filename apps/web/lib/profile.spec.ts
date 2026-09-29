@@ -124,3 +124,13 @@ describe('initials', () => {
     expect(initials('حسام عبدالله')).toBe('ح');
   });
 });
+
+describe('wallet and privacy', () => {
+  it('offers only the wallets the server can make, and a given privacy link', () => {
+    const p = buildProfile({ ...base, theme: null, vcardData: null, wallet: { apple: true, google: false }, privacyUrl: 'https://x.co/privacy' });
+    expect(p.wallet).toEqual({ apple: true, google: false });
+    expect(p.privacyUrl).toBe('https://x.co/privacy');
+    expect(buildProfile({ ...base, theme: null, vcardData: null }).wallet).toEqual({ apple: false, google: false });
+  });
+});
+

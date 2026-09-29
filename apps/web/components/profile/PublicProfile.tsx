@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { API_URL, type PublicCardAction } from '@/lib/api';
 import { resolveAction } from '@/lib/brandIcons';
@@ -109,9 +109,12 @@ export function PublicProfile({
 
   const body = (
     <>
-      <Header profile={profile} t={t} meta={metaItems} onShare={() => setSheet('share')} />
+      {/* In the Studio the card redraws as it is edited, so it does not animate. */}
+      <div className={preview ? '' : 'p-rise'}>
+        <Header profile={profile} t={t} meta={metaItems} onShare={() => setSheet('share')} />
+      </div>
 
-      <div className="px-5 pb-8">
+      <div className={`px-5 pb-8 ${preview ? '' : 'p-rise'}`}>
         <div className="mt-5 grid grid-cols-2 gap-2">
           <a
             href={vcardUrl}
@@ -152,6 +155,8 @@ export function PublicProfile({
             ))}
           </div>
         )}
+
+        <WalletButtons profile={profile} t={t} query={vq.toString()} preview={preview} />
 
         {profile.about && (
           <Block title={t.about}>
@@ -283,6 +288,47 @@ export function PublicProfile({
 }
 
 /* ------------------------------------------------------------------------- */
+
+/**
+ * Add the card to the phone's wallet. Each phone gets its own wallet (Apple on
+ * an iPhone or Mac, Google on Android); anything else sees both. Decided after
+ * load, since the server cannot know the device.
+ */
+function WalletButtons({ profile, t, query, preview }: { profile: ProfileData; t: ProfileStrings; query: string; preview: boolean }) {
+  const [device, setDevice] = useState<'apple' | 'android' | 'other' | null>(null);
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    setDevice(/iPhone|iPad|iPod|Macintosh/.test(ua) ? 'apple' : /Android/.test(ua) ? 'android' : 'other');
+  }, []);
+  if (!device) return null;
+  const apple = profile.wallet.apple && device !== 'android';
+  const google = profile.wallet.google && device !== 'apple';
+  if (!apple && !google) return null;
+
+  const href = (kind: 'apple' | 'google') => `${API_URL}/c/${profile.slug}/wallet/${kind}${query ? `?${query}` : ''}`;
+  const onClick = (e: React.MouseEvent, via: string) => {
+    if (preview) return e.preventDefault();
+    track(profile.slug, 'SAVE', { via });
+  };
+  const button = 'flex h-11 min-w-0 items-center justify-center gap-2 rounded-[12px] bg-[#0b0b0e] px-3 text-[14px] font-medium text-white transition-opacity active:opacity-85';
+  return (
+    // One above the other: side by side, the names would be cut short.
+    <div className="mt-2 flex flex-col gap-2">
+      {apple && (
+        <a href={href('apple')} onClick={(e) => onClick(e, 'apple-wallet')} className={button}>
+          <Icon name="wallet" size={16} />
+          <span className="truncate">{t.addToAppleWallet}</span>
+        </a>
+      )}
+      {google && (
+        <a href={href('google')} onClick={(e) => onClick(e, 'google-wallet')} rel="noreferrer" className={button}>
+          <Icon name="wallet" size={16} />
+          <span className="truncate">{t.addToGoogleWallet}</span>
+        </a>
+      )}
+    </div>
+  );
+}
 
 /* ---------------------------------------------------------------------------
  * The top of the card: one of four layouts
@@ -676,6 +722,51 @@ function SectionBlock({
     );
   }
 
+  if (section.type === 'CREDENTIALS') {
+    const items = (Array.isArray(section.content.items) ? section.content.items : []).filter(
+      (x): x is { name: string; issuer?: string; year?: string } => !!x && typeof x === 'object' && typeof (x as { name?: unknown }).name === 'string' && !!(x as { name: string }).name.trim(),
+    );
+    if (!items.length) return null;
+    return (
+      <Block title={title ?? t.credentials}>
+        <List>
+          {items.map((c, i) => (
+            <li key={`${c.name}-${i}`} className="flex min-h-[60px] items-center gap-3 px-3.5 py-2.5">
+              <Tile>
+                <Icon name="award" size={18} className="text-[var(--p-accent)]" />
+              </Tile>
+              <span className="min-w-0 flex-1">
+                <span dir="auto" className="block text-[15px] font-medium leading-snug">{c.name}</span>
+                {(c.issuer || c.year) && (
+                  <span dir="auto" className="block text-[13px] text-[var(--p-faint)]">
+                    {[c.issuer, c.year].filter(Boolean).join(' · ')}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </List>
+      </Block>
+    );
+  }
+
+  if (section.type === 'CLIENTS') {
+    const logos = Array.isArray(section.content.logos) ? (section.content.logos as unknown[]).filter((x): x is string => typeof x === 'string' && !!x) : [];
+    if (!logos.length) return null;
+    return (
+      <Block title={title ?? t.clients}>
+        <ul className="grid grid-cols-3 gap-2">
+          {logos.map((src, i) => (
+            <li key={`${src}-${i}`} className="flex aspect-[3/2] items-center justify-center rounded-[12px] bg-white p-3 ring-1 ring-inset ring-black/[0.06]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="" loading="lazy" className="max-h-full max-w-full object-contain" />
+            </li>
+          ))}
+        </ul>
+      </Block>
+    );
+  }
+
   if (section.type === 'BOOKING') {
     const url = pick(section.content, 'bookingUrl');
     if (!url) return null;
@@ -831,17 +922,49 @@ function ShareBody({ slug, name, t, preview }: { slug: string; name: string; t: 
 }
 
 type Intent = 'CONTACT' | 'MEETING' | 'QUOTE';
-const SLOTS = ['09:00', '11:00', '13:00', '15:00', '17:00'];
+
+/** The open meeting times the server offers, in the owner's time zone. */
+type Availability = { enabled: boolean; timezone: string; length: number; days: { date: string; slots: { time: string; at: string }[] }[] };
+
+/** "Africa/Cairo" at an instant → "Cairo (GMT+3)". */
+function zoneLabel(tz: string, at: Date): string {
+  const city = tz.split('/').pop()!.replace(/_/g, ' ');
+  const offset = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(at).find((p) => p.type === 'timeZoneName')?.value ?? '';
+  return offset ? `${city} (${offset})` : city;
+}
 
 function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t: ProfileStrings; preview: boolean; tagUid?: string }) {
   const [intent, setIntent] = useState<Intent>('CONTACT');
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', note: '' });
   const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  // The chosen slot's instant.
+  const [slot, setSlot] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState<Intent | null>(null);
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // null while loading; a failed load reads as "no times".
+  const [times, setTimes] = useState<Availability | null>(null);
+  const [visitorZone, setVisitorZone] = useState('');
+  const locale = profile.lang === 'ar' ? 'ar-EG' : 'en-GB';
+
+  const loadTimes = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/c/${profile.slug}/availability`);
+      if (!res.ok) throw new Error();
+      const a = (await res.json()) as Availability;
+      setTimes(a);
+      setDate((d) => (a.days.some((x) => x.date === d) ? d : a.days[0]?.date ?? ''));
+    } catch {
+      setTimes({ enabled: true, timezone: 'UTC', length: 30, days: [] });
+    }
+  }, [profile.slug]);
+
+  useEffect(() => {
+    void loadTimes();
+    setVisitorZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  }, [loadTimes]);
+  const intents = (['CONTACT', 'MEETING', 'QUOTE'] as const).filter((i) => i !== 'MEETING' || times?.enabled !== false);
+  const day = times?.days.find((d) => d.date === date);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -869,12 +992,18 @@ function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t
           phone: form.phone.trim() || undefined,
           company: form.company.trim() || undefined,
           note: form.note.trim() || undefined,
-          meetingAt: intent === 'MEETING' && date && time ? `${date}T${time}:00` : undefined,
+          meetingAt: intent === 'MEETING' && slot ? slot : undefined,
           visitorId: visitorId(),
           // The chip this visitor tapped, so the lead is credited to it.
           tagUid,
         }),
       });
+      if (res.status === 409) {
+        // Someone else took the time a moment ago: show what is left.
+        setSlot('');
+        void loadTimes();
+        throw new Error(t.slotTaken);
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error((Array.isArray(data?.errors) && data.errors[0]?.message) || data?.message || t.failed);
@@ -906,7 +1035,7 @@ function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t
     <form onSubmit={submit} className="space-y-2.5">
       <p className="text-[14px] text-[var(--p-muted)]">{t.exchangeHint}</p>
       <div role="radiogroup" className="flex rounded-[12px] bg-[var(--p-elevated)] p-1">
-        {(['CONTACT', 'MEETING', 'QUOTE'] as const).map((i) => (
+        {intents.map((i) => (
           <button
             key={i}
             type="button"
@@ -929,28 +1058,75 @@ function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t
       <input className={field} placeholder={`${t.company} (${t.optional})`} value={form.company} onChange={set('company')} autoComplete="organization" aria-label={t.company} />
 
       {intent === 'MEETING' && (
-        <div className="space-y-2 pt-1">
-          <label className="block">
-            <span className="mb-1.5 block text-[13px] text-[var(--p-muted)]">{t.pickDay}</span>
-            <input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} required className={field} />
-          </label>
-          <div>
-            <span className="mb-1.5 block text-[13px] text-[var(--p-muted)]">{t.time}</span>
-            <div className="grid grid-cols-5 gap-1.5">
-              {SLOTS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setTime(s)}
-                  aria-pressed={time === s}
-                  dir="ltr"
-                  className={`h-11 rounded-[10px] text-[14px] tabular-nums ${time === s ? 'bg-[var(--p-accent)] text-[var(--p-on-accent)]' : 'bg-[var(--p-elevated)] text-[var(--p-fg)]'}`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="space-y-2.5 pt-1">
+          {!times ? (
+            <p className="flex h-24 items-center justify-center gap-2 text-[13.5px] text-[var(--p-muted)]">
+              <Icon name="loader" size={15} className="animate-spin" /> {t.loadingTimes}
+            </p>
+          ) : times.days.length === 0 ? (
+            <p className="rounded-[12px] bg-[var(--p-elevated)] px-3.5 py-3 text-[13.5px] leading-snug text-[var(--p-muted)]">{fill(t.noTimes, { name: profile.name })}</p>
+          ) : (
+            <>
+              <div>
+                <span className="mb-1.5 block text-[13px] text-[var(--p-muted)]">{t.pickDay}</span>
+                {/* Two weeks of working days, scrolled sideways. */}
+                <div role="radiogroup" aria-label={t.pickDay} className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5">
+                  {times.days.map((d) => {
+                    const at = new Date(`${d.date}T12:00:00Z`);
+                    const on = d.date === date;
+                    return (
+                      <button
+                        key={d.date}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => {
+                          setDate(d.date);
+                          setSlot('');
+                        }}
+                        className={`flex h-[58px] w-[52px] shrink-0 flex-col items-center justify-center rounded-[12px] ${on ? 'bg-[var(--p-accent)] text-[var(--p-on-accent)]' : 'bg-[var(--p-elevated)] text-[var(--p-fg)]'}`}
+                      >
+                        <span className={`text-[11.5px] ${on ? '' : 'text-[var(--p-muted)]'}`}>{new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(at)}</span>
+                        <span className="text-[17px] font-semibold tabular-nums">{new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone: 'UTC' }).format(at)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {day && (
+                <div>
+                  <span className="mb-1.5 block text-[13px] text-[var(--p-muted)]">
+                    {new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${day.date}T12:00:00Z`))}
+                  </span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {day.slots.map((s) => (
+                      <button
+                        key={s.at}
+                        type="button"
+                        onClick={() => setSlot(s.at)}
+                        aria-pressed={slot === s.at}
+                        className={`h-11 rounded-[10px] text-[14px] tabular-nums ${slot === s.at ? 'bg-[var(--p-accent)] text-[var(--p-on-accent)]' : 'bg-[var(--p-elevated)] text-[var(--p-fg)]'}`}
+                      >
+                        {new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone: times.timezone }).format(new Date(s.at))}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <p className="text-[12.5px] leading-snug text-[var(--p-faint)]">
+                {fill(t.timesIn, { zone: zoneLabel(times.timezone, new Date(slot || Date.now())), length: String(times.length) })}
+                {/* A visitor elsewhere sees the time on their own clock too. */}
+                {slot && visitorZone && visitorZone !== times.timezone && (
+                  <>
+                    {' '}
+                    {fill(t.yourTime, {
+                      time: new Intl.DateTimeFormat(locale, { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: visitorZone }).format(new Date(slot)),
+                    })}
+                  </>
+                )}
+              </p>
+            </>
+          )}
         </div>
       )}
 
@@ -968,7 +1144,22 @@ function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t
 
       {error && <p role="alert" className="text-[13.5px] text-[#d4453a]">{error}</p>}
 
-      <button type="submit" disabled={busy || (intent === 'MEETING' && !time)} className="mt-1 flex h-12 w-full items-center justify-center rounded-[12px] bg-[var(--p-accent)] text-[15px] font-medium text-[var(--p-on-accent)] disabled:opacity-50">
+      <p className="flex items-start gap-2 pt-1 text-[12.5px] leading-snug text-[var(--p-faint)]">
+        <Icon name="lock" size={13} className="mt-0.5 shrink-0" />
+        <span>
+          {fill(t.privacy, { name: profile.name })}
+          {profile.privacyUrl && (
+            <>
+              {' '}
+              <a href={profile.privacyUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" onClick={(e) => preview && e.preventDefault()}>
+                {t.privacyLink}
+              </a>
+            </>
+          )}
+        </span>
+      </p>
+
+      <button type="submit" disabled={busy || (intent === 'MEETING' && !slot)} className="mt-1 flex h-12 w-full items-center justify-center rounded-[12px] bg-[var(--p-accent)] text-[15px] font-medium text-[var(--p-on-accent)] disabled:opacity-50">
         {busy ? t.sending : t.send[intent]}
       </button>
     </form>

@@ -27,6 +27,9 @@ export const envSchema = z.object({
   // Public web origin used to build card page / vCard URLs in NFC redirects.
   APP_PUBLIC_URL: z.string().url().default('http://localhost:3000'),
 
+  // The time zone meeting hours are in for cards whose owner has not chosen one.
+  DEFAULT_TIMEZONE: z.string().default('Africa/Cairo'),
+
   // Stripe billing (optional — billing is disabled when STRIPE_SECRET_KEY is unset).
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
@@ -41,6 +44,22 @@ export const envSchema = z.object({
   // need stored credentials are disabled and shown as unavailable, never faked).
   // Must be 32 bytes, base64-encoded (openssl rand -base64 32).
   INTEGRATION_ENCRYPTION_KEY: z.string().optional(),
+
+  // Apple Wallet (optional — the card offers "Add to Apple Wallet" only when
+  // all five are set). From a Pass Type ID in an Apple Developer account; the
+  // PEM values may be given as PEM text or base64 of it.
+  APPLE_PASS_TYPE_ID: z.string().optional(),
+  APPLE_TEAM_ID: z.string().optional(),
+  APPLE_PASS_CERT: z.string().optional(),
+  APPLE_PASS_KEY: z.string().optional(),
+  APPLE_PASS_KEY_PASSPHRASE: z.string().optional(),
+  APPLE_WWDR_CERT: z.string().optional(),
+
+  // Google Wallet (optional — "Save to Google Wallet" only when both are set).
+  // The issuer id from the Google Pay & Wallet Console, and the JSON key of a
+  // service account with access to it (raw JSON or base64).
+  GOOGLE_WALLET_ISSUER_ID: z.string().optional(),
+  GOOGLE_WALLET_SERVICE_ACCOUNT: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
