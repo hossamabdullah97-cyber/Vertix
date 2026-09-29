@@ -4,6 +4,8 @@
  * (stored as `theme.availability`); visitors pick from what is left.
  */
 
+import { defaultWorkDays } from '@vertex/shared';
+
 export interface Availability {
   /** Visitors may ask for a meeting at all. */
   enabled: boolean;
@@ -57,13 +59,16 @@ export function availabilityOf(theme: unknown, fallbackZone?: string): Availabil
   const start = typeof a.start === 'string' && TIME.test(a.start) ? a.start : DEFAULT_AVAILABILITY.start;
   let end = typeof a.end === 'string' && TIME.test(a.end) ? a.end : DEFAULT_AVAILABILITY.end;
   if (minutes(end) <= minutes(start)) end = DEFAULT_AVAILABILITY.end;
-  // An Arabic card's week runs Sunday to Thursday unless the owner says otherwise.
+  const timezone = validTimeZone(a.timezone) ? a.timezone : validTimeZone(fallbackZone) ? fallbackZone : DEFAULT_AVAILABILITY.timezone;
+  // Until the owner picks days, the week is the one where they work: Sunday to
+  // Thursday in Cairo or on an Arabic card, Monday to Friday elsewhere.
   const lang = theme && typeof theme === 'object' ? (theme as Record<string, unknown>).lang : undefined;
-  const defaultDays = lang === 'ar' ? [0, 1, 2, 3, 4] : DEFAULT_AVAILABILITY.days;
-  const days = Array.isArray(a.days) ? [...new Set(a.days.filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))].sort() : defaultDays;
+  const days = Array.isArray(a.days)
+    ? [...new Set(a.days.filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))].sort()
+    : defaultWorkDays(timezone, lang);
   return {
     enabled: a.enabled !== false,
-    timezone: validTimeZone(a.timezone) ? a.timezone : validTimeZone(fallbackZone) ? fallbackZone : DEFAULT_AVAILABILITY.timezone,
+    timezone,
     days,
     start,
     end,

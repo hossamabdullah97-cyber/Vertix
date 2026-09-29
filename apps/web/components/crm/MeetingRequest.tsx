@@ -48,14 +48,9 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
   const [result, setResult] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const who = lead.name || lead.email || t('table.unknownLead');
 
-  const when = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZoneName: 'short',
-  }).format(at);
+  // In the zone the visitor booked in (the card's), so both sides read the same time.
+  const zone = typeof meta.timezone === 'string' ? meta.timezone : undefined;
+  const when = formatWhen(at, locale, zone);
 
   async function send(decision: Decision) {
     setBusy(true);
@@ -186,4 +181,14 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
       )}
     </section>
   );
+}
+
+function formatWhen(at: Date, locale: string, timeZone?: string) {
+  const opts: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
+  const lang = locale === 'ar' ? 'ar-EG' : 'en-GB';
+  try {
+    return new Intl.DateTimeFormat(lang, { ...opts, timeZone }).format(at);
+  } catch {
+    return new Intl.DateTimeFormat(lang, opts).format(at); // an unknown zone name
+  }
 }

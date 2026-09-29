@@ -2,7 +2,7 @@ import { availabilityOf, dateIn, isOpen, openSlots, zonedToUtc, DEFAULT_AVAILABI
 
 describe('availabilityOf', () => {
   it('fills in the defaults and the workspace zone', () => {
-    expect(availabilityOf(null, 'Africa/Cairo')).toEqual({ ...DEFAULT_AVAILABILITY, timezone: 'Africa/Cairo' });
+    expect(availabilityOf(null, 'Europe/London')).toEqual({ ...DEFAULT_AVAILABILITY, timezone: 'Europe/London' });
     expect(availabilityOf({ availability: { timezone: 'Nowhere/City' } }).timezone).toBe('UTC');
   });
 
@@ -17,6 +17,14 @@ describe('availabilityOf', () => {
   it('starts an Arabic card on a Sunday-to-Thursday week', () => {
     expect(availabilityOf({ lang: 'ar' }).days).toEqual([0, 1, 2, 3, 4]);
     expect(availabilityOf({ lang: 'ar', availability: { days: [6] } }).days).toEqual([6]);
+  });
+
+  it('follows the working week of the zone the owner is in', () => {
+    // An English card in Cairo still has Friday off and works on Sunday.
+    expect(availabilityOf({ lang: 'en' }, 'Africa/Cairo').days).toEqual([0, 1, 2, 3, 4]);
+    expect(availabilityOf({ availability: { timezone: 'Asia/Riyadh' } }).days).toEqual([0, 1, 2, 3, 4]);
+    expect(availabilityOf({ availability: { timezone: 'Asia/Dubai' } }).days).toEqual([1, 2, 3, 4, 5]);
+    expect(availabilityOf({ availability: { timezone: 'Africa/Cairo', days: [1, 2] } }).days).toEqual([1, 2]);
   });
 
   it('can be switched off', () => {

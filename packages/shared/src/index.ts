@@ -632,3 +632,19 @@ export function occasionRangeError(startsOn: string, endsOn: string): string | n
   if (days > OCCASION_MAX_DAYS) return `An occasion can last at most ${OCCASION_MAX_DAYS} days`;
   return null;
 }
+
+// --- Working week ---
+/**
+ * Zones whose working week runs Sunday to Thursday (a Friday–Saturday
+ * weekend): Egypt, Saudi Arabia and most of the Arab world. The UAE moved to a
+ * Saturday–Sunday weekend in 2022, so it is not here.
+ */
+const SUN_THU_ZONES = new Set([
+  'Africa/Cairo', 'Asia/Riyadh', 'Asia/Kuwait', 'Asia/Qatar', 'Asia/Bahrain', 'Asia/Muscat', 'Asia/Amman',
+  'Asia/Baghdad', 'Asia/Damascus', 'Asia/Aden', 'Africa/Algiers', 'Africa/Tripoli', 'Africa/Khartoum',
+]);
+
+/** The weekdays (0 = Sunday) a card takes meetings on until its owner picks them. */
+export function defaultWorkDays(timezone?: string | null, lang?: unknown): number[] {
+  return lang === 'ar' || (timezone && SUN_THU_ZONES.has(timezone)) ? [0, 1, 2, 3, 4] : [1, 2, 3, 4, 5];
+}

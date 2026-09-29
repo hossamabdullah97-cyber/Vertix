@@ -130,6 +130,7 @@ export class LeadsService {
 
     // A meeting must be at one of the times the card offers and nobody took.
     let meetingAt: string | undefined;
+    let meetingZone: string | undefined;
     if (input.intent === 'MEETING') {
       const now = new Date();
       const a = availabilityOf(card.theme, this.config.get<string>('DEFAULT_TIMEZONE'));
@@ -139,6 +140,7 @@ export class LeadsService {
         throw new ConflictException('That time is no longer free');
       }
       meetingAt = new Date(input.meetingAt).toISOString();
+      meetingZone = a.timezone;
     }
 
     // Place the lead in the org's first pipeline stage, if any.
@@ -190,6 +192,8 @@ export class LeadsService {
             intent,
             note: input.note ?? null,
             meetingAt: meetingAt ?? null,
+            // The zone the visitor picked the time in, so the owner reads the same time.
+            ...(meetingZone ? { timezone: meetingZone } : {}),
           },
         },
       });

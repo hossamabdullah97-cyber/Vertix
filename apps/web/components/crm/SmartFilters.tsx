@@ -57,7 +57,7 @@ export function SmartFilters({
     }
     const defaults: SavedFilter[] = [
       { id: '1', name: t('filters.defaults.hot'), tempFilter: 'HOT', sourceFilter: 'ALL', minDealValue: 0 },
-      { id: '2', name: t('filters.defaults.highValue'), tempFilter: 'ALL', sourceFilter: 'ALL', minDealValue: 10000 },
+      { id: '2', name: t('filters.defaults.highValue'), tempFilter: 'ALL', sourceFilter: 'ALL', minDealValue: 100000 },
       { id: '3', name: t('filters.defaults.nfc'), tempFilter: 'ALL', sourceFilter: 'nfc_scan', minDealValue: 0 },
     ];
     setSavedFilters(defaults);

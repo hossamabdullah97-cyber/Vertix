@@ -298,7 +298,7 @@ export function PublicProfile({
         <ShareBody slug={profile.slug} name={profile.name} t={t} preview={preview} />
       </BottomSheet>
       <BottomSheet open={sheet === 'exchange'} onClose={() => setSheet(null)} contained={preview} title={fill(t.exchangeTitle, { name: profile.name })} closeLabel={t.close}>
-        <ExchangeBody profile={profile} t={t} preview={preview} tagUid={query.t} />
+        <ExchangeBody profile={profile} t={t} preview={preview} tagUid={query.t} vcardUrl={vcardUrl} />
       </BottomSheet>
 
       {gallery && <Lightbox images={gallery.images} startIndex={gallery.index} onClose={() => setGallery(null)} />}
@@ -988,7 +988,7 @@ function zoneLabel(tz: string, at: Date): string {
   return offset ? `${city} (${offset})` : city;
 }
 
-function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t: ProfileStrings; preview: boolean; tagUid?: string }) {
+function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: ProfileData; t: ProfileStrings; preview: boolean; tagUid?: string; vcardUrl: string }) {
   const [intent, setIntent] = useState<Intent>('CONTACT');
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', note: '', website: '' });
   const [date, setDate] = useState('');
@@ -1082,6 +1082,18 @@ function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t
         </span>
         <p className="mt-4 text-[17px] font-semibold">{t.done[done]}</p>
         <p className="mt-1 text-[14px] text-[var(--p-muted)]">{fill(t.doneHint, { name: profile.name })}</p>
+        {/* The exchange goes both ways: now keep their number too. */}
+        <a
+          href={vcardUrl}
+          onClick={(e) => {
+            if (preview) e.preventDefault();
+            else track(profile.slug, 'SAVE');
+          }}
+          className="mx-auto mt-6 flex h-12 max-w-[320px] items-center justify-center gap-2 rounded-[12px] bg-[var(--p-elevated)] px-4 text-[15px] font-medium text-[var(--p-fg)] ring-1 ring-inset ring-[var(--p-line)] transition-opacity active:opacity-85"
+        >
+          <Icon name="user-plus" size={17} />
+          <span className="truncate">{fill(t.saveBack, { name: profile.name })}</span>
+        </a>
         {preview && <p className="mt-3 text-[12.5px] text-[var(--p-faint)]">{t.previewOnly}</p>}
       </div>
     );

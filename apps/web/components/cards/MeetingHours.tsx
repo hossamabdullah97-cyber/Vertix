@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { defaultWorkDays } from '@vertex/shared';
 import { API_URL } from '@/lib/api';
 import { authFetch } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -38,9 +39,10 @@ export function MeetingHours({ cardId, slug, stored, lang }: { cardId: string; s
   const { t } = useTranslation('cardEditor');
   const { locale } = useLocale();
   const saved = (stored && typeof stored === 'object' ? stored : null) as Partial<MeetingHoursValue> | null;
-  // As the server reads it: an Arabic card's week runs Sunday to Thursday.
-  const initial = { ...(lang === 'ar' ? { days: [0, 1, 2, 3, 4] } : {}), ...saved };
-  const [value, setValue] = useState<MeetingHoursValue | null>(initial.timezone ? { ...DEFAULTS, ...initial, timezone: initial.timezone } : null);
+  // As the server reads it: until days are picked, the week is the one where
+  // the owner works (Sunday to Thursday in Cairo or on an Arabic card).
+  const withZone = (timezone: string): MeetingHoursValue => ({ ...DEFAULTS, days: defaultWorkDays(timezone, lang), ...saved, timezone });
+  const [value, setValue] = useState<MeetingHoursValue | null>(saved?.timezone ? withZone(saved.timezone) : null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const first = useRef(true);
 
@@ -54,7 +56,7 @@ export function MeetingHours({ cardId, slug, stored, lang }: { cardId: string; s
       .catch(() => null)
       .then((a: { timezone?: string } | null) => {
         if (cancelled) return;
-        setValue({ ...DEFAULTS, ...initial, timezone: a?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone });
+        setValue(withZone(a?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone));
       });
     return () => {
       cancelled = true;

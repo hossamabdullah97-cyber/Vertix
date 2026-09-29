@@ -15,15 +15,21 @@ export interface Lead {
   card: { slug: string } | null;
 }
 
-/** Compact money label ($42k, $1.2M) — deal value has no currency config yet, defaults to $. */
+/** Deal values are in Egyptian pounds, the currency the product is sold in. */
+const CURRENCY = 'EGP';
+/** The page's language, read from <html lang> so every call site agrees without threading it through. */
+const moneyTag = () => (typeof document !== 'undefined' && document.documentElement.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US');
+
+/** Compact money label: "EGP 42K", "‏42 ألف ج.م.‏". */
 export function formatMoney(n: number): string {
-  if (!n || n < 0) return '$0';
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0)}M`;
-  if (n >= 1000) return `$${(n / 1000).toFixed(n % 1000 ? 1 : 0)}k`;
-  return `$${n}`;
+  return new Intl.NumberFormat(moneyTag(), { style: 'currency', currency: CURRENCY, notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(n > 0 ? n : 0);
 }
 export function formatMoneyFull(n: number): string {
-  return `$${(n || 0).toLocaleString()}`;
+  return new Intl.NumberFormat(moneyTag(), { style: 'currency', currency: CURRENCY, maximumFractionDigits: 0 }).format(n || 0);
+}
+/** The currency beside a value field: "EGP" / "ج.م". */
+export function currencyLabel(): string {
+  return moneyTag().startsWith('ar') ? 'ج.م' : CURRENCY;
 }
 
 export interface Stage {
