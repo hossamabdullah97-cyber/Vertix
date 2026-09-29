@@ -29,6 +29,7 @@ export function ImageUpload({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [drag, setDrag] = useState(false);
+  const [byLink, setByLink] = useState(false);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -131,13 +132,21 @@ export function ImageUpload({
         />
       </div>
 
-      <input
-        dir="ltr"
-        className="v-field !text-[12.5px] rtl:text-right"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={t('upload.urlPlaceholder')}
-      />
+      {byLink ? (
+        <input
+          dir="ltr"
+          className="v-field !text-[12.5px] rtl:text-right"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={t('upload.urlPlaceholder')}
+          aria-label={t('upload.useLink')}
+          autoFocus
+        />
+      ) : (
+        <button type="button" onClick={() => setByLink(true)} className="min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+          {t('upload.useLink')}
+        </button>
+      )}
 
       {error && <p className="text-[12px] text-red-600 dark:text-red-400">{error}</p>}
     </div>

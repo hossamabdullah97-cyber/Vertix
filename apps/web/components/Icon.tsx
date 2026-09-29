@@ -63,6 +63,7 @@ const PATHS: Record<string, string> = {
   flame: 'M12 2s5 4 5 9a5 5 0 0 1-10 0c0-1.5.6-2.8 1.5-3.8C9 9 9.5 10.5 11 11c-.5-2 0-6 1-9z',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
   dots: 'M12 6h.01M12 12h.01M12 18h.01',
+  menu: 'M4 7h16M4 12h16M4 17h16',
   columns: 'M4 4h6v16H4zM14 4h6v16h-6z',
   bell: 'M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0',
   lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',

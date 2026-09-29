@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import './globals.css';
 import { LanguageProvider } from '@/components/i18n/LanguageProvider';
@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: 'Vertex Connect',
   description: 'NFC-powered digital business cards',
 };
+
+// viewport-fit=cover lets the phone's bottom bar sit clear of the home indicator (env(safe-area-inset-bottom)).
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
 export default function RootLayout({
   children,

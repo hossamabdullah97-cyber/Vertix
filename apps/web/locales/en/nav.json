@@ -73,5 +73,9 @@
     "ADMIN": "Admin",
     "MANAGER": "Manager",
     "EMPLOYEE": "Member"
+  },
+  "mobile": {
+    "label": "Main sections",
+    "more": "More"
   }
 }

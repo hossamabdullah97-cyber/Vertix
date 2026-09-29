@@ -274,7 +274,7 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
       )}
 
       {toast && (
-        <div role="status" className="fixed inset-x-0 bottom-6 z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-[13px] text-surface shadow-lg">
+        <div role="status" className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-[13px] text-surface shadow-lg">
           <Icon name="check" size={14} /> {toast}
         </div>
       )}

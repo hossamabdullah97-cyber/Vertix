@@ -189,6 +189,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const id = params.id;
 
   // Visual Builder States
+  // Below the desktop layout the preview is not beside the editor; this opens it over the page.
+  const [previewOpen, setPreviewOpen] = useState(false);
+  useEffect(() => {
+    if (!previewOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setPreviewOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewOpen]);
   const [activeTab, setActiveTab] = useState<'content' | 'design' | 'templates' | 'profiles' | 'nfc' | 'settings'>('content');
   const [activeSection, setActiveSection] = useState<'profile' | string>('profile');
   const [autoSaveStatus, setAutoSaveStatus] = useState<'Saved' | 'Saving...' | 'Offline'>('Saved');
@@ -664,13 +672,13 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   const headerActions = (
     <div className="flex items-center gap-1.5">
-      <span role="status" className="me-1 hidden items-center gap-1.5 text-[12.5px] text-faint sm:flex">
+      <span role="status" title={statusLabel} className="me-1 flex items-center gap-1.5 text-[12.5px] text-faint">
         <Icon
           name={autoSaveStatus === 'Saved' ? 'check' : saving ? 'loader' : 'x'}
           size={13}
           className={saving ? 'animate-spin' : autoSaveStatus === 'Offline' ? 'text-red-500' : ''}
         />
-        {statusLabel}
+        <span className="sr-only sm:not-sr-only">{statusLabel}</span>
       </span>
       <button
         onClick={handleUndo}
@@ -809,6 +817,21 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 ) : null}
 
                 <StudioSection id="studio-profile" title={t('profile.title')} description={t('profile.subtitle')}>
+                  {/* The face first: it is what people notice on the card. */}
+                  <div className="mb-4 grid gap-4 sm:grid-cols-2">
+                    <ImageUpload
+                      label={t('profile.avatarLabel')}
+                      shape="circle"
+                      value={vcard.avatar ?? ''}
+                      onChange={(url) => setVcard({ ...vcard, avatar: url })}
+                    />
+                    <ImageUpload
+                      label={t('profile.coverLabel')}
+                      shape="wide"
+                      value={vcard.coverImage ?? ''}
+                      onChange={(url) => setVcard({ ...vcard, coverImage: url })}
+                    />
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label={t('profile.fullName')}>
                       <input
@@ -879,20 +902,6 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         placeholder={t('profile.responseTimePlaceholder')}
                       />
                     </Field>
-                  </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <ImageUpload
-                      label={t('profile.avatarLabel')}
-                      shape="circle"
-                      value={vcard.avatar ?? ''}
-                      onChange={(url) => setVcard({ ...vcard, avatar: url })}
-                    />
-                    <ImageUpload
-                      label={t('profile.coverLabel')}
-                      shape="wide"
-                      value={vcard.coverImage ?? ''}
-                      onChange={(url) => setVcard({ ...vcard, coverImage: url })}
-                    />
                   </div>
                   <SecondLanguage
                     primary={lang}
@@ -1642,7 +1651,16 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
         </div>
 
         {/* Preview */}
-        <aside className="shrink-0 border-t border-line bg-elevated lg:w-[380px] lg:overflow-y-auto lg:border-s lg:border-t-0 xl:w-[430px]">
+        <aside
+          aria-label={t('phonePreview.title')}
+          className={`${previewOpen ? 'fixed inset-0 z-[95] overflow-y-auto' : 'hidden'} bg-elevated lg:static lg:block lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:border-s lg:border-line xl:w-[430px]`}
+        >
+          <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-surface/95 px-4 backdrop-blur-md lg:hidden">
+            <span className="text-[14px] font-semibold text-ink">{t('phonePreview.title')}</span>
+            <button type="button" onClick={() => setPreviewOpen(false)} className="v-btn v-btn-ghost">
+              {t('phonePreview.backToEditing')}
+            </button>
+          </div>
           <div className="space-y-5 px-5 py-5">
             <LivePreview
               card={
@@ -1662,6 +1680,17 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
           </div>
         </aside>
       </div>
+
+      {!previewOpen && (
+        <button
+          type="button"
+          onClick={() => setPreviewOpen(true)}
+          className="fixed bottom-[calc(1rem+var(--v-dock,0px))] end-4 z-40 flex h-12 items-center gap-2 rounded-full bg-ink px-5 text-[14px] font-medium text-surface shadow-lg lg:hidden"
+        >
+          <Icon name="eye" size={17} />
+          {t('phonePreview.open')}
+        </button>
+      )}
 
       {/* Platform picker */}
       <AnimatePresence>

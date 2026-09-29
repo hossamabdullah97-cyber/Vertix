@@ -330,7 +330,8 @@
     "hint": "JPG, PNG, WebP or GIF up to 5 MB, or drop a file here.",
     "notImage": "Please choose an image file.",
     "tooLarge": "Image is larger than 5 MB.",
-    "urlPlaceholder": "…or paste an image URL"
+    "urlPlaceholder": "…or paste an image URL",
+    "useLink": "Use an image link instead"
   },
   "errors": {
     "slugMismatch": "Please enter the correct card slug to confirm deletion."
@@ -588,5 +589,10 @@
       "ar": "Arabic",
       "en": "English"
     }
+  },
+  "phonePreview": {
+    "title": "Preview",
+    "open": "Preview",
+    "backToEditing": "Back to editing"
   }
 }
