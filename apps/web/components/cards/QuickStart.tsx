@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { authFetch, type Card as CardType } from '@/lib/client';
@@ -52,7 +52,8 @@ export default function QuickStart({
   /** Leave the guided path without saving anything. */
   onSkip: () => void;
 }) {
-  const { t } = useTranslation('cardEditor');
+  const { t, i18n } = useTranslation('cardEditor');
+  const uid = useId();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -74,7 +75,18 @@ export default function QuickStart({
     [startAccent],
   );
   const [look, setLook] = useState<Look>(() => looks.find((l) => l.accent === startAccent) ?? looks[0]);
-  const lang = startTheme.lang === 'ar' ? 'ar' : 'en';
+  // The workspace's language when it has one; otherwise the script the name is
+  // written in, then the language this page is in — so an Arabic card reads right to left.
+  const lang: 'ar' | 'en' =
+    startTheme.lang === 'ar' || startTheme.lang === 'en'
+      ? startTheme.lang
+      : /[\u0600-\u06FF]/.test(fullName)
+        ? 'ar'
+        : /[A-Za-z]/.test(fullName)
+          ? 'en'
+          : i18n.language?.startsWith('ar')
+            ? 'ar'
+            : 'en';
 
   const chosen = useMemo(
     () => CHANNELS.filter((c) => (values[c.key] ?? '').trim().length > 0),
@@ -154,10 +166,11 @@ export default function QuickStart({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11.5px] font-semibold text-muted">
+                    <label htmlFor={`${uid}-name`} className="text-[11.5px] font-semibold text-muted">
                       {t('profile.fullName')}
                     </label>
                     <input
+                      id={`${uid}-name`}
                       autoFocus
                       className="v-field font-semibold"
                       value={fullName}
@@ -167,10 +180,11 @@ export default function QuickStart({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11.5px] font-semibold text-muted">
+                    <label htmlFor={`${uid}-title`} className="text-[11.5px] font-semibold text-muted">
                       {t('profile.jobTitle')}
                     </label>
                     <input
+                      id={`${uid}-title`}
                       className="v-field"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
@@ -208,10 +222,11 @@ export default function QuickStart({
                           >
                             <Icon name={c.icon} size={16} />
                           </span>
-                          <label className="w-24 shrink-0 text-[13px] font-semibold text-ink">
+                          <label htmlFor={`${uid}-${c.key}`} className="w-24 shrink-0 text-[13px] font-semibold text-ink">
                             {t(`quickStart.channels.${c.key}`)}
                           </label>
                           <input
+                            id={`${uid}-${c.key}`}
                             dir={c.dir}
                             className="v-field !h-9 flex-1 text-[13px]"
                             value={value}
@@ -263,8 +278,8 @@ export default function QuickStart({
 
           {error && <p className="mt-4 text-[13px] font-semibold text-red-500">{error}</p>}
 
-          {/* Navigation */}
-          <div className="mt-8 flex items-center gap-3 border-t border-line pt-5">
+          {/* Navigation — on a phone it stays in reach above the bottom bar. */}
+          <div className="sticky bottom-[var(--v-dock,0px)] z-10 -mx-4 mt-8 flex items-center gap-3 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:pt-5 md:backdrop-blur-none">
             {step > 0 && (
               <button onClick={() => setStep(step - 1)} className="v-btn v-btn-ghost !h-10 px-5 text-[13.5px] font-semibold">
                 {t('quickStart.back')}

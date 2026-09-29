@@ -527,6 +527,9 @@ export default function HomePage() {
   const topRows = topCards.slice(0, 5);
   const topMax = Math.max(1, ...topRows.map((r) => r.events));
 
+  // A brand-new workspace has nothing to chart yet: Home is just the setup steps until a card goes out.
+  const fresh = !cards.some((c) => c.isPublished) && leads.length === 0 && topCards.length === 0;
+
   const largestTeams = [...teams]
     .map((tm) => ({ id: tm.id, name: tm.name, seats: tm._count?.memberships ?? 0 }))
     .sort((a, b) => b.seats - a.seats)
@@ -553,6 +556,7 @@ export default function HomePage() {
             )}
           </p>
         </div>
+        {!fresh && (
         <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => setShowOccasions(true)} className="v-btn v-btn-ghost sm:!h-8">
           <Icon name="calendar" size={14} /> {t('occasions.button')}
@@ -573,11 +577,14 @@ export default function HomePage() {
           ))}
         </div>
         </div>
+        )}
       </div>
 
       {errorBanner}
       {onboarding}
 
+      {!fresh && (
+      <>
       <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="v-card min-w-0 overflow-hidden">
           <div role="tablist" className="grid grid-cols-2 border-b border-line lg:grid-cols-4">
@@ -809,6 +816,9 @@ export default function HomePage() {
         </section>
       </div>
 
+      </>
+      )}
+
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="v-card">
           <PanelHeader title={t('activity.title')} />
@@ -975,7 +985,7 @@ function Onboarding({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
         <h3 className="text-[14px] font-semibold text-ink">{t('onboarding.title')}</h3>
         <span className="text-[12.5px] text-faint">{t('onboarding.progress', { done: done.length, total: steps.length })}</span>
-        <span className="flex gap-1" aria-hidden>
+        <span className="hidden gap-1 sm:flex" aria-hidden>
           {steps.map((s) => (
             <span key={s.id} className={`h-1 w-6 rounded-full ${s.completed ? 'bg-accent' : 'bg-line'}`} />
           ))}
