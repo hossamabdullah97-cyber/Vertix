@@ -14,6 +14,7 @@ import { TrendChart } from '@/components/charts/TrendChart';
 import { OccasionsSheet } from '@/components/occasions/OccasionsSheet';
 import { countDuring, markersFor, occasionOn, type Occasion } from '@/lib/occasions';
 import AppShell from '@/components/AppShell';
+import { setupSteps } from '@/lib/onboarding';
 import { CardThumb } from '@/components/cards/CardThumb';
 import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
 
@@ -85,6 +86,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [me, setMe] = useState<Me | null>(null);
+  const [alertsChosen, setAlertsChosen] = useState(true);
 
   const [cards, setCards] = useState<CardType[]>([]);
   const [tags, setTags] = useState<NfcTag[]>([]);
@@ -125,6 +127,9 @@ export default function HomePage() {
     try {
       const meInfo = await authFetch<Me>('/auth/me');
       setMe(meInfo);
+      authFetch<{ saved: boolean }>('/notifications/lead-alerts')
+        .then((r) => setAlertsChosen(r.saved))
+        .catch(() => setAlertsChosen(true));
 
       if (!orgId) {
         const [c, tg, l, tsk, ntf] = await Promise.all([
@@ -236,43 +241,18 @@ export default function HomePage() {
     });
   };
 
-  const onboardingSteps = useMemo(() => {
-    const hasCard = cards.length > 0;
-    return [
-      {
-        id: 'create-card',
-        label: t('onboarding.steps.createCard.label'),
-        desc: t('onboarding.steps.createCard.desc'),
-        completed: hasCard,
-        link: '/cards?new=1',
-        linkText: t('onboarding.steps.createCard.link'),
-      },
-      {
-        id: 'publish-card',
-        label: t('onboarding.steps.publishCard.label'),
-        desc: t('onboarding.steps.publishCard.desc'),
-        completed: cards.some((c) => c.isPublished),
-        link: cards[0] ? `/cards/${cards[0].id}` : '/cards',
-        linkText: cards[0] ? t('onboarding.steps.publishCard.link') : t('onboarding.steps.publishCard.linkAlt'),
-      },
-      {
-        id: 'link-tag',
-        label: t('onboarding.steps.linkTag.label'),
-        desc: t('onboarding.steps.linkTag.desc'),
-        completed: tags.some((tg) => tg.cardId !== null),
-        link: '/tags',
-        linkText: t('onboarding.steps.linkTag.link'),
-      },
-      {
-        id: 'capture-lead',
-        label: t('onboarding.steps.captureLead.label'),
-        desc: t('onboarding.steps.captureLead.desc'),
-        completed: leads.length > 0,
-        link: '/leads',
-        linkText: t('onboarding.steps.captureLead.link'),
-      },
-    ];
-  }, [cards, tags, leads, t]);
+  const onboardingSteps = useMemo(
+    () =>
+      setupSteps({ cards, userId: me?.sub, tags, alertsChosen }).map((step) => ({
+        id: step.id,
+        label: t(`onboarding.steps.${step.id}.label`),
+        desc: t(`onboarding.steps.${step.id}.desc`),
+        completed: step.done,
+        link: step.href,
+        linkText: t(`onboarding.steps.${step.id}.link`),
+      })),
+    [cards, tags, alertsChosen, me?.sub, t],
+  );
 
   // Leads still sitting in the first pipeline stage have not been picked up yet.
   const firstStageId = useMemo(() => [...stages].sort((a, b) => a.order - b.order)[0]?.id ?? null, [stages]);
@@ -979,14 +959,9 @@ function Onboarding({
           {t('onboarding.hide')}
         </button>
       </div>
-      <ol className="grid sm:grid-cols-2 xl:grid-cols-4">
+      <ol className="grid gap-px bg-line sm:grid-cols-2 xl:grid-cols-3">
         {steps.map((s, i) => (
-          <li
-            key={s.id}
-            className={`flex gap-3 p-4 ${i ? 'border-t border-line' : ''} ${i % 2 ? 'sm:border-s' : ''} ${
-              i < 2 ? 'sm:border-t-0' : ''
-            } ${i === 2 ? 'xl:border-s' : ''} xl:border-t-0`}
-          >
+          <li key={s.id} className="flex gap-3 bg-surface p-4">
             <span
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
                 s.completed ? 'bg-accent text-white' : 'text-faint ring-1 ring-inset ring-faint/40'

@@ -36,6 +36,11 @@ export default function NotificationsPage() {
   const [orgNames, setOrgNames] = useState<Map<string, string>>(new Map());
   const [prefsOpen, setPrefsOpen] = useState(false);
 
+  // The setup checklist links here to open the settings straight away.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('settings') === '1') setPrefsOpen(true);
+  }, []);
+
   const query = useMemo(() => {
     const q = new URLSearchParams();
     if (tab === 'unread') q.set('unread', 'true');

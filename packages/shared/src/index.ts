@@ -113,6 +113,10 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+// The ID token "Sign in with Google" gives the page.
+export const googleSignInSchema = z.object({ credential: z.string().min(20).max(4096) });
+export type GoogleSignInInput = z.infer<typeof googleSignInSchema>;
+
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });

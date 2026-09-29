@@ -61,6 +61,10 @@ export const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
 
+  // Sign in with Google (optional — the button shows only when set). The
+  // OAuth client id of a "Web application" client in Google Cloud.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
   // WhatsApp lead alerts (optional — offered only when the token and phone
   // number id are set). WhatsApp Business Cloud API, with an approved template.
   WHATSAPP_TOKEN: z.string().optional(),

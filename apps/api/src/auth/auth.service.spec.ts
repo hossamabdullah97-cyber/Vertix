@@ -712,3 +712,104 @@ describe('AuthService: sign-in limits', () => {
     expect(throttle.hit).toHaveBeenCalledWith('reset:ghost@acme.co', 60 * 60_000);
   });
 });
+
+describe('AuthService.google', () => {
+  const who = { sub: 'g-1', email: 'Mona@Example.com', emailVerified: true, name: 'Mona Adel', picture: 'https://pic' };
+
+  function google(d: Deps, identity: Record<string, unknown> | Error = who) {
+    const ctx = makeService(d);
+    const verify = jest.fn(async () => {
+      if (identity instanceof Error) throw identity;
+      return identity;
+    });
+    (ctx.service as unknown as { googleVerifier: unknown }).googleVerifier = { verify };
+    return ctx;
+  }
+
+  it('signs in the account already linked to that Google account', async () => {
+    const linked = { id: 'u1', email: 'mona@example.com', googleId: 'g-1', emailVerified: new Date(), avatarUrl: 'a', deletedAt: null };
+    const { service, signed, prisma } = google({
+      user: { findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? linked : { isSuperAdmin: false })) },
+      membership: { findFirst: jest.fn().mockResolvedValue({ orgId: 'org1', role: 'ADMIN' }) },
+    });
+    await expect(service.google('cred'.repeat(10))).resolves.toEqual({ accessToken: 'tok_1', refreshToken: 'tok_2' });
+    expect(access(signed)).toMatchObject({ sub: 'u1', orgId: 'org1', role: 'ADMIN' });
+    expect(prisma.client.user.update).not.toHaveBeenCalled();
+  });
+
+  it('links an existing account with the same verified email', async () => {
+    const existing = { id: 'u2', email: 'mona@example.com', googleId: null, emailVerified: null, avatarUrl: null, name: null, deletedAt: null };
+    const { service, prisma } = google({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? null : { isSuperAdmin: false })),
+        findFirst: jest.fn().mockResolvedValue(existing),
+        update: jest.fn().mockResolvedValue({ ...existing, googleId: 'g-1' }),
+      },
+    });
+    await service.google('cred'.repeat(10));
+    expect(prisma.client.user.update).toHaveBeenCalledWith({
+      where: { id: 'u2' },
+      data: expect.objectContaining({ googleId: 'g-1', avatarUrl: 'https://pic', name: 'Mona Adel', emailVerified: expect.any(Date) }),
+    });
+  });
+
+  it('creates an account and a workspace for someone new', async () => {
+    const { service, prisma, signed } = google({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? null : { isSuperAdmin: false })),
+        create: jest.fn().mockResolvedValue({ id: 'u3', email: 'mona@example.com' }),
+      },
+    });
+    await service.google('cred'.repeat(10));
+    expect(prisma.client.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ email: 'mona@example.com', name: 'Mona Adel', googleId: 'g-1' }),
+    });
+    expect((prisma.client.user.create as jest.Mock).mock.calls[0][0].data.passwordHash).toBeUndefined();
+    expect(prisma.client.organization.create).toHaveBeenCalledWith({ data: expect.objectContaining({ name: 'Mona Adel' }) });
+    expect(prisma.client.pipelineStage.createMany).toHaveBeenCalled();
+    expect(access(signed)).toMatchObject({ sub: 'u3', orgId: 'org_new', role: 'OWNER' });
+  });
+
+  it('refuses an email Google has not verified, before looking anyone up', async () => {
+    const { service, prisma } = google({}, { ...who, emailVerified: false });
+    await expect(service.google('cred'.repeat(10))).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.client.user.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('refuses a bad token without saying why', async () => {
+    const { GoogleTokenError } = jest.requireActual('./google-id-token');
+    const { service } = google({}, new GoogleTokenError('Bad signature'));
+    await expect(service.google('cred'.repeat(10))).rejects.toThrow('Google sign-in failed');
+  });
+
+  it('will not move an account to a different Google account', async () => {
+    const { service } = google({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? null : { isSuperAdmin: false })),
+        findFirst: jest.fn().mockResolvedValue({ id: 'u4', email: 'mona@example.com', googleId: 'g-other', deletedAt: null }),
+      },
+    });
+    await expect(service.google('cred'.repeat(10))).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('refuses a deleted account', async () => {
+    const { service } = google({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? null : { isSuperAdmin: false })),
+        findFirst: jest.fn().mockResolvedValue({ id: 'u5', email: 'mona@example.com', googleId: null, deletedAt: new Date() }),
+      },
+    });
+    await expect(service.google('cred'.repeat(10))).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('keeps a suspended member out, as a password sign-in would', async () => {
+    const linked = { id: 'u6', email: 'mona@example.com', googleId: 'g-1', emailVerified: new Date(), avatarUrl: 'a', deletedAt: null };
+    const { service } = google({
+      user: { findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? linked : { isSuperAdmin: false })) },
+      membership: {
+        findFirst: jest.fn().mockImplementation(({ where }) => (where.status === 'SUSPENDED' ? { id: 'm' } : null)),
+      },
+    });
+    await expect(service.google('cred'.repeat(10))).rejects.toThrow(SUSPENDED_MESSAGE);
+  });
+});

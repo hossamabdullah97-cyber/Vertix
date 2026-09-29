@@ -60,6 +60,8 @@ export class LeadAlertsService {
       lang: ((row?.lang as AlertLang) ?? DEFAULTS.lang) as AlertLang,
       address: user?.email ?? null,
       whatsappReady: this.whatsappReady,
+      /** Whether the person has chosen, rather than living with the defaults. */
+      saved: !!row,
     };
   }
 
