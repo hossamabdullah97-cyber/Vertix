@@ -12,7 +12,7 @@ import type { Response } from 'express';
 import { CardsService } from './cards.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { StorageService } from '../uploads/storage.service';
-import { MAX_PHOTO_BYTES, buildVCard, vcardFileName, vcardPhoto } from './vcard';
+import { MAX_PHOTO_BYTES, buildVCard, inLanguage, vcardFileName, vcardPhoto } from './vcard';
 import { WalletService } from './wallet/wallet.service';
 import { availabilityOf, openSlots } from './availability';
 import { bookedMeetings } from './booked-meetings';
@@ -115,13 +115,16 @@ export class PublicCardsController {
     @Res() res: Response,
     @Query('p') p?: string,
     @Query('code') code?: string,
+    @Query('lang') lang?: string,
     @Req() req?: any,
   ) {
     const card = await this.unlocked(slug, p, code, req);
 
-    const data = (card.vcardData as Record<string, unknown>) ?? {};
+    // The contact is saved in the language the visitor was reading.
+    const shown = inLanguage((card.vcardData as Record<string, unknown>) ?? {}, card.theme, lang);
+    const data = shown.data;
     const bio = card.sections.find((s) => s.type === 'BIO')?.content as Record<string, unknown> | undefined;
-    const about = typeof bio?.body === 'string' ? bio.body.trim() : '';
+    const about = shown.about ?? (typeof bio?.body === 'string' ? bio.body.trim() : '');
     const appUrl = this.appUrl();
     // A variant opened by its private key is the one the visitor saves.
     const cardUrl = `${appUrl}/c/${card.slug}${p ? `?p=${encodeURIComponent(p)}` : ''}`;

@@ -22,6 +22,11 @@ export default function RootLayout({
     // lang/dir are locale-driven and may be reconciled client-side (stored
     // preference); suppress the benign root-attribute hydration warning.
     <html lang={locale} dir={dirOf(locale)} suppressHydrationWarning>
+      <head>
+        {/* The text font every page needs first, fetched with the page. */}
+        <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossOrigin="" />
+        {locale === 'ar' && <link rel="preload" href="/fonts/plex-arabic-arabic-400.woff2" as="font" type="font/woff2" crossOrigin="" />}
+      </head>
       <body suppressHydrationWarning>
         <LanguageProvider initialLocale={locale}>{children}</LanguageProvider>
       </body>

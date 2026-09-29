@@ -60,7 +60,10 @@ export interface ProfileData {
   layout: Layout;
   accent: string;
   mode: ThemeMode;
+  /** The language shown. */
   lang: Lang;
+  /** Every language the card is written in, its own first. */
+  langs: Lang[];
   circle: boolean;
   verified: boolean;
   /** The workspace's name and logo, unless the owner turned it off. */
@@ -111,11 +114,18 @@ export function buildProfile(input: {
   profileName?: string | null;
   /** Shown when the owner has not written a name yet (the Studio preview). */
   fallbackName?: string;
+  /** The language to show, when the card has it; otherwise its own. */
+  viewLang?: Lang | null;
 }): ProfileData {
   const theme = input.theme ?? {};
-  const v = input.vcardData ?? {};
+  const base = input.vcardData ?? {};
   const bio = input.sections.find((s) => s.type === 'BIO');
   const mode = modeOf(theme.mode);
+  const primary: Lang = theme.lang === 'ar' ? 'ar' : 'en';
+  const alt = altOf(base, primary);
+  // In the second language, each field it has replaces the card's own.
+  const showAlt = !!alt && input.viewLang === alt.lang;
+  const v: Record<string, unknown> = showAlt ? { ...base, ...alt.fields } : base;
   const available = v.available === true ? 'now' : typeof v.available === 'string' ? v.available : '';
 
   return {
@@ -124,14 +134,15 @@ export function buildProfile(input: {
     // Older cards kept the job title under `org`.
     title: pick(v, 'title', 'org') || pick(bio?.content, 'subtitle'),
     company: pick(v, 'company'),
-    about: pick(bio?.content, 'body', 'about'),
+    about: (showAlt && alt!.fields.about) || pick(bio?.content, 'body', 'about'),
     avatar: pick(v, 'avatar'),
     coverImage: pick(v, 'coverImage') || pick(theme, 'coverImage'),
     coverStyle: coverOf(theme.cover) ?? (mode === 'dark' ? 'constellation' : 'gradient'),
     layout: layoutOf(theme.layout),
     accent: typeof theme.accent === 'string' && HEX.test(theme.accent) ? theme.accent : '#2563eb',
     mode,
-    lang: theme.lang === 'ar' ? 'ar' : 'en',
+    lang: showAlt ? alt!.lang : primary,
+    langs: alt ? [primary, alt.lang] : [primary],
     circle: theme.avatarShape !== 'square',
     linkStyle: linkStyleOf(theme.links),
     openInApp: theme.openInApp === true,
@@ -236,4 +247,46 @@ export function initials(name: string): string {
   if (/^[\u0600-\u06FF]/.test(words[0] ?? '')) return first(words[0]);
   const letters = words.length > 1 ? [first(words[0]), first(words[words.length - 1])] : [first(words[0])];
   return letters.join('').toUpperCase() || '•';
+}
+
+/** The identity fields a card can carry in its second language. */
+export const ALT_FIELDS = ['fullName', 'title', 'company', 'location', 'languages', 'responseTime', 'about'] as const;
+
+/**
+ * The card's second language (`vcardData.alt`): the other language from its
+ * own, with at least a name. An alt written for the language the card is now
+ * in (the owner switched it) does not count.
+ */
+export function altOf(vcardData: Record<string, unknown> | null | undefined, primary: Lang): { lang: Lang; fields: Record<string, string> } | null {
+  const raw = vcardData?.alt;
+  if (!raw || typeof raw !== 'object') return null;
+  const a = raw as Record<string, unknown>;
+  const lang: Lang = primary === 'ar' ? 'en' : 'ar';
+  if (a.lang !== lang) return null;
+  const fields: Record<string, string> = {};
+  for (const k of ALT_FIELDS) {
+    const v = a[k];
+    if (typeof v === 'string' && v.trim()) fields[k] = v.trim();
+  }
+  return fields.fullName ? { lang, fields } : null;
+}
+
+/**
+ * Which language a visitor sees: the one asked for in the address, else the
+ * first their browser prefers among the card's, else the card's own.
+ */
+export function pickViewLang(langs: Lang[], asked: string | null | undefined, acceptLanguage: string | null | undefined): Lang {
+  if (asked === 'ar' || asked === 'en') {
+    if (langs.includes(asked)) return asked;
+  }
+  const prefs = (acceptLanguage ?? '')
+    .split(',')
+    .map((part) => {
+      const [tag, q] = part.trim().split(';q=');
+      return { lang: tag!.slice(0, 2).toLowerCase(), q: q ? Number(q) : 1 };
+    })
+    .filter((p) => p.lang && !Number.isNaN(p.q))
+    .sort((a, b) => b.q - a.q);
+  for (const p of prefs) if (langs.includes(p.lang as Lang)) return p.lang as Lang;
+  return langs[0]!;
 }

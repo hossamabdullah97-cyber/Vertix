@@ -150,3 +150,24 @@ export function vcardFileName(fullName: string): string {
     .replace(/\s+/g, '-');
   return `${ascii || 'contact'}.vcf`;
 }
+
+/** The identity fields a card can carry in its second language (see the web's altOf). */
+const ALT_FIELDS = ['fullName', 'title', 'company', 'location', 'languages', 'responseTime', 'about'] as const;
+
+/**
+ * The card's data in the language asked for: its own, or its second language
+ * (`vcardData.alt`) laid over it when that is the one asked for and has a name.
+ */
+export function inLanguage(data: Record<string, unknown>, theme: unknown, lang: unknown): { data: Record<string, unknown>; about?: string } {
+  const primary = (theme as Record<string, unknown> | null)?.lang === 'ar' ? 'ar' : 'en';
+  const alt = data.alt && typeof data.alt === 'object' ? (data.alt as Record<string, unknown>) : null;
+  const other = primary === 'ar' ? 'en' : 'ar';
+  if (!alt || alt.lang !== other || lang !== other || typeof alt.fullName !== 'string' || !alt.fullName.trim()) return { data };
+  const fields: Record<string, string> = {};
+  for (const k of ALT_FIELDS) {
+    const v = alt[k];
+    if (typeof v === 'string' && v.trim()) fields[k] = v.trim();
+  }
+  const { about, ...rest } = fields;
+  return { data: { ...data, ...rest }, about };
+}

@@ -578,5 +578,15 @@
     "saving": "Saving…",
     "saved": "Saved",
     "failed": "Could not save. Check your connection."
+  },
+  "second": {
+    "title": "An {{language}} version of the card",
+    "hint": "Visitors whose phone is in {{language}} see it first, and anyone can switch on the card.",
+    "about": "About",
+    "needName": "Add the name, so the card offers this language.",
+    "lang": {
+      "ar": "Arabic",
+      "en": "English"
+    }
   }
 }

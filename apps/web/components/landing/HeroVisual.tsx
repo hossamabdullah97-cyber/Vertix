@@ -47,6 +47,7 @@ export function HeroVisual() {
       accent: '#2563eb',
       mode: 'light',
       lang: locale,
+      langs: [locale],
       circle: true,
       verified: true,
       brand: null,

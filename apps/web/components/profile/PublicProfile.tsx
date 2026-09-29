@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { API_URL, type PublicCardAction } from '@/lib/api';
 import { resolveAction } from '@/lib/brandIcons';
 import { appLink, platformOf } from '@/lib/appLinks';
@@ -47,6 +46,7 @@ export function PublicProfile({
   profile,
   preview = false,
   query = {},
+  onLang,
 }: {
   profile: ProfileData;
   /**
@@ -56,6 +56,8 @@ export function PublicProfile({
   preview?: boolean;
   /** The page's own ?p, ?code and ?t, carried into the contact file and leads. */
   query?: { p?: string; code?: string; t?: string };
+  /** In the Studio: show the card in another of its languages. */
+  onLang?: (lang: 'en' | 'ar') => void;
 }) {
   const t = profileStrings(profile.lang);
   const dir = profile.lang === 'ar' ? 'rtl' : 'ltr';
@@ -80,6 +82,23 @@ export function PublicProfile({
   const vq = new URLSearchParams();
   if (query.p) vq.set('p', query.p);
   if (query.code) vq.set('code', query.code);
+  // The contact file follows the language on screen.
+  if (profile.langs.length > 1) vq.set('lang', profile.lang);
+
+  // The other language, as a link that keeps the rest of the address.
+  const other = profile.langs.find((l) => l !== profile.lang);
+  const langLink: LangLink = other
+    ? {
+        lang: other,
+        href: `?${new URLSearchParams({ ...(query.p ? { p: query.p } : {}), ...(query.code ? { code: query.code } : {}), ...(query.t ? { t: query.t } : {}), lang: other })}`,
+        onClick: preview
+          ? (e) => {
+              e.preventDefault();
+              onLang?.(other);
+            }
+          : undefined,
+      }
+    : null;
   const vcardUrl = `${API_URL}/c/${profile.slug}/vcard${vq.toString() ? `?${vq}` : ''}`;
 
   /** In the preview a tap only shows what would happen. */
@@ -111,7 +130,7 @@ export function PublicProfile({
     <>
       {/* In the Studio the card redraws as it is edited, so it does not animate. */}
       <div className={preview ? '' : 'p-rise'}>
-        <Header profile={profile} t={t} meta={metaItems} onShare={() => setSheet('share')} />
+        <Header profile={profile} t={t} meta={metaItems} onShare={() => setSheet('share')} lang={langLink} />
       </div>
 
       <div className={`px-5 pb-8 ${preview ? '' : 'p-rise'}`}>
@@ -272,7 +291,7 @@ export function PublicProfile({
   );
 
   return (
-    <div dir={dir} style={profileStyle(profile)} {...profileAttrs(profile)} className={`relative bg-[var(--p-surface)] text-[var(--p-fg)] ${preview ? 'h-full overflow-hidden' : ''}`}>
+    <div dir={dir} lang={profile.lang} style={profileStyle(profile)} {...profileAttrs(profile)} className={`relative bg-[var(--p-surface)] text-[var(--p-fg)] ${preview ? 'h-full overflow-hidden' : ''}`}>
       {preview ? <div className="no-scrollbar h-full overflow-y-auto overscroll-contain">{body}</div> : body}
 
       <BottomSheet open={sheet === 'share'} onClose={() => setSheet(null)} contained={preview} title={t.shareTitle} closeLabel={t.close}>
@@ -334,14 +353,14 @@ function WalletButtons({ profile, t, query, preview }: { profile: ProfileData; t
  * The top of the card: one of four layouts
  * ------------------------------------------------------------------------- */
 
-function Header({ profile, t, meta, onShare }: { profile: ProfileData; t: ProfileStrings; meta: MetaItem[]; onShare: () => void }) {
+function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: ProfileStrings; meta: MetaItem[]; onShare: () => void; lang: LangLink }) {
   switch (profile.layout) {
     case 'centered':
       return (
         <>
           <div className="relative h-[148px] overflow-hidden">
             <CoverArt profile={profile} />
-            <CoverChrome profile={profile} t={t} onShare={onShare} />
+            <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
           </div>
           <div className="flex flex-col items-center px-5 text-center">
             <div className="-mt-[52px]">
@@ -370,7 +389,7 @@ function Header({ profile, t, meta, onShare }: { profile: ProfileData; t: Profil
               </>
             )}
             <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black/80 via-black/40 to-transparent" aria-hidden />
-            <CoverChrome profile={profile} t={t} onShare={onShare} />
+            <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
             <div className="absolute inset-x-0 bottom-0 px-5 pb-5 text-white">
               <Name profile={profile} t={t} className="text-[28px]" />
               {profile.title && <p className="mt-1 text-[15px] leading-snug text-white/80">{profile.title}</p>}
@@ -400,14 +419,17 @@ function Header({ profile, t, meta, onShare }: { profile: ProfileData; t: Profil
             ) : (
               <span />
             )}
-            <button
-              onClick={onShare}
-              aria-label={t.share}
-              title={t.share}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--p-muted)] ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
-            >
-              <Icon name="share" size={16} />
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <LangSwitch lang={lang} className="text-[var(--p-muted)] ring-1 ring-inset ring-[var(--p-line-strong)] active:bg-[var(--p-elevated)]" />
+              <button
+                onClick={onShare}
+                aria-label={t.share}
+                title={t.share}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--p-muted)] ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+              >
+                <Icon name="share" size={16} />
+              </button>
+            </div>
           </div>
           <div className="mt-8 flex items-center gap-4">
             <Avatar profile={profile} size={76} ring={false} />
@@ -428,7 +450,7 @@ function Header({ profile, t, meta, onShare }: { profile: ProfileData; t: Profil
         <>
           <div className="relative h-[132px] overflow-hidden">
             <CoverArt profile={profile} />
-            <CoverChrome profile={profile} t={t} onShare={onShare} />
+            <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
           </div>
           <div className="px-5">
             <div className="-mt-11">
@@ -554,7 +576,7 @@ function CoverArt({ profile }: { profile: ProfileData }) {
 }
 
 /** The profile tag and the share button, over a cover. */
-function CoverChrome({ profile, t, onShare }: { profile: ProfileData; t: ProfileStrings; onShare: () => void }) {
+function CoverChrome({ profile, t, onShare, lang }: { profile: ProfileData; t: ProfileStrings; onShare: () => void; lang: LangLink }) {
   return (
     <>
       {/* A soft floor so the share button and the tag read on any cover. */}
@@ -565,15 +587,39 @@ function CoverChrome({ profile, t, onShare }: { profile: ProfileData; t: Profile
           <span className="truncate">{profile.profileName}</span>
         </span>
       )}
-      <button
-        onClick={onShare}
-        aria-label={t.share}
-        title={t.share}
-        className="absolute end-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors active:bg-black/40"
-      >
-        <Icon name="share" size={17} />
-      </button>
+      <div className="absolute end-4 top-4 flex items-center gap-2">
+        <LangSwitch lang={lang} className="bg-black/30 text-white backdrop-blur-md active:bg-black/40" />
+        <button
+          onClick={onShare}
+          aria-label={t.share}
+          title={t.share}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors active:bg-black/40"
+        >
+          <Icon name="share" size={17} />
+        </button>
+      </div>
     </>
+  );
+}
+
+/** The card's other language, when it has one: where it is and how to name it. */
+type LangLink = { lang: 'en' | 'ar'; href: string; onClick?: (e: React.MouseEvent) => void } | null;
+
+/** "العربية" on the English card, "English" on the Arabic one. */
+function LangSwitch({ lang, className }: { lang: LangLink; className: string }) {
+  if (!lang) return null;
+  const label = lang.lang === 'ar' ? 'العربية' : 'English';
+  return (
+    <a
+      href={lang.href}
+      onClick={lang.onClick}
+      hrefLang={lang.lang}
+      lang={lang.lang}
+      dir={lang.lang === 'ar' ? 'rtl' : 'ltr'}
+      className={`flex h-10 items-center rounded-full px-3.5 text-[13px] font-medium transition-colors ${className}`}
+    >
+      {label}
+    </a>
   );
 }
 
@@ -833,38 +879,47 @@ function BottomSheet({
     };
   }, [open, onClose, contained]);
 
+  // Kept on screen while it slides away, then removed (see .p-sheet in globals.css).
+  const [shown, setShown] = useState(open);
+  useEffect(() => {
+    if (open) {
+      setShown(true);
+      return;
+    }
+    const timer = setTimeout(() => setShown(false), SHEET_OUT_MS);
+    return () => clearTimeout(timer);
+  }, [open]);
+  if (!shown) return null;
+
   const pos = contained ? 'absolute' : 'fixed';
+  const closing = open ? undefined : '';
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className={`${pos} inset-0 z-40 bg-black/40`} />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label={title}
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 420, damping: 40 }}
-            className={`${pos} inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88%] w-full max-w-[440px] flex-col rounded-t-[20px] bg-[var(--p-surface)] text-[var(--p-fg)] shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.35)] ${
-              contained ? '' : 'max-h-[88dvh] pb-[env(safe-area-inset-bottom)]'
-            }`}
-          >
-            <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-[var(--p-line-strong)]" aria-hidden />
-            <div className="flex items-start gap-3 px-5 pb-2 pt-3">
-              <h2 className="min-w-0 flex-1 text-[17px] font-semibold leading-snug">{title}</h2>
-              <button onClick={onClose} aria-label={closeLabel} className="-m-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--p-muted)] active:bg-[var(--p-elevated)]">
-                <Icon name="x" size={18} />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">{children}</div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    <>
+      <div onClick={onClose} data-closing={closing} className={`p-scrim ${pos} inset-0 z-40 bg-black/40`} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        data-closing={closing}
+        className={`p-sheet ${pos} inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88%] w-full max-w-[440px] flex-col rounded-t-[20px] bg-[var(--p-surface)] text-[var(--p-fg)] shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.35)] ${
+          contained ? '' : 'max-h-[88dvh] pb-[env(safe-area-inset-bottom)]'
+        }`}
+      >
+        <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-[var(--p-line-strong)]" aria-hidden />
+        <div className="flex items-start gap-3 px-5 pb-2 pt-3">
+          <h2 className="min-w-0 flex-1 text-[17px] font-semibold leading-snug">{title}</h2>
+          <button onClick={onClose} aria-label={closeLabel} className="-m-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--p-muted)] active:bg-[var(--p-elevated)]">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">{children}</div>
+      </div>
+    </>
   );
 }
+
+/** How long a sheet takes to slide away; matches p-sheet-out. */
+const SHEET_OUT_MS = 200;
 
 function ShareBody({ slug, name, t, preview }: { slug: string; name: string; t: ProfileStrings; preview: boolean }) {
   const [url, setUrl] = useState('');

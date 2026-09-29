@@ -1,4 +1,4 @@
-import { buildVCard, vcardFileName, vcardPhoto } from './vcard';
+import { buildVCard, inLanguage, vcardFileName, vcardPhoto } from './vcard';
 
 describe('buildVCard', () => {
   it('wraps output in BEGIN/END and VERSION', () => {
@@ -98,3 +98,22 @@ describe('vcardFileName', () => {
     expect(vcardFileName('مريم خالد')).toBe('contact.vcf');
   });
 });
+
+describe('inLanguage', () => {
+  const data = { fullName: 'Mariam Khaled', title: 'Sales Director', alt: { lang: 'ar', fullName: 'مريم خالد', title: 'مديرة المبيعات', about: 'نبذة' } };
+
+  it('lays the second language over the card when it is asked for', () => {
+    const out = inLanguage(data, { lang: 'en' }, 'ar');
+    expect(out.data).toMatchObject({ fullName: 'مريم خالد', title: 'مديرة المبيعات' });
+    expect(out.about).toBe('نبذة');
+  });
+
+  it('keeps the card as it is otherwise', () => {
+    expect(inLanguage(data, { lang: 'en' }, 'en').data.fullName).toBe('Mariam Khaled');
+    expect(inLanguage(data, { lang: 'en' }, undefined).data.fullName).toBe('Mariam Khaled');
+    // Written for the language the card is now in: not a second language.
+    expect(inLanguage(data, { lang: 'ar' }, 'ar').data.fullName).toBe('Mariam Khaled');
+    expect(inLanguage({ ...data, alt: { lang: 'ar', title: 'x' } }, { lang: 'en' }, 'ar').data.fullName).toBe('Mariam Khaled');
+  });
+});
+
