@@ -285,30 +285,34 @@ export class AnalyticsService {
   }
 
   /**
-   * Per-member standings for the hardware the team carries: taps, the people
-   * reached, the clients produced, and how many of those clients were won.
+   * Per-member standings: the chips they carry and their taps, the people
+   * reached, the clients they brought in, and how many of those were won.
    *
-   * Counted through NfcTag.assignedUserId rather than through card ownership, so
-   * a member who hands their card over, or owns several, is still credited for
-   * the chip in their pocket and nothing else.
+   * A client is credited to whoever brought them: the holder of the chip that
+   * was tapped (NfcTag.assignedUserId, so a member is credited for the chip in
+   * their pocket even on someone else's card), and otherwise the owner of the
+   * card whose link, QR code or form they came through. Members with a card
+   * but no chip are ranked too.
    *
    * Ordered by clients won, then clients, then people reached: a member whose
-   * chip is tapped constantly but closes nothing should not lead the table.
+   * card is opened constantly but closes nothing should not lead the table.
    */
   async memberPerformance(orgId: string, from: Date, to: Date, mine?: string) {
     // A member sees their own line, not how colleagues are doing.
-    const tags = await this.db.nfcTag.findMany({
-      where: { assignedUserId: mine ?? { not: null } },
-      select: {
-        id: true,
-        assignedUserId: true,
-        assignedUser: { select: { id: true, name: true, email: true, avatarUrl: true } },
-      },
-    });
-    if (tags.length === 0) return [];
+    const [tags, cards] = await Promise.all([
+      this.db.nfcTag.findMany({
+        where: { assignedUserId: mine ?? { not: null } },
+        select: { id: true, assignedUserId: true },
+      }),
+      this.db.card.findMany({ where: mine ? { ownerId: mine } : {}, select: { id: true, ownerId: true } }),
+    ]);
+    if (tags.length === 0 && cards.length === 0) return [];
 
     const tagIds = tags.map((t) => t.id);
+    const cardIds = cards.map((c) => c.id);
     const holderByTag = new Map(tags.map((t) => [t.id, t.assignedUserId!]));
+    const ownerByCard = new Map(cards.map((c) => [c.id, c.ownerId]));
+    const userIds = [...new Set([...holderByTag.values(), ...ownerByCard.values()])];
 
     // The stage a lead sits in is how this product records a win, so the won
     // stages have to be resolved before the leads can be judged.
@@ -318,25 +322,30 @@ export class AnalyticsService {
     });
     const wonStageIds = new Set(wonStages.map((s) => s.id));
 
-    const [scanRows, visitorRows, leads] = await Promise.all([
+    const [users, scanRows, tagVisitors, cardVisitors, leads] = await Promise.all([
+      this.db.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true, email: true, avatarUrl: true },
+      }),
       this.db.event.groupBy({
         by: ['tagId'],
         where: { tagId: { in: tagIds }, type: 'NFC_SCAN', createdAt: { gte: from, lte: to } },
         _count: { _all: true },
       }),
       this.db.event.findMany({
-        where: {
-          tagId: { in: tagIds },
-          type: 'NFC_SCAN',
-          visitorId: { not: null },
-          createdAt: { gte: from, lte: to },
-        },
+        where: { tagId: { in: tagIds }, type: 'NFC_SCAN', visitorId: { not: null }, createdAt: { gte: from, lte: to } },
         select: { tagId: true, visitorId: true },
         distinct: ['tagId', 'visitorId'],
       }),
+      // People who opened a member's card some other way (link, QR code).
+      this.db.event.findMany({
+        where: { cardId: { in: cardIds }, tagId: null, type: 'VIEW', visitorId: { not: null }, createdAt: { gte: from, lte: to } },
+        select: { cardId: true, visitorId: true },
+        distinct: ['cardId', 'visitorId'],
+      }),
       this.db.lead.findMany({
-        where: { tagId: { in: tagIds }, createdAt: { gte: from, lte: to } },
-        select: { tagId: true, stageId: true, value: true },
+        where: { OR: [{ tagId: { in: tagIds } }, { cardId: { in: cardIds } }], createdAt: { gte: from, lte: to } },
+        select: { tagId: true, cardId: true, stageId: true, value: true },
       }),
     ]);
 
@@ -349,40 +358,35 @@ export class AnalyticsService {
       wonLeads: number;
       wonValue: number;
     }
-    const byUser = new Map<string, Row>();
-    const seed = (userId: string): Row | undefined => {
-      if (!byUser.has(userId)) {
-        const holder = tags.find((t) => t.assignedUserId === userId)?.assignedUser;
-        if (!holder) return undefined;
-        byUser.set(userId, {
-          user: {
-            id: holder.id,
-            name: holder.name,
-            email: holder.email,
-            avatarUrl: holder.avatarUrl ?? null,
-          },
-          tags: 0,
-          scans: 0,
-          visitors: 0,
-          leads: 0,
-          wonLeads: 0,
-          wonValue: 0,
-        });
-      }
-      return byUser.get(userId);
-    };
+    const byUser = new Map<string, Row>(
+      users.map((u) => [
+        u.id,
+        { user: { id: u.id, name: u.name, email: u.email, avatarUrl: u.avatarUrl ?? null }, tags: 0, scans: 0, visitors: 0, leads: 0, wonLeads: 0, wonValue: 0 },
+      ]),
+    );
+    const rowOf = (userId: string | undefined) => (userId ? byUser.get(userId) : undefined);
 
-    for (const tag of tags) seed(tag.assignedUserId!)!.tags += 1;
+    for (const tag of tags) {
+      const row = rowOf(tag.assignedUserId!);
+      if (row) row.tags += 1;
+    }
     for (const g of scanRows) {
-      const row = seed(holderByTag.get(g.tagId!)!);
+      const row = rowOf(holderByTag.get(g.tagId!));
       if (row) row.scans += g._count._all;
     }
-    for (const v of visitorRows) {
-      const row = seed(holderByTag.get(v.tagId!)!);
-      if (row) row.visitors += 1;
-    }
+    // A person who tapped the chip and later opened the link is one person reached.
+    const reached = new Map<string, Set<string>>();
+    const reach = (userId: string | undefined, visitorId: string | null) => {
+      if (!userId || !visitorId || !byUser.has(userId)) return;
+      if (!reached.has(userId)) reached.set(userId, new Set());
+      reached.get(userId)!.add(visitorId);
+    };
+    for (const v of tagVisitors) reach(holderByTag.get(v.tagId!), v.visitorId);
+    for (const v of cardVisitors) reach(ownerByCard.get(v.cardId!), v.visitorId);
+    for (const [userId, people] of reached) byUser.get(userId)!.visitors = people.size;
     for (const lead of leads) {
-      const row = seed(holderByTag.get(lead.tagId!)!);
+      // The chip that was tapped wins; a tag outside this list falls back to the card.
+      const row = rowOf((lead.tagId && holderByTag.get(lead.tagId)) || (lead.cardId ? ownerByCard.get(lead.cardId) : undefined));
       if (!row) continue;
       row.leads += 1;
       if (lead.stageId && wonStageIds.has(lead.stageId)) {

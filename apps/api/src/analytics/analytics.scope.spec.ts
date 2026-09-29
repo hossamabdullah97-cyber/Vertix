@@ -46,3 +46,35 @@ describe('analytics scope', () => {
     await expect(service.cardStats('c2', 'u1')).rejects.toBeInstanceOf(NotFoundException);
   });
 });
+
+describe('team standings', () => {
+  it('credits a client to the chip that was tapped, else to the card they came through', async () => {
+    const user = (id: string) => ({ id, name: id, email: `${id}@x.com`, avatarUrl: null });
+    const db = {
+      nfcTag: { findMany: jest.fn(async () => [{ id: 't1', assignedUserId: 'sara' }]) },
+      card: { findMany: jest.fn(async () => [{ id: 'c1', ownerId: 'omar' }, { id: 'c2', ownerId: 'sara' }]) },
+      pipelineStage: { findMany: jest.fn(async () => [{ id: 'won' }]) },
+      user: { findMany: jest.fn(async () => [user('sara'), user('omar')]) },
+      event: {
+        groupBy: jest.fn(async () => [{ tagId: 't1', _count: { _all: 4 } }]),
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([{ tagId: 't1', visitorId: 'v1' }])
+          .mockResolvedValueOnce([{ cardId: 'c1', visitorId: 'v2' }, { cardId: 'c1', visitorId: 'v3' }, { cardId: 'c2', visitorId: 'v1' }]),
+      },
+      lead: {
+        findMany: jest.fn(async () => [
+          { tagId: 't1', cardId: 'c1', stageId: 'won', value: 500 }, // Sara's chip on Omar's card: Sara's
+          { tagId: null, cardId: 'c1', stageId: null, value: 0 }, // through Omar's link: Omar's
+          { tagId: null, cardId: 'c1', stageId: 'won', value: 200 },
+        ]),
+      },
+    };
+    const service = new AnalyticsService({ client: db } as never, {} as never);
+    const rows = await service.memberPerformance('o1', new Date(0), new Date());
+    const by = Object.fromEntries(rows.map((r) => [r.user.id, r]));
+    // v1 tapped Sara's chip and opened her card's link too: one person.
+    expect(by.sara).toMatchObject({ tags: 1, scans: 4, visitors: 1, leads: 1, wonLeads: 1, wonValue: 500 });
+    expect(by.omar).toMatchObject({ tags: 0, scans: 0, visitors: 2, leads: 2, wonLeads: 1, wonValue: 200 });
+  });
+});
