@@ -203,7 +203,7 @@ export function ImportPeople({ open, onClose, onImported }: { open: boolean; onC
             <li>{t('import.columns.others')}</li>
             <li>{t('import.columns.role')}</li>
           </ul>
-          <button type="button" onClick={downloadTemplate} className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline">
+          <button type="button" onClick={downloadTemplate} className="v-hit mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline">
             <Icon name="download" size={14} />
             {t('import.template')}
           </button>

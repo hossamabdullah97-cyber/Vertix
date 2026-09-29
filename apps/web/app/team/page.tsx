@@ -674,7 +674,7 @@ function MemberDetails({
 
           <p className="flex items-center justify-between text-[13px]">
             <span className="text-muted">{t('details.chips')}</span>
-            <Link href="/tags" className="tabular font-medium text-accent hover:underline">
+            <Link href="/tags" className="v-hit tabular font-medium text-accent hover:underline">
               {formatNumber(chips, locale)}
             </Link>
           </p>

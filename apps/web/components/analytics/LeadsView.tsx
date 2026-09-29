@@ -69,7 +69,7 @@ export function LeadsView({ leads, stages }: { leads: Lead[] | null; stages: Pip
           <PanelHeader
             title={t('leads.byStage')}
             action={
-              <Link href="/leads" className="text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/leads" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
                 {t('leads.open')}
               </Link>
             }

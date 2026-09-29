@@ -28,7 +28,7 @@
     "taps": "NFC taps",
     "saves": "Contacts saved",
     "leads": "New leads",
-    "viewsSub": "vs {{value}} in the previous period",
+    "viewsSub": "vs {{value}} before",
     "tapsSub": "{{active}} of {{total}} chips active",
     "savesSub": "{{pct}} of views",
     "leadsSub": "Conversion {{pct}}",
@@ -193,5 +193,6 @@
     "errors": {
       "range": "The end date is before the start date."
     }
-  }
+  },
+  "deletedCard": "A deleted card"
 }

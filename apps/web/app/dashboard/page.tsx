@@ -54,7 +54,8 @@ interface ApprovalRequest {
 
 interface TopCard {
   cardId: string;
-  slug: string;
+  /** null when the card has since been deleted. */
+  slug: string | null;
   events: number;
 }
 
@@ -62,6 +63,7 @@ interface AuditLog {
   id: string;
   action: string;
   targetType: string | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
   actor: { name: string | null; email: string } | null;
 }
@@ -283,9 +285,16 @@ export default function HomePage() {
     </Link>
   );
 
+  // On a phone the greeting is the heading, so the New card button sits beside it, as an icon.
+  const phoneNewCard = (
+    <Link href="/cards?new=1" aria-label={t('newCard')} title={t('newCard')} className="v-btn !h-11 !w-11 shrink-0 !p-0 md:hidden">
+      <Icon name="plus" size={18} />
+    </Link>
+  );
+
   if (loading) {
     return (
-      <AppShell title={t('titles.command')} action={newCardAction}>
+      <AppShell title={t('titles.command')} action={newCardAction} mobileTitle={false}>
         <div className="space-y-5">
           <div className="v-skeleton h-14 w-80" />
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -355,8 +364,11 @@ export default function HomePage() {
     ];
 
     return (
-      <AppShell title={t('titles.personal')} action={newCardAction}>
-        <h2 className="text-[24px] font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
+      <AppShell title={t('titles.personal')} action={newCardAction} mobileTitle={false}>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-[24px] font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
+          {phoneNewCard}
+        </div>
         <p className="mt-1 text-[14px] text-muted">{t('personal.subtitle')}</p>
         {errorBanner}
         {onboarding}
@@ -521,10 +533,13 @@ export default function HomePage() {
     .slice(0, 3);
 
   return (
-    <AppShell title={t('titles.command')} action={newCardAction}>
+    <AppShell title={t('titles.command')} action={newCardAction} mobileTitle={false}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
+          <div className="flex items-start justify-between gap-3">
           <h2 className="text-[24px] font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
+          {phoneNewCard}
+        </div>
           <p className="mt-1 text-[14px] text-muted">
             {today} ·{' '}
             {thisWeek.length > 0 ? (
@@ -647,7 +662,7 @@ export default function HomePage() {
                   />
                 )}
               </span>
-              <Link href="/analytics" className="text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/analytics" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
                 {t('metrics.openAnalytics')}
               </Link>
             </div>
@@ -746,7 +761,7 @@ export default function HomePage() {
           <PanelHeader
             title={t('top.title')}
             action={
-              <Link href="/cards" className="text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/cards" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
                 {t('top.all')}
               </Link>
             }
@@ -771,8 +786,8 @@ export default function HomePage() {
                         <Link href={card ? `/cards/${card.id}` : '/cards'} className="flex min-w-0 items-center gap-3">
                           {card ? <CardThumb card={card} /> : <span className="h-[25px] w-10 rounded bg-elevated" />}
                           <span className="min-w-0">
-                            <span className="block truncate font-medium text-ink">{card ? cardName(card) : row.slug}</span>
-                            <span dir="ltr" className="block truncate text-start font-mono text-[11.5px] text-faint">/c/{row.slug}</span>
+                            <span className={`block truncate font-medium ${row.slug ? 'text-ink' : 'text-faint'}`}>{card ? cardName(card) : row.slug ?? t('deletedCard')}</span>
+                            {row.slug && <span dir="ltr" className="block truncate text-start font-mono text-[11.5px] text-faint">/c/{row.slug}</span>}
                           </span>
                         </Link>
                       </td>
@@ -784,7 +799,7 @@ export default function HomePage() {
                           </span>
                         </span>
                       </td>
-                      <td className="tabular px-4 py-2.5 text-end text-ink">{fmt(leadsBySlug.get(row.slug) ?? 0)}</td>
+                      <td className="tabular px-4 py-2.5 text-end text-ink">{fmt((row.slug && leadsBySlug.get(row.slug)) || 0)}</td>
                     </tr>
                   );
                 })}
@@ -794,7 +809,7 @@ export default function HomePage() {
         </section>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="v-card">
           <PanelHeader title={t('activity.title')} />
           {auditLogs.length === 0 ? (
@@ -807,9 +822,15 @@ export default function HomePage() {
                     <Icon name={auditIcon(log.action)} size={13} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] text-ink">{humanizeAction(log.action)}</span>
-                    <span className="block truncate text-[12px] text-faint">
-                      {[log.actor?.name || log.actor?.email, log.targetType].filter(Boolean).join(' · ')}
+                    <span className="block truncate text-[13.5px] text-ink">
+                      <span className="font-medium">{log.actor ? log.actor.name || log.actor.email : t('teams:activity.system')}</span>{' '}
+                      <span className="text-muted">{t(`teams:activity.actions.${log.action.replace('.', '_')}`, { defaultValue: humanizeAction(log.action) })}</span>
+                      {typeof (log.metadata?.email ?? log.metadata?.name) === 'string' && (
+                        <>
+                          {' '}
+                          <span dir="auto">{(log.metadata?.email ?? log.metadata?.name) as string}</span>
+                        </>
+                      )}
                     </span>
                   </span>
                   <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(log.createdAt, locale)}</span>

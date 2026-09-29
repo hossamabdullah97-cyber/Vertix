@@ -175,7 +175,8 @@ export class AnalyticsService {
     const slugById = new Map(cards.map((c) => [c.id, c.slug]));
     return grouped.map((g) => ({
       cardId: g.cardId,
-      slug: slugById.get(g.cardId!) ?? '(deleted)',
+      // null: the card has since been deleted (the page says so in its language).
+      slug: slugById.get(g.cardId!) ?? null,
       events: g._count._all,
     }));
   }
@@ -240,7 +241,7 @@ export class AnalyticsService {
       const tag = tagById.get(g.tagId!);
       return {
         tagId: g.tagId,
-        uid: tag?.uid ?? '(deleted)',
+        uid: tag?.uid ?? null,
         hardwareType: tag?.hardwareType ?? null,
         holder: tag?.assignedUser
           ? {

@@ -11,7 +11,8 @@ import { PanelEmpty, PanelHeader } from './parts';
 
 interface ChipRow {
   tagId: string;
-  uid: string;
+  /** null when the chip has since been deleted. */
+  uid: string | null;
   hardwareType: string | null;
   holder: { id: string; name: string | null; email: string } | null;
   cardSlug: string | null;
@@ -64,7 +65,7 @@ export function ChipsView({ from }: { from: Date }) {
         <PanelHeader
           title={t('chips.title')}
           action={
-            <Link href="/tags" className="text-[12.5px] font-medium text-accent hover:underline">
+            <Link href="/tags" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
               {t('chips.manage')}
             </Link>
           }
@@ -91,9 +92,13 @@ export function ChipsView({ from }: { from: Date }) {
                 {rows.map((r) => (
                   <tr key={r.tagId}>
                     <td>
-                      <span dir="ltr" className="block font-mono text-[12.5px] text-ink rtl:text-right">
-                        {r.uid}
-                      </span>
+                      {r.uid ? (
+                        <span dir="ltr" className="block font-mono text-[12.5px] text-ink rtl:text-right">
+                          {r.uid}
+                        </span>
+                      ) : (
+                        <span className="block text-[12.5px] text-faint">{t('deletedChip')}</span>
+                      )}
                       {r.hardwareType && <span className="block text-[12px] text-faint">{t(`nfc:hardwareType.${r.hardwareType.toLowerCase()}`, r.hardwareType)}</span>}
                     </td>
                     <td className="hidden text-muted md:table-cell">{r.holder ? r.holder.name || r.holder.email : '—'}</td>

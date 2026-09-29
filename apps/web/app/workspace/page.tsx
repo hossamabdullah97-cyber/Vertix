@@ -258,7 +258,7 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
       <Row title={t('general.plan')} hint={t('general.planHint')}>
         <div className="flex flex-wrap items-center gap-3">
           <span className="v-badge v-badge-neutral">{t(`plans.${org.plan}`, org.plan)}</span>
-          <Link href="/billing" className="text-[13px] font-medium text-accent hover:underline">
+          <Link href="/billing" className="v-hit text-[13px] font-medium text-accent hover:underline">
             {t('general.billing')}
           </Link>
         </div>

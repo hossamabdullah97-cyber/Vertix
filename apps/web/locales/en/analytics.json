@@ -111,5 +111,7 @@
     "bySource": "Where they came from",
     "byTemperature": "How warm they are",
     "noStage": "No stage"
-  }
+  },
+  "deletedCard": "A deleted card",
+  "deletedChip": "A deleted chip"
 }

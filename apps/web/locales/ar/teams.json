@@ -402,7 +402,8 @@
       "crm_sync_now": "شغّل مزامنة CRM",
       "occasion_created": "أضاف المناسبة",
       "occasion_updated": "عدّل المناسبة",
-      "occasion_deleted": "حذف المناسبة"
+      "occasion_deleted": "حذف المناسبة",
+      "members_imported": "استورد أشخاصاً من ملف"
     }
   }
 }

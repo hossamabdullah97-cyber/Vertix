@@ -135,5 +135,7 @@
     "bySource": "من أين جاؤوا",
     "byTemperature": "مدى اهتمامهم",
     "noStage": "بلا مرحلة"
-  }
+  },
+  "deletedCard": "بطاقة محذوفة",
+  "deletedChip": "شريحة محذوفة"
 }

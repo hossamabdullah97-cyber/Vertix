@@ -97,6 +97,7 @@ type PaletteItem = {
 export default function AppShell({
   title,
   action,
+  mobileTitle = true,
   children,
   fluid = false,
   bleed = false,
@@ -108,6 +109,8 @@ export default function AppShell({
   fluid?: boolean;
   /** Drop the content padding and width cap so the page can lay out edge to edge. */
   bleed?: boolean;
+  /** Show the title row on phones. Pages whose first line is already a heading (Home) turn it off. */
+  mobileTitle?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -897,7 +900,7 @@ export default function AppShell({
             </div>
           </header>
 
-          {(title || action) && (
+          {mobileTitle && (title || action) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">
               <h1 className="flex min-w-0 items-center gap-2 text-[20px] font-semibold tracking-tight text-ink">{title}</h1>
               {action}

@@ -281,7 +281,7 @@ export function PublicProfile({
 
         <footer className="mt-12 flex items-center justify-center gap-1.5 text-[12px] text-[var(--p-faint)]">
           {t.poweredBy}
-          <a href="/" onClick={guard} className="flex items-center gap-1 font-medium text-[var(--p-muted)]">
+          <a href="/" onClick={guard} className="v-hit flex items-center gap-1 font-medium text-[var(--p-muted)]">
             <VMark size={12} strokeWidth={3} />
             Vertex Connect
           </a>

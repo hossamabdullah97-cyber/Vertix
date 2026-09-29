@@ -41,7 +41,8 @@ const METRICS: Metric[] = ['VIEW', 'CLICK', 'SAVE', 'NFC_SCAN', 'LEADS'];
 
 interface TopCard {
   cardId: string;
-  slug: string;
+  /** null when the card has since been deleted. */
+  slug: string | null;
   events: number;
 }
 interface Referrer {
@@ -405,7 +406,7 @@ function OverviewView({
           <PanelHeader
             title={t('topCards.title')}
             action={
-              <button onClick={() => onView('cards')} className="text-[12.5px] font-medium text-accent hover:underline">
+              <button onClick={() => onView('cards')} className="v-hit text-[12.5px] font-medium text-accent hover:underline">
                 {t('topCards.all')}
               </button>
             }
@@ -422,11 +423,11 @@ function OverviewView({
                   label: (
                     <span className="flex min-w-0 items-center gap-2.5">
                       {card && <CardThumb card={card} />}
-                      <span className="truncate">{card ? cardName(card) : `/c/${row.slug}`}</span>
+                      <span className="truncate">{card ? cardName(card) : row.slug ? `/c/${row.slug}` : t('deletedCard')}</span>
                     </span>
                   ),
                   value: row.events,
-                  aside: t('topCards.leads', { count: periodLeads.filter((l) => l.card?.slug === row.slug).length }),
+                  aside: t('topCards.leads', { count: row.slug ? periodLeads.filter((l) => l.card?.slug === row.slug).length : 0 }),
                 };
               })}
             />
