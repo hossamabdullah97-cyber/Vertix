@@ -36,6 +36,7 @@ function setup(opts: { counts?: Record<string, number>; theme?: unknown; booked?
     new ConfigService({ DEFAULT_TIMEZONE: 'Africa/Cairo' }),
     throttle as never,
     alerts as never,
+    { send: jest.fn(async () => true) } as never,
   );
   return { service, db, throttle, counts, alerts };
 }

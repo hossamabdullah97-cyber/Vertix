@@ -258,5 +258,40 @@
     "quote": "Quote request",
     "share": "Shared link",
     "view": "Profile view"
+  },
+  "meeting": {
+    "title": "Meeting request",
+    "status": {
+      "PENDING": "Waiting for you",
+      "PASSED": "Time passed",
+      "ACCEPTED": "Accepted",
+      "DECLINED": "Declined"
+    },
+    "accept": "Accept",
+    "decline": "Decline",
+    "addToCalendar": "Add to my calendar",
+    "tellOnWhatsapp": "Tell them on WhatsApp",
+    "cancelMeeting": "Cancel meeting",
+    "acceptAfterAll": "Accept after all",
+    "yourReply": "Your reply:",
+    "messageLabel": "A message for {{name}} (optional)",
+    "acceptPlaceholder": "e.g. See you at our office, second floor.",
+    "declinePlaceholder": "e.g. I'm travelling that day. Any time next week works.",
+    "noEmailHint": "No email on this lead, so nothing is sent. You can tell them on WhatsApp after.",
+    "confirmAccept": "Accept and send",
+    "confirmDecline": "Decline and send",
+    "cancel": "Back",
+    "sending": "Sending…",
+    "acceptedEmailed": "Accepted. A confirmation and calendar invite went to {{email}}.",
+    "acceptedNoEmail": "Accepted. This lead left no email, so let them know yourself.",
+    "declinedEmailed": "Declined. {{email}} got a note with a link to choose another time.",
+    "declinedNoEmail": "Declined. This lead left no email, so let them know yourself.",
+    "waAccepted": "Hi {{name}}, your meeting on {{when}} is confirmed. See you then.",
+    "waDeclined": "Hi {{name}}, I can't make {{when}}. Could you pick another time from my card?",
+    "errors": {
+      "passed": "This time has already passed.",
+      "taken": "Someone else asked for this time since you declined it.",
+      "generic": "That didn't go through. Try again."
+    }
   }
 }
