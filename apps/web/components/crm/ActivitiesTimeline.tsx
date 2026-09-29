@@ -33,7 +33,7 @@ export function ActivitiesTimeline({
   const activities = useMemo(() => {
     const list: FlatActivity[] = [];
     for (const l of leads) {
-      const valuePart = l.value > 0 ? t('activity.dealValue', { value: formatMoney(l.value) }) : '';
+      const valuePart = l.value > 0 ? t('activity.dealValue', { value: formatMoney(l.value, locale) }) : '';
       list.push({
         id: `create-${l.id}`,
         type: 'SCAN',

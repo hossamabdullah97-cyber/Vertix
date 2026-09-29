@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import type { UsageSummary } from '@vertex/shared';
 import {
   authFetch,
   getActiveOrgId,
   getToken,
   inviteMember,
+  PlanLimitError,
   type Card,
   type Me,
   type Member,
@@ -691,10 +693,19 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
   const [role, setRole] = useState<Role>('EMPLOYEE');
   const [teamId, setTeamId] = useState('');
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ tone: 'ok' | 'warn' | 'error'; text: string } | null>(null);
+  const [result, setResult] = useState<{ tone: 'ok' | 'warn' | 'error'; text: string; upgrade?: boolean } | null>(null);
+  // Every seat taken: say so before the form is filled in, not after.
+  const [full, setFull] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) setResult(null);
+    if (!open) return;
+    setResult(null);
+    authFetch<UsageSummary>('/billing/subscription')
+      .then((u) => {
+        const limit = u.limits.members;
+        setFull(limit !== null && u.usage.members >= limit ? new PlanLimitError({ resource: 'members', limit, plan: u.plan }).message : null);
+      })
+      .catch(() => setFull(null));
   }, [open]);
 
   async function submit(e: React.FormEvent) {
@@ -709,7 +720,7 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
       setName('');
       onInvited();
     } catch (err) {
-      setResult({ tone: 'error', text: (err as Error).message });
+      setResult({ tone: 'error', text: (err as Error).message, upgrade: err instanceof PlanLimitError });
     } finally {
       setBusy(false);
     }
@@ -718,6 +729,7 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
   return (
     <Sheet open={open} onClose={onClose} closeLabel={t('actions.close')} title={t('invite.title')} subtitle={t('invite.subtitle')}>
       <form onSubmit={submit} className="space-y-4">
+        {full && <PlanLimitNotice text={full} />}
         <label className="block">
           <span className="mb-1.5 block text-[12.5px] text-muted">{t('invite.email')}</span>
           <input type="email" dir="ltr" required className="v-field rtl:text-right" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
@@ -745,10 +757,10 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
             </select>
           </label>
         )}
-        <button disabled={busy || !email.trim()} className="v-btn w-full disabled:opacity-60">
+        <button disabled={busy || !email.trim() || !!full} className="v-btn w-full disabled:opacity-60">
           {busy ? t('invite.sending') : t('invite.send')}
         </button>
-        {result && (
+        {result?.upgrade ? <PlanLimitNotice text={result.text} /> : result && (
           <p
             role={result.tone === 'error' ? 'alert' : 'status'}
             className={`rounded-lg px-3 py-2.5 text-[13px] ring-1 ring-inset ${
@@ -764,5 +776,18 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
         )}
       </form>
     </Sheet>
+  );
+}
+
+/** The plan is full: what that means, and the way to more room. */
+function PlanLimitNotice({ text }: { text: string }) {
+  const { t } = useTranslation('common');
+  return (
+    <div role="alert" className="rounded-lg bg-amber-500/[0.06] px-3 py-2.5 text-[13px] text-amber-800 ring-1 ring-inset ring-amber-500/25 dark:text-amber-300">
+      <p>{text}</p>
+      <Link href="/billing" className="mt-1.5 inline-flex min-h-11 items-center font-medium text-ink underline-offset-2 hover:underline sm:min-h-0">
+        {t('planLimit.upgrade')}
+      </Link>
+    </div>
   );
 }

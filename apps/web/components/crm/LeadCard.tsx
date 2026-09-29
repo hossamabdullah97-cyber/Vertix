@@ -85,7 +85,7 @@ export function LeadCard({
         {lead.value > 0 && (
           <>
             <span aria-hidden>·</span>
-            <span className="tabular shrink-0 font-medium text-ink">{formatMoney(lead.value)}</span>
+            <span className="tabular shrink-0 font-medium text-ink">{formatMoney(lead.value, locale)}</span>
           </>
         )}
         <span className="ms-auto shrink-0">{formatRelativeTime(lead.createdAt, locale, 'narrow')}</span>

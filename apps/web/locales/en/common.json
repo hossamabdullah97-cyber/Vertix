@@ -48,5 +48,17 @@
     "title": "Page not found",
     "body": "The link may be wrong, or the page has moved.",
     "home": "Go to dashboard"
+  },
+  "planLimit": {
+    "cards": "Your {{plan}} plan includes {{limit}} cards, and they are all in use. Upgrade to add more.",
+    "members": "Your {{plan}} plan includes {{limit}} people, and every seat is taken (pending invitations count too). Upgrade to add more.",
+    "nfcTags": "Your {{plan}} plan includes {{limit}} NFC chips, and they are all in use. Upgrade to add more.",
+    "upgrade": "See plans",
+    "plans": {
+      "FREE": "Free",
+      "PRO": "Pro",
+      "BUSINESS": "Business",
+      "ENTERPRISE": "Enterprise"
+    }
   }
 }

@@ -67,7 +67,7 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
       {/* Real KPIs */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="v-stat"><span className="v-stat-label">{t('reports.totalLeads')}</span><p className="v-stat-value mt-2 tabular-nums">{a.total}</p></div>
-        <div className="v-stat"><span className="v-stat-label">{t('reports.pipelineValue')}</span><p className="v-stat-value mt-2 truncate tabular-nums">{formatMoney(a.pipelineValue)}</p></div>
+        <div className="v-stat"><span className="v-stat-label">{t('reports.pipelineValue')}</span><p className="v-stat-value mt-2 truncate tabular-nums">{formatMoney(a.pipelineValue, locale)}</p></div>
         <div className="v-stat"><span className="v-stat-label">{t('reports.wonDeals')}</span><p className="v-stat-value mt-2 tabular-nums">{a.won}</p></div>
         <div className="v-stat"><span className="v-stat-label">{t('reports.conversion')}</span><p className="v-stat-value mt-2 tabular-nums">{a.conv}%</p></div>
       </div>
@@ -104,7 +104,7 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
               <div key={i} className="space-y-1">
                 <div className="flex items-center justify-between text-[11.5px] font-semibold">
                   <span className="text-ink">{f.stage}</span>
-                  <span className="text-muted">{f.count} · {formatMoney(f.value)}</span>
+                  <span className="text-muted">{f.count} · {formatMoney(f.value, locale)}</span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-canvas">
                   <motion.div

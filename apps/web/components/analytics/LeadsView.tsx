@@ -53,13 +53,13 @@ export function LeadsView({ leads, stages }: { leads: Lead[] | null; stages: Pip
           ·
         </span>
         {t('leads.summary.won', { count: won.length, value: fmt(won.length), pct: fmt(Math.round(shareOf(won.length, leads.length))) })}
-        {wonValue > 0 && ` (${formatMoney(wonValue)})`}
+        {wonValue > 0 && ` (${formatMoney(wonValue, locale)})`}
         {openValue > 0 && (
           <>
             <span className="mx-2 text-faint" aria-hidden>
               ·
             </span>
-            {t('leads.summary.open', { value: formatMoney(openValue) })}
+            {t('leads.summary.open', { value: formatMoney(openValue, locale) })}
           </>
         )}
       </p>
@@ -86,7 +86,7 @@ export function LeadsView({ leads, stages }: { leads: Lead[] | null; stages: Pip
                   </span>
                 ),
                 value: count,
-                aside: value > 0 ? formatMoney(value) : '',
+                aside: value > 0 ? formatMoney(value, locale) : '',
               })),
               ...(unstaged > 0 ? [{ key: 'none', label: t('leads.noStage'), value: unstaged, aside: '' }] : []),
             ]}

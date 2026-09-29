@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { Prisma } from '@vertex/db';
+import { Prisma, type TenantContext } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { WebhookService } from '../integrations/webhook.service';
 
@@ -80,12 +80,25 @@ export class AnalyticsService {
   }
 
   // -------- Reports (org-scoped; orgId passed explicitly for raw SQL safety) --------
+  //
+  // A member's reports cover their own cards and chips; anyone above sees the
+  // whole workspace. `mine` is the member's user id, or undefined for managers.
 
-  async overview(orgId: string, from: Date, to: Date) {
+  /** Whose reports these are: the member themself, or the whole workspace. */
+  static ownerOf(viewer: TenantContext): string | undefined {
+    return viewer.role === 'EMPLOYEE' ? viewer.userId : undefined;
+  }
+
+  /** The same limit in raw SQL, which bypasses the tenant extension. */
+  private ownCardsSql(mine?: string) {
+    return mine ? Prisma.sql`AND "cardId" IN (SELECT id FROM cards WHERE "ownerId" = ${mine})` : Prisma.empty;
+  }
+
+  async overview(orgId: string, from: Date, to: Date, mine?: string) {
     // Per-type counts via groupBy (orgId auto-injected by the tenant extension).
     const grouped = await this.db.event.groupBy({
       by: ['type'],
-      where: { createdAt: { gte: from, lte: to } },
+      where: { createdAt: { gte: from, lte: to }, ...(mine ? { card: { ownerId: mine } } : {}) },
       _count: { _all: true },
     });
 
@@ -100,10 +113,14 @@ export class AnalyticsService {
       WHERE "orgId" = ${orgId}
         AND "createdAt" >= ${from} AND "createdAt" <= ${to}
         AND "visitorId" IS NOT NULL
+        ${this.ownCardsSql(mine)}
     `);
 
     const leads = await this.db.lead.count({
-      where: { createdAt: { gte: from, lte: to } },
+      where: {
+        createdAt: { gte: from, lte: to },
+        ...(mine ? { OR: [{ assignedTo: mine }, { card: { ownerId: mine } }] } : {}),
+      },
     });
 
     return {
@@ -115,7 +132,7 @@ export class AnalyticsService {
     };
   }
 
-  async timeseries(orgId: string, from: Date, to: Date) {
+  async timeseries(orgId: string, from: Date, to: Date, mine?: string) {
     const rows = await this.db.$queryRaw<
       Array<{ day: Date; type: string; count: number }>
     >(Prisma.sql`
@@ -123,6 +140,7 @@ export class AnalyticsService {
       FROM events
       WHERE "orgId" = ${orgId}
         AND "createdAt" >= ${from} AND "createdAt" <= ${to}
+        ${this.ownCardsSql(mine)}
       GROUP BY day, type
       ORDER BY day ASC
     `);
@@ -142,7 +160,10 @@ export class AnalyticsService {
   }
 
   /** Lifetime event counts for a single card, keyed by event type. */
-  async cardStats(cardId: string) {
+  async cardStats(cardId: string, mine?: string) {
+    if (mine && !(await this.db.card.findFirst({ where: { id: cardId, ownerId: mine }, select: { id: true } }))) {
+      throw new NotFoundException('Card not found');
+    }
     const grouped = await this.db.event.groupBy({
       by: ['type'],
       where: { cardId },
@@ -159,10 +180,10 @@ export class AnalyticsService {
     return counts;
   }
 
-  async topCards(from: Date, to: Date, limit = 5) {
+  async topCards(from: Date, to: Date, limit = 5, mine?: string) {
     const grouped = await this.db.event.groupBy({
       by: ['cardId'],
-      where: { createdAt: { gte: from, lte: to }, cardId: { not: null } },
+      where: { createdAt: { gte: from, lte: to }, cardId: { not: null }, ...(mine ? { card: { ownerId: mine } } : {}) },
       _count: { _all: true },
       orderBy: { _count: { cardId: 'desc' } },
       take: limit,
@@ -188,10 +209,14 @@ export class AnalyticsService {
    * Visitors are counted distinctly rather than as taps, because a chip tapped
    * twenty times by its own owner has reached one person, not twenty.
    */
-  async tagPerformance(from: Date, to: Date, limit = 50) {
+  async tagPerformance(from: Date, to: Date, limit = 50, mine?: string) {
+    // A member's chips are the ones handed to them.
+    const own = mine
+      ? (await this.db.nfcTag.findMany({ where: { assignedUserId: mine }, select: { id: true } })).map((t) => t.id)
+      : null;
     const scans = await this.db.event.groupBy({
       by: ['tagId'],
-      where: { createdAt: { gte: from, lte: to }, tagId: { not: null }, type: 'NFC_SCAN' },
+      where: { createdAt: { gte: from, lte: to }, tagId: own ? { in: own } : { not: null }, type: 'NFC_SCAN' },
       _count: { _all: true },
       orderBy: { _count: { tagId: 'desc' } },
       take: limit,
@@ -270,9 +295,10 @@ export class AnalyticsService {
    * Ordered by clients won, then clients, then people reached: a member whose
    * chip is tapped constantly but closes nothing should not lead the table.
    */
-  async memberPerformance(orgId: string, from: Date, to: Date) {
+  async memberPerformance(orgId: string, from: Date, to: Date, mine?: string) {
+    // A member sees their own line, not how colleagues are doing.
     const tags = await this.db.nfcTag.findMany({
-      where: { assignedUserId: { not: null } },
+      where: { assignedUserId: mine ?? { not: null } },
       select: {
         id: true,
         assignedUserId: true,
@@ -370,10 +396,10 @@ export class AnalyticsService {
     );
   }
 
-  async referrers(from: Date, to: Date, limit = 6) {
+  async referrers(from: Date, to: Date, limit = 6, mine?: string) {
     const grouped = await this.db.event.groupBy({
       by: ['referrer'],
-      where: { createdAt: { gte: from, lte: to } },
+      where: { createdAt: { gte: from, lte: to }, ...(mine ? { card: { ownerId: mine } } : {}) },
       _count: { _all: true },
       orderBy: { _count: { referrer: 'desc' } },
       take: limit,

@@ -4,8 +4,9 @@ import { buildIcs, googleCalendarLink, type CalendarEvent } from './ics';
 import { meetingReplyEmail } from './meeting-mail';
 import { ConfigService } from '@nestjs/config';
 import type { AddLeadActivityInput, CreateLeadInput, LeadCaptureInput, MeetingResponseInput } from '@vertex/shared';
-import type { TenantContext } from '@vertex/db';
+import type { Prisma, TenantContext } from '@vertex/db';
 import { CardScanError, CardScanner } from './card-scan';
+import { leadsVisibleTo } from './lead-visibility';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LeadAlertsService } from '../notifications/lead-alerts.service';
@@ -264,9 +265,14 @@ export class LeadsService {
     }
   }
 
-  /** Org-scoped lead list (orgId auto-injected). */
-  list() {
+  visibleTo(viewer: TenantContext): Prisma.LeadWhereInput {
+    return leadsVisibleTo(viewer);
+  }
+
+  /** The org's leads this person may see (orgId auto-injected), newest first. */
+  list(viewer: TenantContext) {
     return this.db.lead.findMany({
+      where: this.visibleTo(viewer),
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -286,9 +292,9 @@ export class LeadsService {
   }
 
   /** Full lead detail with its activity history (org-scoped, newest first). */
-  async findOne(id: string) {
+  async findOne(viewer: TenantContext, id: string) {
     const lead = await this.db.lead.findFirst({
-      where: { id },
+      where: { id, ...this.visibleTo(viewer) },
       select: {
         id: true,
         name: true,
@@ -313,8 +319,8 @@ export class LeadsService {
   }
 
   /** Append a user-logged activity (note / call / email / meeting) to a lead. */
-  async addActivity(id: string, input: AddLeadActivityInput) {
-    const lead = await this.db.lead.findFirst({ where: { id }, select: { id: true } });
+  async addActivity(viewer: TenantContext, id: string, input: AddLeadActivityInput) {
+    const lead = await this.db.lead.findFirst({ where: { id, ...this.visibleTo(viewer) }, select: { id: true } });
     if (!lead) throw new NotFoundException('Lead not found');
     return this.db.leadActivity.create({
       data: {
@@ -330,9 +336,9 @@ export class LeadsService {
    * The meeting a visitor asked for through a card's form, with what is
    * needed to answer it. Owner-logged meetings are notes, not requests.
    */
-  private async meetingRequest(id: string) {
+  private async meetingRequest(viewer: TenantContext, id: string) {
     const lead = await this.db.lead.findFirst({
-      where: { id },
+      where: { id, ...this.visibleTo(viewer) },
       select: {
         id: true,
         name: true,
@@ -395,8 +401,9 @@ export class LeadsService {
    * book again. Changing one's mind is allowed; taking back a time someone
    * else has since asked for is not.
    */
-  async respondToMeeting(id: string, input: MeetingResponseInput, userId: string) {
-    const m = await this.meetingRequest(id);
+  async respondToMeeting(viewer: TenantContext, id: string, input: MeetingResponseInput) {
+    const userId = viewer.userId;
+    const m = await this.meetingRequest(viewer, id);
     const status = input.decision === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED';
     if (m.meta.status === status) throw new ConflictException(status === 'ACCEPTED' ? 'Already accepted' : 'Already declined');
     if (status === 'ACCEPTED') {
@@ -456,8 +463,8 @@ export class LeadsService {
   }
 
   /** The accepted (or asked-for) meeting as a calendar file, for the owner. */
-  async meetingIcs(id: string): Promise<string> {
-    return buildIcs(this.meetingEvent(await this.meetingRequest(id)));
+  async meetingIcs(viewer: TenantContext, id: string): Promise<string> {
+    return buildIcs(this.meetingEvent(await this.meetingRequest(viewer, id)));
   }
 
   private scanner(): CardScanner | null {
@@ -536,10 +543,11 @@ export class LeadsService {
 
   /** Move a lead across the pipeline / update its temperature. */
   async update(
+    viewer: TenantContext,
     id: string,
     input: { stageId?: string | null; temperature?: string; value?: number; name?: string | null; email?: string | null; phone?: string | null; company?: string | null },
   ) {
-    const lead = await this.db.lead.findFirst({ where: { id }, select: { id: true, stageId: true, orgId: true } });
+    const lead = await this.db.lead.findFirst({ where: { id, ...this.visibleTo(viewer) }, select: { id: true, stageId: true, orgId: true } });
     if (!lead) throw new NotFoundException('Lead not found');
 
     // A caller-supplied stageId must belong to the active org's pipeline —

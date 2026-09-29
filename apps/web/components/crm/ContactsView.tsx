@@ -63,7 +63,7 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: tm.dot }} /> {t(`temperature.${l.temperature.toLowerCase()}`)}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 font-semibold tabular-nums text-emerald-600">{l.value > 0 ? formatMoney(l.value) : '—'}</td>
+                  <td className="px-4 py-2.5 font-semibold tabular-nums text-emerald-600">{l.value > 0 ? formatMoney(l.value, locale) : '—'}</td>
                   <td className="whitespace-nowrap px-4 py-2.5 text-[11.5px] text-faint">{formatRelativeTime(l.createdAt, locale, 'narrow')}</td>
                 </tr>
               );

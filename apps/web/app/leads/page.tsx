@@ -256,7 +256,7 @@ export default function LeadsPage() {
       <p className="text-[14px] text-muted">
         <span className="font-medium text-ink">{t('summary.open', { count: summary.open })}</span>
         <span className="mx-2 text-faint" aria-hidden>·</span>
-        {t('summary.pipeline', { value: formatMoney(summary.pipeline) })}
+        {t('summary.pipeline', { value: formatMoney(summary.pipeline, locale) })}
         <span className="mx-2 text-faint" aria-hidden>·</span>
         {t('summary.won', { pct: summary.wonPct })}
       </p>
@@ -386,7 +386,7 @@ export default function LeadsPage() {
                         <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: stage.color || 'hsl(var(--v-faint))' }} />
                         <h3 className="truncate text-[13px] font-medium text-ink">{t(stageKey(stage.name), stage.name)}</h3>
                         <span className="tabular text-[12px] text-faint">{items.length}</span>
-                        {colValue > 0 && <span className="tabular ms-auto text-[12px] text-faint">{formatMoney(colValue)}</span>}
+                        {colValue > 0 && <span className="tabular ms-auto text-[12px] text-faint">{formatMoney(colValue, locale)}</span>}
                       </header>
 
                       <div className="no-scrollbar flex min-h-[80px] flex-1 flex-col gap-2 overflow-y-auto p-0.5">
@@ -585,7 +585,7 @@ function LeadTable({ leads, stages, onOpen, selected }: { leads: Lead[]; stages:
                       {t(`sources.${l.source}`, src.label)}
                     </span>
                   </td>
-                  <td className="tabular text-end text-ink">{l.value ? formatMoney(l.value) : '—'}</td>
+                  <td className="tabular text-end text-ink">{l.value ? formatMoney(l.value, locale) : '—'}</td>
                   <td className="whitespace-nowrap text-faint">{formatRelativeTime(l.createdAt, locale, 'narrow')}</td>
                 </tr>
               );

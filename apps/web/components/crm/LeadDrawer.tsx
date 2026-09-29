@@ -372,7 +372,7 @@ function DrawerBody({
 
               <dt className="text-faint">{t('drawer.dealValue')}</dt>
               <dd className="flex items-center gap-1.5">
-                <span className="shrink-0 text-muted">{currencyLabel()}</span>
+                <span className="shrink-0 text-muted">{currencyLabel(locale)}</span>
                 <input
                   type="number"
                   min={0}
