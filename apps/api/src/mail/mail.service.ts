@@ -5,6 +5,9 @@ interface SendArgs {
   to: string;
   subject: string;
   html: string;
+  /** Where replies go, e.g. the card owner rather than our no-reply address. */
+  replyTo?: string;
+  attachments?: { filename: string; content: string; contentType: string }[];
 }
 
 /**
@@ -33,10 +36,10 @@ export class MailService {
    * caller decides what to tell the end user; this layer never leaks
    * provider/network detail beyond its own logs.
    */
-  async send({ to, subject, html }: SendArgs): Promise<boolean> {
+  async send({ to, subject, html, replyTo, attachments }: SendArgs): Promise<boolean> {
     const key = this.config.get<string>('RESEND_API_KEY');
     if (!key) {
-      this.logger.log(`[DEV EMAIL] to=${to} | ${subject}`);
+      this.logger.log(`[DEV EMAIL] to=${to} | ${subject}${attachments?.length ? ` | attached: ${attachments.map((a) => a.filename).join(', ')}` : ''}`);
       this.logLink('DEV EMAIL', to, html);
       return true; // no provider configured is a deliberate local-dev state, not a failure
     }
@@ -47,7 +50,22 @@ export class MailService {
           Authorization: `Bearer ${key}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ from: this.from, to, subject, html }),
+        body: JSON.stringify({
+          from: this.from,
+          to,
+          subject,
+          html,
+          ...(replyTo ? { reply_to: replyTo } : {}),
+          ...(attachments?.length
+            ? {
+                attachments: attachments.map((a) => ({
+                  filename: a.filename,
+                  content: Buffer.from(a.content).toString('base64'),
+                  content_type: a.contentType,
+                })),
+              }
+            : {}),
+        }),
       });
       if (!res.ok) {
         this.logger.error(`Email send failed (${res.status}): ${await res.text()}`);

@@ -467,6 +467,13 @@ export const leadAlertSettingsSchema = z
   .partial();
 export type LeadAlertSettingsInput = z.infer<typeof leadAlertSettingsSchema>;
 
+// The card owner's answer to a visitor's meeting request.
+export const meetingResponseSchema = z.object({
+  decision: z.enum(['ACCEPT', 'DECLINE']),
+  message: z.string().trim().max(1000).optional(),
+});
+export type MeetingResponseInput = z.infer<typeof meetingResponseSchema>;
+
 // A user-logged CRM activity on a lead (note / call / email / meeting).
 export const addLeadActivitySchema = z.object({
   type: z.enum(['NOTE', 'CALL', 'EMAIL', 'MEETING']),

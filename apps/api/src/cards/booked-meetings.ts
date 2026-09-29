@@ -9,7 +9,8 @@ interface Db {
 
 /**
  * The times already asked for on a card: meeting requests from its exchange
- * form (kept on the lead's activity), from leads that still exist. Requests
+ * form (kept on the lead's activity), from leads that still exist, unless
+ * the owner declined them. Requests
  * can be made up to two weeks ahead, so older activity cannot matter.
  */
 export async function bookedMeetings(db: Db, cardId: string, now: Date): Promise<Date[]> {
@@ -20,7 +21,10 @@ export async function bookedMeetings(db: Db, cardId: string, now: Date): Promise
   });
   const out: Date[] = [];
   for (const r of rows) {
-    const at = (r.metadata as Record<string, unknown> | null)?.meetingAt;
+    const meta = r.metadata as Record<string, unknown> | null;
+    // A declined request gives its time back.
+    if (meta?.status === 'DECLINED') continue;
+    const at = meta?.meetingAt;
     const d = typeof at === 'string' ? new Date(at) : null;
     if (d && !Number.isNaN(d.getTime()) && d.getTime() >= now.getTime()) out.push(d);
   }

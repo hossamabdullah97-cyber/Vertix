@@ -120,6 +120,28 @@ async function withSession(send: (token: string | null) => Promise<Response>): P
   return res;
 }
 
+/** Downloads a file the API serves only to a signed-in person, under `filename`. */
+export async function authDownload(path: string, filename: string): Promise<void> {
+  const orgId = getActiveOrgId();
+  const res = await withSession((token) =>
+    fetch(`${API_URL}${path}`, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(orgId ? { 'x-organization-id': orgId } : {}),
+      },
+    }),
+  );
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /** Authenticated fetch against the API. An expired session is renewed; one that cannot be ends in /login. */
 export async function authFetch<T>(
   path: string,

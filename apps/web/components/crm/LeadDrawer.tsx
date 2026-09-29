@@ -26,6 +26,7 @@ import {
   dueMeta,
 } from '@/lib/crm';
 import { Heat } from './LeadCard';
+import { MeetingRequest, meetingRequestOf } from './MeetingRequest';
 
 const TEMPS: Temp[] = ['COLD', 'WARM', 'HOT'];
 
@@ -239,6 +240,7 @@ function DrawerBody({
   }
 
   const openTasks = tasks.filter((tk) => !tk.completed).length;
+  const meetingRequest = meetingRequestOf(activities);
 
   return (
     <>
@@ -292,6 +294,14 @@ function DrawerBody({
                 </a>
               ))}
             </div>
+          )}
+
+          {!loadingLog && meetingRequest && (
+            <MeetingRequest
+              lead={lead}
+              request={meetingRequest}
+              onChange={(updated) => setActivities((list) => list.map((a) => (a.id === updated.id ? updated : a)))}
+            />
           )}
         </div>
 

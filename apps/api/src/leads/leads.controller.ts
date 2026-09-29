@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Ip,
   Param,
   Patch,
@@ -11,9 +12,13 @@ import {
 import {
   addLeadActivitySchema,
   leadCaptureSchema,
+  meetingResponseSchema,
   type AddLeadActivityInput,
+  type JwtPayload,
   type LeadCaptureInput,
+  type MeetingResponseInput,
 } from '@vertex/shared';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { LeadsService } from './leads.service';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { Public } from '../auth/decorators/public.decorator';
@@ -64,6 +69,28 @@ export class LeadsController {
     @Body(new ZodValidationPipe(addLeadActivitySchema)) body: AddLeadActivityInput,
   ) {
     return this.leads.addActivity(id, body);
+  }
+
+  /** Accept or decline the meeting a visitor asked for; the visitor is emailed. */
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Post(':id/meeting')
+  respondToMeeting(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(meetingResponseSchema)) body: MeetingResponseInput,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.leads.respondToMeeting(id, body, user.sub);
+  }
+
+  /** The meeting as a calendar file, to add to one's own calendar. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get(':id/meeting.ics')
+  @Header('Content-Type', 'text/calendar; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="meeting.ics"')
+  meetingIcs(@Param('id') id: string) {
+    return this.leads.meetingIcs(id);
   }
 
   @RequireScopes('crm:write')

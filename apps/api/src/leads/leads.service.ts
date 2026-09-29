@@ -1,6 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { MailService } from '../mail/mail.service';
+import { buildIcs, googleCalendarLink, type CalendarEvent } from './ics';
+import { meetingReplyEmail } from './meeting-mail';
 import { ConfigService } from '@nestjs/config';
-import type { AddLeadActivityInput, LeadCaptureInput } from '@vertex/shared';
+import type { AddLeadActivityInput, LeadCaptureInput, MeetingResponseInput } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LeadAlertsService } from '../notifications/lead-alerts.service';
@@ -28,6 +31,7 @@ export class LeadsService {
     private readonly config: ConfigService,
     private readonly throttle: AuthThrottleService,
     private readonly alerts: LeadAlertsService,
+    private readonly mail: MailService,
   ) {}
 
   private get db() {
@@ -310,6 +314,140 @@ export class LeadsService {
       },
       select: { id: true, type: true, metadata: true, createdAt: true },
     });
+  }
+
+  /**
+   * The meeting a visitor asked for through a card's form, with what is
+   * needed to answer it. Owner-logged meetings are notes, not requests.
+   */
+  private async meetingRequest(id: string) {
+    const lead = await this.db.lead.findFirst({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        cardId: true,
+        card: { select: { slug: true, theme: true, vcardData: true, owner: { select: { email: true, name: true } } } },
+        activities: {
+          where: { type: 'MEETING' },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, metadata: true, createdAt: true },
+        },
+      },
+    });
+    if (!lead) throw new NotFoundException('Lead not found');
+    const request = lead.activities.find((a) => {
+      const m = (a.metadata ?? {}) as Record<string, unknown>;
+      return typeof m.meetingAt === 'string' && !m.manual;
+    });
+    if (!request || !lead.card || !lead.cardId) throw new NotFoundException('This lead has no meeting request');
+    const meta = (request.metadata ?? {}) as Record<string, unknown>;
+    const theme = (lead.card.theme ?? {}) as Record<string, unknown>;
+    const vcard = (lead.card.vcardData ?? {}) as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+    const availability = availabilityOf(lead.card.theme, this.config.get<string>('DEFAULT_TIMEZONE'));
+    const base = (this.config.get<string>('APP_PUBLIC_URL') || 'http://localhost:3000').replace(/\/$/, '');
+    const ownerName = str(vcard.fullName) ?? lead.card.owner.name ?? lead.card.slug;
+    return {
+      lead,
+      request,
+      meta,
+      cardId: lead.cardId,
+      at: new Date(meta.meetingAt as string),
+      minutes: availability.length,
+      timezone: availability.timezone,
+      lang: (theme.lang === 'ar' ? 'ar' : 'en') as 'en' | 'ar',
+      ownerName,
+      ownerLine: [str(vcard.title), str(vcard.company)].filter(Boolean).join(' · ') || null,
+      ownerEmail: str(vcard.email) ?? lead.card.owner.email,
+      cardUrl: `${base}/c/${lead.card.slug}`,
+    };
+  }
+
+  private meetingEvent(m: Awaited<ReturnType<LeadsService['meetingRequest']>>): CalendarEvent {
+    const visitor = m.lead.name || m.lead.email || 'Visitor';
+    return {
+      uid: `${m.request.id}@vertex-connect`,
+      start: m.at,
+      minutes: m.minutes,
+      title: `${visitor} · ${m.ownerName}`,
+      description: typeof m.meta.note === 'string' && m.meta.note.trim() ? m.meta.note.trim() : undefined,
+      url: m.cardUrl,
+      organizer: { name: m.ownerName, email: m.ownerEmail },
+      attendee: { name: visitor, email: m.lead.email },
+    };
+  }
+
+  /**
+   * Accepts or declines a visitor's meeting request and tells the visitor by
+   * email, with a calendar invite when accepted. A declined time is free to
+   * book again. Changing one's mind is allowed; taking back a time someone
+   * else has since asked for is not.
+   */
+  async respondToMeeting(id: string, input: MeetingResponseInput, userId: string) {
+    const m = await this.meetingRequest(id);
+    const status = input.decision === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED';
+    if (m.meta.status === status) throw new ConflictException(status === 'ACCEPTED' ? 'Already accepted' : 'Already declined');
+    if (status === 'ACCEPTED') {
+      if (m.at.getTime() < Date.now()) throw new BadRequestException('This meeting time has passed');
+      const others = await this.db.leadActivity.findMany({
+        where: { type: 'MEETING', id: { not: m.request.id }, lead: { cardId: m.cardId, deletedAt: null } },
+        select: { metadata: true },
+      });
+      const taken = others.some((o) => {
+        const meta = (o.metadata ?? {}) as Record<string, unknown>;
+        return meta.status !== 'DECLINED' && typeof meta.meetingAt === 'string' && new Date(meta.meetingAt).getTime() === m.at.getTime();
+      });
+      if (taken) throw new ConflictException('Someone else has asked for this time since');
+    }
+
+    const metadata = {
+      ...m.meta,
+      status,
+      decidedAt: new Date().toISOString(),
+      decidedBy: userId,
+      reply: input.message?.trim() || null,
+    };
+    const activity = await this.db.leadActivity.update({
+      where: { id: m.request.id },
+      data: { metadata },
+      select: { id: true, type: true, metadata: true, createdAt: true },
+    });
+
+    let emailed = false;
+    if (m.lead.email) {
+      const event = this.meetingEvent(m);
+      const { subject, html } = meetingReplyEmail(
+        {
+          decision: status,
+          visitorName: m.lead.name || m.lead.email,
+          ownerName: m.ownerName,
+          ownerLine: m.ownerLine,
+          meetingAt: m.at,
+          minutes: m.minutes,
+          timezone: m.timezone,
+          message: input.message,
+          cardUrl: m.cardUrl,
+          calendarUrl: status === 'ACCEPTED' ? googleCalendarLink(event) : undefined,
+        },
+        m.lang,
+      );
+      emailed = await this.mail.send({
+        to: m.lead.email,
+        subject,
+        html,
+        replyTo: m.ownerEmail ?? undefined,
+        attachments: status === 'ACCEPTED' ? [{ filename: 'meeting.ics', content: buildIcs(event), contentType: 'text/calendar; charset=utf-8; method=PUBLISH' }] : undefined,
+      });
+    }
+
+    return { activity, emailed };
+  }
+
+  /** The accepted (or asked-for) meeting as a calendar file, for the owner. */
+  async meetingIcs(id: string): Promise<string> {
+    return buildIcs(this.meetingEvent(await this.meetingRequest(id)));
   }
 
   /** The org's pipeline stages (ordered). */
