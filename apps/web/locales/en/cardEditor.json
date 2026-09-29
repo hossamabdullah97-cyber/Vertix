@@ -41,8 +41,16 @@
     "subtitle": "Who you are, as the card shows it. Changes save as you type.",
     "fullName": "Full name",
     "fullNamePlaceholder": "Sarah Chen",
-    "jobTitle": "Title and company",
+    "jobTitle": "Job title",
     "jobTitlePlaceholder": "Product Designer",
+    "company": "Company",
+    "companyPlaceholder": "Vertex Build",
+    "location": "City",
+    "locationPlaceholder": "Cairo, Egypt",
+    "languages": "Languages",
+    "languagesPlaceholder": "Arabic, English",
+    "responseTime": "Usually replies within",
+    "responseTimePlaceholder": "a few hours",
     "phone": "Phone",
     "phonePlaceholder": "+201001234567",
     "email": "Email",
@@ -214,7 +222,7 @@
   },
   "design": {
     "title": "Design",
-    "subtitle": "Colour, light or dark, the cover and the card’s language. Changes save as you pick them.",
+    "subtitle": "Layout, colour, light or dark, the cover and the card’s language. Changes save as you pick them.",
     "accent": "Accent colour",
     "themeMode": "Appearance",
     "lightMode": "Light",
@@ -224,7 +232,35 @@
     "covers": {
       "solid": "Solid",
       "gradient": "Gradient",
-      "constellation": "Night sky"
+      "constellation": "Night sky",
+      "mesh": "Glow",
+      "lines": "Lines"
+    },
+    "layout": "Layout",
+    "layouts": {
+      "classic": {
+        "label": "Classic",
+        "desc": "Cover, then photo and name"
+      },
+      "centered": {
+        "label": "Centered",
+        "desc": "Everything on the middle line"
+      },
+      "spotlight": {
+        "label": "Spotlight",
+        "desc": "Your photo fills the top"
+      },
+      "minimal": {
+        "label": "Minimal",
+        "desc": "No cover; name and company first"
+      }
+    },
+    "autoMode": "Auto",
+    "autoHint": "The card follows each visitor’s phone: light by day, dark if their phone is dark.",
+    "coverImageWins": "Your cover image is shown instead. Remove it under Profile to use a pattern.",
+    "brand": {
+      "title": "Show the workspace logo and name",
+      "hint": "Beside the company on the card, from the workspace settings."
     }
   },
   "nfc": {

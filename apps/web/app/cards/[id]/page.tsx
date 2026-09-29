@@ -23,8 +23,9 @@ const LivePreview = nextDynamic(() => import('@/components/preview/LivePreview')
   loading: () => <div className="v-skeleton mx-auto h-[620px] w-[320px] rounded-[44px]" />,
 });
 import ShareCard from '@/components/ShareCard';
-import { LINK_STYLES, linkStyleOf, type LinkStyle } from '@/lib/profile';
+import { COVER_STYLES, LAYOUTS, LINK_STYLES, layoutOf, linkStyleOf, modeOf, type CoverStyle, type Layout, type LinkStyle, type ThemeMode } from '@/lib/profile';
 import { Toggle } from '@/components/ui/Toggle';
+import { shade } from '@/lib/color';
 import { PresenceBadge, useCardPresence } from '@/components/cards/Presence';
 import { Icon } from '@/components/Icon';
 import { ImageUpload } from '@/components/ImageUpload';
@@ -41,7 +42,7 @@ function identityPayload(
   slug: string,
   templateId: string,
   vcard: Record<string, string>,
-  theme: { accent: string; mode: string; cover: string; lang: string; links: LinkStyle; openInApp: boolean },
+  theme: { accent: string; mode: string; cover: string; lang: string; links: LinkStyle; openInApp: boolean; layout: Layout; brand: boolean },
 ) {
   return { slug, templateId, theme, vcardData: vcard };
 }
@@ -209,8 +210,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [templateId, setTemplateId] = useState('');
   const [vcard, setVcard] = useState<Record<string, string>>({});
   const [accent, setAccent] = useState('#2563eb');
-  const [mode, setMode] = useState<'light' | 'dark'>('light');
-  const [cover, setCover] = useState<'gradient' | 'constellation' | 'solid'>('gradient');
+  const [mode, setMode] = useState<ThemeMode>('light');
+  const [cover, setCover] = useState<CoverStyle>('gradient');
+  const [layout, setLayout] = useState<Layout>('classic');
+  // The workspace's name and logo on the card.
+  const [showBrand, setShowBrand] = useState(true);
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const [linkStyle, setLinkStyle] = useState<LinkStyle>('list');
   // Teammates with this card open right now.
@@ -262,8 +266,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     const vc = (c.vcardData as Record<string, string>) ?? {};
     const th = (c.theme ?? {}) as Record<string, string>;
     const accentV = th.accent ?? '#2563eb';
-    const modeV = th.mode === 'dark' ? 'dark' : 'light';
-    const coverV = (th.cover as 'gradient' | 'constellation' | 'solid') ?? (modeV === 'dark' ? 'constellation' : 'gradient');
+    const modeV = modeOf(th.mode);
+    const coverV: CoverStyle = COVER_STYLES.includes(th.cover as CoverStyle) ? (th.cover as CoverStyle) : modeV === 'dark' ? 'constellation' : 'gradient';
+    const layoutV = layoutOf(th.layout);
+    const brandV = (th as Record<string, unknown>).brand !== false;
     const langV = (th.lang as 'en' | 'ar') === 'ar' ? 'ar' : 'en';
     const linksV = linkStyleOf(th.links);
     const inAppV = (th as Record<string, unknown>).openInApp === true;
@@ -274,13 +280,15 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     setAccent(accentV);
     setMode(modeV);
     setCover(coverV);
+    setLayout(layoutV);
+    setShowBrand(brandV);
     setLang(langV);
     setLinkStyle(linksV);
     setOpenInApp(inAppV);
     setSections([...(c.sections ?? [])].sort((a, b) => a.order - b.order));
     setActions([...(c.actions ?? [])].sort((a, b) => a.order - b.order));
     lastSavedRef.current = JSON.stringify(
-      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV, links: linksV, openInApp: inAppV }),
+      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV, links: linksV, openInApp: inAppV, layout: layoutV, brand: brandV }),
     );
   }, []);
 
@@ -318,7 +326,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   useEffect(() => {
     if (!loadedRef.current) return; // don't save before the first load lands
     if (suppressSaveRef.current) { suppressSaveRef.current = false; return; } // ignore server echoes
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand }));
     if (body === lastSavedRef.current) return; // nothing actually changed
     setAutoSaveStatus('Saving...');
     const handle = setTimeout(async () => {
@@ -333,7 +341,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       }
     }, 700);
     return () => clearTimeout(handle);
-  }, [slug, templateId, vcard, accent, mode, cover, lang, linkStyle, openInApp, id]);
+  }, [slug, templateId, vcard, accent, mode, cover, lang, linkStyle, openInApp, layout, showBrand, id]);
 
   // Load favorites & recentlyUsed from localStorage
   useEffect(() => {
@@ -390,7 +398,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
    * structural mutation pulls fresh server state, so nothing is lost).
    */
   const flushIdentity = async () => {
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand }));
     if (body === lastSavedRef.current) return;
     await authFetch(`/cards/${id}`, { method: 'PATCH', body });
     lastSavedRef.current = body;
@@ -453,7 +461,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const profileScore = useMemo(() => {
     let score = 20; // base profile creation
     if (vcard.fullName) score += 15;
-    if (vcard.org) score += 10;
+    if (vcard.title) score += 10;
     if (vcard.phone) score += 15;
     if (vcard.email) score += 15;
     if (sections.length > 0) score += 15;
@@ -805,9 +813,18 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     <Field label={t('profile.jobTitle')}>
                       <input
                         className="v-field"
-                        value={vcard.org ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, org: e.target.value })}
+                        value={vcard.title ?? ''}
+                        onChange={(e) => setVcard({ ...vcard, title: e.target.value })}
                         placeholder={t('profile.jobTitlePlaceholder')}
+                      />
+                    </Field>
+                    <Field label={t('profile.company')}>
+                      <input
+                        className="v-field"
+                        value={vcard.company ?? ''}
+                        onChange={(e) => setVcard({ ...vcard, company: e.target.value })}
+                        placeholder={t('profile.companyPlaceholder')}
+                        autoComplete="organization"
                       />
                     </Field>
                     <Field label={t('profile.phone')}>
@@ -826,6 +843,32 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         value={vcard.email ?? ''}
                         onChange={(e) => setVcard({ ...vcard, email: e.target.value })}
                         placeholder={t('profile.emailPlaceholder')}
+                      />
+                    </Field>
+                  </div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                    <Field label={t('profile.location')}>
+                      <input
+                        className="v-field"
+                        value={vcard.location ?? ''}
+                        onChange={(e) => setVcard({ ...vcard, location: e.target.value })}
+                        placeholder={t('profile.locationPlaceholder')}
+                      />
+                    </Field>
+                    <Field label={t('profile.languages')}>
+                      <input
+                        className="v-field"
+                        value={vcard.languages ?? ''}
+                        onChange={(e) => setVcard({ ...vcard, languages: e.target.value })}
+                        placeholder={t('profile.languagesPlaceholder')}
+                      />
+                    </Field>
+                    <Field label={t('profile.responseTime')}>
+                      <input
+                        className="v-field"
+                        value={vcard.responseTime ?? ''}
+                        onChange={(e) => setVcard({ ...vcard, responseTime: e.target.value })}
+                        placeholder={t('profile.responseTimePlaceholder')}
                       />
                     </Field>
                   </div>
@@ -1231,6 +1274,28 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               <StudioSection title={t('design.title')} description={t('design.subtitle')}>
                 <div className="space-y-8">
                   <div>
+                    <h3 id="design-layout" className="mb-3 text-[13px] font-medium text-ink">{t('design.layout')}</h3>
+                    <div role="radiogroup" aria-labelledby="design-layout" className="grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                      {LAYOUTS.map((l) => (
+                        <button
+                          key={l}
+                          type="button"
+                          role="radio"
+                          aria-checked={layout === l}
+                          onClick={() => setLayout(l)}
+                          className={`min-w-0 rounded-xl p-2.5 text-start transition-colors ${
+                            layout === l ? 'bg-accent/[0.05] ring-2 ring-inset ring-accent' : 'ring-1 ring-inset ring-line hover:bg-elevated'
+                          }`}
+                        >
+                          <LayoutSketch layout={l} accent={accent} />
+                          <span className="mt-2.5 block truncate text-[13px] font-medium text-ink">{t(`design.layouts.${l}.label`)}</span>
+                          <span className="block text-[12px] leading-snug text-faint">{t(`design.layouts.${l}.desc`)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
                     <h3 className="mb-3 text-[13px] font-medium text-ink">{t('design.accent')}</h3>
                     <div className="flex flex-wrap items-center gap-2.5">
                       {SWATCHES.map((c) => {
@@ -1267,38 +1332,43 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                   <div>
                     <h3 className="mb-3 text-[13px] font-medium text-ink">{t('design.themeMode')}</h3>
-                    <div className="grid max-w-md grid-cols-2 gap-3">
-                      {(['light', 'dark'] as const).map((m) => (
-                        <OptionCard key={m} selected={mode === m} onClick={() => setMode(m)} label={t(m === 'light' ? 'design.lightMode' : 'design.darkMode')}>
-                          <span className={`flex h-16 flex-col gap-1.5 rounded-md p-2.5 ${m === 'light' ? 'bg-white ring-1 ring-inset ring-black/10' : 'bg-[#141416]'}`}>
-                            <span className="h-2 w-10 rounded-full" style={{ background: accent }} />
-                            <span className={`h-1.5 w-16 rounded-full ${m === 'light' ? 'bg-black/15' : 'bg-white/20'}`} />
-                            <span className={`h-1.5 w-12 rounded-full ${m === 'light' ? 'bg-black/10' : 'bg-white/10'}`} />
+                    <div className="grid max-w-lg grid-cols-3 gap-3">
+                      {(['light', 'dark', 'auto'] as const).map((m) => (
+                        <OptionCard key={m} selected={mode === m} onClick={() => setMode(m)} label={t(`design.${m}Mode`)}>
+                          <span className="relative flex h-16 overflow-hidden rounded-md ring-1 ring-inset ring-black/10">
+                            {/* "Auto" shows both halves: it follows the visitor's phone. */}
+                            {(m === 'auto' ? (['light', 'dark'] as const) : [m]).map((half) => (
+                              <span key={half} className={`flex flex-1 flex-col gap-1.5 p-2.5 ${half === 'light' ? 'bg-white' : 'bg-[#141416]'}`}>
+                                <span className="h-2 w-10 max-w-full rounded-full" style={{ background: accent }} />
+                                <span className={`h-1.5 w-16 max-w-full rounded-full ${half === 'light' ? 'bg-black/15' : 'bg-white/20'}`} />
+                                <span className={`h-1.5 w-12 max-w-full rounded-full ${half === 'light' ? 'bg-black/10' : 'bg-white/10'}`} />
+                              </span>
+                            ))}
                           </span>
                         </OptionCard>
                       ))}
                     </div>
+                    {mode === 'auto' && <p className="mt-2 text-[12.5px] text-faint">{t('design.autoHint')}</p>}
                   </div>
 
                   <div>
                     <h3 className="mb-3 text-[13px] font-medium text-ink">{t('design.cover')}</h3>
-                    <div className="grid max-w-lg grid-cols-3 gap-3">
-                      {(['solid', 'gradient', 'constellation'] as const).map((type) => (
+                    <div className="grid max-w-2xl grid-cols-3 gap-3 sm:grid-cols-5">
+                      {COVER_STYLES.map((type) => (
                         <OptionCard key={type} selected={cover === type} onClick={() => setCover(type)} label={t(`design.covers.${type}`)}>
-                          <span
-                            className="block h-12 rounded-md ring-1 ring-inset ring-black/10"
-                            style={{
-                              background:
-                                type === 'solid'
-                                  ? accent
-                                  : type === 'gradient'
-                                    ? `linear-gradient(135deg, ${accent}, rgba(0,0,0,0.35))`
-                                    : 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px) 0 0 / 10px 10px, #0b0b10',
-                            }}
-                          />
+                          <CoverSwatch type={type} accent={accent} />
                         </OptionCard>
                       ))}
                     </div>
+                    {vcard.coverImage && <p className="mt-2 text-[12.5px] text-faint">{t('design.coverImageWins')}</p>}
+                  </div>
+
+                  <div className="flex max-w-2xl items-center justify-between gap-4 rounded-xl px-3.5 py-3 ring-1 ring-inset ring-line">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-medium text-ink">{t('design.brand.title')}</p>
+                      <p className="mt-0.5 text-[12px] leading-snug text-faint">{t('design.brand.hint')}</p>
+                    </div>
+                    <Toggle on={showBrand} onChange={() => setShowBrand((v) => !v)} label={t('design.brand.title')} />
                   </div>
 
                   <div>
@@ -1483,7 +1553,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 {
                   ...card,
                   vcardData: vcard,
-                  theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle, openInApp },
+                  theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand },
                 } as any
               }
               sections={sections}
@@ -1657,6 +1727,84 @@ function RowButton({
     >
       {children}
     </button>
+  );
+}
+
+/** A cover pattern in small, as the card draws it (see CoverArt). */
+function CoverSwatch({ type, accent }: { type: CoverStyle; accent: string }) {
+  const background =
+    type === 'solid'
+      ? accent
+      : type === 'gradient'
+        ? `linear-gradient(160deg, ${shade(accent, 18)}, ${accent} 45%, ${shade(accent, -40)})`
+        : type === 'mesh'
+          ? `radial-gradient(60% 90% at 12% 10%, ${shade(accent, 45)}, transparent 70%), radial-gradient(70% 100% at 95% 100%, ${shade(accent, -45)}, transparent 70%), ${accent}`
+          : type === 'lines'
+            ? `repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 1px, transparent 1px 7px), linear-gradient(160deg, ${shade(accent, 10)}, ${shade(accent, -30)})`
+            : 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px) 0 0 / 10px 10px, #0b0b10';
+  return <span className="block h-12 rounded-md ring-1 ring-inset ring-black/10" style={{ background }} />;
+}
+
+/** Where the photo, name and buttons sit, in small. */
+function LayoutSketch({ layout, accent }: { layout: Layout; accent: string }) {
+  const bar = (w: string, strong = false) => <span className={`block h-1.5 rounded-full ${strong ? 'bg-ink/60' : 'bg-ink/15'}`} style={{ width: w }} />;
+  const buttons = (
+    <span className="mt-2 grid grid-cols-2 gap-1">
+      <span className="h-2.5 rounded-[3px]" style={{ background: accent }} />
+      <span className="h-2.5 rounded-[3px] ring-1 ring-inset ring-ink/15" />
+    </span>
+  );
+  const photo = (size: number, extra = '') => (
+    <span className={`block shrink-0 rounded-full ring-2 ring-surface ${extra}`} style={{ width: size, height: size, background: shade(accent, -30) }} />
+  );
+  return (
+    <span className="block h-[104px] overflow-hidden rounded-lg bg-surface ring-1 ring-inset ring-line" aria-hidden>
+      {layout === 'classic' && (
+        <>
+          <span className="block h-7" style={{ background: accent }} />
+          <span className="block px-2">
+            {photo(20, '-mt-2.5')}
+            <span className="mt-1.5 block space-y-1">{bar('60%', true)}{bar('40%')}</span>
+            {buttons}
+          </span>
+        </>
+      )}
+      {layout === 'centered' && (
+        <>
+          <span className="block h-7" style={{ background: accent }} />
+          <span className="flex flex-col items-center px-2">
+            {photo(22, '-mt-3')}
+            <span className="mt-1.5 flex w-full flex-col items-center space-y-1">{bar('55%', true)}{bar('35%')}</span>
+            <span className="w-full">{buttons}</span>
+          </span>
+        </>
+      )}
+      {layout === 'spotlight' && (
+        <>
+          <span className="relative block h-[62px]" style={{ background: `linear-gradient(180deg, ${shade(accent, 20)}, ${shade(accent, -60)})` }}>
+            <span className="absolute bottom-1.5 start-2 block w-[70%] space-y-1">
+              <span className="block h-1.5 w-[70%] rounded-full bg-white/90" />
+              <span className="block h-1.5 w-[45%] rounded-full bg-white/50" />
+            </span>
+          </span>
+          <span className="block px-2">{buttons}</span>
+        </>
+      )}
+      {layout === 'minimal' && (
+        <span className="block px-2 pt-2">
+          <span className="flex items-center justify-between">
+            <span className="block h-1.5 w-8 rounded-full bg-ink/15" />
+            <span className="block h-2.5 w-2.5 rounded-full ring-1 ring-inset ring-ink/20" />
+          </span>
+          <span className="mt-2.5 flex items-center gap-1.5">
+            <span className="block h-5 w-5 shrink-0 rounded-[6px]" style={{ background: shade(accent, -30) }} />
+            <span className="block flex-1 space-y-1">{bar('70%', true)}{bar('45%')}</span>
+          </span>
+          <span className="mt-2 block h-[2px] w-4 rounded-full" style={{ background: accent }} />
+          {buttons}
+        </span>
+      )}
+    </span>
   );
 }
 

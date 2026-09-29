@@ -73,6 +73,10 @@ const EN = {
   unlock: 'Unlock',
   unlocking: 'Unlocking…',
   wrongCode: 'That passcode is not right. Try again.',
+
+  // Beside the card on a computer
+  companionTitle: 'Keep this card on your phone',
+  companionHint: 'Point your phone camera at the code to open it there, then save the contact.',
 };
 
 export type ProfileStrings = typeof EN;
@@ -142,6 +146,9 @@ const AR: ProfileStrings = {
   unlock: 'فتح',
   unlocking: 'جارٍ الفتح…',
   wrongCode: 'رمز الدخول غير صحيح. حاول مرة أخرى.',
+
+  companionTitle: 'احتفظ بهذه البطاقة على هاتفك',
+  companionHint: 'وجّه كاميرا هاتفك إلى الرمز لتفتحها عليه، ثم احفظ جهة الاتصال.',
 };
 
 export function profileStrings(lang: Lang): ProfileStrings {

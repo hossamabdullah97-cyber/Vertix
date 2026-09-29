@@ -202,7 +202,7 @@ export class CardsService {
         vcardData: true,
         // The verified badge is earned by the owning org's plan, never
         // self-declared in vcardData.
-        org: { select: { plan: true } },
+        org: { select: { plan: true, name: true, branding: true } },
         sections: {
           where: { isVisible: true, deletedAt: null, variantId: null },
           orderBy: { order: 'asc' },
@@ -299,6 +299,7 @@ export class CardsService {
     }
 
     const verified = isPaidPlan(card.org?.plan);
+    const brand = publicBrand(card.org);
 
     const base = {
       id: card.id,
@@ -310,6 +311,7 @@ export class CardsService {
       actions: card.actions,
       paymentLinks: card.paymentLinks,
       verified,
+      brand,
       profileName: null as string | null,
       abTestGroup: null as string | null,
     };
@@ -325,6 +327,8 @@ export class CardsService {
         locked: true as const,
         profileName: chosen.name,
         requiresPasscode: true as const,
+        // Only the colours and language, so the gate looks like the card.
+        look: lockedLook(chosen.theme ? mergeTheme(card.theme, chosen.theme) : card.theme),
       };
     }
 
@@ -364,6 +368,7 @@ export class CardsService {
       actions,
       paymentLinks: resolvedPaymentLinks,
       verified,
+      brand,
       profileName: chosen.name,
       abTestGroup: abSelection,
     };
@@ -769,3 +774,23 @@ export function getABSelection(visitorKey: string, split: number): 'A' | 'B' {
   return pct < split ? 'A' : 'B';
 }
 
+/**
+ * The workspace a card belongs to, as the public card shows it: its name and
+ * logo. Only an http(s) or uploaded logo is passed on.
+ */
+export function publicBrand(org: { name: string; branding: unknown } | null | undefined) {
+  if (!org) return null;
+  const b = (org.branding && typeof org.branding === 'object' ? org.branding : {}) as Record<string, unknown>;
+  const logo = typeof b.logo === 'string' && /^(https?:\/\/|\/uploads\/)/.test(b.logo) ? b.logo : null;
+  return { name: org.name, logo };
+}
+
+/** A locked profile's colours and language, and nothing else from its theme. */
+export function lockedLook(theme: unknown) {
+  const t = (theme && typeof theme === 'object' ? theme : {}) as Record<string, unknown>;
+  return {
+    accent: typeof t.accent === 'string' && /^#[0-9a-f]{6}$/i.test(t.accent) ? t.accent : null,
+    mode: t.mode === 'dark' || t.mode === 'auto' ? t.mode : 'light',
+    lang: t.lang === 'ar' ? 'ar' : 'en',
+  };
+}

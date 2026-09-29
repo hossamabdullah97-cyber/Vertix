@@ -59,7 +59,7 @@ export default function QuickStart({
 
   const existing = (card.vcardData as Record<string, string>) ?? {};
   const [fullName, setFullName] = useState(existing.fullName ?? '');
-  const [org, setOrg] = useState(existing.org ?? '');
+  const [title, setTitle] = useState(existing.title ?? existing.org ?? '');
   const [avatar, setAvatar] = useState(existing.avatar ?? '');
   const [values, setValues] = useState<Partial<Record<ChannelKey, string>>>({});
   // A card created in a workspace starts in its brand colour and language
@@ -92,7 +92,7 @@ export default function QuickStart({
         body: JSON.stringify({
           templateId: look.id,
           theme: { accent: look.accent, mode: look.mode, cover: 'gradient', lang },
-          vcardData: { ...existing, fullName: fullName.trim(), org: org.trim(), avatar },
+          vcardData: { ...existing, fullName: fullName.trim(), title: title.trim(), avatar },
         }),
       });
 
@@ -172,8 +172,8 @@ export default function QuickStart({
                     </label>
                     <input
                       className="v-field"
-                      value={org}
-                      onChange={(e) => setOrg(e.target.value)}
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
                       placeholder={t('profile.jobTitlePlaceholder')}
                     />
                   </div>
@@ -328,7 +328,7 @@ export default function QuickStart({
                 {fullName.trim() || t('quickStart.previewName')}
               </h3>
               <p className="text-[12.5px]" style={{ color: look.mode === 'dark' ? '#93a0b4' : '#64748b' }}>
-                {org.trim() || t('quickStart.previewRole')}
+                {title.trim() || t('quickStart.previewRole')}
               </p>
 
               {chosen.length > 0 && (

@@ -1,4 +1,4 @@
-import { CardsService, mergeTheme } from './cards.service';
+import { CardsService, lockedLook, mergeTheme, publicBrand } from './cards.service';
 
 /**
  * Several editors write parts of one theme object. None may erase what the
@@ -52,5 +52,25 @@ describe('CardsService.update', () => {
     const { svc, update } = service({ accent: '#111' });
     await svc.update(owner, 'c1', { isPublished: true });
     expect(update.mock.calls[0][0].data).toEqual({ isPublished: true });
+  });
+});
+
+describe('publicBrand', () => {
+  it('passes the workspace name and a web or uploaded logo only', () => {
+    expect(publicBrand({ name: 'Acme', branding: { logo: 'https://cdn.test/a.png', accent: '#111' } })).toEqual({ name: 'Acme', logo: 'https://cdn.test/a.png' });
+    expect(publicBrand({ name: 'Acme', branding: { logo: 'javascript:alert(1)' } })).toEqual({ name: 'Acme', logo: null });
+    expect(publicBrand({ name: 'Acme', branding: null })).toEqual({ name: 'Acme', logo: null });
+    expect(publicBrand(null)).toBeNull();
+  });
+});
+
+describe('lockedLook', () => {
+  it('gives only the colours and language of a locked profile', () => {
+    expect(lockedLook({ accent: '#0f766e', mode: 'auto', lang: 'ar', layout: 'spotlight', rulesEngine: { secret: 1 } })).toEqual({
+      accent: '#0f766e',
+      mode: 'auto',
+      lang: 'ar',
+    });
+    expect(lockedLook({ accent: 'red' })).toEqual({ accent: null, mode: 'light', lang: 'en' });
   });
 });

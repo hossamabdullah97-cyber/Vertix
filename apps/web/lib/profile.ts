@@ -5,9 +5,32 @@
  */
 import type { PublicCardAction, PublicPaymentLink } from './api';
 import type { Lang } from './profileI18n';
-import { hexChannels, readableOn } from './color';
+import { brandInk, hexChannels, readableOn } from './color';
 
-export type CoverStyle = 'constellation' | 'gradient' | 'solid';
+export type CoverStyle = 'constellation' | 'gradient' | 'solid' | 'mesh' | 'lines';
+export const COVER_STYLES: CoverStyle[] = ['solid', 'gradient', 'mesh', 'lines', 'constellation'];
+function coverOf(v: unknown): CoverStyle | null {
+  return COVER_STYLES.includes(v as CoverStyle) ? (v as CoverStyle) : null;
+}
+
+/** The card's layout: where the photo, name and buttons sit. */
+export type Layout = 'classic' | 'centered' | 'spotlight' | 'minimal';
+export const LAYOUTS: Layout[] = ['classic', 'centered', 'spotlight', 'minimal'];
+export function layoutOf(v: unknown): Layout {
+  return LAYOUTS.includes(v as Layout) ? (v as Layout) : 'classic';
+}
+
+/** Light, dark, or whichever the visitor's phone is set to. */
+export type ThemeMode = 'light' | 'dark' | 'auto';
+export function modeOf(v: unknown): ThemeMode {
+  return v === 'dark' || v === 'auto' ? v : 'light';
+}
+
+/** The workspace behind a card, as the public card receives it. */
+export interface CardBrand {
+  name: string;
+  logo: string | null;
+}
 
 /** How the card's links (all but the quick-contact tiles) are laid out. */
 export type LinkStyle = 'list' | 'icons' | 'buttons';
@@ -27,16 +50,21 @@ export interface ProfileSection {
 export interface ProfileData {
   slug: string;
   name: string;
+  /** Job title. */
   title: string;
+  company: string;
   about: string;
   avatar: string;
   coverImage: string;
   coverStyle: CoverStyle;
+  layout: Layout;
   accent: string;
-  mode: 'light' | 'dark';
+  mode: ThemeMode;
   lang: Lang;
   circle: boolean;
   verified: boolean;
+  /** The workspace's name and logo, unless the owner turned it off. */
+  brand: CardBrand | null;
   linkStyle: LinkStyle;
   /** WhatsApp and LinkedIn links open their apps on a phone. */
   openInApp: boolean;
@@ -73,6 +101,7 @@ export function buildProfile(input: {
   actions: PublicCardAction[];
   paymentLinks: PublicPaymentLink[];
   verified?: boolean;
+  brand?: CardBrand | null;
   profileName?: string | null;
   /** Shown when the owner has not written a name yet (the Studio preview). */
   fallbackName?: string;
@@ -80,18 +109,20 @@ export function buildProfile(input: {
   const theme = input.theme ?? {};
   const v = input.vcardData ?? {};
   const bio = input.sections.find((s) => s.type === 'BIO');
-  const mode = theme.mode === 'dark' ? 'dark' : 'light';
-  const cover = theme.cover;
+  const mode = modeOf(theme.mode);
   const available = v.available === true ? 'now' : typeof v.available === 'string' ? v.available : '';
 
   return {
     slug: input.slug,
     name: pick(v, 'fullName') || pick(bio?.content, 'title', 'headline') || input.fallbackName || 'Vertex Connect',
-    title: pick(v, 'org', 'title') || pick(bio?.content, 'subtitle'),
+    // Older cards kept the job title under `org`.
+    title: pick(v, 'title', 'org') || pick(bio?.content, 'subtitle'),
+    company: pick(v, 'company'),
     about: pick(bio?.content, 'body', 'about'),
     avatar: pick(v, 'avatar'),
     coverImage: pick(v, 'coverImage') || pick(theme, 'coverImage'),
-    coverStyle: cover === 'constellation' || cover === 'solid' || cover === 'gradient' ? cover : mode === 'dark' ? 'constellation' : 'gradient',
+    coverStyle: coverOf(theme.cover) ?? (mode === 'dark' ? 'constellation' : 'gradient'),
+    layout: layoutOf(theme.layout),
     accent: typeof theme.accent === 'string' && HEX.test(theme.accent) ? theme.accent : '#2563eb',
     mode,
     lang: theme.lang === 'ar' ? 'ar' : 'en',
@@ -99,6 +130,7 @@ export function buildProfile(input: {
     linkStyle: linkStyleOf(theme.links),
     openInApp: theme.openInApp === true,
     verified: input.verified === true,
+    brand: theme.brand === false ? null : input.brand ?? null,
     meta: {
       available,
       location: pick(v, 'location'),
@@ -155,13 +187,45 @@ const PALETTE = {
   },
 } as const;
 
-/** The style variables for a profile; the page uses them for its backdrop too. */
+/**
+ * The style variables for a profile; the page uses them for its backdrop too.
+ * An "auto" card starts light, and globals.css switches it to the dark palette
+ * when the visitor's phone is dark (see `profileAttrs`).
+ */
 export function profileStyle(p: Pick<ProfileData, 'accent' | 'mode'>): React.CSSProperties {
   const vars: Record<string, string> = {
-    ...PALETTE[p.mode],
+    ...PALETTE[p.mode === 'dark' ? 'dark' : 'light'],
     '--p-accent': p.accent,
     '--p-accent-ch': hexChannels(p.accent),
     '--p-on-accent': readableOn(p.accent),
   };
   return vars as React.CSSProperties;
+}
+
+/** Marks an "auto" card so the stylesheet can follow the visitor's setting. */
+export function profileAttrs(p: Pick<ProfileData, 'mode'>): Record<string, string> {
+  return p.mode === 'auto' ? { 'data-p-auto': '' } : {};
+}
+
+/**
+ * A brand colour made readable on the card. On an "auto" card it carries both
+ * versions, and the stylesheet picks one (class `p-ink`).
+ */
+export function inkStyle(color: string, mode: ThemeMode): React.CSSProperties {
+  return {
+    '--ink': brandInk(color, mode === 'dark' ? 'dark' : 'light'),
+    '--ink-dark': brandInk(color, 'dark'),
+  } as React.CSSProperties;
+}
+
+/**
+ * "Mariam Khaled" → "MK"; one word gives one letter. Arabic letters would join
+ * into a word, so an Arabic name gives its first letter only.
+ */
+export function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const first = (w: string | undefined) => (w ? Array.from(w)[0] ?? '' : '');
+  if (/^[\u0600-\u06FF]/.test(words[0] ?? '')) return first(words[0]);
+  const letters = words.length > 1 ? [first(words[0]), first(words[words.length - 1])] : [first(words[0])];
+  return letters.join('').toUpperCase() || '•';
 }

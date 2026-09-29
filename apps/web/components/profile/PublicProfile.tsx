@@ -6,9 +6,9 @@ import { API_URL, type PublicCardAction } from '@/lib/api';
 import { resolveAction } from '@/lib/brandIcons';
 import { appLink, platformOf } from '@/lib/appLinks';
 import { paymentBrand } from '@/lib/paymentBrands';
-import { embedUrl, externalUrl, pick, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
+import { embedUrl, externalUrl, initials, inkStyle, pick, profileAttrs, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
 import { fill, profileStrings, type ProfileStrings } from '@/lib/profileI18n';
-import { brandInk, readableOn, shade } from '@/lib/color';
+import { readableOn, shade } from '@/lib/color';
 import { Icon } from '@/components/Icon';
 import { VerifiedBadge } from '@/components/Avatar';
 import { VMark } from '@/components/brand/VMark';
@@ -38,6 +38,8 @@ function track(slug: string, type: 'CLICK' | 'SAVE' | 'SHARE', metadata?: Record
     // ignore
   }
 }
+
+type MetaItem = { key: string; label: React.ReactNode; icon?: string; dot?: boolean };
 
 type Resolved = { a: PublicCardAction; href: string; label: string; sub: string; icon: string; color: string; quick: boolean };
 
@@ -94,7 +96,7 @@ export function PublicProfile({
     window.location.href = target;
   };
 
-  const metaItems: { key: string; label: React.ReactNode; icon?: string; dot?: boolean }[] = [];
+  const metaItems: MetaItem[] = [];
   if (profile.meta.available) metaItems.push({ key: 'available', label: profile.meta.available === 'now' ? t.available : profile.meta.available, dot: true });
   if (profile.meta.location) metaItems.push({ key: 'location', label: profile.meta.location, icon: 'map-pin' });
   if (profile.meta.languages) metaItems.push({ key: 'languages', label: profile.meta.languages, icon: 'globe' });
@@ -107,34 +109,9 @@ export function PublicProfile({
 
   const body = (
     <>
-      <Cover profile={profile} t={t} onShare={() => setSheet('share')} />
+      <Header profile={profile} t={t} meta={metaItems} onShare={() => setSheet('share')} />
 
       <div className="px-5 pb-8">
-        <div className="-mt-11 flex items-end justify-between">
-          <Avatar profile={profile} />
-        </div>
-
-        <h1 className="mt-3 flex items-center gap-1.5 text-[24px] font-semibold leading-tight tracking-[-0.02em] rtl:tracking-normal">
-          <span className="min-w-0 break-words">{profile.name}</span>
-          {profile.verified && (
-            <span title={t.verified} className="shrink-0">
-              <VerifiedBadge size={20} absolute={false} />
-            </span>
-          )}
-        </h1>
-        {profile.title && <p className="mt-1 text-[15px] leading-snug text-[var(--p-muted)]">{profile.title}</p>}
-
-        {metaItems.length > 0 && (
-          <ul className="mt-3 flex flex-wrap gap-x-3.5 gap-y-1.5 text-[13px] text-[var(--p-muted)]">
-            {metaItems.map((m) => (
-              <li key={m.key} className="flex items-center gap-1.5">
-                {m.dot ? <span className="h-2 w-2 rounded-full bg-[#22a06b]" aria-hidden /> : <Icon name={m.icon!} size={14} className="text-[var(--p-faint)]" />}
-                {m.label}
-              </li>
-            ))}
-          </ul>
-        )}
-
         <div className="mt-5 grid grid-cols-2 gap-2">
           <a
             href={vcardUrl}
@@ -197,7 +174,7 @@ export function PublicProfile({
                       title={l.label}
                       className="flex h-12 w-12 items-center justify-center rounded-[12px] bg-[var(--p-elevated)] ring-1 ring-inset ring-[var(--p-line)] transition-opacity active:opacity-80"
                     >
-                      <span style={{ color: brandInk(l.color, profile.mode) }} className="flex">
+                      <span style={inkStyle(l.color, profile.mode)} className="p-ink flex">
                         <Icon name={l.icon} size={20} />
                       </span>
                     </a>
@@ -215,7 +192,7 @@ export function PublicProfile({
                       onClick={(e) => onLink(e, l)}
                       className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] px-4 text-[15px] font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
                     >
-                      <span style={{ color: brandInk(l.color, profile.mode) }} className="flex shrink-0">
+                      <span style={inkStyle(l.color, profile.mode)} className="p-ink flex shrink-0">
                         <Icon name={l.icon} size={18} />
                       </span>
                       <span className="truncate">{l.label}</span>
@@ -232,7 +209,7 @@ export function PublicProfile({
                     onClick={(e) => onLink(e, l)}
                     icon={
                       <Tile>
-                        <span style={{ color: brandInk(l.color, profile.mode) }} className="flex">
+                        <span style={inkStyle(l.color, profile.mode)} className="p-ink flex">
                           <Icon name={l.icon} size={18} />
                         </span>
                       </Tile>
@@ -290,7 +267,7 @@ export function PublicProfile({
   );
 
   return (
-    <div dir={dir} style={profileStyle(profile)} className={`relative bg-[var(--p-surface)] text-[var(--p-fg)] ${preview ? 'h-full overflow-hidden' : ''}`}>
+    <div dir={dir} style={profileStyle(profile)} {...profileAttrs(profile)} className={`relative bg-[var(--p-surface)] text-[var(--p-fg)] ${preview ? 'h-full overflow-hidden' : ''}`}>
       {preview ? <div className="no-scrollbar h-full overflow-y-auto overscroll-contain">{body}</div> : body}
 
       <BottomSheet open={sheet === 'share'} onClose={() => setSheet(null)} contained={preview} title={t.shareTitle} closeLabel={t.close}>
@@ -307,26 +284,235 @@ export function PublicProfile({
 
 /* ------------------------------------------------------------------------- */
 
-function Cover({ profile, t, onShare }: { profile: ProfileData; t: ProfileStrings; onShare: () => void }) {
-  const a = profile.accent;
+/* ---------------------------------------------------------------------------
+ * The top of the card: one of four layouts
+ * ------------------------------------------------------------------------- */
+
+function Header({ profile, t, meta, onShare }: { profile: ProfileData; t: ProfileStrings; meta: MetaItem[]; onShare: () => void }) {
+  switch (profile.layout) {
+    case 'centered':
+      return (
+        <>
+          <div className="relative h-[148px] overflow-hidden">
+            <CoverArt profile={profile} />
+            <CoverChrome profile={profile} t={t} onShare={onShare} />
+          </div>
+          <div className="flex flex-col items-center px-5 text-center">
+            <div className="-mt-[52px]">
+              <Avatar profile={profile} size={104} />
+            </div>
+            <Identity profile={profile} t={t} meta={meta} center />
+          </div>
+        </>
+      );
+
+    case 'spotlight': {
+      // The photo is the cover; without one, the cover art with the initials.
+      const photo = profile.avatar || profile.coverImage;
+      return (
+        <>
+          <div className="relative h-[380px] overflow-hidden bg-[#0b0b0e]">
+            {photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photo} alt={profile.avatar ? profile.name : ''} className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <>
+                <CoverArt profile={profile} />
+                <span aria-hidden className="absolute inset-x-0 top-[26%] text-center text-[96px] font-semibold leading-none tracking-[-0.04em] text-white/25">
+                  {initials(profile.name)}
+                </span>
+              </>
+            )}
+            <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black/80 via-black/40 to-transparent" aria-hidden />
+            <CoverChrome profile={profile} t={t} onShare={onShare} />
+            <div className="absolute inset-x-0 bottom-0 px-5 pb-5 text-white">
+              <Name profile={profile} t={t} className="text-[28px]" />
+              {profile.title && <p className="mt-1 text-[15px] leading-snug text-white/80">{profile.title}</p>}
+              <Company profile={profile} className="mt-2 text-white/90" />
+            </div>
+          </div>
+          {meta.length > 0 && (
+            <div className="px-5">
+              <Meta items={meta} />
+            </div>
+          )}
+        </>
+      );
+    }
+
+    case 'minimal':
+      return (
+        <div className="px-5 pt-5">
+          <div className="flex h-10 items-center justify-between gap-3">
+            {profile.brand ? (
+              <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-[var(--p-muted)]">
+                <BrandMark brand={profile.brand} size={24} />
+                <span className="truncate">{profile.brand.name}</span>
+              </span>
+            ) : profile.profileName ? (
+              <span className="truncate text-[13px] font-medium text-[var(--p-muted)]">{profile.profileName}</span>
+            ) : (
+              <span />
+            )}
+            <button
+              onClick={onShare}
+              aria-label={t.share}
+              title={t.share}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--p-muted)] ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+            >
+              <Icon name="share" size={16} />
+            </button>
+          </div>
+          <div className="mt-8 flex items-center gap-4">
+            <Avatar profile={profile} size={76} ring={false} />
+            <div className="min-w-0 flex-1">
+              <Name profile={profile} t={t} className="text-[22px]" />
+              {profile.title && <p className="mt-0.5 text-[14.5px] leading-snug text-[var(--p-muted)]">{profile.title}</p>}
+            </div>
+          </div>
+          {/* Shown at the top already; here only when it is a different name. */}
+          {profile.company && profile.company !== profile.brand?.name && <Company profile={profile} noLogo className="mt-3" />}
+          <span className="mt-5 block h-[3px] w-10 rounded-full bg-[var(--p-accent)]" aria-hidden />
+          <Meta items={meta} />
+        </div>
+      );
+
+    default:
+      return (
+        <>
+          <div className="relative h-[132px] overflow-hidden">
+            <CoverArt profile={profile} />
+            <CoverChrome profile={profile} t={t} onShare={onShare} />
+          </div>
+          <div className="px-5">
+            <div className="-mt-11">
+              <Avatar profile={profile} size={88} />
+            </div>
+            <Identity profile={profile} t={t} meta={meta} />
+          </div>
+        </>
+      );
+  }
+}
+
+/** Name, title, company and details, under the photo. */
+function Identity({ profile, t, meta, center = false }: { profile: ProfileData; t: ProfileStrings; meta: MetaItem[]; center?: boolean }) {
   return (
-    <div className="relative h-[132px] overflow-hidden">
-      {profile.coverImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={profile.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      ) : profile.coverStyle === 'constellation' ? (
+    <div className={center ? 'flex flex-col items-center' : ''}>
+      <Name profile={profile} t={t} className="mt-3 text-[24px]" />
+      {profile.title && <p className="mt-1 text-[15px] leading-snug text-[var(--p-muted)]">{profile.title}</p>}
+      <Company profile={profile} className="mt-2.5" />
+      <Meta items={meta} center={center} />
+    </div>
+  );
+}
+
+function Name({ profile, t, className = '' }: { profile: ProfileData; t: ProfileStrings; className?: string }) {
+  return (
+    <h1 className={`flex items-center gap-1.5 font-semibold leading-tight tracking-[-0.02em] rtl:tracking-normal ${className}`}>
+      <span className="min-w-0 break-words">{profile.name}</span>
+      {profile.verified && (
+        <span title={t.verified} className="shrink-0">
+          <VerifiedBadge size={20} absolute={false} />
+        </span>
+      )}
+    </h1>
+  );
+}
+
+/** The company, with the workspace's logo beside it when there is one. */
+function Company({ profile, className = '', noLogo = false }: { profile: ProfileData; className?: string; noLogo?: boolean }) {
+  const name = profile.company || profile.brand?.name;
+  if (!name) return null;
+  const logo = !noLogo && profile.brand?.logo ? profile.brand : null;
+  return (
+    <p className={`flex min-w-0 items-center gap-2 text-[14px] font-medium ${className}`}>
+      {logo ? <BrandMark brand={logo} size={22} /> : <Icon name="briefcase" size={15} className="shrink-0 opacity-60" />}
+      <span className="min-w-0 truncate">{name}</span>
+    </p>
+  );
+}
+
+function BrandMark({ brand, size }: { brand: { name: string; logo: string | null }; size: number }) {
+  if (!brand.logo) {
+    return (
+      <span
+        aria-hidden
+        style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}
+        className="flex shrink-0 items-center justify-center rounded-[7px] bg-[var(--p-accent)] font-semibold text-[var(--p-on-accent)]"
+      >
+        {initials(brand.name)}
+      </span>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={brand.logo} alt="" style={{ width: size, height: size }} className="shrink-0 rounded-[7px] bg-white object-contain ring-1 ring-inset ring-black/10" />
+  );
+}
+
+function Meta({ items, center = false }: { items: MetaItem[]; center?: boolean }) {
+  if (!items.length) return null;
+  return (
+    <ul className={`mt-3 flex flex-wrap gap-x-3.5 gap-y-1.5 text-[13px] text-[var(--p-muted)] ${center ? 'justify-center' : ''}`}>
+      {items.map((m) => (
+        <li key={m.key} className="flex items-center gap-1.5">
+          {m.dot ? <span className="h-2 w-2 rounded-full bg-[#22a06b]" aria-hidden /> : <Icon name={m.icon!} size={14} className="text-[var(--p-faint)]" />}
+          {/* One item, so the flex gap does not split a sentence. */}
+          <span>{m.label}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The cover's picture or pattern, filling its box. */
+function CoverArt({ profile }: { profile: ProfileData }) {
+  const a = profile.accent;
+  if (profile.coverImage && profile.layout !== 'spotlight') {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={profile.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover" />;
+  }
+  switch (profile.coverStyle) {
+    case 'constellation':
+      return (
         <div className="absolute inset-0 bg-[#0b0b0e]">
           <Constellation className="absolute inset-0 h-full w-full opacity-70" />
           <div className="absolute inset-0" style={{ background: `radial-gradient(80% 120% at 85% 0%, ${a}40, transparent 70%)` }} />
         </div>
-      ) : profile.coverStyle === 'solid' ? (
-        <div className="absolute inset-0" style={{ background: a }} />
-      ) : (
-        <div className="absolute inset-0" style={{ background: `linear-gradient(160deg, ${shade(a, 18)}, ${a} 45%, ${shade(a, -40)})` }} />
-      )}
+      );
+    case 'solid':
+      return <div className="absolute inset-0" style={{ background: a }} />;
+    case 'mesh':
+      // Soft light pooling from two corners.
+      return (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(60% 90% at 12% 10%, ${shade(a, 45)}, transparent 70%), radial-gradient(70% 100% at 95% 100%, ${shade(a, -45)}, transparent 70%), ${a}`,
+          }}
+        />
+      );
+    case 'lines':
+      return (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `repeating-linear-gradient(135deg, rgba(255,255,255,0.09) 0 1px, transparent 1px 14px), linear-gradient(160deg, ${shade(a, 10)}, ${shade(a, -30)})`,
+          }}
+        />
+      );
+    default:
+      return <div className="absolute inset-0" style={{ background: `linear-gradient(160deg, ${shade(a, 18)}, ${a} 45%, ${shade(a, -40)})` }} />;
+  }
+}
+
+/** The profile tag and the share button, over a cover. */
+function CoverChrome({ profile, t, onShare }: { profile: ProfileData; t: ProfileStrings; onShare: () => void }) {
+  return (
+    <>
       {/* A soft floor so the share button and the tag read on any cover. */}
       <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/20 to-transparent" aria-hidden />
-
       {profile.profileName && (
         <span className="absolute start-4 top-4 flex h-8 max-w-[60%] items-center gap-1.5 rounded-full bg-black/30 px-3 text-[12.5px] font-medium text-white backdrop-blur-md">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white" aria-hidden />
@@ -341,22 +527,29 @@ function Cover({ profile, t, onShare }: { profile: ProfileData; t: ProfileString
       >
         <Icon name="share" size={17} />
       </button>
-    </div>
+    </>
   );
 }
 
-function Avatar({ profile }: { profile: ProfileData }) {
-  const shape = profile.circle ? 'rounded-full' : 'rounded-[22px]';
+function Avatar({ profile, size, ring = true }: { profile: ProfileData; size: number; ring?: boolean }) {
+  const shape = profile.circle ? 'rounded-full' : size > 80 ? 'rounded-[24px]' : 'rounded-[20px]';
+  const text = initials(profile.name);
   return (
     <span
-      className={`relative flex h-[88px] w-[88px] shrink-0 items-center justify-center overflow-hidden text-[34px] font-semibold ring-4 ring-[var(--p-surface)] ${shape}`}
-      style={{ background: profile.accent, color: readableOn(profile.accent) }}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden font-semibold tracking-[-0.02em] ${ring ? 'ring-4 ring-[var(--p-surface)]' : ''} ${shape}`}
+      style={{
+        width: size,
+        height: size,
+        fontSize: Math.round(size * (text.length > 1 ? 0.34 : 0.4)),
+        background: profile.avatar ? 'var(--p-elevated)' : `linear-gradient(145deg, ${shade(profile.accent, 12)}, ${shade(profile.accent, -22)})`,
+        color: readableOn(profile.accent),
+      }}
     >
       {profile.avatar ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
       ) : (
-        (profile.name.trim()[0] || '•').toUpperCase()
+        text
       )}
     </span>
   );

@@ -47,6 +47,8 @@ export interface PublicCard {
   paymentLinks: PublicPaymentLink[];
   /** Earned by the owning organization's paid plan — computed server-side. */
   verified: boolean;
+  /** The workspace's name and logo. */
+  brand?: { name: string; logo: string | null } | null;
   /** Name of the active profile variant (null when the base profile is served). */
   profileName?: string | null;
 }
@@ -58,4 +60,6 @@ export interface PublicCardLocked {
   locked: true;
   profileName: string;
   requiresPasscode: true;
+  /** The profile's colours and language, so the gate looks like the card. */
+  look?: { accent: string | null; mode: 'light' | 'dark' | 'auto'; lang: 'en' | 'ar' };
 }
