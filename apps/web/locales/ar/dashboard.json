@@ -177,7 +177,15 @@
         "desc": "لمسة واحدة لشريحتك تفتح البطاقة على أي هاتف.",
         "link": "اربط الشريحة"
       }
-    }
+    },
+    "doneList_zero": "لا شيء بعد",
+    "doneList_one": "تم: {{steps}}",
+    "doneList_two": "تمت خطوتان: {{steps}}",
+    "doneList_few": "تمت {{value}} خطوات: {{steps}}",
+    "doneList_many": "تمت {{value}} خطوة: {{steps}}",
+    "doneList_other": "تمت {{value}} خطوة: {{steps}}",
+    "hideDone": "إخفاء الخطوات المكتملة",
+    "separator": "، "
   },
   "occasions": {
     "button": "المناسبات",

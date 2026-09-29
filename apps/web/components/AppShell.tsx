@@ -930,7 +930,7 @@ export default function AppShell({
                   className={`flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${active ? 'text-accent' : 'text-muted'}`}
                 >
                   <Icon name={item.icon} size={21} />
-                  <span className="max-w-full truncate px-1">{t(item.labelKey)}</span>
+                  <span className="max-w-full truncate px-1">{t(`mobile.short.${item.labelKey.split('.').pop()}`, { defaultValue: t(item.labelKey) })}</span>
                 </Link>
               </li>
             );

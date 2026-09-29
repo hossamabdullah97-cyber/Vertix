@@ -12,6 +12,7 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { LeadCard, Heat } from '@/components/crm/LeadCard';
 import { LeadDrawer } from '@/components/crm/LeadDrawer';
+import { LeadList } from '@/components/crm/LeadList';
 import { AddLead } from '@/components/crm/AddLead';
 import { downloadText, leadsCsv } from '@/lib/export-leads';
 import { SmartFilters } from '@/components/crm/SmartFilters';
@@ -55,6 +56,16 @@ export default function LeadsPage() {
   const [patchBusy, setPatchBusy] = useState(false);
   const [toast, setToast] = useState('');
   const [adding, setAdding] = useState(false);
+  // On a phone the pipeline is a list filtered by stage, not side-scrolling columns.
+  const [isPhone, setIsPhone] = useState(false);
+  const [phoneStage, setPhoneStage] = useState<string | null>(null);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsPhone(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const load = useCallback(async () => {
     const [l, s, tk] = await Promise.all([
@@ -303,7 +314,7 @@ export default function LeadsPage() {
             </>
           )}
           {view === 'pipeline' && (
-            <div role="radiogroup" aria-label={t('view.label')} className="ms-auto inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+            <div role="radiogroup" aria-label={t('view.label')} className="ms-auto hidden rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line md:inline-flex">
               {(['board', 'table'] as const).map((l) => (
                 <button
                   key={l}
@@ -336,7 +347,17 @@ export default function LeadsPage() {
           <EmptyState />
         ) : (
           <>
-            {view === 'pipeline' && layout === 'board' && (
+            {view === 'pipeline' && isPhone && (
+              <LeadList
+                leads={phoneStage ? filtered.filter((l) => (l.stageId ?? firstStage) === phoneStage) : filtered}
+                stages={stages}
+                stage={phoneStage}
+                onStage={setPhoneStage}
+                counts={Object.fromEntries(stages.map((st) => [st.id, (byStage[st.id] ?? []).length]))}
+                onOpen={setSelected}
+              />
+            )}
+            {view === 'pipeline' && !isPhone && layout === 'board' && (
               <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-4 md:-mx-8 md:px-8">
                 {stages.map((stage) => {
                   const items = byStage[stage.id] ?? [];
@@ -394,7 +415,7 @@ export default function LeadsPage() {
               </div>
             )}
 
-            {view === 'pipeline' && layout === 'table' && <LeadTable leads={filtered} stages={stages} onOpen={setSelected} selected={selected} />}
+            {view === 'pipeline' && !isPhone && layout === 'table' && <LeadTable leads={filtered} stages={stages} onOpen={setSelected} selected={selected} />}
 
             {view === 'contacts' && <ContactsView leads={filtered} onOpen={setSelected} />}
 

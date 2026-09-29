@@ -934,22 +934,26 @@ function Onboarding({
   onToggle: () => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
-  const done = steps.filter((s) => s.completed).length;
-  if (done === steps.length) return null;
+  const [showDone, setShowDone] = useState(false);
+  const done = steps.filter((s) => s.completed);
+  const left = steps.filter((s) => !s.completed);
+  if (left.length === 0) return null;
 
   if (!visible) {
     return (
       <button onClick={onToggle} className="mt-4 min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
-        {t('onboarding.show', { done, total: steps.length })}
+        {t('onboarding.show', { done: done.length, total: steps.length })}
       </button>
     );
   }
 
+  // What is left comes first; what is done folds into one line.
+  const shown = showDone ? steps : left;
   return (
     <section className="v-card mt-5 overflow-hidden">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
         <h3 className="text-[14px] font-semibold text-ink">{t('onboarding.title')}</h3>
-        <span className="text-[12.5px] text-faint">{t('onboarding.progress', { done, total: steps.length })}</span>
+        <span className="text-[12.5px] text-faint">{t('onboarding.progress', { done: done.length, total: steps.length })}</span>
         <span className="flex gap-1" aria-hidden>
           {steps.map((s) => (
             <span key={s.id} className={`h-1 w-6 rounded-full ${s.completed ? 'bg-accent' : 'bg-line'}`} />
@@ -960,28 +964,47 @@ function Onboarding({
         </button>
       </div>
       <ol className="grid gap-px bg-line sm:grid-cols-2 xl:grid-cols-3">
-        {steps.map((s, i) => (
-          <li key={s.id} className="flex gap-3 bg-surface p-4">
-            <span
-              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
-                s.completed ? 'bg-accent text-white' : 'text-faint ring-1 ring-inset ring-faint/40'
-              }`}
-            >
-              {s.completed ? <Icon name="check" size={12} /> : i + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className={`text-[13.5px] font-medium ${s.completed ? 'text-faint line-through' : 'text-ink'}`}>{s.label}</p>
-              <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{s.desc}</p>
-              {!s.completed && (
-                <Link href={s.link} className="mt-2 inline-flex min-h-11 items-center gap-1 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
-                  {s.linkText}
-                  <DirectionalIcon name="arrow" size={13} />
-                </Link>
-              )}
-            </div>
-          </li>
-        ))}
+        {shown.map((s) => {
+          const n = steps.indexOf(s) + 1;
+          return (
+            <li key={s.id} className="flex gap-3 bg-surface p-4">
+              <span
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                  s.completed ? 'bg-accent text-white' : 'text-faint ring-1 ring-inset ring-faint/40'
+                }`}
+              >
+                {s.completed ? <Icon name="check" size={12} /> : n}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={`text-[13.5px] font-medium ${s.completed ? 'text-faint line-through' : 'text-ink'}`}>{s.label}</p>
+                {!s.completed && <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{s.desc}</p>}
+                {!s.completed && (
+                  <Link href={s.link} className="mt-2 inline-flex min-h-11 items-center gap-1 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+                    {s.linkText}
+                    <DirectionalIcon name="arrow" size={13} />
+                  </Link>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ol>
+      {done.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowDone((v) => !v)}
+          aria-expanded={showDone}
+          className="flex min-h-11 w-full items-center gap-2 border-t border-line px-4 text-start text-[12.5px] text-muted hover:bg-elevated"
+        >
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white">
+            <Icon name="check" size={11} />
+          </span>
+          <span className="min-w-0 flex-1 truncate">
+            {showDone ? t('onboarding.hideDone') : t('onboarding.doneList', { count: done.length, value: done.length, steps: done.map((d) => d.label).join(t('onboarding.separator')) })}
+          </span>
+          <Icon name={showDone ? 'chevron-up' : 'chevron-down'} size={14} />
+        </button>
+      )}
     </section>
   );
 }

@@ -76,6 +76,7 @@
   },
   "mobile": {
     "label": "Main sections",
-    "more": "More"
+    "more": "More",
+    "short": {}
   }
 }
