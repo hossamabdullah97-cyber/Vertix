@@ -92,7 +92,7 @@
     "clearAll": "Clear all filters",
     "defaults": {
       "hot": "Hot leads",
-      "highValue": "Worth $10k or more",
+      "highValue": "Worth EGP 100k or more",
       "nfc": "From NFC taps"
     },
     "remove": "Remove “{{name}}”"
@@ -116,7 +116,7 @@
     "leadScore": "Score",
     "sourceLink": "Source",
     "emailPlaceholder": "email@address.com",
-    "phonePlaceholder": "+1 (555) 000-0000",
+    "phonePlaceholder": "+20 10 0000 0000",
     "companyPlaceholder": "Company name",
     "addActivity": "Add a {{type}}…",
     "saving": "Saving…",
