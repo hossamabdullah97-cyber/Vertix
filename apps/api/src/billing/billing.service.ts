@@ -3,41 +3,100 @@ import {
   Injectable,
   Logger,
   ServiceUnavailableException,
+  type OnModuleDestroy,
+  type OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Stripe from 'stripe';
+import { randomUUID } from 'node:crypto';
 import type { Plan } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymobClient, PaymobError, type PaymobSubscription } from './paymob.client';
+import { planPrices, toCents, type PaidPlan, type PlanPrices } from './prices';
 
 type SubStatus = 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELED';
 
 /** Statuses in which the org is still subscribed, and still being billed. */
 const LIVE = new Set<string>(['ACTIVE', 'TRIALING', 'PAST_DUE']);
 
-/**
- * Stripe's subscription status in the terms the app keeps, or null while the
- * first payment is still pending (nothing is granted until it clears).
- */
-function subStatus(status: Stripe.Subscription.Status): SubStatus | null {
-  if (status === 'active') return 'ACTIVE';
-  if (status === 'trialing') return 'TRIALING';
-  if (status === 'past_due' || status === 'unpaid') return 'PAST_DUE';
-  if (status === 'canceled' || status === 'incomplete_expired') return 'CANCELED';
-  return null;
+/** Paymob's subscription state in the terms the app keeps. */
+export function subStatus(state: string): SubStatus {
+  const s = state.toLowerCase();
+  if (s === 'active') return 'ACTIVE';
+  if (s === 'suspended') return 'PAST_DUE';
+  return 'CANCELED';
 }
 
+/**
+ * The reference a checkout carries through Paymob and back:
+ * "vc_<orgId>_<plan>_<nonce>". It is how a payment is tied to a workspace.
+ */
+export function checkoutReference(orgId: string, plan: PaidPlan): string {
+  return `vc_${orgId}_${plan}_${randomUUID().slice(0, 8)}`;
+}
+export function parseReference(ref: unknown): { orgId: string; plan: PaidPlan } | null {
+  const m = typeof ref === 'string' ? ref.match(/^vc_([a-z0-9]+)_(PRO|BUSINESS)_[0-9a-f]{8}$/) : null;
+  return m ? { orgId: m[1]!, plan: m[2] as PaidPlan } : null;
+}
+
+/**
+ * The ids a Paymob callback names. Nothing else in a callback is believed:
+ * each id is looked up at Paymob with the account's own keys, so a forged
+ * callback can at most make the app re-read what Paymob already says.
+ */
+export function callbackIds(body: unknown): { transactionId: number | null; subscriptionId: number | null } {
+  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
+  const obj = (b.obj && typeof b.obj === 'object' ? b.obj : {}) as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v > 0 ? v : typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : null);
+  const type = typeof b.type === 'string' ? b.type.toUpperCase() : '';
+  const sub = (b.subscription_data && typeof b.subscription_data === 'object' ? b.subscription_data : null) as Record<string, unknown> | null;
+  return {
+    transactionId: type === 'TRANSACTION' ? num(obj.id) : num(b.transaction_id) ?? num(sub?.initial_transaction),
+    subscriptionId: num(sub?.id) ?? num(b.subscription_id) ?? (type.startsWith('SUBSCRIPTION') ? num(obj.id) : null),
+  };
+}
+
+/** How often lapsed paid periods are closed. */
+const SWEEP_MS = 60 * 60_000;
+
 @Injectable()
-export class BillingService {
+export class BillingService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(BillingService.name);
-  private readonly stripe: Stripe | null;
+  private readonly paymob: PaymobClient | null;
+  private readonly plans: Record<PaidPlan, number | null>;
+  private timer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    const key = config.get<string>('STRIPE_SECRET_KEY');
-    this.stripe = key ? new Stripe(key) : null;
-    if (!this.stripe) this.logger.warn('Stripe not configured — billing disabled');
+    const get = (k: string) => config.get<string>(k)?.trim() || undefined;
+    const planId = (k: string) => (get(k) && /^\d+$/.test(get(k)!) ? Number(get(k)) : null);
+    this.plans = { PRO: planId('PAYMOB_PLAN_PRO'), BUSINESS: planId('PAYMOB_PLAN_BUSINESS') };
+    const apiKey = get('PAYMOB_API_KEY');
+    const secretKey = get('PAYMOB_SECRET_KEY');
+    const publicKey = get('PAYMOB_PUBLIC_KEY');
+    const integration = get('PAYMOB_CARD_INTEGRATION_ID');
+    this.paymob =
+      apiKey && secretKey && publicKey && integration && /^\d+$/.test(integration)
+        ? new PaymobClient({
+            baseUrl: (get('PAYMOB_BASE_URL') ?? 'https://accept.paymob.com').replace(/\/$/, ''),
+            apiKey,
+            secretKey,
+            publicKey,
+            cardIntegrationId: Number(integration),
+          })
+        : null;
+    if (!this.paymob) this.logger.warn('Paymob is not configured: billing is off');
+  }
+
+  onModuleInit() {
+    if (process.env.NODE_ENV === 'test') return;
+    this.timer = setInterval(() => void this.closeLapsed().catch((e) => this.logger.warn(`lapse sweep failed: ${(e as Error).message}`)), SWEEP_MS);
+    this.timer.unref?.();
+  }
+
+  onModuleDestroy() {
+    if (this.timer) clearInterval(this.timer);
   }
 
   private get db() {
@@ -45,157 +104,195 @@ export class BillingService {
   }
 
   get enabled(): boolean {
-    return !!this.stripe;
+    return !!this.paymob;
   }
 
-  private priceId(plan: 'PRO' | 'BUSINESS'): string | undefined {
-    return plan === 'PRO'
-      ? this.config.get<string>('STRIPE_PRICE_PRO')
-      : this.config.get<string>('STRIPE_PRICE_BUSINESS');
+  /** The monthly prices shown on the pricing pages. */
+  prices(): PlanPrices {
+    return planPrices((k) => this.config.get<string>(k));
   }
 
-  /** Creates a Stripe Checkout session to subscribe the org to a paid plan. */
+  /** Whether a plan can be bought right now: Paymob, its plan and its price are all set. */
+  sells(plan: PaidPlan): boolean {
+    return !!this.paymob && this.plans[plan] !== null && this.prices()[plan] !== null;
+  }
+
+  /**
+   * Starts paying for a plan: a subscription intention at Paymob, and the
+   * checkout page to open. Moving to another plan is a new subscription; the
+   * old one is cancelled once the new one is paid (see `applySubscription`).
+   */
   async createCheckout(
     orgId: string,
-    plan: 'PRO' | 'BUSINESS',
-    email: string,
+    plan: PaidPlan,
+    customer: { email: string; name: string | null; phone: string },
+    apiBase: string,
   ): Promise<{ url: string }> {
-    if (!this.stripe) throw new ServiceUnavailableException('Billing is not configured');
-    const price = this.priceId(plan);
-    if (!price) throw new ServiceUnavailableException(`Price for ${plan} is not configured`);
+    if (!this.paymob) throw new ServiceUnavailableException('Billing is not configured');
+    const planId = this.plans[plan];
+    const price = this.prices()[plan];
+    if (!planId || !price) throw new ServiceUnavailableException(`The ${plan} plan is not on sale`);
 
-    const org = await this.db.organization.findUnique({
-      where: { id: orgId },
-      select: { name: true },
-    });
     const existing = await this.db.subscription.findFirst({ where: { orgId } });
-    // A second checkout would start a second subscription and bill both, so an
-    // org that is already subscribed changes plans from the billing portal.
-    if (existing?.stripeSubId && existing.plan !== 'FREE' && LIVE.has(existing.status)) {
-      throw new BadRequestException('This workspace already has a subscription. Change plans from the billing portal.');
+    if (existing?.paymobSubscriptionId && existing.plan === plan && LIVE.has(existing.status)) {
+      throw new BadRequestException('This workspace is already on this plan.');
     }
 
-    let customerId = existing?.stripeCustomerId ?? undefined;
-    if (!customerId) {
-      const customer = await this.stripe.customers.create({
-        email,
-        name: org?.name,
-        metadata: { orgId },
-      });
-      customerId = customer.id;
-    }
-
-    const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
-    const session = await this.stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer: customerId,
-      line_items: [{ price, quantity: 1 }],
-      success_url: `${appUrl}/billing?success=1`,
-      cancel_url: `${appUrl}/billing?canceled=1`,
-      metadata: { orgId, plan },
-      // Stripe does not copy the session's metadata onto the subscription, and
-      // the subscription's later updates and cancellation only carry their own.
-      subscription_data: { metadata: { orgId, plan } },
+    const [first, ...rest] = (customer.name ?? '').trim().split(/\s+/).filter(Boolean);
+    const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000').replace(/\/$/, '');
+    const api = (this.config.get<string>('API_PUBLIC_URL') ?? apiBase).replace(/\/$/, '');
+    const { checkoutUrl } = await this.paymob.createSubscriptionIntention({
+      planId,
+      amountCents: toCents(price),
+      reference: checkoutReference(orgId, plan),
+      itemName: `Vertex Connect ${plan === 'PRO' ? 'Pro' : 'Business'}`,
+      customer: { firstName: first ?? 'Vertex', lastName: rest.join(' ') || 'Customer', email: customer.email, phone: customer.phone },
+      notificationUrl: `${api}/api/billing/paymob/webhook`,
+      redirectionUrl: `${appUrl}/billing?checkout=done`,
+      extras: { orgId, plan },
     });
-    if (!session.url) throw new BadRequestException('Failed to create checkout session');
-    return { url: session.url };
+    return { url: checkoutUrl };
   }
 
-  /** Opens the Stripe customer portal for managing/cancelling the subscription. */
-  async createPortal(orgId: string): Promise<{ url: string }> {
-    if (!this.stripe) throw new ServiceUnavailableException('Billing is not configured');
+  /**
+   * Stops the renewals. The workspace keeps its plan until the end of what it
+   * paid for, then goes back to Free (see `closeLapsed`).
+   */
+  async cancel(orgId: string): Promise<{ periodEnd: string | null }> {
+    if (!this.paymob) throw new ServiceUnavailableException('Billing is not configured');
     const sub = await this.db.subscription.findFirst({ where: { orgId } });
-    if (!sub?.stripeCustomerId) throw new BadRequestException('No billing account yet');
-    const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
-    const session = await this.stripe.billingPortal.sessions.create({
-      customer: sub.stripeCustomerId,
-      return_url: `${appUrl}/billing`,
-    });
-    return { url: session.url };
+    if (!sub?.paymobSubscriptionId || !LIVE.has(sub.status)) throw new BadRequestException('There is no subscription to cancel.');
+    const remote = await this.paymob.cancelSubscription(Number(sub.paymobSubscriptionId));
+    const periodEnd = remote.next_billing ? endOfDay(remote.next_billing) : sub.currentPeriodEnd;
+    await this.db.subscription.update({ where: { orgId }, data: { status: 'CANCELED', currentPeriodEnd: periodEnd } });
+    this.logger.log(`Cancelled the subscription of org ${orgId}; paid through ${periodEnd?.toISOString() ?? 'now'}`);
+    return { periodEnd: periodEnd?.toISOString() ?? null };
   }
 
-  /** Handles Stripe webhooks: applies the new plan to the organization. */
-  async handleWebhook(rawBody: Buffer, signature: string): Promise<{ received: true }> {
-    if (!this.stripe) return { received: true };
-    const secret = this.config.get<string>('STRIPE_WEBHOOK_SECRET');
-    if (!secret) return { received: true };
-
-    let event: Stripe.Event;
+  /**
+   * A callback from Paymob: a payment was processed, or a subscription changed.
+   * Only ids are read from it; the facts come from Paymob itself.
+   */
+  async handleCallback(body: unknown): Promise<{ received: true }> {
+    if (!this.paymob) return { received: true };
     try {
-      event = this.stripe.webhooks.constructEvent(rawBody, signature, secret);
+      await this.readCallback(body);
     } catch (err) {
-      throw new BadRequestException(`Webhook signature failed: ${(err as Error).message}`);
-    }
-
-    if (event.type === 'checkout.session.completed') {
-      const s = event.data.object as Stripe.Checkout.Session;
-      const orgId = s.metadata?.orgId;
-      const plan = (s.metadata?.plan as Plan) ?? 'PRO';
-      if (orgId) {
-        await this.applyPlan(orgId, plan, 'ACTIVE', s.customer as string, s.subscription as string);
+      // An id Paymob does not know is settled: answering with an error would
+      // only make Paymob send it again. Anything else (Paymob unreachable) is
+      // an error, so Paymob retries later.
+      if (err instanceof PaymobError && err.status === 404) {
+        this.logger.warn(`Paymob callback names something Paymob does not know: ${err.message}`);
+        return { received: true };
       }
-    } else if (
-      event.type === 'customer.subscription.created' ||
-      event.type === 'customer.subscription.updated' ||
-      event.type === 'customer.subscription.deleted'
-    ) {
-      const sub = event.data.object as Stripe.Subscription;
-      // Subscriptions started before their metadata was set are found by id.
-      const stored = await this.db.subscription.findFirst({
-        where: sub.metadata?.orgId ? { orgId: sub.metadata.orgId } : { stripeSubId: sub.id },
-        select: { orgId: true, stripeSubId: true, status: true },
-      });
-      const orgId = sub.metadata?.orgId ?? stored?.orgId;
-      // Events can arrive late: one about an older subscription must not undo
-      // the one the org is paying for now.
-      const stale = !!stored?.stripeSubId && stored.stripeSubId !== sub.id && LIVE.has(stored.status);
-      const status = event.type === 'customer.subscription.deleted' ? 'CANCELED' : subStatus(sub.status);
-      if (orgId && status && !stale) {
-        const periodEnd = sub.items?.data?.[0]?.current_period_end;
-        await this.applyPlan(
-          orgId,
-          status === 'CANCELED' ? 'FREE' : this.planOf(sub),
-          status,
-          sub.customer as string,
-          sub.id,
-          status === 'CANCELED' || !periodEnd ? null : new Date(periodEnd * 1000),
+      throw err;
+    }
+    return { received: true };
+  }
+
+  private async readCallback(body: unknown) {
+    const { transactionId, subscriptionId } = callbackIds(body);
+
+    if (transactionId) {
+      const tx = await this.paymob!.getTransaction(transactionId);
+      const sub = tx.success ? await this.paymob!.subscriptionOfTransaction(transactionId) : null;
+      if (sub) {
+        // The first payment names the workspace; a renewal is found by its subscription.
+        const ref = parseReference(tx.order?.merchant_order_id);
+        await this.applySubscription(sub, ref?.orgId);
+      } else if (!tx.success) {
+        this.logger.warn(`Paymob payment ${transactionId} did not go through`);
+      }
+    }
+    if (subscriptionId) {
+      await this.applySubscription(await this.paymob!.getSubscription(subscriptionId));
+    }
+  }
+
+  /** The plan a Paymob subscription plan pays for, or null for plans that are not ours. */
+  private planOf(planId: number): PaidPlan | null {
+    if (planId === this.plans.BUSINESS) return 'BUSINESS';
+    if (planId === this.plans.PRO) return 'PRO';
+    return null;
+  }
+
+  /**
+   * Brings a workspace in line with its subscription at Paymob. `orgId` is
+   * known for a first payment; otherwise the subscription must be on file.
+   */
+  private async applySubscription(sub: PaymobSubscription, orgId?: string) {
+    const plan = this.planOf(sub.plan_id);
+    if (!plan) {
+      this.logger.warn(`Paymob subscription ${sub.id} is on plan ${sub.plan_id}, which is not a Vertex plan`);
+      return;
+    }
+    const subId = String(sub.id);
+    const stored = await this.db.subscription.findFirst({
+      where: orgId ? { orgId } : { paymobSubscriptionId: subId },
+      select: { orgId: true, paymobSubscriptionId: true, status: true },
+    });
+    const org = orgId ?? stored?.orgId;
+    if (!org) {
+      this.logger.warn(`Paymob subscription ${sub.id} is not tied to any workspace`);
+      return;
+    }
+    const status = subStatus(sub.state);
+    const periodEnd = sub.next_billing ? endOfDay(sub.next_billing) : null;
+
+    if (stored?.paymobSubscriptionId && stored.paymobSubscriptionId !== subId) {
+      if (status !== 'ACTIVE') return; // news about an older subscription changes nothing
+      // A new plan was paid for: stop the old one, so it is not billed twice.
+      if (LIVE.has(stored.status)) {
+        await this.paymob!.cancelSubscription(Number(stored.paymobSubscriptionId)).catch((e) =>
+          this.logger.error(`Could not cancel the old Paymob subscription ${stored.paymobSubscriptionId}: ${(e as Error).message}`),
         );
       }
     }
 
-    return { received: true };
+    // A cancelled subscription keeps its plan until the paid period ends.
+    const keepsPlan = status !== 'CANCELED' || (periodEnd !== null && periodEnd.getTime() > Date.now());
+    const orgPlan: Plan = keepsPlan ? plan : 'FREE';
+    await this.db.$transaction([
+      this.db.organization.update({ where: { id: org }, data: { plan: orgPlan } }),
+      this.db.subscription.upsert({
+        where: { orgId: org },
+        create: { orgId: org, plan: orgPlan, status, paymobSubscriptionId: subId, currentPeriodEnd: periodEnd },
+        update: { plan: orgPlan, status, paymobSubscriptionId: subId, currentPeriodEnd: periodEnd },
+      }),
+    ]);
+    this.logger.log(`Applied ${orgPlan} (${status}) to org ${org} from Paymob subscription ${subId}`);
   }
 
   /**
-   * The plan a subscription pays for. A plan switched in the billing portal
-   * changes the price but not the metadata written at checkout, so the price
-   * decides and the metadata is only the fallback.
+   * Workspaces whose paid time is over go back to Free: a cancelled
+   * subscription at the end of its period, and one whose renewal kept failing
+   * a week after it was due.
    */
-  private planOf(sub: Stripe.Subscription): Plan {
-    const price = sub.items?.data?.[0]?.price?.id;
-    if (price && price === this.priceId('BUSINESS')) return 'BUSINESS';
-    if (price && price === this.priceId('PRO')) return 'PRO';
-    return (sub.metadata?.plan as Plan) ?? 'PRO';
+  async closeLapsed(now = new Date()): Promise<number> {
+    const grace = new Date(now.getTime() - 7 * 86_400_000);
+    const lapsed = await this.db.subscription.findMany({
+      where: {
+        deletedAt: null,
+        plan: { in: ['PRO', 'BUSINESS'] },
+        OR: [
+          { status: 'CANCELED', currentPeriodEnd: { lt: now } },
+          { status: 'PAST_DUE', currentPeriodEnd: { lt: grace } },
+        ],
+      },
+      select: { orgId: true },
+    });
+    for (const { orgId } of lapsed) {
+      await this.db.$transaction([
+        this.db.organization.update({ where: { id: orgId }, data: { plan: 'FREE' } }),
+        this.db.subscription.update({ where: { orgId }, data: { plan: 'FREE', status: 'CANCELED' } }),
+      ]);
+      this.logger.log(`Org ${orgId} is back on Free: its paid period is over`);
+    }
+    return lapsed.length;
   }
+}
 
-  private async applyPlan(
-    orgId: string,
-    plan: Plan,
-    status: SubStatus,
-    customerId: string,
-    subId: string,
-    periodEnd?: Date | null,
-  ) {
-    const period = periodEnd === undefined ? {} : { currentPeriodEnd: periodEnd };
-    // Runs outside tenant context (public webhook) — orgId is set explicitly.
-    await this.db.$transaction([
-      this.db.organization.update({ where: { id: orgId }, data: { plan } }),
-      this.db.subscription.upsert({
-        where: { orgId },
-        create: { orgId, plan, status, stripeCustomerId: customerId, stripeSubId: subId, ...period },
-        update: { plan, status, stripeCustomerId: customerId, stripeSubId: subId, ...period },
-      }),
-    ]);
-    this.logger.log(`Applied plan ${plan} (${status}) to org ${orgId}`);
-  }
+/** "2026-10-31" → the end of that day, in Cairo, when the next charge is due. */
+function endOfDay(date: string): Date {
+  return new Date(`${date.slice(0, 10)}T23:59:59+02:00`);
 }

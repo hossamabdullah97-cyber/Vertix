@@ -1,6 +1,3 @@
-import { readFileSync, statSync } from 'node:fs';
-import { basename, join } from 'node:path';
-
 /** Escapes values per RFC 6350 (vCard). */
 function esc(value: unknown): string {
   return String(value)
@@ -33,7 +30,7 @@ export interface VCardExtras {
   cardUrl?: string;
   /** The About text. */
   about?: string;
-  /** The contact photo, already encoded (see `photoFromUpload`). */
+  /** The contact photo, already encoded (see `vcardPhoto`). */
   photo?: { type: 'JPEG' | 'PNG'; base64: string } | null;
   /** The card's links: phones, emails and web links the vCard may carry. */
   actions?: VCardAction[];
@@ -130,30 +127,18 @@ export function buildVCard(data: Record<string, unknown> = {}, extras: VCardExtr
 }
 
 /** Photos above this are left out rather than bloating the contact file. */
-const MAX_PHOTO_BYTES = 1024 * 1024;
+export const MAX_PHOTO_BYTES = 1024 * 1024;
 
 /**
- * Reads a photo this API stored itself (a `/uploads/<file>` URL), so the
- * contact file carries the picture. Anything else is skipped: the vCard must
- * never make the server fetch an address a card owner typed.
+ * A stored photo as the contact file carries it: JPEG and PNG only, which is
+ * what address books show. (The photo is read by StorageService, which only
+ * reads files this app stored, never an address a card owner typed.)
  */
-export function photoFromUpload(url: unknown, uploadDir: string): VCardExtras['photo'] {
-  if (typeof url !== 'string') return null;
-  let path: string;
-  try {
-    path = new URL(url, 'http://local').pathname;
-  } catch {
-    return null;
-  }
-  const m = path.match(/^\/uploads\/([A-Za-z0-9-]+\.(jpe?g|png))$/i);
-  if (!m) return null;
-  const file = join(uploadDir, basename(m[1]!));
-  try {
-    if (statSync(file).size > MAX_PHOTO_BYTES) return null;
-    return { type: /png/i.test(m[2]!) ? 'PNG' : 'JPEG', base64: readFileSync(file).toString('base64') };
-  } catch {
-    return null;
-  }
+export function vcardPhoto(file: { bytes: Buffer; type: string } | null): VCardExtras['photo'] {
+  if (!file || file.bytes.length > MAX_PHOTO_BYTES) return null;
+  if (file.type === 'image/jpeg') return { type: 'JPEG', base64: file.bytes.toString('base64') };
+  if (file.type === 'image/png') return { type: 'PNG', base64: file.bytes.toString('base64') };
+  return null;
 }
 
 /** A file name for the download: the person's name, or "contact". */

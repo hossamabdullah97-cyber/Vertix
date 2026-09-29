@@ -58,6 +58,7 @@ const EN = {
   timesIn: 'Times are {{zone}} time; meetings take {{length}} minutes.',
   yourTime: 'That is {{time}} where you are.',
   slotTaken: 'Someone just took that time. Pick another.',
+  tooMany: 'This form has been sent several times from here. Try again in a while.',
   privacy: 'Only {{name}} receives what you send here, to get back to you.',
   privacyLink: 'Privacy policy',
 
@@ -145,6 +146,7 @@ const AR: ProfileStrings = {
   timesIn: 'المواعيد بتوقيت {{zone}}، ومدة الاجتماع {{length}} دقيقة.',
   yourTime: 'أي {{time}} بتوقيتك.',
   slotTaken: 'حجز شخص آخر هذا الموعد للتو. اختر موعداً آخر.',
+  tooMany: 'أُرسل هذا النموذج عدة مرات من هنا. حاول مجدداً بعد قليل.',
   privacy: 'لا يصل ما ترسله هنا إلا إلى {{name}}، ليتواصل معك.',
   privacyLink: 'سياسة الخصوصية',
 

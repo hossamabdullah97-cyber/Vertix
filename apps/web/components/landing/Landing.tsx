@@ -14,7 +14,7 @@ import { Faq } from './Faq';
 import { Footer } from './Footer';
 import { Contactless, REGISTER, SectionHead, WRAP } from './shared';
 
-export function Landing() {
+export function Landing({ prices }: { prices: Record<'PRO' | 'BUSINESS', number | null> }) {
   const theme = useStoredTheme();
 
   return (
@@ -24,7 +24,7 @@ export function Landing() {
         <Hero />
         <Product />
         <How />
-        <Pricing />
+        <Pricing prices={prices} />
         <Faq />
         <Closing />
       </main>

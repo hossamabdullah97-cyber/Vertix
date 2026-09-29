@@ -935,7 +935,7 @@ function zoneLabel(tz: string, at: Date): string {
 
 function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t: ProfileStrings; preview: boolean; tagUid?: string }) {
   const [intent, setIntent] = useState<Intent>('CONTACT');
-  const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', note: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', note: '', website: '' });
   const [date, setDate] = useState('');
   // The chosen slot's instant.
   const [slot, setSlot] = useState('');
@@ -996,8 +996,11 @@ function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t
           visitorId: visitorId(),
           // The chip this visitor tapped, so the lead is credited to it.
           tagUid,
+          // The hidden field: empty from a person, filled by a bot.
+          website: form.website || undefined,
         }),
       });
+      if (res.status === 429) throw new Error(t.tooMany);
       if (res.status === 409) {
         // Someone else took the time a moment ago: show what is left.
         setSlot('');
@@ -1052,6 +1055,13 @@ function ExchangeBody({ profile, t, preview, tagUid }: { profile: ProfileData; t
         ))}
       </div>
 
+      {/* A trap for bots: out of sight and out of the tab order, so a person never fills it. */}
+      <div aria-hidden className="absolute -start-[9999px] h-px w-px overflow-hidden">
+        <label>
+          Website
+          <input tabIndex={-1} autoComplete="off" value={form.website} onChange={set('website')} name="website" />
+        </label>
+      </div>
       <input className={field} placeholder={t.fullName} value={form.name} onChange={set('name')} required autoComplete="name" aria-label={t.fullName} />
       <input className={field} type="email" dir="ltr" placeholder={t.email} value={form.email} onChange={set('email')} autoComplete="email" aria-label={t.email} style={{ textAlign: profile.lang === 'ar' ? 'right' : 'left' }} />
       <input className={field} type="tel" dir="ltr" placeholder={t.phone} value={form.phone} onChange={set('phone')} autoComplete="tel" aria-label={t.phone} style={{ textAlign: profile.lang === 'ar' ? 'right' : 'left' }} />

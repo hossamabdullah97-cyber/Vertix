@@ -4,21 +4,21 @@
   "readOnly": "Only owners and admins can change the plan.",
   "dismiss": "Dismiss",
   "notices": {
-    "success": "Payment received. Your new plan shows here as soon as it is confirmed.",
+    "success": "Payment received. Your new plan shows here as soon as Paymob confirms it.",
     "successDone": "You're on {{plan}} now.",
-    "canceled": "Checkout closed. Nothing was charged.",
-    "disabled": "Online payment isn't connected on this server yet, so the plan can't be changed from here. Your plan's limits still apply."
+    "disabled": "Online payment isn't connected on this server yet, so the plan can't be changed from here. Your plan's limits still apply.",
+    "failed": "The payment did not go through, so nothing changed. You can try again with another card.",
+    "cancelled": "Renewals are cancelled. You keep your plan until {{date}}, then the workspace moves to Free."
   },
   "current": {
     "label": "Your plan",
     "free": "No payment needed",
     "perMonth": "{{price}} per month",
     "contract": "Custom contract",
-    "paidThrough": "Paid through {{date}}",
-    "manage": "Manage billing",
-    "opening": "Opening…",
-    "pastDue": "The last payment didn't go through. Update the payment method to keep {{plan}}.",
-    "updatePayment": "Update payment"
+    "pastDue": "The last renewal didn’t go through. Paymob will try again over the next few days; if it keeps failing, the workspace moves back to Free.",
+    "renews": "Renews on {{date}}",
+    "endsOn": "Ends on {{date}}, then Free",
+    "cancel": "Cancel subscription"
   },
   "status": {
     "ACTIVE": "Active",
@@ -44,7 +44,7 @@
     "noLimit": "{{plan}} has no limit."
   },
   "plansTitle": "Plans",
-  "plansHint": "Prices are in US dollars, per month. Changes apply as soon as payment is confirmed.",
+  "plansHint": "Prices are in Egyptian pounds, per month. A new plan applies as soon as the payment is confirmed.",
   "plans": {
     "FREE": "Free",
     "PRO": "Pro",
@@ -64,7 +64,9 @@
     "upgrade": "Upgrade to {{plan}}",
     "switchTo": "Switch to {{plan}}",
     "redirecting": "Redirecting…",
-    "contactSales": "Contact sales"
+    "contactSales": "Contact sales",
+    "resume": "Subscribe to {{plan}} again",
+    "priceSoon": "Price coming soon"
   },
   "features": {
     "cards_one": "One card",
@@ -78,5 +80,21 @@
     "nfcTagsUnlimited": "Unlimited NFC chips",
     "verified": "Verified badge on your cards"
   },
-  "secure": "Payments are handled by Stripe. Card details never reach Vertex Connect."
+  "secure": "Payments are handled by Paymob, a licensed Egyptian payment provider. Card details never reach Vertex Connect.",
+  "phone": {
+    "title": "Subscribe to {{plan}}",
+    "hint": "{{price}} a month, renewed automatically on the card you pay with. You can cancel any time.",
+    "hintNoPrice": "Renewed automatically every month on the card you pay with. You can cancel any time.",
+    "label": "Mobile number",
+    "back": "Back",
+    "continue": "Continue to payment"
+  },
+  "cancel": {
+    "title": "Cancel the subscription?",
+    "body": "Renewals stop now. You keep {{plan}} until {{date}}, then the workspace moves to Free and anything over the Free limits becomes read-only.",
+    "bodyNoDate": "Renewals stop now, and the workspace moves to Free at the end of the paid period.",
+    "keep": "Keep subscription",
+    "confirm": "Cancel subscription",
+    "cancelling": "Cancelling…"
+  }
 }

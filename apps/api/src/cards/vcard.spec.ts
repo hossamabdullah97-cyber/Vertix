@@ -1,7 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { buildVCard, photoFromUpload, vcardFileName } from './vcard';
+import { buildVCard, vcardFileName, vcardPhoto } from './vcard';
 
 describe('buildVCard', () => {
   it('wraps output in BEGIN/END and VERSION', () => {
@@ -85,19 +82,13 @@ describe('buildVCard', () => {
   });
 });
 
-describe('photoFromUpload', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'vc-'));
-  writeFileSync(join(dir, 'abc-123.jpg'), Buffer.from([1, 2, 3]));
-
-  it('reads a photo this server stored', () => {
-    expect(photoFromUpload('http://api.test/uploads/abc-123.jpg', dir)).toEqual({ type: 'JPEG', base64: 'AQID' });
-  });
-
-  it('never reads anything else', () => {
-    expect(photoFromUpload('https://evil.test/uploads/../../etc/passwd', dir)).toBeNull();
-    expect(photoFromUpload('http://api.test/uploads/abc-123.gif', dir)).toBeNull();
-    expect(photoFromUpload('http://api.test/uploads/missing.jpg', dir)).toBeNull();
-    expect(photoFromUpload(42, dir)).toBeNull();
+describe('vcardPhoto', () => {
+  it('carries JPEG and PNG photos, and nothing too big or of another kind', () => {
+    expect(vcardPhoto({ bytes: Buffer.from([1, 2, 3]), type: 'image/jpeg' })).toEqual({ type: 'JPEG', base64: 'AQID' });
+    expect(vcardPhoto({ bytes: Buffer.from([1]), type: 'image/png' })?.type).toBe('PNG');
+    expect(vcardPhoto({ bytes: Buffer.from([1]), type: 'image/webp' })).toBeNull();
+    expect(vcardPhoto({ bytes: Buffer.alloc(2 * 1024 * 1024), type: 'image/jpeg' })).toBeNull();
+    expect(vcardPhoto(null)).toBeNull();
   });
 });
 

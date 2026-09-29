@@ -17,10 +17,18 @@ type Resource = 'cards' | 'members' | 'nfcTags';
 
 interface PlanDef {
   label: string;
-  price: number;
   cards: number | null;
   members: number | null;
   nfcTags: number | null;
+}
+
+interface PlansResponse {
+  plans: Record<string, PlanDef>;
+  /** Monthly prices in pounds; null when the server has none set. */
+  prices: Record<'PRO' | 'BUSINESS', number | null>;
+  currency: string;
+  billingEnabled: boolean;
+  onSale: Record<'PRO' | 'BUSINESS', boolean>;
 }
 
 const ORDER: Plan[] = ['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE'];
@@ -29,24 +37,30 @@ const RESOURCES: { key: Resource; href: string; icon: string; page: string }[] =
   { key: 'members', href: '/team', icon: 'users', page: 'nav:items.team' },
   { key: 'nfcTags', href: '/tags', icon: 'tag', page: 'nfc:title' },
 ];
-/** Subscribed, and still billed: plan changes go through the billing portal. */
+/** Subscribed, and still billed. */
 const LIVE = new Set(['ACTIVE', 'TRIALING', 'PAST_DUE']);
 const rank = (p: string) => ORDER.indexOf(p as Plan);
-/** Prices are set in US dollars and read as "$19" in either language. */
-const usd = (v: number) => formatCurrency(v, 'en', 'USD');
+/** The mobile number Paymob asks for, remembered on this device for next time. */
+const PHONE_KEY = 'vertex_billing_phone';
 
-type Notice = 'success' | 'canceled' | null;
+type Notice = 'success' | 'failed' | 'cancelled' | null;
 
 /**
  * The organization's plan: what it pays, what it uses against the limits, and
- * the other plans. Paying and plan changes happen on Stripe; this page starts
- * them and shows the result.
+ * the other plans. Paying happens on Paymob's checkout page; this page starts
+ * it, cancels renewals, and shows the result.
  */
 export default function BillingPage() {
   const router = useRouter();
   const { t } = useTranslation('billing');
+  const { locale } = useLocale();
   const [plans, setPlans] = useState<Record<string, PlanDef>>({});
+  const [prices, setPrices] = useState<PlansResponse['prices']>({ PRO: null, BUSINESS: null });
+  const [onSale, setOnSale] = useState<PlansResponse['onSale']>({ PRO: false, BUSINESS: false });
   const [enabled, setEnabled] = useState(true);
+  // The plan waiting for a mobile number before checkout opens.
+  const [asking, setAsking] = useState<'PRO' | 'BUSINESS' | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [sub, setSub] = useState<UsageSummary | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [personal, setPersonal] = useState(false);
@@ -61,30 +75,32 @@ export default function BillingPage() {
       router.replace('/login');
       return;
     }
-    // Stripe sends the owner back with ?success or ?canceled. The query stays
-    // until the notice is dismissed, so a remount still shows it.
+    // Paymob sends the payer back with ?checkout=done and its own result in
+    // ?success. The query stays until the notice is dismissed.
     const q = new URLSearchParams(window.location.search);
-    const back: Notice = q.has('success') ? 'success' : q.has('canceled') ? 'canceled' : null;
+    const back: Notice = q.get('checkout') === 'done' ? (q.get('success') === 'false' ? 'failed' : 'success') : null;
     if (back) setNotice(back);
     if (!getActiveOrgId()) {
       setPersonal(true);
       return;
     }
     Promise.all([
-      authFetch<{ plans: Record<string, PlanDef>; billingEnabled: boolean }>('/billing/plans'),
+      authFetch<PlansResponse>('/billing/plans'),
       loadUsage(),
       authFetch<Me>('/auth/me').then(setMe),
     ])
       .then(([p]) => {
         setPlans(p.plans);
+        setPrices(p.prices);
+        setOnSale(p.onSale);
         setEnabled(p.billingEnabled);
       })
       .catch((e) => setError((e as Error).message));
 
-    // The plan changes when Stripe's webhook lands, usually a moment after
-    // the redirect, so look again a couple of times.
+    // The plan changes when Paymob's callback lands, usually a moment after
+    // the redirect, so look again a few times.
     if (back === 'success') {
-      const timers = [3000, 8000].map((ms) => setTimeout(() => loadUsage().catch(() => {}), ms));
+      const timers = [3000, 8000, 15000].map((ms) => setTimeout(() => loadUsage().catch(() => {}), ms));
       return () => timers.forEach(clearTimeout);
     }
   }, [router, loadUsage]);
@@ -92,8 +108,9 @@ export default function BillingPage() {
   const canChange = me?.role === 'OWNER' || me?.role === 'ADMIN';
   const isOwner = me?.role === 'OWNER';
   const live = !!sub && sub.plan !== 'FREE' && LIVE.has(sub.status);
-  const portalReady = enabled && !!sub?.billingAccount && isOwner;
+  const canCancel = enabled && !!sub?.subscribed && isOwner;
   const name = (p: string) => t(`plans.${p}`, { defaultValue: plans[p]?.label ?? p });
+  const priceOf = (p: Plan) => (p === 'PRO' || p === 'BUSINESS' ? prices[p] : null);
 
   async function go(key: string, path: string, body?: unknown) {
     setError('');
@@ -110,8 +127,30 @@ export default function BillingPage() {
     setNotice(null);
     window.history.replaceState(null, '', window.location.pathname);
   }
-  const checkout = (plan: Plan) => go(plan, '/billing/checkout', { plan });
-  const portal = (key = 'portal') => go(key, '/billing/portal');
+  const checkout = (plan: Plan) => (plan === 'PRO' || plan === 'BUSINESS') && setAsking(plan);
+  function pay(plan: 'PRO' | 'BUSINESS', phone: string) {
+    try {
+      localStorage.setItem(PHONE_KEY, phone);
+    } catch {
+      // not remembered, which is fine
+    }
+    setAsking(null);
+    void go(plan, '/billing/checkout', { plan, phone });
+  }
+  async function cancel() {
+    setError('');
+    setBusy('cancel');
+    try {
+      await authFetch('/billing/cancel', { method: 'POST' });
+      setConfirmCancel(false);
+      setNotice('cancelled');
+      await loadUsage();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy('');
+    }
+  }
 
   if (personal) {
     return (
@@ -124,13 +163,14 @@ export default function BillingPage() {
   }
 
   const successText = notice === 'success' && sub && sub.plan !== 'FREE' && LIVE.has(sub.status) ? t('notices.successDone', { plan: name(sub.plan) }) : t('notices.success');
+  const noticeText = notice === 'success' ? successText : notice === 'failed' ? t('notices.failed') : t('notices.cancelled', { date: sub?.periodEnd ? formatDate(sub.periodEnd, locale) : '' });
 
   return (
     <AppShell title={t('title')}>
       <div className="max-w-[1040px] space-y-3">
         {notice && (
-          <Banner tone={notice === 'success' ? 'success' : 'neutral'} icon={notice === 'success' ? 'check' : 'info'} onDismiss={dismissNotice} dismiss={t('dismiss')}>
-            {notice === 'success' ? successText : t('notices.canceled')}
+          <Banner tone={notice === 'failed' ? 'danger' : notice === 'success' ? 'success' : 'neutral'} icon={notice === 'success' ? 'check' : 'info'} onDismiss={dismissNotice} dismiss={t('dismiss')}>
+            {noticeText}
           </Banner>
         )}
         {!enabled && (
@@ -162,15 +202,12 @@ export default function BillingPage() {
               sub={sub}
               def={plans[sub.plan]}
               plans={plans}
+              price={priceOf(sub.plan as Plan)}
               name={name}
               busy={busy}
-              portalReady={portalReady}
-              onPortal={portal}
-              upgrade={
-                canChange && enabled
-                  ? (plan) => (live ? (portalReady ? portal(plan) : undefined) : checkout(plan))
-                  : undefined
-              }
+              canCancel={canCancel}
+              onCancel={() => setConfirmCancel(true)}
+              upgrade={canChange && enabled ? (plan) => checkout(plan) : undefined}
               live={live}
             />
 
@@ -187,6 +224,7 @@ export default function BillingPage() {
                     key={p}
                     plan={p}
                     def={plans[p]}
+                    price={priceOf(p)}
                     name={name(p)}
                     current={sub.plan === p}
                     action={planAction(p)}
@@ -204,24 +242,118 @@ export default function BillingPage() {
           </>
         )}
       </div>
+
+      {asking && <PhoneDialog plan={name(asking)} price={prices[asking]} onPay={(phone) => pay(asking, phone)} onClose={() => setAsking(null)} />}
+      {confirmCancel && sub && (
+        <ConfirmCancel
+          plan={name(sub.plan)}
+          until={sub.periodEnd ? formatDate(sub.periodEnd, locale) : ''}
+          busy={busy === 'cancel'}
+          onConfirm={() => void cancel()}
+          onClose={() => setConfirmCancel(false)}
+        />
+      )}
     </AppShell>
   );
 
   /**
-   * What a plan's column offers. A first subscription goes through checkout;
-   * once subscribed, every change (up, down, or cancelling to Free) goes
-   * through the billing portal so nothing is billed twice.
+   * What a plan's column offers. A paid plan is bought at Paymob; moving to
+   * another paid plan is a new subscription, and the old one stops once the
+   * new one is paid. Going back to Free is cancelling the renewals.
    */
   function planAction(p: Plan): PlanAction {
     if (!sub) return { kind: 'none' };
-    if (sub.plan === p) return { kind: 'current' };
+    if (sub.plan === p && (live || p === 'FREE')) return { kind: 'current' };
     if (p === 'ENTERPRISE') return { kind: 'sales' };
     if (!enabled || !canChange) return { kind: 'none' };
+    if (p === 'FREE') return live && canCancel ? { kind: 'button', primary: false, label: t('plan.switchTo', { plan: name(p) }), run: () => setConfirmCancel(true) } : { kind: 'none' };
+    if (!onSale[p as 'PRO' | 'BUSINESS']) return { kind: 'none' };
     const up = rank(p) > rank(sub.plan);
-    if (live) return portalReady ? { kind: 'button', primary: up, label: t(up ? 'plan.upgrade' : 'plan.switchTo', { plan: name(p) }), run: () => portal(p) } : { kind: 'none' };
-    if (p === 'FREE') return { kind: 'none' };
-    return { kind: 'button', primary: up, label: t(up ? 'plan.upgrade' : 'plan.switchTo', { plan: name(p) }), run: () => checkout(p) };
+    return { kind: 'button', primary: up, label: t(sub.plan === p ? 'plan.resume' : up ? 'plan.upgrade' : 'plan.switchTo', { plan: name(p) }), run: () => checkout(p) };
   }
+}
+
+/** Paymob asks for the payer's mobile number; it is asked here, once, and remembered. */
+function PhoneDialog({ plan, price, onPay, onClose }: { plan: string; price: number | null; onPay: (phone: string) => void; onClose: () => void }) {
+  const { t } = useTranslation('billing');
+  const { locale } = useLocale();
+  const [phone, setPhone] = useState(() => {
+    try {
+      return localStorage.getItem(PHONE_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const valid = /^\+?[0-9 ]{8,16}$/.test(phone.trim());
+  return (
+    <Dialog title={t('phone.title', { plan })} onClose={onClose}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (valid) onPay(phone.trim());
+        }}
+      >
+        <p className="text-[13px] leading-relaxed text-muted">
+          {price !== null ? t('phone.hint', { price: formatCurrency(price, locale, 'EGP') }) : t('phone.hintNoPrice')}
+        </p>
+        <label className="mt-4 block">
+          <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{t('phone.label')}</span>
+          <input
+            type="tel"
+            dir="ltr"
+            inputMode="tel"
+            autoComplete="tel"
+            autoFocus
+            className="v-field tabular rtl:text-right"
+            placeholder="+20 100 000 0000"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </label>
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
+            {t('phone.back')}
+          </button>
+          <button type="submit" disabled={!valid} className="v-btn disabled:opacity-50">
+            {t('phone.continue')}
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+function ConfirmCancel({ plan, until, busy, onConfirm, onClose }: { plan: string; until: string; busy: boolean; onConfirm: () => void; onClose: () => void }) {
+  const { t } = useTranslation('billing');
+  return (
+    <Dialog title={t('cancel.title')} onClose={onClose}>
+      <p className="text-[13px] leading-relaxed text-muted">{until ? t('cancel.body', { plan, date: until }) : t('cancel.bodyNoDate', { plan })}</p>
+      <div className="mt-5 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
+          {t('cancel.keep')}
+        </button>
+        <button type="button" onClick={onConfirm} disabled={busy} className="v-btn bg-red-600 text-white hover:bg-red-700 disabled:opacity-60">
+          {busy ? t('cancel.cancelling') : t('cancel.confirm')}
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
+function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="w-full max-w-[420px] rounded-xl bg-surface p-5 shadow-xl ring-1 ring-line">
+        <h2 className="text-[16px] font-semibold text-ink">{title}</h2>
+        <div className="mt-2">{children}</div>
+      </div>
+    </div>
+  );
 }
 
 type PlanAction =
@@ -272,21 +404,23 @@ function Current({
   sub,
   def,
   plans,
+  price: amount,
   name,
   busy,
   live,
-  portalReady,
-  onPortal,
+  canCancel,
+  onCancel,
   upgrade,
 }: {
   sub: UsageSummary;
   def: PlanDef;
   plans: Record<string, PlanDef>;
+  price: number | null;
   name: (p: string) => string;
   busy: string;
   live: boolean;
-  portalReady: boolean;
-  onPortal: () => void;
+  canCancel: boolean;
+  onCancel: () => void;
   upgrade?: (plan: Plan) => void;
 }) {
   const { t } = useTranslation('billing');
@@ -298,14 +432,23 @@ function Current({
       ? t('current.free')
       : plan === 'ENTERPRISE'
         ? t('current.contract')
-        : t('current.perMonth', { price: usd(def.price) });
-  const period = sub.periodEnd && live && sub.status !== 'PAST_DUE' ? t('current.paidThrough', { date: formatDate(sub.periodEnd, locale) }) : '';
+        : amount !== null
+          ? t('current.perMonth', { price: formatCurrency(amount, locale, 'EGP') })
+          : '';
+  // Renewing: "renews on"; cancelled but paid for: "ends on", then Free.
+  const period = !sub.periodEnd
+    ? ''
+    : live && sub.status !== 'PAST_DUE'
+      ? t('current.renews', { date: formatDate(sub.periodEnd, locale) })
+      : sub.status === 'CANCELED' && plan !== 'FREE' && new Date(sub.periodEnd) > new Date()
+        ? t('current.endsOn', { date: formatDate(sub.periodEnd, locale) })
+        : '';
 
   // The first limit that is full, and the next plan that lifts it.
   const full = RESOURCES.find((r) => def[r.key] !== null && sub.usage[r.key] >= (def[r.key] as number));
   const next = full ? ORDER.find((p) => rank(p) > rank(plan) && plans[p] && (plans[p][full.key] === null || (plans[p][full.key] as number) > sub.usage[full.key])) : undefined;
   // Enterprise is sold by contract, so it is suggested but never a button.
-  const nextAction = next && next !== 'ENTERPRISE' && upgrade && (!live || portalReady) ? () => upgrade(next) : undefined;
+  const nextAction = next && next !== 'ENTERPRISE' && upgrade ? () => upgrade(next) : undefined;
 
   return (
     <section aria-labelledby="current-title" className="v-card overflow-hidden">
@@ -320,13 +463,17 @@ function Current({
           </div>
           <p className="mt-1.5 text-[13px] text-muted">
             {price}
-            {period && <span className="text-faint"> · {period}</span>}
+            {period && (
+              <span className="text-faint">
+                {price ? ' · ' : ''}
+                {period}
+              </span>
+            )}
           </p>
         </div>
-        {portalReady && (
-          <button onClick={() => onPortal()} disabled={!!busy} className="v-btn v-btn-ghost shrink-0 disabled:opacity-60">
-            <Icon name="external-link" size={14} />
-            {busy === 'portal' ? t('current.opening') : t('current.manage')}
+        {canCancel && live && (
+          <button onClick={onCancel} disabled={!!busy} className="v-btn v-btn-ghost shrink-0 disabled:opacity-60">
+            {t('current.cancel')}
           </button>
         )}
       </div>
@@ -335,11 +482,6 @@ function Current({
         <div className="flex flex-wrap items-center gap-3 border-t border-line bg-amber-500/[0.06] px-5 py-3.5 sm:px-6">
           <Icon name="alert" size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
           <p className="min-w-0 flex-1 text-[13px] text-ink">{t('current.pastDue', { plan: name(plan) })}</p>
-          {portalReady && (
-            <button onClick={() => onPortal()} disabled={!!busy} className="v-btn !h-9 shrink-0 disabled:opacity-60">
-              {t('current.updatePayment')}
-            </button>
-          )}
         </div>
       )}
 
@@ -419,8 +561,9 @@ function UsageCell({ resource, used, limit, first }: { resource: (typeof RESOURC
   );
 }
 
-function PlanColumn({ plan, def, name, current, action, busy }: { plan: Plan; def: PlanDef; name: string; current: boolean; action: PlanAction; busy: boolean }) {
+function PlanColumn({ plan, def, price, name, current, action, busy }: { plan: Plan; def: PlanDef; price: number | null; name: string; current: boolean; action: PlanAction; busy: boolean }) {
   const { t } = useTranslation('billing');
+  const { locale } = useLocale();
   const paid = plan !== 'FREE';
 
   const features: string[] = (['cards', 'members', 'nfcTags'] as const).map((k) =>
@@ -437,11 +580,13 @@ function PlanColumn({ plan, def, name, current, action, busy }: { plan: Plan; de
       <p className="mt-4 flex items-baseline gap-1.5">
         {plan === 'ENTERPRISE' ? (
           <span className="text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{t('plan.custom')}</span>
-        ) : (
+        ) : plan === 'FREE' || price !== null ? (
           <>
-            <span dir="ltr" className="tabular text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink">{usd(def.price)}</span>
+            <span className="tabular text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{formatCurrency(plan === 'FREE' ? 0 : price!, locale, 'EGP')}</span>
             <span className="text-[13px] text-muted">{t('plan.perMonth')}</span>
           </>
+        ) : (
+          <span className="text-[15px] font-medium leading-[26px] text-muted">{t('plan.priceSoon')}</span>
         )}
       </p>
 

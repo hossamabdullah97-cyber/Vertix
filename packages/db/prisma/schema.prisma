@@ -566,8 +566,8 @@ model Event {
 model Subscription {
   id               String    @id @default(cuid())
   orgId            String    @unique
-  stripeCustomerId String?
-  stripeSubId      String?   @unique
+  /// The subscription at Paymob that bills this workspace, while there is one.
+  paymobSubscriptionId String?   @unique
   plan             Plan      @default(FREE)
   status           SubStatus @default(ACTIVE)
   currentPeriodEnd DateTime?

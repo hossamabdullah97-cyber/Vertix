@@ -10,27 +10,25 @@ export type Role = z.infer<typeof Role>;
 export const Plan = z.enum(['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE']);
 export type Plan = z.infer<typeof Plan>;
 
-// Plan limits & pricing. null = unlimited. price = monthly USD.
+// Plan limits. null = unlimited. Prices are server settings (apps/api/src/billing/prices.ts).
 export interface PlanDef {
   label: string;
-  price: number;
   cards: number | null;
   members: number | null;
   nfcTags: number | null;
 }
 
 export const PLAN_LIMITS: Record<Plan, PlanDef> = {
-  FREE: { label: 'Free', price: 0, cards: 1, members: 2, nfcTags: 5 },
-  PRO: { label: 'Pro', price: 19, cards: 5, members: 5, nfcTags: 50 },
-  BUSINESS: { label: 'Business', price: 79, cards: 25, members: 25, nfcTags: 500 },
-  ENTERPRISE: { label: 'Enterprise', price: 0, cards: null, members: null, nfcTags: null },
+  FREE: { label: 'Free', cards: 1, members: 2, nfcTags: 5 },
+  PRO: { label: 'Pro', cards: 5, members: 5, nfcTags: 50 },
+  BUSINESS: { label: 'Business', cards: 25, members: 25, nfcTags: 500 },
+  ENTERPRISE: { label: 'Enterprise', cards: null, members: null, nfcTags: null },
 };
 
 /**
  * Whether a plan is paid. This is what earns an account its verified badge —
  * the badge is never self-declared, it is derived from the organization's plan.
- * ENTERPRISE is priced at 0 in the table because it is quoted per contract, so
- * it is listed explicitly rather than inferred from `price`.
+ * Prices are settings on the server (see apps/api/src/billing/prices.ts).
  */
 export function isPaidPlan(plan: Plan | null | undefined): boolean {
   return plan === 'PRO' || plan === 'BUSINESS' || plan === 'ENTERPRISE';
@@ -43,12 +41,14 @@ export interface UsageSummary {
   status: string;
   /** When the paid period ends (renews or lapses), if billing has reported one. */
   periodEnd: string | null;
-  /** Whether the org has a billing account, i.e. the billing portal can open. */
-  billingAccount: boolean;
+  /** Whether the org has a subscription at Paymob that renews and can be cancelled. */
+  subscribed: boolean;
 }
 
 export const checkoutSchema = z.object({
   plan: z.enum(['PRO', 'BUSINESS']),
+  /** Paymob asks for the payer's mobile number. */
+  phone: z.string().trim().regex(/^\+?[0-9 ]{8,16}$/, 'Enter a mobile number'),
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
@@ -442,6 +442,9 @@ export const leadCaptureSchema = z
     /// The chip UID the visitor arrived from, carried through the redirect. It
     /// credits the member whose hardware produced this client.
     tagUid: z.string().max(120).optional(),
+    /// A field people never see. Bots fill every field, so a value here marks
+    /// the request as one (see LeadsService.capture).
+    website: z.string().max(500).optional(),
   })
   .refine((d) => !!d.email || !!d.phone, {
     message: 'Provide an email or a phone number',

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { BillingModule } from '../billing/billing.module';
+import { UploadsModule } from '../uploads/uploads.module';
 import { CardsService } from './cards.service';
 import { SectionsService } from './sections.service';
 import { ActionsService } from './actions.service';
@@ -16,7 +17,7 @@ import { PublicCardsController } from './public-cards.controller';
 import { WalletService } from './wallet/wallet.service';
 
 @Module({
-  imports: [BillingModule],
+  imports: [BillingModule, UploadsModule],
   controllers: [
     CardsController,
     CardPresenceController,

@@ -30,7 +30,8 @@ interface Kpis {
   system: { uptimeSeconds: number; memoryMb: number; activeJobs: number; failedJobs: number };
 }
 
-const usd = (v: number) => formatCurrency(v, 'en', 'USD');
+/** Revenue is in Egyptian pounds, the currency plans are sold in. */
+const egp = (v: number) => formatCurrency(v, 'en', 'EGP');
 
 export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (tab: 'workspaces' | 'jobs') => void }) {
   const { t } = useTranslation('admin');
@@ -71,8 +72,8 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
     { label: t('overview.views'), value: n(views), sub: t('overview.viewsSub', { count: events }) },
     {
       label: t('overview.revenue'),
-      value: usd(k.totals.mrr),
-      sub: [t('overview.revenueSub', { arr: usd(k.totals.arr) }), k.totals.enterpriseSubs ? t('overview.enterprise', { count: k.totals.enterpriseSubs }) : ''].filter(Boolean).join(' '),
+      value: egp(k.totals.mrr),
+      sub: [t('overview.revenueSub', { arr: egp(k.totals.arr) }), k.totals.enterpriseSubs ? t('overview.enterprise', { count: k.totals.enterpriseSubs }) : ''].filter(Boolean).join(' '),
       hint: t('overview.revenueHint'),
     },
     { label: t('overview.database'), value: k.totals.dbSize ?? '—' },

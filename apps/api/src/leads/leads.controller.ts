@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Ip,
   Param,
   Patch,
   Post,
@@ -28,8 +29,9 @@ export class LeadsController {
   @Post('capture')
   capture(
     @Body(new ZodValidationPipe(leadCaptureSchema)) body: LeadCaptureInput,
+    @Ip() ip: string,
   ) {
-    return this.leads.capture(body);
+    return this.leads.capture(body, ip || 'unknown');
   }
 
   @RequireScopes('crm:read')

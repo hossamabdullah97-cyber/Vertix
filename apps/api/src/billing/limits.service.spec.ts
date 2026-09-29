@@ -96,7 +96,7 @@ describe('LimitsService.usage', () => {
       usage: { cards: 2, members: 3, nfcTags: 7 },
       status: 'ACTIVE',
       periodEnd: null,
-      billingAccount: false,
+      subscribed: false,
     });
   });
 
@@ -125,13 +125,13 @@ describe('LimitsService.usage', () => {
           findFirst: jest.fn().mockResolvedValue({
             status: 'ACTIVE',
             currentPeriodEnd: new Date('2026-10-28T00:00:00Z'),
-            stripeCustomerId: 'cus_1',
+            paymobSubscriptionId: '900',
           }),
         },
       },
     } as unknown as PrismaService;
     const out = await new LimitsService(prisma).usage('org');
     expect(out.periodEnd).toBe('2026-10-28T00:00:00.000Z');
-    expect(out.billingAccount).toBe(true);
+    expect(out.subscribed).toBe(true);
   });
 });

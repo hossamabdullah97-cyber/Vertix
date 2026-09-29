@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { runWithTenant } from '@vertex/db';
+import { planPrices } from '../billing/prices';
 import { PrismaService } from '../prisma/prisma.service';
 import { PLAN_LIMITS, defaultStageRows, type Plan, type Role } from '@vertex/shared';
 
@@ -171,18 +172,19 @@ export class AdminService {
       },
     });
 
-    // Revenue from real subscriptions, priced from the shared plan table.
+    // Revenue from real subscriptions, priced from the configured plan prices.
     // ENTERPRISE is quoted per contract, so its price is not known here — those
     // subscriptions are counted separately rather than guessed at.
     const activeSubs = await this.prisma.client.subscription.findMany({
       where: { deletedAt: null, status: 'ACTIVE' },
       select: { plan: true },
     });
+    const prices = planPrices((k) => process.env[k]);
     let mrr = 0;
     let enterpriseSubs = 0;
     for (const sub of activeSubs) {
       if (sub.plan === 'ENTERPRISE') enterpriseSubs += 1;
-      else mrr += PLAN_LIMITS[sub.plan as Plan]?.price ?? 0;
+      else if (sub.plan === 'PRO' || sub.plan === 'BUSINESS') mrr += prices[sub.plan] ?? 0;
     }
     const arr = mrr * 12;
 
@@ -521,7 +523,7 @@ export class AdminService {
       data: { plan: plan as any }
     });
 
-    // Also update Stripe subscription if it exists
+    // Keep the subscription row's plan in step, if there is one.
     await this.prisma.client.subscription.updateMany({
       where: { orgId },
       data: { plan: plan as any }
