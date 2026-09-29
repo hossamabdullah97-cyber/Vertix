@@ -381,6 +381,25 @@ export const inviteMemberSchema = z.object({
 });
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 
+// Many people at once, from a spreadsheet. Owners are never made this way.
+export const importMemberRowSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  name: z.string().trim().max(120).optional(),
+  title: z.string().trim().max(120).optional(),
+  phone: z.string().trim().max(40).optional(),
+  team: z.string().trim().max(80).optional(),
+  role: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE']).default('EMPLOYEE'),
+});
+export const importMembersSchema = z.object({
+  rows: z.array(importMemberRowSchema).min(1).max(500),
+  /** Also make each person a card, filled in from their row. */
+  createCards: z.boolean().default(true),
+  /** The language those cards are written in. */
+  lang: z.enum(['en', 'ar']).default('en'),
+});
+export type ImportMemberRow = z.infer<typeof importMemberRowSchema>;
+export type ImportMembersInput = z.infer<typeof importMembersSchema>;
+
 export const MemberStatus = z.enum(['INVITED', 'ACTIVE', 'SUSPENDED']);
 export const updateMemberSchema = z.object({
   role: Role.optional(),

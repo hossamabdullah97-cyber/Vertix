@@ -28,6 +28,7 @@ import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Sheet } from '@/components/ui/Sheet';
 import { TeamsView, type Department, type TeamRow } from '@/components/team/TeamsView';
+import { ImportPeople } from '@/components/team/ImportPeople';
 import { RolesView } from '@/components/team/RolesView';
 import { ActivityView } from '@/components/team/ActivityView';
 
@@ -179,6 +180,7 @@ export default function TeamPage() {
   const filtersActive = query.trim() !== '' || roleFilter !== '' || teamFilter !== '';
   const closeMember = useCallback(() => setSelectedId(null), []);
   const closeInvite = useCallback(() => setInviting(false), []);
+  const [importing, setImporting] = useState(false);
   const closeRemove = useCallback(() => setRemoving(null), []);
 
   const patchMember = (m: MemberRow, body: Record<string, unknown>, done: string) =>
@@ -224,9 +226,14 @@ export default function TeamPage() {
       fluid
       action={
         canManage && (
-          <button onClick={() => setInviting(true)} className="v-btn">
-            <Icon name="plus" size={14} /> {t('invite.button')}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setImporting(true)} className="v-btn v-btn-ghost">
+              <Icon name="upload" size={14} /> <span className="hidden sm:inline">{t('import.button')}</span>
+            </button>
+            <button onClick={() => setInviting(true)} className="v-btn">
+              <Icon name="plus" size={14} /> {t('invite.button')}
+            </button>
+          </div>
         )
       }
     >
@@ -457,6 +464,7 @@ export default function TeamPage() {
         onRemove={() => selected && setRemoving(selected)}
       />
 
+      <ImportPeople open={importing} onClose={() => setImporting(false)} onImported={() => load().catch(() => {})} />
       <InvitePeople open={inviting} onClose={closeInvite} teams={teams} myRole={me?.role} onInvited={() => load().catch(() => {})} />
 
       <ConfirmDialog

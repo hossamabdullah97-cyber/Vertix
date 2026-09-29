@@ -1,3 +1,5 @@
+import { CardsModule } from '../cards/cards.module';
+import { MembersImportService } from './members-import.service';
 import { Module } from '@nestjs/common';
 import { BillingModule } from '../billing/billing.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
@@ -18,7 +20,7 @@ import { OccasionsController } from './occasions.controller';
 import { OccasionsService } from './occasions.service';
 
 @Module({
-  imports: [BillingModule, IntegrationsModule],
+  imports: [BillingModule, IntegrationsModule, CardsModule],
   controllers: [
     OrganizationsController,
     MembersController,
@@ -31,6 +33,7 @@ import { OccasionsService } from './occasions.service';
   providers: [
     OrganizationsService,
     MembersService,
+    MembersImportService,
     TeamsService,
     AuditService,
     AssetsService,
