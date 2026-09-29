@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-ocr.mjs",
     "dev": "next dev -p 3000",
+    "prebuild": "node scripts/copy-ocr.mjs",
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "tsc --noEmit",
@@ -11,16 +13,20 @@
     "i18n:validate": "node scripts/i18n-validate.mjs"
   },
   "dependencies": {
+    "@tesseract.js-data/ara": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
     "@vertex/shared": "workspace:*",
     "framer-motion": "^12.42.1",
     "html-to-image": "1.11.11",
     "i18next": "^26.3.6",
+    "jsqr": "^1.4.0",
     "next": "14.2.21",
     "qrcode": "^1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-i18next": "^17.0.10",
-    "read-excel-file": "^5.8.8"
+    "read-excel-file": "^5.8.8",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

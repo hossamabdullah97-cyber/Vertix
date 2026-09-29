@@ -12,6 +12,8 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { LeadCard, Heat } from '@/components/crm/LeadCard';
 import { LeadDrawer } from '@/components/crm/LeadDrawer';
+import { AddLead } from '@/components/crm/AddLead';
+import { downloadText, leadsCsv } from '@/lib/export-leads';
 import { SmartFilters } from '@/components/crm/SmartFilters';
 import nextDynamic from 'next/dynamic';
 import { type Lead, type Stage, type Temp, type Task, type TaskPriority, sourceMeta, wonStage, lostStage, formatMoney, stageKey } from '@/lib/crm';
@@ -52,6 +54,7 @@ export default function LeadsPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [patchBusy, setPatchBusy] = useState(false);
   const [toast, setToast] = useState('');
+  const [adding, setAdding] = useState(false);
 
   const load = useCallback(async () => {
     const [l, s, tk] = await Promise.all([
@@ -197,8 +200,48 @@ export default function LeadsPage() {
   // Views that list leads share the filter toolbar.
   const filterable = view === 'pipeline' || view === 'contacts' || view === 'companies' || view === 'timeline';
 
+  // The leads on screen (all of them, or what the filters leave) as a CSV for Excel.
+  function exportLeads() {
+    const rows = filtersActive ? filtered : leads;
+    const csv = leadsCsv(rows, stages, {
+      headers: {
+        name: t('export.headers.name'),
+        company: t('export.headers.company'),
+        email: t('export.headers.email'),
+        phone: t('export.headers.phone'),
+        stage: t('export.headers.stage'),
+        temperature: t('export.headers.temperature'),
+        value: t('export.headers.value'),
+        source: t('export.headers.source'),
+        card: t('export.headers.card'),
+        added: t('export.headers.added'),
+      },
+      stage: (st) => t(stageKey(st.name), st.name),
+      temperature: (tp) => t(`temperature.${tp.toLowerCase()}`),
+      source: (src) => t(`sources.${src}`, sourceMeta(src).label),
+    });
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    downloadText(csv, `${t('export.file')}-${stamp}.csv`);
+  }
+
   return (
-    <AppShell title={t('title')} fluid>
+    <AppShell
+      title={t('title')}
+      fluid
+      action={
+        <div className="flex gap-2">
+          {leads.length > 0 && (
+            <button type="button" onClick={exportLeads} className="v-btn v-btn-ghost" title={filtersActive ? t('export.filtered', { count: filtered.length }) : t('export.all')}>
+              <Icon name="download" size={14} /> <span className="hidden sm:inline">{t('export.button')}</span>
+            </button>
+          )}
+          <button type="button" onClick={() => setAdding(true)} className="v-btn">
+            <Icon name="plus" size={14} /> {t('add.button')}
+          </button>
+        </div>
+      }
+    >
       <p className="text-[14px] text-muted">
         <span className="font-medium text-ink">{t('summary.open', { count: summary.open })}</span>
         <span className="mx-2 text-faint" aria-hidden>·</span>
@@ -380,6 +423,15 @@ export default function LeadsPage() {
         )}
       </div>
 
+      <AddLead
+        open={adding}
+        onClose={() => setAdding(false)}
+        onAdded={(lead) => {
+          setLeads((list) => [lead, ...list]);
+          setView('pipeline');
+          setSelected(lead.id);
+        }}
+      />
       <LeadDrawer
         lead={selectedLead}
         stages={stages}

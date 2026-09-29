@@ -134,6 +134,8 @@ export const SOURCE_META: Record<string, { label: string; icon: string }> = {
   quote: { label: 'Quote request', icon: 'quote' },
   share: { label: 'Shared link', icon: 'send' },
   view: { label: 'Profile view', icon: 'eye' },
+  card_scan: { label: 'Paper card', icon: 'camera' },
+  manual: { label: 'Added by hand', icon: 'user-plus' },
 };
 
 export function sourceMeta(source: string) {
