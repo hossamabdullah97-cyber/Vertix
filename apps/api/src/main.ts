@@ -11,7 +11,7 @@ import { trustProxySetting } from './config/trust-proxy';
 import { UPLOAD_DIR } from './uploads/storage.service';
 
 async function bootstrap() {
-  // rawBody enables Stripe webhook signature verification.
+  // rawBody keeps the unparsed request body for handlers that need it.
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: false,
     rawBody: true,

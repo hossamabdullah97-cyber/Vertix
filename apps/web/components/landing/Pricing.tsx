@@ -5,17 +5,19 @@ import { useTranslation } from 'react-i18next';
 import { PLAN_LIMITS, type Plan } from '@vertex/shared';
 import { formatCurrency } from '@/lib/format';
 import { SALES_MAILTO } from '@/lib/contact';
+import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Icon } from '@/components/Icon';
 import { REGISTER, SectionHead, WRAP } from './shared';
 
 const PLANS: Plan[] = ['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE'];
 
 /**
- * The same plans, prices and limits the Billing page sells, from the same
- * table, in the same words.
+ * The same plans, prices and limits the Billing page sells, in the same
+ * words. Prices are the server's settings, in Egyptian pounds.
  */
-export function Pricing() {
+export function Pricing({ prices }: { prices: Record<'PRO' | 'BUSINESS', number | null> }) {
   const { t } = useTranslation(['landing', 'billing']);
+  const { locale } = useLocale();
 
   return (
     <section id="pricing" aria-labelledby="pricing-title" className="scroll-mt-20 py-20 sm:py-28">
@@ -25,6 +27,7 @@ export function Pricing() {
         <div className="mt-12 grid gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan) => {
             const def = PLAN_LIMITS[plan];
+            const price = plan === 'FREE' ? 0 : plan === 'ENTERPRISE' ? null : prices[plan];
             const features = (['cards', 'members', 'nfcTags'] as const).map((k) =>
               def[k] === null ? t(`billing:features.${k}Unlimited`) : t(`billing:features.${k}`, { count: def[k] as number }),
             );
@@ -36,13 +39,13 @@ export function Pricing() {
                 <p className="mt-5 flex items-baseline gap-1.5">
                   {plan === 'ENTERPRISE' ? (
                     <span className="text-[30px] font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{t('billing:plan.custom')}</span>
-                  ) : (
+                  ) : price !== null ? (
                     <>
-                      <span dir="ltr" className="tabular text-[30px] font-semibold leading-none tracking-[-0.02em] text-ink">
-                        {formatCurrency(def.price, 'en', 'USD')}
-                      </span>
+                      <span className="tabular text-[30px] font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{formatCurrency(price, locale, 'EGP')}</span>
                       <span className="text-[13px] text-muted">{t('billing:plan.perMonth')}</span>
                     </>
+                  ) : (
+                    <span className="text-[16px] font-medium leading-[30px] text-muted">{t('billing:plan.priceSoon')}</span>
                   )}
                 </p>
                 {plan === 'ENTERPRISE' ? (

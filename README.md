@@ -70,9 +70,9 @@ pnpm dev                 # API: http://localhost:4000/api · Web: http://localho
 | CRUD | `/api/orgs/teams`    | إدارة الفرق | OWNER/ADMIN |
 | GET  | `/api/billing/plans` | الخطط والأسعار | عام |
 | GET  | `/api/billing/subscription` | الخطة الحالية + الاستخدام | JWT + مؤسسة |
-| POST | `/api/billing/checkout` | جلسة Stripe Checkout | OWNER/ADMIN |
-| POST | `/api/billing/portal` | بوابة Stripe لإدارة الاشتراك | OWNER |
-| POST | `/api/billing/webhook` | webhook من Stripe | عام (موقّع) |
+| POST | `/api/billing/checkout` | صفحة دفع Paymob لاشتراك شهري | OWNER/ADMIN |
+| POST | `/api/billing/cancel` | إيقاف التجديد (الخطة تبقى حتى نهاية المدفوع) | OWNER |
+| POST | `/api/billing/paymob/webhook` | إشعارات Paymob (تُتحقق من Paymob نفسها) | عام |
 | CRUD | `/api/cards`         | البطاقات (إنشاء/عرض/تعديل/حذف ناعم) | JWT + مؤسسة |
 | CRUD | `/api/cards/:id/sections` | أقسام البطاقة (+ `/reorder`) | JWT + مؤسسة |
 | CRUD | `/api/cards/:id/actions`  | إجراءات البطاقة (+ `/reorder`) | JWT + مؤسسة |
@@ -163,10 +163,11 @@ docker compose -f docker-compose.prod.yml up --build -d
 - ✅ حُرّاس: لا يمكن إزالة آخر مالك / تعديل مالك إلا من مالك / لا تُزِل نفسك
 - ✅ صفحة `/team` في الويب (إدارة كاملة للمالك/المسؤول، عرض للبقية)
 
-### الفوترة (Stripe) + الخطط + الحدود
-- ✅ 4 خطط (FREE/PRO/BUSINESS/ENTERPRISE) بحدود وأسعار في الحزمة المشتركة
+### الفوترة (Paymob بالجنيه المصري) + الخطط + الحدود
+- ✅ 4 خطط (FREE/PRO/BUSINESS/ENTERPRISE) بحدود في الحزمة المشتركة، والأسعار إعدادات (`PRICE_PRO_EGP` و`PRICE_BUSINESS_EGP`)
 - ✅ فرض الحدود على الإنشاء (بطاقات/أعضاء/تاجات) — `LimitsService` يقرأ خطة المؤسسة
-- ✅ Stripe: Checkout + Customer Portal + webhook (تحديث الخطة) — مُعطَّل تلقائياً بلا مفتاح
+- ✅ Paymob: اشتراك شهري عبر Intention API + Subscription Module، إلغاء التجديد، وإشعارات لا يُصدَّق منها إلا الأرقام (كل شيء يُتحقق منه لدى Paymob) — مُعطَّل تلقائياً بلا مفاتيح
+- ✅ إنشاء الخطط في Paymob: `pnpm --filter @vertex/api paymob:plans`
 - ✅ صفحة `/billing`: الخطة الحالية + أشرطة الاستخدام + بطاقات الترقية
 
 ### تطبيق الموبايل (Expo + NFC أصلي)
@@ -191,6 +192,6 @@ docker compose -f docker-compose.prod.yml up --build -d
 - ✅ صفحات الويب: `/accept-invite` · `/forgot-password` · `/reset-password`
 
 ## التالي
-- ربط Stripe بمفاتيح حقيقية + اختبار webhook عبر Stripe CLI.
+- ربط Paymob بمفاتيح حقيقية وتجربة اشتراك كامل في وضع الاختبار.
 - اختبارات تكامل (e2e) للمسارات المحمية + تشغيل الموبايل على جهاز (EAS).
 - نشر فعلي على خادم (Railway/Fly/VPS) + مزوّد بريد حقيقي.

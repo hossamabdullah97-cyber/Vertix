@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  checkoutSchema,
   registerSchema,
   createCardSchema,
   PLAN_LIMITS,
@@ -49,9 +50,8 @@ describe('PLAN_LIMITS', () => {
     expect(PLAN_LIMITS.PRO.cards).toBeLessThan(PLAN_LIMITS.BUSINESS.cards!);
     expect(PLAN_LIMITS.ENTERPRISE.cards).toBeNull();
   });
-  it('FREE is the only zero-price tier alongside enterprise-custom', () => {
-    expect(PLAN_LIMITS.FREE.price).toBe(0);
-    expect(PLAN_LIMITS.PRO.price).toBeGreaterThan(0);
+  it('carries limits only: prices are server settings, in pounds', () => {
+    for (const def of Object.values(PLAN_LIMITS)) expect(def).not.toHaveProperty('price');
   });
 });
 
@@ -62,10 +62,9 @@ describe('isPaidPlan', () => {
     expect(isPaidPlan('FREE')).toBe(false);
   });
 
-  it('counts ENTERPRISE as paid despite its zero table price', () => {
-    // Enterprise is quoted per contract, so price is 0 in PLAN_LIMITS. Deriving
-    // "paid" from price would silently strip its verified badge.
-    expect(PLAN_LIMITS.ENTERPRISE.price).toBe(0);
+  it('counts ENTERPRISE as paid, though it has no listed price', () => {
+    // Enterprise is quoted per contract. Deriving "paid" from a price would
+    // silently strip its verified badge.
     expect(isPaidPlan('ENTERPRISE')).toBe(true);
   });
 
@@ -98,5 +97,14 @@ describe('occasions', () => {
     expect(createOccasionSchema.safeParse({ name: 'Expo', startsOn: '2026-09-19', endsOn: '2026-09-21' }).success).toBe(true);
     expect(createOccasionSchema.safeParse({ name: 'Expo', startsOn: '19/09/2026', endsOn: '2026-09-21' }).success).toBe(false);
     expect(createOccasionSchema.safeParse({ name: '  ', startsOn: '2026-09-19', endsOn: '2026-09-21' }).success).toBe(false);
+  });
+});
+
+describe('checkoutSchema', () => {
+  it('asks for the mobile number Paymob needs', () => {
+    expect(checkoutSchema.safeParse({ plan: 'PRO', phone: '+20 100 123 4567' }).success).toBe(true);
+    expect(checkoutSchema.safeParse({ plan: 'PRO' }).success).toBe(false);
+    expect(checkoutSchema.safeParse({ plan: 'PRO', phone: 'call me' }).success).toBe(false);
+    expect(checkoutSchema.safeParse({ plan: 'ENTERPRISE', phone: '+201001234567' }).success).toBe(false);
   });
 });

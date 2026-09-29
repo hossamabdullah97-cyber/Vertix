@@ -39,11 +39,23 @@ export const envSchema = z.object({
   // The time zone meeting hours are in for cards whose owner has not chosen one.
   DEFAULT_TIMEZONE: z.string().default('Africa/Cairo'),
 
-  // Stripe billing (optional — billing is disabled when STRIPE_SECRET_KEY is unset).
-  STRIPE_SECRET_KEY: z.string().optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  STRIPE_PRICE_PRO: z.string().optional(),
-  STRIPE_PRICE_BUSINESS: z.string().optional(),
+  // Billing with Paymob (optional — billing is off until the keys and the
+  // card integration are set). Keys are in the Paymob dashboard under
+  // Settings → API Keys; plans are made with `pnpm --filter @vertex/api paymob:plans`.
+  PAYMOB_BASE_URL: z.string().url().optional(),
+  PAYMOB_API_KEY: z.string().optional(),
+  PAYMOB_SECRET_KEY: z.string().optional(),
+  PAYMOB_PUBLIC_KEY: z.string().optional(),
+  PAYMOB_CARD_INTEGRATION_ID: z.string().optional(),
+  PAYMOB_MOTO_INTEGRATION_ID: z.string().optional(),
+  PAYMOB_PLAN_PRO: z.string().optional(),
+  PAYMOB_PLAN_BUSINESS: z.string().optional(),
+  // Monthly prices in Egyptian pounds; a plan without one is not sold.
+  PRICE_PRO_EGP: z.string().optional(),
+  PRICE_BUSINESS_EGP: z.string().optional(),
+  // This API's own public address, for Paymob's callbacks (defaults to the
+  // address a request came in on).
+  API_PUBLIC_URL: z.string().url().optional(),
 
   // Email (optional — emails are logged to the console when RESEND_API_KEY is unset).
   RESEND_API_KEY: z.string().optional(),

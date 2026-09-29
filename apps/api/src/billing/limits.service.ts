@@ -94,7 +94,7 @@ export class LimitsService {
       this.db.nfcTag.count(),
       this.db.subscription.findFirst({
         where: { orgId },
-        select: { status: true, currentPeriodEnd: true, stripeCustomerId: true },
+        select: { status: true, currentPeriodEnd: true, paymobSubscriptionId: true },
       }),
     ]);
     return {
@@ -103,7 +103,7 @@ export class LimitsService {
       usage: { cards, members, nfcTags },
       status: sub?.status ?? 'NONE',
       periodEnd: sub?.currentPeriodEnd?.toISOString() ?? null,
-      billingAccount: !!sub?.stripeCustomerId,
+      subscribed: !!sub?.paymobSubscriptionId && sub.status !== 'CANCELED',
     };
   }
 }
