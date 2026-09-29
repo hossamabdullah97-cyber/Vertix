@@ -4,6 +4,8 @@ import {
   registerSchema,
   loginSchema,
   refreshSchema,
+  googleSignInSchema,
+  type GoogleSignInInput,
   forgotPasswordSchema,
   resetPasswordSchema,
   acceptInviteSchema,
@@ -46,6 +48,20 @@ export class AuthController {
   @Post('login')
   login(@Body(new ZodValidationPipe(loginSchema)) body: LoginInput, @Ip() ip: string) {
     return this.auth.login(body, ip);
+  }
+
+  /** Which sign-in methods the page should offer. */
+  @Public()
+  @Get('providers')
+  providers() {
+    return this.auth.providers();
+  }
+
+  @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
+  @Post('google')
+  google(@Body(new ZodValidationPipe(googleSignInSchema)) body: GoogleSignInInput) {
+    return this.auth.google(body.credential);
   }
 
   @Public()

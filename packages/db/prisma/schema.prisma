@@ -31,6 +31,8 @@ model User {
   name          String?
   avatarUrl     String?
   passwordHash  String?   // null for OAuth-only sign-in
+  /// The Google account ("sub") this person signs in with, once linked.
+  googleId      String?   @unique
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

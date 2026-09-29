@@ -1,6 +1,8 @@
 import {
   Injectable,
   ConflictException,
+  Logger,
+  ServiceUnavailableException,
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -29,6 +31,7 @@ import {
   SIGN_IN_WINDOW_MS,
   tooManyAttempts,
 } from './auth-throttle.service';
+import { GoogleIdTokenVerifier, GoogleTokenError } from './google-id-token';
 
 function slugify(input: string): string {
   const base = input
@@ -56,6 +59,9 @@ export const SUSPENDED_MESSAGE =
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private googleVerifier: GoogleIdTokenVerifier | null = null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -76,28 +82,9 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(input.password, 10);
 
-    const { user, orgId } = await this.prisma.client.$transaction(
-      async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            email,
-            name: input.name,
-            passwordHash,
-          },
-        });
-        const org = await tx.organization.create({
-          data: {
-            name: input.organizationName,
-            slug: slugify(input.organizationName),
-          },
-        });
-        await tx.membership.create({
-          data: { userId: user.id, orgId: org.id, role: 'OWNER' },
-        });
-        // Seed the default 7-stage sales pipeline so the CRM works immediately.
-        await tx.pipelineStage.createMany({ data: defaultStageRows(org.id) });
-        return { user, orgId: org.id };
-      },
+    const { user, orgId } = await this.createAccount(
+      { email, name: input.name, passwordHash },
+      input.organizationName,
     );
 
     return this.issueTokens({
@@ -296,6 +283,94 @@ export class AuthService {
       },
     });
     return this.getProfile(userId);
+  }
+
+  /** The sign-in methods this server offers, for the sign-in page. */
+  providers(): { google: string | null } {
+    return { google: this.config.get<string>('GOOGLE_CLIENT_ID') || null };
+  }
+
+  /**
+   * Sign in (or sign up) with a Google ID token. The Google account is
+   * matched first by its id, then by a verified email: an existing account
+   * with that email is linked to it, and a new person gets an account and a
+   * workspace of their own, as with register().
+   */
+  async google(credential: string): Promise<AuthTokens> {
+    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
+    if (!clientId) throw new ServiceUnavailableException('Google sign-in is not set up on this server');
+    this.googleVerifier ??= new GoogleIdTokenVerifier(clientId);
+
+    let who;
+    try {
+      who = await this.googleVerifier.verify(credential);
+    } catch (err) {
+      if (err instanceof GoogleTokenError) {
+        this.logger.warn(`Google sign-in refused: ${err.message}`);
+        throw new UnauthorizedException('Google sign-in failed');
+      }
+      throw err;
+    }
+    // An unverified address could belong to anyone; it must not open, or
+    // claim, an account.
+    if (!who.emailVerified) throw new UnauthorizedException('Google has not verified this email address');
+    const email = normalizeEmail(who.email);
+
+    let user =
+      (await this.prisma.client.user.findUnique({ where: { googleId: who.sub } })) ??
+      (await this.prisma.client.user.findFirst({ where: { email: emailIs(email) } }));
+
+    if (user?.deletedAt) throw new UnauthorizedException('Google sign-in failed');
+
+    if (user) {
+      if (user.googleId && user.googleId !== who.sub) {
+        throw new UnauthorizedException('This account is linked to a different Google account');
+      }
+      if (!user.googleId || !user.emailVerified || !user.avatarUrl) {
+        user = await this.prisma.client.user.update({
+          where: { id: user.id },
+          data: {
+            googleId: who.sub,
+            emailVerified: user.emailVerified ?? new Date(),
+            avatarUrl: user.avatarUrl ?? who.picture,
+            name: user.name ?? who.name,
+          },
+        });
+      }
+      const membership = await this.defaultMembership(user.id);
+      return this.issueTokens({
+        sub: user.id,
+        email: user.email,
+        orgId: membership?.orgId,
+        role: membership?.role as Role | undefined,
+      });
+    }
+
+    const name = who.name ?? email.split('@')[0]!;
+    const created = await this.createAccount(
+      { email, name, googleId: who.sub, emailVerified: new Date(), avatarUrl: who.picture },
+      name,
+    );
+    return this.issueTokens({ sub: created.user.id, email: created.user.email, orgId: created.orgId, role: 'OWNER' });
+  }
+
+  /** A new person with a workspace they own, its sales pipeline ready. */
+  private createAccount(
+    data: { email: string; name?: string | null; passwordHash?: string; googleId?: string; emailVerified?: Date; avatarUrl?: string | null },
+    organizationName: string,
+  ) {
+    return this.prisma.client.$transaction(async (tx) => {
+      const user = await tx.user.create({ data });
+      const org = await tx.organization.create({
+        data: { name: organizationName, slug: slugify(organizationName) },
+      });
+      await tx.membership.create({
+        data: { userId: user.id, orgId: org.id, role: 'OWNER' },
+      });
+      // Seed the default 7-stage sales pipeline so the CRM works immediately.
+      await tx.pipelineStage.createMany({ data: defaultStageRows(org.id) });
+      return { user, orgId: org.id };
+    });
   }
 
   /**

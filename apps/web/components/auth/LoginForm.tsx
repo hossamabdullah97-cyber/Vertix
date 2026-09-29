@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { login, register, safeNext } from '@/lib/client';
 import { AuthShell } from './AuthShell';
+import { GoogleButton } from './GoogleButton';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText, emailProps } from './fields';
 
 type Mode = 'login' | 'register';
@@ -55,9 +56,13 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   }
 
   const isLogin = mode === 'login';
+  const afterGoogle = useCallback(() => {
+    window.location.href = safeNext(next) ?? '/dashboard';
+  }, [next]);
 
   return (
     <AuthShell title={isLogin ? t('login.title') : t('register.title')} subtitle={isLogin ? t('login.subtitle') : t('register.subtitle')}>
+      <GoogleButton mode={mode} onDone={afterGoogle} />
       <form onSubmit={submit} className="space-y-5">
         {isLogin && expired && !error && <FormMessage tone="info">{t('login.expired')}</FormMessage>}
         {error && (

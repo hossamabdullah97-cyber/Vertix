@@ -264,6 +264,24 @@ export async function register(input: {
   return data;
 }
 
+/** Signs in (or up) with the ID token "Sign in with Google" gave the page. */
+export async function googleSignIn(credential: string) {
+  const data = await authPost<AuthTokens>('google', { credential });
+  saveTokens(data);
+  setActiveOrgId(null);
+  return data;
+}
+
+/** The sign-in methods the server offers besides email and password. */
+export async function authProviders(): Promise<{ google: string | null }> {
+  try {
+    const res = await fetch(`${API_URL}/auth/providers`);
+    return res.ok ? await res.json() : { google: null };
+  } catch {
+    return { google: null };
+  }
+}
+
 /** Succeeds whether or not the address has an account; fails only when the request does. */
 export async function forgotPassword(email: string) {
   await authPost('forgot-password', { email: email.trim() });

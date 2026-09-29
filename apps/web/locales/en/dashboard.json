@@ -124,25 +124,34 @@
     "show": "Show setup checklist ({{done}} of {{total}} done)",
     "steps": {
       "createCard": {
-        "label": "Create your first card",
-        "desc": "Your name, title and the ways people can reach you.",
+        "label": "Create your card",
+        "desc": "Your name, title and company, as people should see them.",
         "link": "Create card"
+      },
+      "addPhoto": {
+        "label": "Add your photo",
+        "desc": "People save and remember a face far more than a name.",
+        "link": "Add photo"
+      },
+      "addContact": {
+        "label": "Add how to reach you",
+        "desc": "Your phone or email, and at least one link like WhatsApp or LinkedIn.",
+        "link": "Add details"
       },
       "publishCard": {
         "label": "Publish it",
-        "desc": "Pick a template, add your links and make it live.",
-        "link": "Edit card",
-        "linkAlt": "Go to cards"
+        "desc": "Make the card live so its link and QR code work.",
+        "link": "Open card"
+      },
+      "leadAlerts": {
+        "label": "Choose how you hear about leads",
+        "desc": "Email, WhatsApp, or both, when someone leaves their details.",
+        "link": "Choose alerts"
       },
       "linkTag": {
         "label": "Link an NFC chip",
-        "desc": "Register a chip and point it at your card.",
+        "desc": "One tap of your chip opens the card on any phone.",
         "link": "Link chip"
-      },
-      "captureLead": {
-        "label": "Capture your first lead",
-        "desc": "Share your card; details people leave arrive in Leads.",
-        "link": "Open leads"
       }
     }
   },
