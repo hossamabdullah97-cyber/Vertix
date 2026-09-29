@@ -326,7 +326,7 @@ export function TemplateMarketplace({
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
-            className="fixed inset-x-0 bottom-5 z-40 mx-auto flex w-fit items-center gap-3 rounded-xl border border-line bg-surface py-2 pe-2 ps-4 shadow-lg"
+            className="fixed inset-x-0 bottom-[calc(1.25rem+var(--v-dock,0px))] z-40 mx-auto flex w-fit items-center gap-3 rounded-xl border border-line bg-surface py-2 pe-2 ps-4 shadow-lg"
           >
             <span className="text-[12.5px] text-ink">{t('templates.selected', { count: compare.length })}</span>
             <div className="flex -space-x-1.5 rtl:space-x-reverse">

@@ -50,6 +50,9 @@ const GROUPS: { labelKey: string; showLabel: boolean; items: { href: string; lab
   },
 ];
 
+/** The phone's bottom bar: the four places people go most. Everything else is under More. */
+const DOCK = ['/dashboard', '/cards', '/leads', '/analytics'];
+
 type Theme = 'light' | 'dark';
 
 /** Fired when the command menu picks a lead; the leads page opens its panel. */
@@ -115,6 +118,7 @@ export default function AppShell({
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
   // Workspace switcher
+  const [moreOpen, setMoreOpen] = useState(false);
   const [orgs, setOrgs] = useState<{ org: { id: string; name: string; slug: string; branding?: Record<string, unknown> | null }; role: string }[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -514,6 +518,16 @@ export default function AppShell({
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+  const moreItems = navItems.filter((n) => !DOCK.includes(n.href));
+  // More closes when the page changes (back/forward too) and on Escape.
+  useEffect(() => setMoreOpen(false), [pathname]);
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMoreOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [moreOpen]);
+  const moreActive = moreItems.some((n) => isActive(n.href));
 
   const roleLabel = me?.role ? t(`roles.${me.role}`) : '';
   const cardLimit = usage?.limits.cards ?? null;
@@ -581,7 +595,7 @@ export default function AppShell({
   );
 
   return (
-    <div data-theme={theme} className="min-h-screen bg-canvas text-ink antialiased md:flex md:h-screen md:overflow-hidden">
+    <div data-theme={theme} className="min-h-screen bg-canvas text-ink antialiased [--v-dock:calc(64px+env(safe-area-inset-bottom))] md:flex md:h-screen md:overflow-hidden md:[--v-dock:0px]">
       {/* Sidebar (desktop) */}
       <aside className="hidden w-[244px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 pb-3 pt-3.5 md:flex">
         <Link href="/dashboard" className="mb-2 flex items-center gap-2.5 px-2 py-1">
@@ -870,23 +884,6 @@ export default function AppShell({
             </div>
           </div>
         </div>
-        <nav className="no-scrollbar flex gap-1 overflow-x-auto px-2">
-          {GROUPS.flatMap((g) => g.items).map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative inline-flex min-h-11 items-center whitespace-nowrap px-2.5 text-[13px] font-medium transition-colors ${
-                  active ? 'text-ink' : 'text-muted'
-                }`}
-              >
-                {t(item.labelKey)}
-                {active && <span className="absolute inset-x-2.5 bottom-0 h-0.5 rounded-full bg-ink" />}
-              </Link>
-            );
-          })}
-        </nav>
       </div>
 
       {/* Content sheet: its own scroll area beside a still sidebar on desktop */}
@@ -910,8 +907,117 @@ export default function AppShell({
           <main className={bleed ? '' : `mx-auto px-5 py-6 md:px-8 md:py-7 ${fluid ? 'w-full max-w-[1560px]' : 'max-w-[1240px]'}`}>
             {children}
           </main>
+          {/* Room for the phone's bottom bar, so the last row is never under it. */}
+          <div className="h-[var(--v-dock)] md:hidden" aria-hidden />
         </div>
       </div>
+
+      {/* Phone bottom bar: the four places people go most, and the rest under More. */}
+      <nav
+        aria-label={t('mobile.label')}
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur-md md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <ul className="grid h-16 grid-cols-5">
+          {DOCK.map((href) => {
+            const item = navItems.find((n) => n.href === href)!;
+            const active = isActive(href);
+            return (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${active ? 'text-accent' : 'text-muted'}`}
+                >
+                  <Icon name={item.icon} size={21} />
+                  <span className="max-w-full truncate px-1">{t(item.labelKey)}</span>
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              aria-expanded={moreOpen}
+              aria-haspopup="dialog"
+              className={`flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${moreActive ? 'text-accent' : 'text-muted'}`}
+            >
+              <Icon name="menu" size={21} />
+              <span>{t('mobile.more')}</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      {moreOpen && (
+        <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true" aria-label={t('mobile.more')}>
+          <div className="p-scrim absolute inset-0 bg-black/40" onClick={() => setMoreOpen(false)} />
+          <div
+            className="p-sheet absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-surface shadow-2xl"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+          >
+            <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-line" aria-hidden />
+            <ul className="grid grid-cols-3 gap-2 p-4">
+              {moreItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setMoreOpen(false)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl text-center text-[12.5px] font-medium ring-1 ring-inset transition-colors ${
+                        active ? 'bg-accent/10 text-accent ring-accent/30' : 'bg-elevated text-ink ring-line'
+                      }`}
+                    >
+                      <Icon name={item.icon} size={20} />
+                      <span className="max-w-full truncate px-1">{t(item.labelKey)}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {totalWorkspacesCount > 1 && (
+              <div className="border-t border-line px-4 pb-2 pt-3">
+                <p className="px-1 pb-1.5 text-[12px] font-medium text-faint">{t('switcher.workspaces')}</p>
+                <ul>
+                  {allWorkspaceItems.map((item) => {
+                    const active = selectedOrgId === (item.isOrg ? item.id : null);
+                    return (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMoreOpen(false);
+                            if (!active) handleSwitchOrg(item.isOrg ? item.id : null);
+                          }}
+                          className="flex min-h-12 w-full items-center gap-3 rounded-lg px-2 text-start text-[14px] text-ink hover:bg-elevated"
+                        >
+                          {item.isOrg ? (
+                            <OrgMark name={item.name} branding={item.branding} size={26} />
+                          ) : (
+                            <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md bg-elevated text-muted ring-1 ring-inset ring-line">
+                              <Icon name="user" size={14} />
+                            </span>
+                          )}
+                          <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                          {active && (
+                            <span className="text-accent">
+                              <Icon name="check" size={16} />
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Command menu */}
       {paletteOpen && (
