@@ -18,6 +18,7 @@ const PATHS: Record<string, string> = {
   check: 'M5 12l4 4L19 7',
   clock: 'M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
   'chevron-down': 'M6 9l6 6 6-6',
+  'chevron-up': 'M6 15l6-6 6 6',
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 21v-1a7 7 0 0 1 14 0v1',
   quote: 'M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6',
   grid: 'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z',

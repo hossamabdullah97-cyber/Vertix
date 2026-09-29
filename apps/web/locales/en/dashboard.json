@@ -153,7 +153,11 @@
         "desc": "One tap of your chip opens the card on any phone.",
         "link": "Link chip"
       }
-    }
+    },
+    "doneList_one": "Done: {{steps}}",
+    "doneList_other": "{{value}} done: {{steps}}",
+    "hideDone": "Hide finished steps",
+    "separator": ", "
   },
   "occasions": {
     "button": "Occasions",

@@ -352,5 +352,9 @@
       "device": "Read on this phone; the photo never left it. Check the name, title and company before saving.",
         "deviceArabic": "Read on this phone; the photo never left it. Arabic is harder to read this way: check every field, the phone number above all, before saving."
     }
+  },
+  "list": {
+    "allStages": "All",
+    "stages": "Stages"
   }
 }
