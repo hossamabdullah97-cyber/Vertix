@@ -13,6 +13,11 @@ import { CardsService } from './cards.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { UPLOAD_DIR } from '../uploads/uploads.controller';
 import { buildVCard, photoFromUpload, vcardFileName } from './vcard';
+import { WalletService } from './wallet/wallet.service';
+import { availabilityOf, openSlots } from './availability';
+import { bookedMeetings } from './booked-meetings';
+import { PrismaService } from '../prisma/prisma.service';
+import { walletCardOf } from './wallet/wallet-card';
 
 /** Public card page — no authentication, shows published cards only. */
 @Controller('c')
@@ -20,7 +25,20 @@ export class PublicCardsController {
   constructor(
     private readonly cards: CardsService,
     private readonly config: ConfigService,
+    private readonly wallet: WalletService,
+    private readonly prisma: PrismaService,
   ) {}
+
+  private appUrl() {
+    return this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000').replace(/\/$/, '');
+  }
+
+  /** The resolved, unlocked card, or 404. */
+  private async unlocked(slug: string, p?: string, code?: string, req?: any) {
+    const card = await this.cards.getPublicBySlug(slug, { p, code, req });
+    if (!card || 'locked' in card) throw new NotFoundException('Card not found');
+    return card;
+  }
 
   @Public()
   @Get(':slug')
@@ -32,7 +50,60 @@ export class PublicCardsController {
   ) {
     const card = await this.cards.getPublicBySlug(slug, { p, code, req });
     if (!card) throw new NotFoundException('Card not found');
-    return card;
+    // Which wallets the card may offer; a locked profile offers nothing yet.
+    return 'locked' in card ? card : { ...card, wallet: this.wallet.available() };
+  }
+
+  /**
+   * The times a visitor can ask to meet over the next two weeks, in the
+   * owner's time zone. Meetings are a card-wide setting, not per profile.
+   */
+  @Public()
+  @Get(':slug/availability')
+  async availability(@Param('slug') slug: string) {
+    const card = await this.prisma.client.card.findFirst({
+      where: { slug, isPublished: true, deletedAt: null },
+      select: { id: true, theme: true },
+    });
+    if (!card) throw new NotFoundException('Card not found');
+    const now = new Date();
+    const a = availabilityOf(card.theme, this.config.get<string>('DEFAULT_TIMEZONE'));
+    const days = a.enabled ? openSlots(a, now, await bookedMeetings(this.prisma.client, card.id, now)) : [];
+    return { enabled: a.enabled, timezone: a.timezone, length: a.length, days };
+  }
+
+  @Public()
+  @Get(':slug/wallet/apple')
+  async appleWallet(
+    @Param('slug') slug: string,
+    @Res() res: Response,
+    @Query('p') p?: string,
+    @Query('code') code?: string,
+    @Req() req?: any,
+  ) {
+    const card = await this.unlocked(slug, p, code, req);
+    const pass = walletCardOf(card, { appUrl: this.appUrl(), p });
+    const photo = photoFromUpload(pass.avatar, UPLOAD_DIR);
+    const file = this.wallet.applePass(pass, photo ? { type: photo.type, bytes: new Uint8Array(Buffer.from(photo.base64, 'base64')) } : null);
+    if (!file) throw new NotFoundException('Apple Wallet is not set up');
+    res.setHeader('Content-Type', 'application/vnd.apple.pkpass');
+    res.setHeader('Content-Disposition', `attachment; filename="${vcardFileName(pass.name).replace(/\.vcf$/, '.pkpass')}"`);
+    res.send(Buffer.from(file));
+  }
+
+  @Public()
+  @Get(':slug/wallet/google')
+  async googleWallet(
+    @Param('slug') slug: string,
+    @Res() res: Response,
+    @Query('p') p?: string,
+    @Query('code') code?: string,
+    @Req() req?: any,
+  ) {
+    const card = await this.unlocked(slug, p, code, req);
+    const url = this.wallet.googleUrl(walletCardOf(card, { appUrl: this.appUrl(), p }), this.appUrl());
+    if (!url) throw new NotFoundException('Google Wallet is not set up');
+    res.redirect(302, url);
   }
 
   @Public()
@@ -44,13 +115,12 @@ export class PublicCardsController {
     @Query('code') code?: string,
     @Req() req?: any,
   ) {
-    const card = await this.cards.getPublicBySlug(slug, { p, code, req });
-    if (!card || 'locked' in card) throw new NotFoundException('Card not found');
+    const card = await this.unlocked(slug, p, code, req);
 
     const data = (card.vcardData as Record<string, unknown>) ?? {};
     const bio = card.sections.find((s) => s.type === 'BIO')?.content as Record<string, unknown> | undefined;
     const about = typeof bio?.body === 'string' ? bio.body.trim() : '';
-    const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000').replace(/\/$/, '');
+    const appUrl = this.appUrl();
     // A variant opened by its private key is the one the visitor saves.
     const cardUrl = `${appUrl}/c/${card.slug}${p ? `?p=${encodeURIComponent(p)}` : ''}`;
 

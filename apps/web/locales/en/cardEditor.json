@@ -188,6 +188,14 @@
       "VIDEO": {
         "label": "Video",
         "desc": "A YouTube or Vimeo video"
+      },
+      "CREDENTIALS": {
+        "label": "Certifications",
+        "desc": "Certificates, licences and awards"
+      },
+      "CLIENTS": {
+        "label": "Clients",
+        "desc": "Logos of clients you have worked with"
       }
     },
     "sectionTitle": "Title",
@@ -218,7 +226,22 @@
     "optional": "optional",
     "videoHelp": "Paste a YouTube or Vimeo link; the video plays on your card.",
     "videoInvalid": "That doesn’t look like a YouTube or Vimeo link.",
-    "bookingHelp": "Link your Calendly, Cal.com or any booking page; it shows as a button on your card."
+    "bookingHelp": "Link your Calendly, Cal.com or any booking page; it shows as a button on your card.",
+    "credentials": {
+      "titlePlaceholder": "Certifications",
+      "name": "Certificate or award",
+      "namePlaceholder": "PMP",
+      "issuer": "Issued by",
+      "issuerPlaceholder": "Project Management Institute",
+      "year": "Year",
+      "remove": "Remove",
+      "add": "Add a certificate"
+    },
+    "clients": {
+      "titlePlaceholder": "Clients",
+      "help": "Logos show on white tiles, so transparent or white-background images look best.",
+      "add": "Add a client logo"
+    }
   },
   "design": {
     "title": "Design",
@@ -536,5 +559,24 @@
     "one": "{{name}} is here too",
     "two": "{{names}} are here too",
     "many": "{{names}} and others are here too"
+  },
+  "meetings": {
+    "title": "Meeting times",
+    "subtitle": "When visitors can ask to meet you. The card offers only these times, and never one already asked for.",
+    "enabled": "Take meeting requests",
+    "enabledHint": "Off hides the Meeting option from the card’s form.",
+    "days": "Working days",
+    "from": "From",
+    "to": "Until",
+    "length": "Each meeting",
+    "notice": "Notice you need",
+    "timezone": "Time zone",
+    "minutes": "{{count}} min",
+    "hours": "{{count}} h ahead",
+    "noNotice": "None",
+    "badHours": "“Until” has to be later than “From”.",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "failed": "Could not save. Check your connection."
   }
 }

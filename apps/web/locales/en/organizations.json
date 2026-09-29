@@ -30,7 +30,10 @@
     "planHint": "What this workspace can do and how many cards, people and chips it includes.",
     "billing": "Manage billing",
     "id": "Workspace ID",
-    "idHint": "Integrations and the API use this to reach this workspace."
+    "idHint": "Integrations and the API use this to reach this workspace.",
+    "privacy": "Privacy policy",
+    "privacyHint": "Linked under the contact form on every card, so visitors can read how their details are handled. Leave empty to show none.",
+    "privacyInvalid": "Use a full https:// address."
   },
   "brand": {
     "logo": "Logo",

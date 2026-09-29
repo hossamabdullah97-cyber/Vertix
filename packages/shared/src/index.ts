@@ -78,6 +78,8 @@ export const SectionType = z.enum([
   'PORTFOLIO',
   'BOOKING',
   'VIDEO',
+  'CREDENTIALS',
+  'CLIENTS',
 ]);
 export type SectionType = z.infer<typeof SectionType>;
 

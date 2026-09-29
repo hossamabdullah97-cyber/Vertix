@@ -50,6 +50,8 @@ export function HeroVisual() {
       circle: true,
       verified: true,
       brand: null,
+      wallet: { apple: false, google: false },
+      privacyUrl: null,
       linkStyle: 'list',
       openInApp: false,
       meta: { available: 'now', location: t('sample.location'), languages: '', responseTime: '' },

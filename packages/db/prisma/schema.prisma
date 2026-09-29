@@ -652,6 +652,8 @@ enum SectionType {
   PORTFOLIO
   BOOKING
   VIDEO
+  CREDENTIALS
+  CLIENTS
 }
 
 enum ActionType {

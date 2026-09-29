@@ -65,6 +65,10 @@ export interface ProfileData {
   verified: boolean;
   /** The workspace's name and logo, unless the owner turned it off. */
   brand: CardBrand | null;
+  /** Which wallet passes the server can make for this card. */
+  wallet: { apple: boolean; google: boolean };
+  /** The workspace's privacy policy, linked under the exchange form. */
+  privacyUrl: string | null;
   linkStyle: LinkStyle;
   /** WhatsApp and LinkedIn links open their apps on a phone. */
   openInApp: boolean;
@@ -102,6 +106,8 @@ export function buildProfile(input: {
   paymentLinks: PublicPaymentLink[];
   verified?: boolean;
   brand?: CardBrand | null;
+  wallet?: { apple: boolean; google: boolean };
+  privacyUrl?: string | null;
   profileName?: string | null;
   /** Shown when the owner has not written a name yet (the Studio preview). */
   fallbackName?: string;
@@ -131,6 +137,8 @@ export function buildProfile(input: {
     openInApp: theme.openInApp === true,
     verified: input.verified === true,
     brand: theme.brand === false ? null : input.brand ?? null,
+    wallet: { apple: input.wallet?.apple === true, google: input.wallet?.google === true },
+    privacyUrl: input.privacyUrl ?? null,
     meta: {
       available,
       location: pick(v, 'location'),

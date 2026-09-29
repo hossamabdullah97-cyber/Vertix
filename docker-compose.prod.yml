@@ -39,6 +39,15 @@ services:
       # Set to the number of proxies (e.g. 1) if a load balancer sits in front of the API.
       TRUST_PROXY: ${TRUST_PROXY:-}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
+      # Wallet passes: each is offered on cards only when its values are set.
+      APPLE_PASS_TYPE_ID: ${APPLE_PASS_TYPE_ID:-}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_PASS_CERT: ${APPLE_PASS_CERT:-}
+      APPLE_PASS_KEY: ${APPLE_PASS_KEY:-}
+      APPLE_PASS_KEY_PASSPHRASE: ${APPLE_PASS_KEY_PASSPHRASE:-}
+      APPLE_WWDR_CERT: ${APPLE_WWDR_CERT:-}
+      GOOGLE_WALLET_ISSUER_ID: ${GOOGLE_WALLET_ISSUER_ID:-}
+      GOOGLE_WALLET_SERVICE_ACCOUNT: ${GOOGLE_WALLET_SERVICE_ACCOUNT:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}

@@ -297,7 +297,7 @@ export interface Card {
 
 export interface Section {
   id: string;
-  type: 'BIO' | 'SOCIAL' | 'PORTFOLIO' | 'BOOKING' | 'VIDEO';
+  type: 'BIO' | 'SOCIAL' | 'PORTFOLIO' | 'BOOKING' | 'VIDEO' | 'CREDENTIALS' | 'CLIENTS';
   order: number;
   isVisible: boolean;
   content: Record<string, unknown>;

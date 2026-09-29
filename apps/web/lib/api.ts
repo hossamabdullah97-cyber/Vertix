@@ -14,7 +14,7 @@ export async function apiGet<T>(path: string): Promise<T | null> {
 
 export interface PublicCardSection {
   id: string;
-  type: 'BIO' | 'SOCIAL' | 'PORTFOLIO' | 'BOOKING' | 'VIDEO';
+  type: 'BIO' | 'SOCIAL' | 'PORTFOLIO' | 'BOOKING' | 'VIDEO' | 'CREDENTIALS' | 'CLIENTS';
   order: number;
   content: Record<string, unknown>;
 }
@@ -47,6 +47,10 @@ export interface PublicCard {
   paymentLinks: PublicPaymentLink[];
   /** Earned by the owning organization's paid plan — computed server-side. */
   verified: boolean;
+  /** Which wallet passes this card can offer (set up on the server). */
+  wallet?: { apple: boolean; google: boolean };
+  /** The workspace's privacy policy, linked under the card's form. */
+  privacyUrl?: string | null;
   /** The workspace's name and logo. */
   brand?: { name: string; logo: string | null } | null;
   /** Name of the active profile variant (null when the base profile is served). */

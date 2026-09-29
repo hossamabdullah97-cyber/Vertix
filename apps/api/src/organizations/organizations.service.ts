@@ -36,13 +36,21 @@ export class OrganizationsService {
 
   /** Update the active org's profile / branding. Scoped by the caller to the
    *  active org id (from @OrgId), which the TenantGuard has already verified. */
-  updateCurrent(orgId: string, input: UpdateOrgInput) {
+  async updateCurrent(orgId: string, input: UpdateOrgInput) {
+    // Settings are laid over the stored ones, so saving one setting (the
+    // language, the privacy link) never erases the others.
+    let settings: Record<string, unknown> | undefined;
+    if (input.settings) {
+      const current = await this.prisma.client.organization.findUnique({ where: { id: orgId }, select: { settings: true } });
+      const stored = current?.settings && typeof current.settings === 'object' && !Array.isArray(current.settings) ? (current.settings as Record<string, unknown>) : {};
+      settings = { ...stored, ...input.settings };
+    }
     return this.prisma.client.organization.update({
       where: { id: orgId },
       data: {
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.branding !== undefined ? { branding: (input.branding ?? undefined) as never } : {}),
-        ...(input.settings !== undefined ? { settings: (input.settings ?? undefined) as never } : {}),
+        ...(input.settings !== undefined ? { settings: (settings ?? undefined) as never } : {}),
       },
       select: { id: true, name: true, slug: true, plan: true, branding: true, settings: true },
     });

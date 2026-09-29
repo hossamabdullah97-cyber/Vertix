@@ -13,6 +13,7 @@ import { CardActionsController } from './actions.controller';
 import { CardVariantsController } from './card-variants.controller';
 import { PaymentLinksController } from './payment-links.controller';
 import { PublicCardsController } from './public-cards.controller';
+import { WalletService } from './wallet/wallet.service';
 
 @Module({
   imports: [BillingModule],
@@ -25,7 +26,7 @@ import { PublicCardsController } from './public-cards.controller';
     PaymentLinksController,
     PublicCardsController,
   ],
-  providers: [CardsService, SectionsService, ActionsService, CardVariantsService, PaymentLinksService, CardPresenceService],
+  providers: [CardsService, SectionsService, ActionsService, CardVariantsService, PaymentLinksService, CardPresenceService, WalletService],
   exports: [CardsService],
 })
 export class CardsModule {}

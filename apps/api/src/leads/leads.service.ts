@@ -1,8 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { AddLeadActivityInput, LeadCaptureInput } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WebhookService } from '../integrations/webhook.service';
+import { availabilityOf, isOpen } from '../cards/availability';
+import { bookedMeetings } from '../cards/booked-meetings';
 
 @Injectable()
 export class LeadsService {
@@ -12,6 +15,7 @@ export class LeadsService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly webhooks: WebhookService,
+    private readonly config: ConfigService,
   ) {}
 
   private get db() {
@@ -79,9 +83,22 @@ export class LeadsService {
   async capture(input: LeadCaptureInput) {
     const card = await this.db.card.findFirst({
       where: { slug: input.slug, isPublished: true },
-      select: { id: true, orgId: true, ownerId: true },
+      select: { id: true, orgId: true, ownerId: true, theme: true },
     });
     if (!card) throw new NotFoundException('Card not found');
+
+    // A meeting must be at one of the times the card offers and nobody took.
+    let meetingAt: string | undefined;
+    if (input.intent === 'MEETING') {
+      const now = new Date();
+      const a = availabilityOf(card.theme, this.config.get<string>('DEFAULT_TIMEZONE'));
+      if (!a.enabled) throw new BadRequestException('This card does not take meeting requests');
+      if (!input.meetingAt) throw new BadRequestException('Choose a time for the meeting');
+      if (!isOpen(a, now, await bookedMeetings(this.db, card.id, now), input.meetingAt)) {
+        throw new ConflictException('That time is no longer free');
+      }
+      meetingAt = new Date(input.meetingAt).toISOString();
+    }
 
     // Place the lead in the org's first pipeline stage, if any.
     const stage = await this.db.pipelineStage.findFirst({
@@ -131,7 +148,7 @@ export class LeadsService {
           metadata: {
             intent,
             note: input.note ?? null,
-            meetingAt: input.meetingAt ?? null,
+            meetingAt: meetingAt ?? null,
           },
         },
       });
@@ -164,6 +181,7 @@ export class LeadsService {
       intent,
       temperature,
       cardSlug: input.slug,
+      meetingAt: meetingAt ?? null,
     };
     void this.emitLeadEvents(card.orgId, intent, eventData);
 
