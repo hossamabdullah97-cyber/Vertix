@@ -317,14 +317,12 @@
   "add": {
     "button": "Add lead",
     "title": "Add a lead",
-    "subtitle": "Type in the details of someone you met.",
     "subtitleScan": "Photograph their business card, or type the details in.",
     "scan": "Scan a business card",
-    "scanHint": "Take a photo of a paper card and the details fill themselves in. Arabic, English or both.",
+    "scanHint": "Take a photo of a paper card and the details fill themselves in. It reads the card's QR code too.",
     "photoAlt": "The business card",
     "reading": "Reading the card…",
     "retake": "Take another",
-    "check": "Check what was read before saving. The photo isn't kept.",
     "fields": {
       "name": "Name",
       "title": "Job title",
@@ -345,6 +343,14 @@
       "empty": "Add at least a name, an email or a phone number.",
       "email": "Check the email address.",
       "save": "The lead wasn't saved. Try again."
+    },
+    "preparing": "Getting ready to read (first time only)…",
+    "readingPct": "Reading the card… {{pct}}%",
+    "readBy": {
+      "qr": "Read from the card's QR code, exactly as its owner saved it.",
+      "ai": "Read by AI. Check the details before saving; the photo isn't kept.",
+      "device": "Read on this phone; the photo never left it. Check the name, title and company before saving.",
+        "deviceArabic": "Read on this phone; the photo never left it. Arabic is harder to read this way: check every field, the phone number above all, before saving."
     }
   }
 }

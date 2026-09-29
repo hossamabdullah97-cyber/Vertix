@@ -6,47 +6,32 @@ import { authFetch, authPostFile } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/ui/Sheet';
 import type { Lead } from '@/lib/crm';
+import { contactFromQr, contactFromText, mergeContacts, type CardContact } from '@/lib/card-text';
+import { canvasJpeg, photoCanvas, readQr, readText, type ReadProgress } from '@/lib/card-reader';
 
-interface Scanned {
-  name: string | null;
-  nameAlt: string | null;
-  title: string | null;
-  company: string | null;
-  emails: string[];
-  phones: string[];
-  website: string | null;
-  address: string | null;
-}
+type Scanned = CardContact;
+/** How the card was read: its QR code (exact), Claude on the server, or this phone. */
+type ReadBy = 'qr' | 'ai' | 'device' | 'deviceArabic';
+
+const found = (c: CardContact | null) => !!c && !!(c.name || c.company || c.emails.length || c.phones.length);
 
 type Fields = { name: string; title: string; company: string; email: string; phone: string; website: string; address: string; note: string };
 const EMPTY: Fields = { name: '', title: '', company: '', email: '', phone: '', website: '', address: '', note: '' };
 
-/** Big phone photos are made small before they leave the phone: text stays sharp at 1600px. */
-async function shrink(file: File): Promise<Blob> {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.85));
-    return blob ?? file;
-  } catch {
-    return file;
-  }
-}
-
 /**
  * Add a lead yourself: photograph a paper business card and check what was
- * read, or type the details in. Nothing is saved until you press Save.
+ * read, or type the details in. The card's QR code is read first; then its
+ * text, by Claude when the server has it turned on, else on the phone
+ * itself. Nothing is saved until you press Save, and the photo never is.
  */
 export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: () => void; onAdded: (lead: Lead) => void }) {
   const { t } = useTranslation('crm');
   const camera = useRef<HTMLInputElement>(null);
   // Only the latest photo's answer counts; a slower one for an older photo is dropped.
   const latest = useRef(0);
-  const [canScan, setCanScan] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
+  const [readBy, setReadBy] = useState<ReadBy | null>(null);
+  const [progress, setProgress] = useState<ReadProgress | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const [scanned, setScanned] = useState<Scanned | null>(null);
@@ -58,8 +43,8 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
   useEffect(() => {
     if (!open) return;
     authFetch<{ available: boolean }>('/leads/scan')
-      .then((r) => setCanScan(r.available))
-      .catch(() => setCanScan(false));
+      .then((r) => setAiReady(r.available))
+      .catch(() => setAiReady(false));
   }, [open]);
 
   function reset() {
@@ -72,6 +57,8 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
     setFromScan(false);
     setError(null);
     setReading(false);
+    setReadBy(null);
+    setProgress(null);
   }
 
   function close() {
@@ -80,35 +67,72 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
     setTimeout(reset, 250);
   }
 
+  function fill(c: CardContact, by: ReadBy) {
+    setScanned(c);
+    setReadBy(by);
+    setFromScan(true);
+    setFields({
+      name: c.name ?? '',
+      title: c.title ?? '',
+      company: c.company ?? '',
+      email: c.emails[0] ?? '',
+      phone: c.phones[0] ?? '',
+      website: c.website ?? '',
+      address: c.address ?? '',
+      // What had no field of its own is kept, so nothing on the card is lost.
+      note: [c.nameAlt, ...c.emails.slice(1), ...c.phones.slice(1)].filter(Boolean).join('\n'),
+    });
+  }
+
   async function scan(file: File | undefined) {
     if (!file) return;
     const id = ++latest.current;
+    const current = () => id === latest.current;
     reset();
     setPhoto(URL.createObjectURL(file));
     setReading(true);
     try {
-      const small = await shrink(file);
-      const c = await authPostFile<Scanned>('/leads/scan', small, 'card.jpg');
-      if (id !== latest.current) return;
-      setScanned(c);
-      setFromScan(true);
-      setFields({
-        name: c.name ?? '',
-        title: c.title ?? '',
-        company: c.company ?? '',
-        email: c.emails[0] ?? '',
-        phone: c.phones[0] ?? '',
-        website: c.website ?? '',
-        address: c.address ?? '',
-        // What had no field of its own is kept, so nothing on the card is lost.
-        note: [c.nameAlt, ...c.emails.slice(1), ...c.phones.slice(1)].filter(Boolean).join('\n'),
-      });
-    } catch (e) {
-      if (id !== latest.current) return;
-      const status = (e as { status?: number }).status;
-      setError(status === 422 ? t('add.errors.notCard') : status === 429 ? t('add.errors.tooMany') : t('add.errors.read'));
+      const canvas = await photoCanvas(file);
+
+      // 1. A QR code with a vCard is exact: nothing to guess.
+      const qrText = await readQr(canvas).catch(() => null);
+      const qr = qrText ? contactFromQr(qrText) : null;
+      if (!current()) return;
+      if (qr && (qr.name || qr.emails.length || qr.phones.length)) return fill(qr, 'qr');
+
+      // 2. Claude, when the server has it: best at names and Arabic.
+      if (aiReady) {
+        try {
+          const c = await authPostFile<Scanned>('/leads/scan', await canvasJpeg(canvas), 'card.jpg');
+          if (!current()) return;
+          return fill(qr ? mergeContacts(c, qr) : c, 'ai');
+        } catch (e) {
+          if (!current()) return;
+          if ((e as { status?: number }).status === 422) {
+            setError(t('add.errors.notCard'));
+            return;
+          }
+          // Down or over its limit: read it here instead.
+        }
+      }
+
+      // 3. On this phone.
+      const lines = await readText(canvas, (p) => current() && setProgress(p));
+      if (!current()) return;
+      const c = qr ? mergeContacts(contactFromText(lines), qr) : contactFromText(lines);
+      if (!found(c)) {
+        setError(t('add.errors.notCard'));
+        return;
+      }
+      // Tesseract reads Arabic, and Arabic digits above all, much less well than English.
+      fill(c, lines.some((l) => /[\u0600-\u06FF]/.test(l.text)) ? 'deviceArabic' : 'device');
+    } catch {
+      if (current()) setError(t('add.errors.read'));
     } finally {
-      if (id === latest.current) setReading(false);
+      if (current()) {
+        setReading(false);
+        setProgress(null);
+      }
     }
   }
 
@@ -157,39 +181,47 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
   );
 
   return (
-    <Sheet open={open} onClose={close} closeLabel={t('drawer.close')} title={t('add.title')} subtitle={canScan ? t('add.subtitleScan') : t('add.subtitle')} footer={footer}>
-      {canScan && (
-        <div className="mb-5">
-          <input ref={camera} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { void scan(e.target.files?.[0]); e.target.value = ''; }} />
-          {photo ? (
-            <div className="relative overflow-hidden rounded-xl ring-1 ring-inset ring-line">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo} alt={t('add.photoAlt')} className={`max-h-52 w-full object-contain bg-elevated ${reading ? 'opacity-60' : ''}`} />
-              {reading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="rounded-full bg-surface px-3 py-1.5 text-[12.5px] font-medium text-ink shadow-sm ring-1 ring-line">{t('add.reading')}</span>
-                </div>
-              )}
-              {!reading && (
-                <button type="button" onClick={() => camera.current?.click()} className="absolute bottom-2 end-2 rounded-full bg-surface px-3 py-1.5 text-[12px] font-medium text-ink shadow-sm ring-1 ring-line hover:bg-elevated">
-                  {t('add.retake')}
-                </button>
-              )}
-            </div>
-          ) : (
-            <button type="button" onClick={() => camera.current?.click()} className="flex w-full items-center gap-3 rounded-xl p-4 text-start ring-1 ring-inset ring-line transition-colors hover:bg-elevated">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <Icon name="camera" size={18} />
-              </span>
-              <span>
-                <span className="block text-[13.5px] font-medium text-ink">{t('add.scan')}</span>
-                <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{t('add.scanHint')}</span>
-              </span>
-            </button>
-          )}
-          {scanned && !reading && <p className="mt-2 text-[12.5px] text-muted">{t('add.check')}</p>}
-        </div>
-      )}
+    <Sheet open={open} onClose={close} closeLabel={t('drawer.close')} title={t('add.title')} subtitle={t('add.subtitleScan')} footer={footer}>
+      <div className="mb-5">
+        <input ref={camera} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { void scan(e.target.files?.[0]); e.target.value = ''; }} />
+        {photo ? (
+          <div className="relative overflow-hidden rounded-xl ring-1 ring-inset ring-line">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo} alt={t('add.photoAlt')} className={`max-h-52 w-full object-contain bg-elevated ${reading ? 'opacity-60' : ''}`} />
+            {reading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="rounded-full bg-surface px-3 py-1.5 text-[12.5px] font-medium text-ink shadow-sm ring-1 ring-line">
+                  {progress?.phase === 'loading'
+                    ? t('add.preparing')
+                    : progress
+                      ? t('add.readingPct', { pct: Math.round(progress.progress * 100) })
+                      : t('add.reading')}
+                </span>
+              </div>
+            )}
+            {!reading && (
+              <button type="button" onClick={() => camera.current?.click()} className="absolute bottom-2 end-2 rounded-full bg-surface px-3 py-1.5 text-[12px] font-medium text-ink shadow-sm ring-1 ring-line hover:bg-elevated">
+                {t('add.retake')}
+              </button>
+            )}
+          </div>
+        ) : (
+          <button type="button" onClick={() => camera.current?.click()} className="flex w-full items-center gap-3 rounded-xl p-4 text-start ring-1 ring-inset ring-line transition-colors hover:bg-elevated">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+              <Icon name="camera" size={18} />
+            </span>
+            <span>
+              <span className="block text-[13.5px] font-medium text-ink">{t('add.scan')}</span>
+              <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{t('add.scanHint')}</span>
+            </span>
+          </button>
+        )}
+        {scanned && !reading && readBy && (
+          <p className={`mt-2 text-[12.5px] leading-relaxed ${readBy === 'deviceArabic' ? 'rounded-lg bg-amber-500/[0.08] px-3 py-2 text-amber-800 dark:text-amber-300' : 'text-muted'}`}>
+            {t(`add.readBy.${readBy}`)}
+          </p>
+        )}
+      </div>
 
       {error && (
         <p role="alert" className="mb-4 rounded-lg bg-red-500/[0.07] px-3 py-2.5 text-[12.5px] leading-relaxed text-red-700 dark:text-red-300">

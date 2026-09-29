@@ -65,8 +65,9 @@ export const envSchema = z.object({
   // OAuth client id of a "Web application" client in Google Cloud.
   GOOGLE_CLIENT_ID: z.string().optional(),
 
-  // Reading paper business cards (optional — the "Scan a card" button shows
-  // only when set). An Anthropic API key; the model defaults to Claude Haiku.
+  // Reading paper business cards with Claude (optional). Without it, cards
+  // are still read on the phone itself (QR code and Tesseract); with it, the
+  // server reads them more accurately. The model defaults to Claude Haiku.
   ANTHROPIC_API_KEY: z.string().optional(),
   LEAD_SCAN_MODEL: z.string().optional(),
 
