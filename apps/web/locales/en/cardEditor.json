@@ -594,5 +594,14 @@
     "title": "Preview",
     "open": "Preview",
     "backToEditing": "Back to editing"
+  },
+  "published": {
+    "title": "Your card is live 🎉",
+    "subtitle": "Anyone who opens the link or scans the code will see it. Send it to someone now.",
+    "shareText": "Here's my card — {{name}}:",
+    "whatsapp": "WhatsApp",
+    "more": "Share",
+    "email": "Email",
+    "done": "Done"
   }
 }

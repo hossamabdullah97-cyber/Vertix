@@ -62,7 +62,7 @@ const EN = {
   privacy: 'Only {{name}} receives what you send here, to get back to you.',
   privacyLink: 'Privacy policy',
 
-  // Link labels for the generic kinds; brand names stay as they are.
+  // Link labels for the generic kinds; brand names stay as they are (Arabic spells the common ones in its own script).
   labels: {
     Call: 'Call',
     Email: 'Email',
@@ -160,6 +160,8 @@ const AR: ProfileStrings = {
     Location: 'الموقع',
     Download: 'تحميل',
     'Save contact': 'حفظ جهة الاتصال',
+    WhatsApp: 'واتساب',
+    LinkedIn: 'لينكد إن',
   },
 
   lockedTitle: 'ملف خاص',

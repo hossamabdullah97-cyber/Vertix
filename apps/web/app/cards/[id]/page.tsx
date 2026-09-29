@@ -23,6 +23,7 @@ const LivePreview = nextDynamic(() => import('@/components/preview/LivePreview')
   loading: () => <div className="v-skeleton mx-auto h-[620px] w-[320px] rounded-[44px]" />,
 });
 import ShareCard from '@/components/ShareCard';
+import { PublishedSheet } from '@/components/cards/PublishedSheet';
 import { COVER_STYLES, LAYOUTS, LINK_STYLES, layoutOf, linkStyleOf, modeOf, type CoverStyle, type Layout, type LinkStyle, type ThemeMode } from '@/lib/profile';
 import { Toggle } from '@/components/ui/Toggle';
 import { MeetingHours } from '@/components/cards/MeetingHours';
@@ -191,6 +192,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   // Visual Builder States
   // Below the desktop layout the preview is not beside the editor; this opens it over the page.
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [justPublished, setJustPublished] = useState(false);
   useEffect(() => {
     if (!previewOpen) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setPreviewOpen(false);
@@ -644,13 +646,17 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const saving = autoSaveStatus === 'Saving...';
   const statusLabel =
     autoSaveStatus === 'Saved' ? t('status.saved') : saving ? t('status.saving') : t('status.offline');
-  const togglePublish = () =>
-    run(() =>
+  const togglePublish = async () => {
+    const publishing = !card.isPublished;
+    const c = await run(() =>
       authFetch(`/cards/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ isPublished: !card.isPublished }),
+        body: JSON.stringify({ isPublished: publishing }),
       }),
     );
+    // Going live ends with the card's link in hand, ready to send.
+    if (publishing && c?.isPublished) setJustPublished(true);
+  };
   const pickerLabel = (p: { label: string; arLabel: string }) => (locale === 'ar' ? p.arLabel : p.label);
   const linkedTags = tags.filter((tag) => tag.cardId === id);
 
@@ -1680,6 +1686,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
           </div>
         </aside>
       </div>
+
+      <PublishedSheet open={justPublished} onClose={() => setJustPublished(false)} slug={card.slug} name={cardName} />
 
       {!previewOpen && (
         <button
