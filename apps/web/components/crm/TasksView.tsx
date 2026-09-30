@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, type Task, type TaskPriority, TASK_PRIORITY, dueMeta, initials, hueFor } from '@/lib/crm';
+import { type Lead, type Task, type TaskPriority, TASK_PRIORITY, dueMeta, initials, avatarColor } from '@/lib/crm';
 
 export function TasksView({
   leads,
@@ -153,7 +153,6 @@ export function TasksView({
                 const isOverdue = !tk.completed && due.tone === 'overdue';
                 const isToday = !tk.completed && due.tone === 'today';
                 const toneColor = isOverdue ? '#ef4444' : isToday ? '#f59e0b' : 'hsl(var(--v-muted))';
-                const hue = tk.lead?.name ? hueFor(tk.lead.name) : 0;
 
                 return (
                   <motion.div
@@ -187,7 +186,7 @@ export function TasksView({
                         onClick={() => tk.leadId && onOpenLead(tk.leadId)}
                         className="hidden items-center gap-1.5 rounded-lg border border-line bg-canvas/30 px-2 py-1 text-[11.5px] font-semibold text-muted hover:border-line-strong hover:text-accent sm:flex"
                       >
-                        <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full text-[8px] font-semibold text-white" style={{ background: `hsl(${hue} 62% 48%)` }}>
+                        <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full text-[8px] font-semibold text-white" style={{ background: avatarColor(tk.lead.name ?? tk.lead.id) }}>
                           {initials(tk.lead.name)}
                         </span>
                         {tk.lead.name}

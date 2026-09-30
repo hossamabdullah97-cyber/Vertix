@@ -1,3 +1,4 @@
+import { THEME_SCRIPT } from '@/lib/themeScript';
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import './globals.css';
@@ -26,6 +27,8 @@ export default function RootLayout({
     // preference); suppress the benign root-attribute hydration warning.
     <html lang={locale} dir={dirOf(locale)} suppressHydrationWarning>
       <head>
+        {/* The saved light/dark theme, applied before the first paint so a dark page never flashes white. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         {/* The text font every page needs first, fetched with the page. */}
         <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossOrigin="" />
         {locale === 'ar' && <link rel="preload" href="/fonts/plex-arabic-arabic-400.woff2" as="font" type="font/woff2" crossOrigin="" />}

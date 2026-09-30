@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, TEMP_META, initials, hueFor, sourceMeta, formatMoney } from '@/lib/crm';
+import { type Lead, TEMP_META, initials, avatarColor, sourceMeta, formatMoney } from '@/lib/crm';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatRelativeTime } from '@/lib/format';
 
@@ -28,13 +28,12 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
           <tbody>
             {leads.map((l) => {
               const tm = TEMP_META[l.temperature];
-              const hue = hueFor(l.name || l.email || l.id);
               const src = sourceMeta(l.source);
               return (
                 <tr key={l.id} onClick={() => onOpen(l.id)} className="cursor-pointer border-b border-line last:border-0 transition-colors hover:bg-canvas/30">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold text-white" style={{ background: `hsl(${hue} 62% 48%)` }}>
+                      <span className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold text-white" style={{ background: avatarColor(l.name || l.email || l.id) }}>
                         {initials(l.name)}
                       </span>
                       <div className="min-w-0">

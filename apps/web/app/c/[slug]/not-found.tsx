@@ -18,7 +18,7 @@ export default function CardNotFound() {
         </span>
         <h1 className="mt-4 text-[20px] font-semibold">{t('notFound.title')}</h1>
         <p className="mt-1.5 text-[14px] leading-relaxed text-[#5e5d63]">{t('notFound.body')}</p>
-        <p className="mt-3 text-[13px] leading-relaxed text-[#94939a]">{t('notFound.hint')}</p>
+        <p className="mt-3 text-[13px] leading-relaxed text-[#6f6e75]">{t('notFound.hint')}</p>
       </div>
     </main>
   );
