@@ -8,6 +8,7 @@ import { Icon } from '@/components/Icon';
 import { type Lead, type Stage, type Temp, TEMP_META, initials, avatarColor, formatMoney, wonStage } from '@/lib/crm';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatRelativeTime } from '@/lib/format';
+import { ShowMore, useShowMore } from '@/components/crm/ShowMore';
 
 interface CompanyAgg {
   name: string;
@@ -42,11 +43,13 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
     return [...map.values()].sort((a, b) => b.value - a.value || b.contacts.length - a.contacts.length);
   }, [leads, wonId]);
 
+  const page = useShowMore(companies);
   if (companies.length === 0) return <EmptyCompanies />;
 
   return (
+    <>
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {companies.map((c, i) => {
+      {page.shown.map((c, i) => {
         const total = c.contacts.length;
         return (
           <motion.button
@@ -112,6 +115,8 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
         );
       })}
     </div>
+    <ShowMore rest={page.rest} shown={page.shown.length} onMore={page.more} />
+    </>
   );
 }
 

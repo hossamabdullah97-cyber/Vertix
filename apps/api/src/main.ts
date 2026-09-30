@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { mkdirSync } from 'node:fs';
 import helmet from 'helmet';
+import compression from 'compression';
 import { AppModule } from './app.module';
 import { trustProxySetting } from './config/trust-proxy';
 import { UPLOAD_DIR } from './uploads/storage.service';
@@ -25,6 +26,11 @@ async function bootstrap() {
   // Uploaded images are served cross-origin (web app runs on a different port),
   // so relax Cross-Origin-Resource-Policy; helmet defaults to same-origin.
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+  // Answers go out compressed: a workspace's lead list is JSON that shrinks
+  // about tenfold, which is most of what a phone waits for on a slow network.
+  // Small answers (under 1 KB) are left alone; compressing them costs more than it saves.
+  app.use(compression({ threshold: 1024 }));
 
   // Serve uploaded images at /uploads (outside the /api global prefix).
   mkdirSync(UPLOAD_DIR, { recursive: true });
