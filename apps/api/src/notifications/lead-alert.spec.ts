@@ -39,12 +39,22 @@ describe('alertEmail', () => {
     expect(escapeHtml(`"'&`)).toBe('&quot;&#39;&amp;');
   });
 
+  it('lets the owner call or write back in one tap, and says what a meeting request needs', () => {
+    const { html } = alertEmail(lead, 'en');
+    expect(html).toContain('href="tel:01001234567"');
+    expect(html).toContain('href="mailto:omar@example.com"');
+    expect(html).toContain('Accept or decline');
+    expect(alertEmail({ ...lead, intent: 'CONTACT' }, 'en').html).toContain('Open the lead');
+  });
+
   it('shows the meeting in the owner’s time, the card, and a WhatsApp reply', () => {
     const { html } = alertEmail(lead, 'en');
     expect(html).toContain(escapeHtml(meetingTime(lead.meetingAt!, 'Africa/Cairo', 'en')));
     expect(meetingTime(lead.meetingAt!, 'Africa/Cairo', 'en')).toMatch(/12:00/);
     expect(html).toContain('From your card “\u2068Mariam Khaled\u2069”');
     expect(html).toContain('https://wa.me/201001234567');
+    // The reply opens with a greeting already typed.
+    expect(html).toContain(`https://wa.me/201001234567?text=${encodeURIComponent('Hi ')}`);
     expect(html).toContain('href="https://app.example/leads?lead=lead1"');
   });
 
@@ -76,5 +86,13 @@ describe('alertWhatsApp', () => {
 
   it('says which card when there is nothing else', () => {
     expect(alertWhatsApp({ ...lead, intent: 'CONTACT', phone: null, company: null, meetingAt: null }, 'ar')[2]).toBe('من بطاقتك «\u2068Mariam Khaled\u2069»');
+  });
+});
+
+describe('meetingTime in Arabic', () => {
+  it('uses the digits the app shows', () => {
+    const out = meetingTime('2026-10-01T07:30:00.000Z', 'Africa/Cairo', 'ar');
+    expect(out).toMatch(/10:30/);
+    expect(out).not.toMatch(/[٠-٩]/);
   });
 });

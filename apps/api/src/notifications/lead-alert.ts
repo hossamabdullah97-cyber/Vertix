@@ -22,6 +22,8 @@ export interface LeadAlert {
   cardName: string;
   /** Where the lead opens in the app. */
   link: string;
+  /** The card's own language: what the alert is written in until the owner picks one. */
+  lang?: AlertLang;
 }
 
 const COPY = {
@@ -31,7 +33,9 @@ const COPY = {
     via: 'From your card “{card}”',
     rows: { company: 'Company', email: 'Email', phone: 'Phone', meeting: 'Meeting', note: 'Message' },
     open: 'Open the lead',
+    answer: 'Accept or decline',
     whatsapp: 'Reply on WhatsApp',
+    greeting: 'Hi {name}, this is {card}. Thanks for getting in touch!',
     footer: 'You get this because email alerts for new leads are on. You can turn them off in Notifications › Settings.',
   },
   ar: {
@@ -40,7 +44,9 @@ const COPY = {
     via: 'من بطاقتك «{card}»',
     rows: { company: 'الشركة', email: 'البريد', phone: 'الهاتف', meeting: 'الاجتماع', note: 'الرسالة' },
     open: 'افتح العميل',
+    answer: 'اقبل أو ارفض الاجتماع',
     whatsapp: 'رد على واتساب',
+    greeting: 'أهلاً {name}، معك {card}. شكراً لتواصلك!',
     footer: 'وصلك هذا لأن تنبيهات البريد للعملاء الجدد مفعلة. يمكنك إيقافها من الإشعارات › الإعدادات.',
   },
 } as const;
@@ -67,13 +73,16 @@ export function normalizePhone(input: string | null | undefined): string | null 
   return /^[1-9]\d{7,14}$/.test(d) ? d : null;
 }
 
+/** Arabic with the same digits the app shows (10:30, not ١٠:٣٠). */
+const tagOf = (lang: AlertLang) => (lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB');
+
 export function meetingTime(iso: string, timezone: string, lang: AlertLang): string {
   const at = new Date(iso);
   const opts: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZone: timezone };
   try {
-    return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-GB', opts).format(at);
+    return new Intl.DateTimeFormat(tagOf(lang), opts).format(at);
   } catch {
-    return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-GB', { ...opts, timeZone: 'UTC' }).format(at) + ' UTC';
+    return new Intl.DateTimeFormat(tagOf(lang), { ...opts, timeZone: 'UTC' }).format(at) + ' UTC';
   }
 }
 
@@ -94,11 +103,16 @@ export function alertEmail(a: LeadAlert, lang: AlertLang): { subject: string; ht
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const subject = fill(c.subject[a.intent], { name: a.name });
   const wa = normalizePhone(a.phone);
+  // A phone number and an address are one tap from calling or writing back.
+  const linked = (k: string, v: string) => {
+    const href = k === c.rows.phone ? `tel:${v.replace(/[^\d+]/g, '')}` : k === c.rows.email ? `mailto:${v}` : null;
+    return href ? `<a href="${escapeHtml(href)}" style="color:#2563eb;text-decoration:none" dir="ltr">${escapeHtml(v)}</a>` : escapeHtml(v);
+  };
   const rows = rowsOf(a, lang)
     .map(
       ([k, v]) =>
         `<tr><td style="padding:8px 0;color:#71717a;font-size:13px;vertical-align:top;width:96px">${escapeHtml(k)}</td>` +
-        `<td style="padding:8px 0;color:#18181b;font-size:14px;white-space:pre-wrap">${escapeHtml(v)}</td></tr>`,
+        `<td style="padding:8px 0;color:#18181b;font-size:14px;white-space:pre-wrap">${linked(k, v)}</td></tr>`,
     )
     .join('');
   const button = (href: string, label: string, primary: boolean) =>
@@ -108,7 +122,7 @@ export function alertEmail(a: LeadAlert, lang: AlertLang): { subject: string; ht
   <h1 style="margin:0 0 4px;color:#18181b;font-size:22px">${escapeHtml(a.name)}</h1>
   <p style="margin:0 0 16px;color:#71717a;font-size:13px">${escapeHtml(fill(c.via, { card: isolate(a.cardName) }))}</p>
   <table style="width:100%;border-collapse:collapse;border-top:1px solid #f4f4f5;margin-bottom:20px">${rows}</table>
-  ${button(a.link, c.open, true)} ${wa ? button(`https://wa.me/${wa}`, c.whatsapp, false) : ''}
+  ${button(a.link, a.intent === 'MEETING' ? c.answer : c.open, true)} ${wa ? button(`https://wa.me/${wa}?text=${encodeURIComponent(fill(c.greeting, { name: a.name, card: a.cardName }))}`, c.whatsapp, false) : ''}
   <p style="margin:24px 0 0;color:#a1a1aa;font-size:12px;line-height:1.5">${escapeHtml(c.footer)}</p>
 </div>`;
   return { subject, html };

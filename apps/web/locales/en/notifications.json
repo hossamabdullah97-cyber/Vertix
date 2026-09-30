@@ -10,7 +10,11 @@
   "loading": "Loading…",
   "more": "More actions",
   "close": "Close",
-  "tabs": { "all": "All", "unread": "Unread", "archived": "Archived" },
+  "tabs": {
+    "all": "All",
+    "unread": "Unread",
+    "archived": "Archived"
+  },
   "categories": {
     "all": "All types",
     "CRM": "Leads",
@@ -19,8 +23,18 @@
     "SYSTEM": "Automations",
     "BILLING": "Billing"
   },
-  "groups": { "today": "Today", "yesterday": "Yesterday", "week": "Earlier this week", "earlier": "Earlier" },
-  "actions": { "markRead": "Mark as read", "markUnread": "Mark as unread", "archive": "Archive", "open": "Open" },
+  "groups": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "week": "Earlier this week",
+    "earlier": "Earlier"
+  },
+  "actions": {
+    "markRead": "Mark as read",
+    "markUnread": "Mark as unread",
+    "archive": "Archive",
+    "open": "Open"
+  },
   "otherWorkspace": "In {{name}}",
   "empty": {
     "unreadTitle": "You're all caught up",
@@ -45,7 +59,9 @@
     "saveFailed": "That didn't save. Try again.",
     "testSent": "Test sent. It should arrive in a few seconds.",
     "testFailed": "WhatsApp didn't accept the message. Check the number and try again.",
-    "tooMany": "Too many tests for now. Try again later."
+    "tooMany": "Too many tests for now. Try again later.",
+    "testEmail": "Send a test alert",
+    "testEmailSent": "A test alert went to {{address}}."
   },
   "prefs": {
     "intro": "Choose what shows up here. Turning a type off stops new ones; the ones you have stay.",

@@ -117,7 +117,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.14 }}
-            className="absolute end-0 z-50 mt-2 w-[380px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
+            className="absolute end-0 z-50 mt-2 w-[380px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-line bg-surface shadow-xl max-sm:fixed max-sm:inset-x-3 max-sm:top-[3.75rem] max-sm:mt-0 max-sm:w-auto max-sm:max-w-none"
           >
             <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
               <h3 className="flex-1 text-[14px] font-semibold text-ink">{t('title')}</h3>
@@ -136,7 +136,7 @@ export function NotificationBell() {
               </div>
             </div>
 
-            <div className="max-h-[420px] overflow-y-auto">
+            <div className="max-h-[min(420px,calc(100dvh-12rem))] overflow-y-auto">
               {!shown ? (
                 <div className="space-y-3 p-4">
                   {[0, 1, 2].map((i) => (

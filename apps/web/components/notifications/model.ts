@@ -1,6 +1,20 @@
 import type { TFunction } from 'i18next';
 import { authFetch, getActiveOrgId, setActiveOrgId } from '@/lib/client';
 import { OPEN_LEAD_EVENT } from '@/lib/events';
+import type { Locale } from '@/lib/i18n/config';
+
+/** "Thu 1 Oct, 10:30" in the zone the meeting was booked in (or this device's). */
+function meetingWhen(iso: string, timeZone: string, locale: Locale): string {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return '';
+  const opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' };
+  const tag = locale === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB';
+  try {
+    return new Intl.DateTimeFormat(tag, { ...opts, timeZone: timeZone || undefined }).format(at);
+  } catch {
+    return new Intl.DateTimeFormat(tag, opts).format(at);
+  }
+}
 
 export interface Notif {
   id: string;
@@ -49,7 +63,7 @@ const iso = (v: string) => `\u2068${v}\u2069`;
  * it again properly. Anything else, and text people wrote themselves (an
  * automation's own message), is shown as stored.
  */
-export function describe(n: Notif, t: TFunction): { title: string; body: string } {
+export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title: string; body: string } {
   const m = n.metadata ?? {};
   const actor = n.actor?.name || n.actor?.email || '';
   const by = (key: string, values: Record<string, string> = {}) =>
@@ -58,8 +72,12 @@ export function describe(n: Notif, t: TFunction): { title: string; body: string 
   const event = (e: unknown) => t(`integrations:events.${str(e)}`, { defaultValue: str(e) });
 
   switch (n.type) {
-    case 'lead.captured':
-      return { title: t(`notifications:types.lead.${str(m.intent) || 'CONTACT'}`, { defaultValue: n.title }), body: n.body ?? '' };
+    case 'lead.captured': {
+      const title = t(`notifications:types.lead.${str(m.intent) || 'CONTACT'}`, { defaultValue: n.title });
+      // A meeting request says when, in the zone it was booked in.
+      const when = str(m.meetingAt) ? meetingWhen(str(m.meetingAt), str(m.timezone), locale) : '';
+      return { title, body: [n.body ?? '', when].filter(Boolean).join(' · ') };
+    }
     case 'automation.failed':
       return { title: t('notifications:types.automationFailed'), body: t('notifications:types.automationFailedBody', { event: event(m.event) }) };
     case 'webhook.failed':

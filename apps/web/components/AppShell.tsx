@@ -453,7 +453,7 @@ export default function AppShell({
     push(
       t('searchGroups.notifications'),
       searchData.notifications
-        .map((n) => ({ n, said: describe(n, t) }))
+        .map((n) => ({ n, said: describe(n, t, locale) }))
         .filter(({ n, said }) => has(said.title) || has(said.body) || has(n.title) || has(n.body))
         .map(({ n, said }) => ({
           key: `notif-${n.id}`,
