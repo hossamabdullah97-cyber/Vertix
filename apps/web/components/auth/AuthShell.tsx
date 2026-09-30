@@ -23,7 +23,9 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
             <Brand />
             <LanguageSwitcher />
           </header>
-          <main className="flex flex-1 items-center justify-center py-10">
+          {/* On a phone a short form (an invite, a new password) starts under the
+              header instead of floating mid-screen; wider screens centre it. */}
+          <main className="flex flex-1 items-start justify-center pb-10 pt-8 sm:items-center sm:py-10">
             <div className="w-full max-w-[380px]">
               <h1 className="text-4xl font-semibold leading-tight tracking-[-0.02em] text-ink rtl:tracking-normal">{title}</h1>
               {subtitle && <p className="mt-2 text-base leading-relaxed text-muted">{subtitle}</p>}
