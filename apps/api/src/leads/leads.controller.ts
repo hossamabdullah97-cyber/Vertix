@@ -52,8 +52,8 @@ export class LeadsController {
   @RequireScopes('crm:read')
   @UseGuards(RequireTenantGuard)
   @Get()
-  list() {
-    return this.leads.list();
+  list(@Tenant() tenant: TenantContext) {
+    return this.leads.list(tenant);
   }
 
   @RequireScopes('crm:read')
@@ -96,18 +96,19 @@ export class LeadsController {
   @RequireScopes('crm:read')
   @UseGuards(RequireTenantGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.leads.findOne(id);
+  findOne(@Tenant() tenant: TenantContext, @Param('id') id: string) {
+    return this.leads.findOne(tenant, id);
   }
 
   @RequireScopes('crm:write')
   @UseGuards(RequireTenantGuard)
   @Post(':id/activities')
   addActivity(
+    @Tenant() tenant: TenantContext,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(addLeadActivitySchema)) body: AddLeadActivityInput,
   ) {
-    return this.leads.addActivity(id, body);
+    return this.leads.addActivity(tenant, id, body);
   }
 
   /** Accept or decline the meeting a visitor asked for; the visitor is emailed. */
@@ -115,11 +116,11 @@ export class LeadsController {
   @UseGuards(RequireTenantGuard)
   @Post(':id/meeting')
   respondToMeeting(
+    @Tenant() tenant: TenantContext,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(meetingResponseSchema)) body: MeetingResponseInput,
-    @CurrentUser() user: JwtPayload,
   ) {
-    return this.leads.respondToMeeting(id, body, user.sub);
+    return this.leads.respondToMeeting(tenant, id, body);
   }
 
   /** The meeting as a calendar file, to add to one's own calendar. */
@@ -128,17 +129,18 @@ export class LeadsController {
   @Get(':id/meeting.ics')
   @Header('Content-Type', 'text/calendar; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="meeting.ics"')
-  meetingIcs(@Param('id') id: string) {
-    return this.leads.meetingIcs(id);
+  meetingIcs(@Tenant() tenant: TenantContext, @Param('id') id: string) {
+    return this.leads.meetingIcs(tenant, id);
   }
 
   @RequireScopes('crm:write')
   @UseGuards(RequireTenantGuard)
   @Patch(':id')
   update(
+    @Tenant() tenant: TenantContext,
     @Param('id') id: string,
     @Body() body: { stageId?: string | null; temperature?: string; value?: number; name?: string | null; email?: string | null; phone?: string | null; company?: string | null },
   ) {
-    return this.leads.update(id, body);
+    return this.leads.update(tenant, id, body);
   }
 }

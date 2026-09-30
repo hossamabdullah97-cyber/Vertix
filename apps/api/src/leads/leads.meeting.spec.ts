@@ -1,8 +1,10 @@
+import type { TenantContext } from '@vertex/db';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LeadsService } from './leads.service';
 import { bookedMeetings } from '../cards/booked-meetings';
 
+const owner = { orgId: 'o1', userId: 'u1', role: 'OWNER' } as TenantContext;
 const future = new Date(Date.now() + 3 * 86_400_000);
 future.setUTCMinutes(0, 0, 0);
 
@@ -47,7 +49,7 @@ function setup(opts: { meta?: Record<string, unknown>; email?: string | null; ot
 describe('LeadsService.respondToMeeting', () => {
   it('accepts, emails the visitor an invite, and replies go to the owner', async () => {
     const { service, db, mail } = setup();
-    const res = await service.respondToMeeting('lead1', { decision: 'ACCEPT', message: 'See you then' }, 'u1');
+    const res = await service.respondToMeeting(owner, 'lead1', { decision: 'ACCEPT', message: 'See you then' });
     expect(res.emailed).toBe(true);
     expect(db.leadActivity.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'act1' } }));
     expect(res.activity.metadata).toMatchObject({ status: 'ACCEPTED', decidedBy: 'u1', reply: 'See you then', note: 'About the fit-out' });
@@ -67,7 +69,7 @@ describe('LeadsService.respondToMeeting', () => {
 
   it('declines with no invite attached', async () => {
     const { service, mail } = setup();
-    await service.respondToMeeting('lead1', { decision: 'DECLINE' }, 'u1');
+    await service.respondToMeeting(owner, 'lead1', { decision: 'DECLINE' });
     const sent = (mail.send.mock.calls[0] as unknown as [Record<string, any>])[0];
     expect(sent.subject).toBe('About your meeting request with Mariam Khaled');
     expect(sent.attachments).toBeUndefined();
@@ -75,38 +77,38 @@ describe('LeadsService.respondToMeeting', () => {
 
   it('answers without an email when the visitor left only a phone', async () => {
     const { service, mail } = setup({ email: null });
-    await expect(service.respondToMeeting('lead1', { decision: 'ACCEPT' }, 'u1')).resolves.toMatchObject({ emailed: false });
+    await expect(service.respondToMeeting(owner, 'lead1', { decision: 'ACCEPT' })).resolves.toMatchObject({ emailed: false });
     expect(mail.send).not.toHaveBeenCalled();
   });
 
   it('will not answer the same way twice', async () => {
     const { service } = setup({ meta: { status: 'ACCEPTED' } });
-    await expect(service.respondToMeeting('lead1', { decision: 'ACCEPT' }, 'u1')).rejects.toBeInstanceOf(ConflictException);
-    await expect(service.respondToMeeting('lead1', { decision: 'DECLINE' }, 'u1')).resolves.toBeDefined();
+    await expect(service.respondToMeeting(owner, 'lead1', { decision: 'ACCEPT' })).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.respondToMeeting(owner, 'lead1', { decision: 'DECLINE' })).resolves.toBeDefined();
   });
 
   it('will not accept a time that has passed', async () => {
     const { service } = setup({ meta: { meetingAt: '2020-01-01T09:00:00.000Z' } });
-    await expect(service.respondToMeeting('lead1', { decision: 'ACCEPT' }, 'u1')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.respondToMeeting(owner, 'lead1', { decision: 'ACCEPT' })).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('will not take back a declined time someone else has asked for since', async () => {
     const { service } = setup({ meta: { status: 'DECLINED' }, others: [{ meetingAt: future.toISOString() }] });
-    await expect(service.respondToMeeting('lead1', { decision: 'ACCEPT' }, 'u1')).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.respondToMeeting(owner, 'lead1', { decision: 'ACCEPT' })).rejects.toBeInstanceOf(ConflictException);
     const free = setup({ meta: { status: 'DECLINED' }, others: [{ meetingAt: future.toISOString(), status: 'DECLINED' }] });
-    await expect(free.service.respondToMeeting('lead1', { decision: 'ACCEPT' }, 'u1')).resolves.toBeDefined();
+    await expect(free.service.respondToMeeting(owner, 'lead1', { decision: 'ACCEPT' })).resolves.toBeDefined();
   });
 
   it('needs a meeting request, not a meeting someone logged', async () => {
     const { service } = setup({
       lead: { id: 'lead1', name: 'x', email: null, cardId: 'card1', card: { slug: 's', theme: null, vcardData: null, owner: { email: 'o', name: null } }, activities: [{ id: 'm', metadata: { meetingAt: future.toISOString(), manual: true } }] },
     });
-    await expect(service.respondToMeeting('lead1', { decision: 'ACCEPT' }, 'u1')).rejects.toBeInstanceOf(NotFoundException);
-    await expect(setup({ lead: null }).service.meetingIcs('x')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.respondToMeeting(owner, 'lead1', { decision: 'ACCEPT' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(setup({ lead: null }).service.meetingIcs(owner, 'x')).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('gives the owner the meeting as a calendar file', async () => {
-    const ics = await setup().service.meetingIcs('lead1');
+    const ics = await setup().service.meetingIcs(owner, 'lead1');
     expect(ics).toContain('BEGIN:VEVENT');
     expect(ics).toContain('SUMMARY:Omar Adel · Mariam Khaled');
     expect(ics).toContain('ATTENDEE;CN=Omar Adel');

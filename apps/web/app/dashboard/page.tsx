@@ -147,16 +147,19 @@ export default function HomePage() {
         setPersonalTasks(tsk);
         setPersonalNotifications(ntf);
       } else {
+        // A member sees their own work; the people and the workspace's log are for managers.
+        const manages = meInfo.role !== 'EMPLOYEE';
+        const orgOnly = <T,>(path: string) => (manages ? authFetch<T[]>(path).catch(() => [] as T[]) : Promise.resolve([] as T[]));
         const [c, tg, l, stg, mem, tm, dept, appList, logs] = await Promise.all([
           authFetch<CardType[]>('/cards').catch(() => []),
           authFetch<NfcTag[]>('/nfc/tags').catch(() => []),
           authFetch<Lead[]>('/leads').catch(() => []),
           authFetch<Stage[]>('/leads/stages').catch(() => []),
-          authFetch<Member[]>('/orgs/members').catch(() => []),
-          authFetch<Team[]>('/orgs/teams').catch(() => []),
-          authFetch<Department[]>('/orgs/departments').catch(() => []),
-          authFetch<ApprovalRequest[]>('/orgs/approvals').catch(() => []),
-          authFetch<AuditLog[]>('/orgs/audit-logs').catch(() => []),
+          orgOnly<Member>('/orgs/members'),
+          orgOnly<Team>('/orgs/teams'),
+          orgOnly<Department>('/orgs/departments'),
+          orgOnly<ApprovalRequest>('/orgs/approvals'),
+          orgOnly<AuditLog>('/orgs/audit-logs'),
         ]);
         setCards(c);
         setTags(tg);
@@ -528,7 +531,9 @@ export default function HomePage() {
   const topMax = Math.max(1, ...topRows.map((r) => r.events));
 
   // A brand-new workspace has nothing to chart yet: Home is just the setup steps until a card goes out.
-  const fresh = !cards.some((c) => c.isPublished) && leads.length === 0 && topCards.length === 0;
+  // A member's Home is about their own card: the workspace's other cards do not count.
+  const member = me?.role === 'EMPLOYEE';
+  const fresh = !cards.some((c) => c.isPublished) && leads.length === 0 && (member || topCards.length === 0);
 
   const largestTeams = [...teams]
     .map((tm) => ({ id: tm.id, name: tm.name, seats: tm._count?.memberships ?? 0 }))
@@ -819,6 +824,7 @@ export default function HomePage() {
       </>
       )}
 
+      {!member && (
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="v-card">
           <PanelHeader title={t('activity.title')} />
@@ -886,6 +892,7 @@ export default function HomePage() {
           </Link>
         </section>
       </div>
+      )}
       <OccasionsSheet open={showOccasions} onClose={() => setShowOccasions(false)} occasions={occasions} canManage={canManageOccasions} onChanged={loadOccasions} />
     </AppShell>
   );

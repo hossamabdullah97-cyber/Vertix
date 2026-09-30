@@ -2,6 +2,8 @@
 
 import type { Plan } from '@vertex/shared';
 import { API_URL } from './api';
+import enCommon from '@/locales/en/common.json';
+import arCommon from '@/locales/ar/common.json';
 
 const TOKEN_KEY = 'vertex_token';
 const REFRESH_KEY = 'vertex_refresh';
@@ -143,6 +145,23 @@ export async function authDownload(path: string, filename: string): Promise<void
 }
 
 /** Authenticated fetch against the API. An expired session is renewed; one that cannot be ends in /login. */
+/**
+ * The workspace's plan has no room for another card, person or chip. Its
+ * message is already in the page's language; `resource` says which.
+ */
+export class PlanLimitError extends Error {
+  readonly code = 'plan-limit';
+  readonly resource: 'cards' | 'members' | 'nfcTags';
+  constructor(data: { resource?: string; limit?: number; plan?: string }) {
+    const lang = typeof document !== 'undefined' && document.documentElement.lang === 'ar' ? 'ar' : 'en';
+    const strings = (lang === 'ar' ? arCommon : enCommon).planLimit;
+    const resource = data.resource === 'members' || data.resource === 'nfcTags' ? data.resource : 'cards';
+    const plan = strings.plans[data.plan as keyof typeof strings.plans] ?? data.plan ?? '';
+    super(strings[resource].replace('{{plan}}', plan).replace('{{limit}}', String(data.limit ?? '')));
+    this.resource = resource;
+  }
+}
+
 export async function authFetch<T>(
   path: string,
   init: RequestInit = {},
@@ -163,6 +182,7 @@ export async function authFetch<T>(
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
+    if (data?.code === 'plan-limit') throw new PlanLimitError(data);
     const message =
       (data && (data.message || data.error)) || `Request failed (${res.status})`;
     throw new Error(

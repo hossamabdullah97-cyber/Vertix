@@ -101,7 +101,7 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
             <div className="flex items-end justify-between border-t border-line/50 pt-2.5">
               <div>
                 <p className="text-[12px] text-faint">{t('companies.pipelineValue')}</p>
-                <p className="text-[16px] font-semibold tabular-nums text-ink">{formatMoney(c.value)}</p>
+                <p className="text-[16px] font-semibold tabular-nums text-ink">{formatMoney(c.value, locale)}</p>
               </div>
               <span className="text-[10.5px] font-semibold text-faint">{formatRelativeTime(c.lastAt, locale, 'narrow')}</span>
             </div>

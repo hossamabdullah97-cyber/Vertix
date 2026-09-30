@@ -1,4 +1,5 @@
 /** Shared CRM types + presentation helpers (real data only — no fabricated fields). */
+import type { Locale } from '@/lib/i18n/config';
 
 export interface Lead {
   id: string;
@@ -17,19 +18,20 @@ export interface Lead {
 
 /** Deal values are in Egyptian pounds, the currency the product is sold in. */
 const CURRENCY = 'EGP';
-/** The page's language, read from <html lang> so every call site agrees without threading it through. */
-const moneyTag = () => (typeof document !== 'undefined' && document.documentElement.lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US');
+// The page's language is passed in rather than read from the document, so the
+// server and the browser render the same text.
+const moneyTag = (locale: Locale) => (locale === 'ar' ? 'ar-EG-u-nu-latn' : 'en-US');
 
 /** Compact money label: "EGP 42K", "‏42 ألف ج.م.‏". */
-export function formatMoney(n: number): string {
-  return new Intl.NumberFormat(moneyTag(), { style: 'currency', currency: CURRENCY, notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(n > 0 ? n : 0);
+export function formatMoney(n: number, locale: Locale): string {
+  return new Intl.NumberFormat(moneyTag(locale), { style: 'currency', currency: CURRENCY, notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(n > 0 ? n : 0);
 }
-export function formatMoneyFull(n: number): string {
-  return new Intl.NumberFormat(moneyTag(), { style: 'currency', currency: CURRENCY, maximumFractionDigits: 0 }).format(n || 0);
+export function formatMoneyFull(n: number, locale: Locale): string {
+  return new Intl.NumberFormat(moneyTag(locale), { style: 'currency', currency: CURRENCY, maximumFractionDigits: 0 }).format(n || 0);
 }
 /** The currency beside a value field: "EGP" / "ج.م". */
-export function currencyLabel(): string {
-  return moneyTag().startsWith('ar') ? 'ج.م' : CURRENCY;
+export function currencyLabel(locale: Locale): string {
+  return locale === 'ar' ? 'ج.م' : CURRENCY;
 }
 
 export interface Stage {

@@ -19,8 +19,8 @@ export class TasksController {
 
   @RequireScopes('crm:read')
   @Get()
-  list(@Query('leadId') leadId?: string) {
-    return this.tasks.list(leadId);
+  list(@Tenant() tenant: TenantContext, @Query('leadId') leadId?: string) {
+    return this.tasks.list(tenant, leadId);
   }
 
   @RequireScopes('crm:write')
@@ -29,21 +29,22 @@ export class TasksController {
     @Tenant() tenant: TenantContext,
     @Body(new ZodValidationPipe(createTaskSchema)) body: CreateTaskInput,
   ) {
-    return this.tasks.create(tenant.orgId, body);
+    return this.tasks.create(tenant, body);
   }
 
   @RequireScopes('crm:write')
   @Patch(':id')
   update(
+    @Tenant() tenant: TenantContext,
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateTaskSchema)) body: UpdateTaskInput,
   ) {
-    return this.tasks.update(id, body);
+    return this.tasks.update(tenant, id, body);
   }
 
   @RequireScopes('crm:write')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tasks.remove(id);
+  remove(@Tenant() tenant: TenantContext, @Param('id') id: string) {
+    return this.tasks.remove(tenant, id);
   }
 }

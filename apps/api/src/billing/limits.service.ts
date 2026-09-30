@@ -52,9 +52,16 @@ export class LimitsService {
     if (limit === null) return; // unlimited
     const current = await this.count(resource, db);
     if (current + adding > limit) {
-      throw new ForbiddenException(
-        `Plan limit reached (${PLAN_LIMITS[plan].label}: ${limit} ${resource}). Upgrade your plan to add more.`,
-      );
+      // The code and numbers let the app say this in the user's language and offer the upgrade.
+      throw new ForbiddenException({
+        statusCode: 403,
+        error: 'Forbidden',
+        code: 'plan-limit',
+        resource,
+        limit,
+        plan,
+        message: `Plan limit reached (${PLAN_LIMITS[plan].label}: ${limit} ${resource}). Upgrade your plan to add more.`,
+      });
     }
   }
 

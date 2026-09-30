@@ -92,7 +92,7 @@ export function TeamView({ from }: { from: Date }) {
                   <td className="hidden text-end sm:table-cell">{fmt(r.visitors)}</td>
                   <td className="text-end">{fmt(r.leads)}</td>
                   <td className="text-end">{fmt(r.wonLeads)}</td>
-                  <td className="hidden text-end lg:table-cell">{formatMoney(r.wonValue)}</td>
+                  <td className="hidden text-end lg:table-cell">{formatMoney(r.wonValue, locale)}</td>
                 </tr>
               ))}
             </tbody>
