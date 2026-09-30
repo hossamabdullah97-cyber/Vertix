@@ -19,6 +19,7 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
+import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
@@ -921,18 +922,23 @@ export default function AppShell({
             </div>
           </div>
         </div>
+        <ConnectionBanner className="flex md:hidden" />
       </div>
 
       {/* Content sheet: its own scroll area beside a still sidebar on desktop */}
       <div className="min-w-0 flex-1 md:py-2 md:pe-2">
         <div className="bg-surface md:h-full md:overflow-y-auto md:rounded-[14px] md:shadow-[0_0_0_1px_hsl(var(--v-border)),0_1px_2px_rgba(23,23,26,0.04)]">
-          <header className="sticky top-0 z-20 hidden h-14 items-center gap-3 border-b border-line bg-surface/90 px-7 backdrop-blur-md md:flex">
+          {/* The connection line and the title bar stay on top together while the page scrolls. */}
+          <div className="sticky top-0 z-20">
+          <ConnectionBanner className="hidden md:flex" />
+          <header className="hidden h-14 items-center gap-3 border-b border-line bg-surface/90 px-7 backdrop-blur-md md:flex">
             <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold text-ink">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <NotificationBell />
               {action}
             </div>
           </header>
+          </div>
 
           {mobileTitle && (title || action) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">

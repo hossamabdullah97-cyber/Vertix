@@ -72,5 +72,17 @@
     "url": "Enter a full link, starting with https://",
     "short": "Use at least {{min}} characters",
     "oneOf": "Add an email or a phone number"
+  },
+  "connection": {
+    "offline": "You are offline.",
+    "willKeep": "Changes are kept on this device and sent when the connection is back.",
+    "waiting_one": "{{n}} change waiting to be sent.",
+    "waiting_other": "{{n}} changes waiting to be sent.",
+    "sending_one": "Sending {{n}} change…",
+    "sending_other": "Sending {{n}} changes…",
+    "sent": "All changes sent.",
+    "retry": "Send now",
+    "failed_one": "{{n}} change could not be saved: it no longer applied when the connection came back.",
+    "failed_other": "{{n}} changes could not be saved: they no longer applied when the connection came back."
   }
 }
