@@ -93,19 +93,22 @@ export function NotificationBell() {
         aria-expanded={open}
         className="relative flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-ink/5 hover:text-ink md:h-9 md:w-9"
       >
-        <Icon name="bell" size={18} />
-        <AnimatePresence>
-          {count > 0 && (
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              className="tabular absolute end-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9.5px] font-semibold text-white ring-2 ring-surface"
-            >
-              {count > 99 ? '99+' : count}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {/* The count hangs off the bell's top corner, so the bell stays whole however long the number is. */}
+        <span className="relative flex">
+          <Icon name="bell" size={18} />
+          <AnimatePresence>
+            {count > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="tabular absolute -end-3 -top-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9.5px] font-semibold leading-none text-white ring-2 ring-surface"
+              >
+                {count > 99 ? '99+' : count}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </span>
       </button>
 
       <AnimatePresence>
