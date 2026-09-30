@@ -34,7 +34,7 @@ function Switch({ on, disabled, label, onClick }: { on: boolean; disabled?: bool
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className={`relative mt-1 inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors before:absolute before:-inset-3 before:content-[''] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 sm:before:hidden ${on ? 'bg-accent' : ''}`}
+      className={`relative mt-1 inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors before:absolute before:-inset-x-3 before:-inset-y-[13px] before:content-[''] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 sm:before:hidden ${on ? 'bg-accent' : ''}`}
       style={on ? undefined : { background: 'hsl(var(--v-border-strong))' }}
     >
       <span className={`pointer-events-none absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-[inset-inline-start] ${on ? 'start-[14px]' : 'start-[2px]'}`} />

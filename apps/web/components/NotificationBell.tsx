@@ -131,7 +131,7 @@ export function NotificationBell() {
                     role="radio"
                     aria-checked={unreadOnly === u}
                     onClick={() => setUnreadOnly(u)}
-                    className={`h-7 rounded-md px-2.5 text-xs font-medium ${unreadOnly === u ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+                    className={`h-11 min-w-11 rounded-md px-2.5 text-xs font-medium sm:h-7 sm:min-w-0 ${unreadOnly === u ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
                   >
                     {u ? t('tabs.unread') : t('tabs.all')}
                   </button>
@@ -171,11 +171,11 @@ export function NotificationBell() {
             </div>
 
             <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2">
-              <Link href="/notifications" onClick={() => setOpen(false)} className="flex h-8 items-center text-xs font-medium text-accent hover:underline">
+              <Link href="/notifications" onClick={() => setOpen(false)} className="flex h-11 items-center sm:h-8 text-xs font-medium text-accent hover:underline">
                 {t('viewAll')}
               </Link>
               {count > 0 && (
-                <button onClick={markAll} className="flex h-8 items-center gap-1.5 text-xs font-medium text-muted hover:text-ink">
+                <button onClick={markAll} className="flex h-11 items-center sm:h-8 gap-1.5 text-xs font-medium text-muted hover:text-ink">
                   <Icon name="check" size={13} /> {t('markAll')}
                 </button>
               )}

@@ -5,7 +5,7 @@ import { Brand, REGISTER, WRAP } from './shared';
 
 export function Footer() {
   const t = getT(serverLocale(), 'landing');
-  const link = 'inline-flex min-h-9 items-center text-sm text-muted transition-colors hover:text-ink';
+  const link = 'inline-flex min-h-11 min-w-11 items-center text-sm text-muted sm:min-h-9 sm:min-w-0 transition-colors hover:text-ink';
 
   return (
     <footer className="border-t border-line">

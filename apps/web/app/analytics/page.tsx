@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
               role="tab"
               aria-selected={active}
               onClick={() => chooseView(v.id)}
-              className={`relative flex min-h-11 shrink-0 items-center text-sm font-medium transition-colors sm:min-h-10 ${
+              className={`relative flex min-h-11 min-w-11 shrink-0 items-center justify-center text-sm font-medium transition-colors sm:min-h-10 ${
                 active ? 'text-ink' : 'text-muted hover:text-ink'
               }`}
             >

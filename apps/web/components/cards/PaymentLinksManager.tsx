@@ -266,7 +266,7 @@ export default function PaymentLinksManager({
                         aria-checked={link.isActive}
                         aria-label={link.isActive ? t('actions.active') : t('actions.inactive')}
                         title={link.isActive ? t('actions.active') : t('actions.inactive')}
-                        className={`relative inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent before:absolute before:-inset-3 before:content-[''] sm:before:hidden ${
+                        className={`relative inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent before:absolute before:-inset-x-3 before:-inset-y-[13px] before:content-[''] sm:before:hidden ${
                           link.isActive ? 'bg-accent' : ''
                         }`}
                         style={link.isActive ? undefined : { background: 'hsl(var(--v-border-strong))' }}

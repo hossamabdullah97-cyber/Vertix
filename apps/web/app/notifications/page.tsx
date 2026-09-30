@@ -177,7 +177,7 @@ export default function NotificationsPage() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(id)}
-                className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
+                className={`relative flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
               >
                 {t(`tabs.${id}`)}
                 {id === 'unread' && unread > 0 && <span className="tabular rounded-full bg-accent/10 px-1.5 text-2xs font-medium text-accent">{formatNumber(unread, locale)}</span>}
@@ -193,7 +193,7 @@ export default function NotificationsPage() {
               key={c}
               onClick={() => setCat(c)}
               aria-pressed={cat === c}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${cat === c ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
+              className={`flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${cat === c ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
             >
               {c !== 'all' && <Icon name={CATEGORY_ICON[c]} size={13} />}
               {t(`categories.${c}`)}
@@ -305,7 +305,7 @@ function Preferences({ open, onClose }: { open: boolean; onClose: () => void }) 
                   aria-label={t(`categories.${c}`)}
                   disabled={!prefs}
                   onClick={() => flip(c)}
-                  className={`relative mt-1 inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors before:absolute before:-inset-3 before:content-[''] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60 sm:before:hidden ${on ? 'bg-accent' : ''}`}
+                  className={`relative mt-1 inline-flex h-[18px] w-[30px] shrink-0 rounded-full transition-colors before:absolute before:-inset-x-3 before:-inset-y-[13px] before:content-[''] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60 sm:before:hidden ${on ? 'bg-accent' : ''}`}
                   style={on ? undefined : { background: 'hsl(var(--v-border-strong))' }}
                 >
                   <span className={`pointer-events-none absolute top-[2px] h-[14px] w-[14px] rounded-full bg-white shadow-sm transition-[inset-inline-start] ${on ? 'start-[14px]' : 'start-[2px]'}`} />

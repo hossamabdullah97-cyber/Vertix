@@ -315,7 +315,7 @@ function DrawerBody({
                 role="tab"
                 aria-selected={active}
                 onClick={() => setActiveTab(tab)}
-                className={`relative flex min-h-11 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
+                className={`relative flex min-h-11 min-w-11 items-center justify-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
                   active ? 'text-ink' : 'text-muted hover:text-ink'
                 }`}
               >

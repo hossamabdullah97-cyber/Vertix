@@ -47,7 +47,7 @@ export function LeadList({
               role="radio"
               aria-checked={on}
               onClick={() => onStage(c.id)}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium ring-1 ring-inset transition-colors ${
+              className={`flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 sm:h-9 text-sm font-medium ring-1 ring-inset transition-colors ${
                 on ? 'bg-ink text-surface ring-ink' : 'bg-surface text-muted ring-line'
               }`}
             >

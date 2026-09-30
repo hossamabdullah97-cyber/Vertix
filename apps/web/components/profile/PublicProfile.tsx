@@ -594,7 +594,7 @@ function CoverChrome({ profile, t, onShare, lang }: { profile: ProfileData; t: P
           onClick={onShare}
           aria-label={t.share}
           title={t.share}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors active:bg-black/40"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors active:bg-black/40"
         >
           <Icon name="share" size={17} />
         </button>

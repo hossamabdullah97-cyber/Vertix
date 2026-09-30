@@ -629,11 +629,11 @@ function PlanColumn({ plan, def, price, name, current, action, busy }: { plan: P
             <Icon name="check" size={14} /> {t('plan.currentPlan')}
           </span>
         ) : action.kind === 'sales' ? (
-          <a href={SALES_MAILTO} className="v-btn v-btn-ghost !h-10 w-full sm:!h-9">
+          <a href={SALES_MAILTO} className="v-btn v-btn-ghost !h-11 w-full sm:!h-9">
             {t('plan.contactSales')}
           </a>
         ) : action.kind === 'button' ? (
-          <button onClick={action.run} disabled={busy} className={`v-btn !h-10 w-full sm:!h-9 disabled:opacity-60 ${action.primary ? '' : 'v-btn-ghost'}`}>
+          <button onClick={action.run} disabled={busy} className={`v-btn !h-11 w-full sm:!h-9 disabled:opacity-60 ${action.primary ? '' : 'v-btn-ghost'}`}>
             {busy ? t('plan.redirecting') : action.label}
           </button>
         ) : (

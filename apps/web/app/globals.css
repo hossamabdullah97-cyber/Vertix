@@ -208,8 +208,10 @@ textarea.v-field {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  /* 44px tap target on phones; the tighter desktop height returns at sm. */
+  /* 44px tap target on phones, both ways (an icon-only button too); the
+     tighter desktop height returns at sm. */
   height: 2.75rem;
+  min-width: 2.75rem;
   padding-inline: 0.85rem;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -227,6 +229,7 @@ textarea.v-field {
 @media (min-width: 640px) {
   .v-btn {
     height: 2.125rem;
+    min-width: 2.125rem;
   }
 }
 
@@ -622,9 +625,14 @@ textarea.v-field {
   .v-hit {
     position: relative;
   }
+  /* Centred on the link and never smaller than 44 × 44, however short the text. */
   .v-hit::after {
     content: '';
     position: absolute;
-    inset: -12px -8px;
+    top: 50%;
+    left: 50%;
+    width: max(calc(100% + 16px), 44px);
+    height: max(calc(100% + 24px), 44px);
+    transform: translate(-50%, -50%);
   }
 }

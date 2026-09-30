@@ -51,7 +51,7 @@ export function BarList({ rows, max }: { rows: BarRow[]; max?: number }) {
             {r.aside !== undefined && <span className="tabular relative min-w-12 shrink-0 text-end text-xs text-faint">{r.aside}</span>}
           </>
         );
-        const cls = 'relative flex min-h-9 items-center gap-3 rounded-md px-2.5 text-sm';
+        const cls = 'relative flex min-h-11 items-center gap-3 rounded-md px-2.5 sm:min-h-9 text-sm';
         return (
           <li key={r.key}>
             {r.href ? (
