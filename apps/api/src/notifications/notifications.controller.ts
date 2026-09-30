@@ -61,8 +61,9 @@ export class NotificationsController {
   }
 
   @Post('lead-alerts/test')
-  testLeadAlert(@CurrentUser() user: JwtPayload) {
-    return this.alerts.sendTest(user.sub);
+  testLeadAlert(@CurrentUser() user: JwtPayload, @Body() body: { channel?: string; lang?: string } = {}) {
+    const lang = body?.lang === 'ar' || body?.lang === 'en' ? body.lang : undefined;
+    return this.alerts.sendTest(user.sub, body?.channel === 'email' ? 'email' : 'whatsapp', lang);
   }
 
   @Post('read-all')

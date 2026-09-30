@@ -59,7 +59,7 @@ export function NotificationRow({
 }) {
   const { t } = useTranslation('notifications');
   const { locale } = useLocale();
-  const { title, body } = describe(n, t);
+  const { title, body } = describe(n, t, locale);
   const unread = !n.readAt && !archived;
   const href = linkOf(n);
   const recent = Date.now() - new Date(n.createdAt).getTime() < 3_600_000;

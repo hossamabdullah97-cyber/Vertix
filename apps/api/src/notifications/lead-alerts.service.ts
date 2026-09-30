@@ -92,11 +92,17 @@ export class LeadAlertsService {
   }
 
   /** Sends a sample alert to the saved number, so the owner knows it arrives. */
-  async sendTest(userId: string) {
-    if (!this.wa) throw new ServiceUnavailableException('WhatsApp alerts are not set up on this server');
-    const s = await this.settings(userId);
-    if (!s.phone) throw new BadRequestException('Add your WhatsApp number first');
-    const key = `wa-test:${userId}`;
+  /** A sample alert on one channel, so the owner sees what will reach them. */
+  async sendTest(userId: string, channel: 'whatsapp' | 'email' = 'whatsapp', lang?: AlertLang) {
+    // The language the page is in, when given, so the sample reads as the owner will read it.
+    const s = { ...(await this.settings(userId)), ...(lang ? { lang } : {}) };
+    if (channel === 'whatsapp') {
+      if (!this.wa) throw new ServiceUnavailableException('WhatsApp alerts are not set up on this server');
+      if (!s.phone) throw new BadRequestException('Add your WhatsApp number first');
+    } else if (!s.address) {
+      throw new BadRequestException('This account has no email address');
+    }
+    const key = `${channel === 'whatsapp' ? 'wa' : 'mail'}-test:${userId}`;
     const wait = await this.throttle.blockedFor(key, TEST_LIMIT, TEST_WINDOW_MS);
     if (wait > 0) throw tooManyAttempts(wait);
     await this.throttle.hit(key, TEST_WINDOW_MS);
@@ -110,8 +116,15 @@ export class LeadAlertsService {
       cardName: 'Vertex Connect',
       link: this.leadLink('test'),
     };
+    if (channel === 'email') {
+      // There is no lead behind a sample, so its button opens the leads page.
+      sample.link = this.leadLink('test').replace(/\?lead=test$/, '');
+      const { subject, html } = alertEmail(sample, s.lang);
+      if (!(await this.mail.send({ to: s.address!, subject, html }))) throw new BadRequestException('The email could not be sent. Try again in a moment.');
+      return { ok: true as const };
+    }
     try {
-      await this.wa.sendTemplate({ to: s.phone, lang: s.lang, body: alertWhatsApp(sample, s.lang), buttonSuffix: 'test' });
+      await this.wa!.sendTemplate({ to: s.phone!, lang: s.lang, body: alertWhatsApp(sample, s.lang), buttonSuffix: 'test' });
     } catch (err) {
       this.logger.warn(`WhatsApp test failed for ${userId}: ${(err as Error).message}`);
       throw new BadRequestException('WhatsApp did not accept the message. Check the number and try again.');
@@ -133,7 +146,9 @@ export class LeadAlertsService {
       ]);
       if (!owner || owner.deletedAt) return;
       const s = { ...DEFAULTS, ...(row ?? {}) };
-      const lang: AlertLang = s.lang === 'ar' ? 'ar' : 'en';
+      // The language the owner chose; before they choose, the card's own.
+      const chosen = row?.lang === 'ar' || row?.lang === 'en' ? row.lang : alert.lang;
+      const lang: AlertLang = chosen === 'ar' ? 'ar' : 'en';
       const full: LeadAlert = { ...alert, link: this.leadLink(alert.leadId) };
       const jobs: Promise<unknown>[] = [];
       if (s.email && owner.email) {

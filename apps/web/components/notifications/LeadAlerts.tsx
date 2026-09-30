@@ -53,7 +53,7 @@ export function LeadAlerts({ open }: { open: boolean }) {
   const [s, setS] = useState<Settings | null>(null);
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
-  const [busy, setBusy] = useState<'save' | 'test' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'test' | 'test-email' | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -101,12 +101,12 @@ export function LeadAlerts({ open }: { open: boolean }) {
     setBusy(null);
   }
 
-  async function test() {
-    setBusy('test');
+  async function test(channel: 'whatsapp' | 'email' = 'whatsapp') {
+    setBusy(channel === 'email' ? 'test-email' : 'test');
     setStatus(null);
     try {
-      await authFetch('/notifications/lead-alerts/test', { method: 'POST' });
-      setStatus({ kind: 'ok', text: t('alerts.testSent') });
+      await authFetch('/notifications/lead-alerts/test', { method: 'POST', body: JSON.stringify({ channel, lang }) });
+      setStatus({ kind: 'ok', text: channel === 'email' ? t('alerts.testEmailSent', { address: s?.address ?? '' }) : t('alerts.testSent') });
     } catch (e) {
       setStatus({ kind: 'error', text: /too many/i.test((e as Error).message) ? t('alerts.tooMany') : t('alerts.testFailed') });
     } finally {
@@ -131,9 +131,15 @@ export function LeadAlerts({ open }: { open: boolean }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[13.5px] font-medium text-ink">{t('alerts.email')}</span>
-            <span className="mt-0.5 block truncate text-[12.5px] text-muted" dir="ltr">
-              {s?.address ?? '…'}
+            <span className="mt-0.5 block truncate text-[12.5px] text-muted">
+              <bdi dir="ltr">{s?.address ?? '…'}</bdi>
             </span>
+            {/* See exactly what arrives before a real visitor does. */}
+            {s?.email && s.address && (
+              <button type="button" className="v-hit mt-1.5 text-[12.5px] font-medium text-accent hover:underline disabled:opacity-60" disabled={busy !== null} onClick={() => test('email')}>
+                {busy === 'test-email' ? t('loading') : t('alerts.testEmail')}
+              </button>
+            )}
           </span>
           <Switch on={!!s?.email} disabled={!s} label={t('alerts.email')} onClick={() => s && save({ email: !s.email })} />
         </li>
@@ -186,7 +192,7 @@ export function LeadAlerts({ open }: { open: boolean }) {
                   </button>
                 ) : (
                   s.phone && (
-                    <button type="button" className="v-btn v-btn-ghost shrink-0" disabled={busy !== null} onClick={test}>
+                    <button type="button" className="v-btn v-btn-ghost shrink-0" disabled={busy !== null} onClick={() => test()}>
                       {busy === 'test' ? t('loading') : t('alerts.test')}
                     </button>
                   )

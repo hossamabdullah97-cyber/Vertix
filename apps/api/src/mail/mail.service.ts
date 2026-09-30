@@ -82,7 +82,8 @@ export class MailService {
 
   /** Recovers the actionable link from an email that was never delivered. */
   private logLink(tag: string, to: string, html: string): void {
-    const link = html.match(/href="([^"]+)"/)?.[1];
+    // The first web link: a phone or mail link is not the one to follow.
+    const link = html.match(/href="(https?:[^"]+)"/)?.[1];
     if (link) this.logger.log(`[${tag}] to=${to} | link: ${link}`);
   }
 

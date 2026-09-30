@@ -30,6 +30,12 @@ suite('describe', () => {
     expect(out).toEqual({ title: 'notifications:types.lead.QUOTE', body: 'Sara · Acme' });
   });
 
+  it('says when a requested meeting is, in the zone it was booked in', () => {
+    const meta = { intent: 'MEETING', meetingAt: '2026-10-01T07:30:00.000Z', timezone: 'Africa/Cairo' };
+    expect(describe(n({ type: 'lead.captured', metadata: meta, body: 'Noha' }), t, 'en').body).toBe('Noha · Thu 1 Oct, 10:30');
+    expect(describe(n({ type: 'lead.captured', metadata: meta, body: 'Noha' }), t, 'ar').body).toMatch(/^Noha · .*10:30/);
+  });
+
   it('says who did it when someone did', () => {
     const actor = { name: 'Omar', email: 'o@x.co' };
     expect(describe(n({ type: 'team.created', metadata: { name: 'Sales' }, actor }), t).title).toBe('notifications:types.teamCreatedBy(name=Sales,actor=Omar)');

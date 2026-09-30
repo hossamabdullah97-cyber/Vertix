@@ -45,6 +45,16 @@ describe('LeadAlertsService', () => {
     expect(http).not.toHaveBeenCalled();
   });
 
+  it("writes in the card's language until the owner picks one", async () => {
+    const fresh = setup();
+    await fresh.service.leadCaptured('u1', { ...alert, lang: 'ar' });
+    expect(fresh.mail.send).toHaveBeenCalledWith(expect.objectContaining({ subject: 'Omar شارك بياناته' }));
+
+    const chosen = setup({ row: { email: true, whatsapp: false, phone: null, lang: 'en' } });
+    await chosen.service.leadCaptured('u1', { ...alert, lang: 'ar' });
+    expect(chosen.mail.send).toHaveBeenCalledWith(expect.objectContaining({ subject: 'Omar shared their details' }));
+  });
+
   it('sends the WhatsApp template in the owner’s language when turned on', async () => {
     const { service, mail, http } = setup({ whatsapp: true, row: { email: false, whatsapp: true, phone: '201001234567', lang: 'ar' } });
     await service.leadCaptured('u1', alert);
@@ -91,5 +101,11 @@ describe('LeadAlertsService', () => {
     expect(http).toHaveBeenCalledTimes(1);
     throttle.blockedFor.mockResolvedValueOnce(900);
     await expect(service.sendTest('u1')).rejects.toMatchObject({ status: 429 });
+  });
+
+  it('emails a sample alert on request, without WhatsApp being set up', async () => {
+    const { service, mail } = setup({ row: { email: true, whatsapp: false, phone: null, lang: 'ar' } });
+    await expect(service.sendTest('u1', 'email')).resolves.toEqual({ ok: true });
+    expect(mail.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'owner@example.com', subject: 'زائر تجريبي يطلب اجتماعاً' }));
   });
 });

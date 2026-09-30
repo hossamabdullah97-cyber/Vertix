@@ -211,7 +211,8 @@ export class LeadsService {
       priority: intent === 'CONTACT' ? 'MEDIUM' : 'HIGH',
       title: 'New lead captured',
       body: `${input.name}${input.company ? ` · ${input.company}` : ''}`,
-      metadata: { leadId: lead.id, source, intent },
+      // The meeting's time and zone, so the notification can say when without opening the lead.
+      metadata: { leadId: lead.id, source, intent, ...(meetingAt ? { meetingAt, timezone: meetingZone } : {}) },
     });
 
     // And by email / WhatsApp, as the owner chose. Not awaited: the visitor
@@ -228,6 +229,7 @@ export class LeadsService {
       meetingAt: meetingAt ?? null,
       timezone: availabilityOf(card.theme, this.config.get<string>('DEFAULT_TIMEZONE')).timezone,
       cardName: (typeof vcard.fullName === 'string' && vcard.fullName.trim()) || input.slug,
+      lang: (card.theme as { lang?: unknown } | null)?.lang === 'ar' ? 'ar' : 'en',
     });
 
     // Fan the event out to any subscribed external systems (Slack, Zapier,
