@@ -1064,7 +1064,11 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
       }
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error((Array.isArray(data?.errors) && data.errors[0]?.message) || data?.message || t.failed);
+        const message = (Array.isArray(data?.errors) && data.errors[0]?.message) || data?.message;
+        if (!message) throw new Error(t.failed);
+        // Loaded only when a send is refused, so the card itself stays light.
+        const { apiErrorText } = await import('@/lib/apiErrors');
+        throw new Error(apiErrorText(message, [], profile.lang === 'ar' ? 'ar' : 'en'));
       }
       setDone(intent);
     } catch (err) {

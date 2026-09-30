@@ -6,19 +6,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
-import {
-  authFetch,
-  getActiveOrgId,
-  getToken,
-  inviteMember,
-  PlanLimitError,
-  type Card,
-  type Me,
-  type Member,
-  type NfcTag,
-  type Role,
-  type Team,
-} from '@/lib/client';
+import { authFetch, getActiveOrgId, getToken, inviteMember, PlanLimitError, type Card, type Me, type Member, type NfcTag, type Role, type Team, apiMessageOf, type ApiError } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import AppShell from '@/components/AppShell';
@@ -127,7 +115,7 @@ export default function TeamPage() {
     if (!active) return;
     load().catch((e) => {
       // Members are a manager's view; an employee is told so rather than shown an error.
-      if (/forbidden|403|permission/i.test((e as Error).message)) setForbidden(true);
+      if ((e as ApiError).status === 403 || /forbidden|permission/i.test(apiMessageOf(e))) setForbidden(true);
       else setError((e as Error).message);
       setMembers([]);
     });

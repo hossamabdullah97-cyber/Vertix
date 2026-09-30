@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authFetch } from '@/lib/client';
+import { authFetch, apiMessageOf, type ApiError } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Icon } from '@/components/Icon';
 
@@ -108,7 +108,7 @@ export function LeadAlerts({ open }: { open: boolean }) {
       await authFetch('/notifications/lead-alerts/test', { method: 'POST', body: JSON.stringify({ channel, lang }) });
       setStatus({ kind: 'ok', text: channel === 'email' ? t('alerts.testEmailSent', { address: s?.address ?? '' }) : t('alerts.testSent') });
     } catch (e) {
-      setStatus({ kind: 'error', text: /too many/i.test((e as Error).message) ? t('alerts.tooMany') : t('alerts.testFailed') });
+      setStatus({ kind: 'error', text: (e as ApiError).status === 429 || /too many/i.test(apiMessageOf(e)) ? t('alerts.tooMany') : t('alerts.testFailed') });
     } finally {
       setBusy(null);
     }

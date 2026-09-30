@@ -4,6 +4,9 @@ import type { Plan } from '@vertex/shared';
 import { API_URL } from './api';
 import enCommon from '@/locales/en/common.json';
 import arCommon from '@/locales/ar/common.json';
+import { ApiError } from './apiErrors';
+
+export { ApiError, apiMessageOf } from './apiErrors';
 
 const TOKEN_KEY = 'vertex_token';
 const REFRESH_KEY = 'vertex_refresh';
@@ -100,13 +103,23 @@ export function safeNext(next: string | null | undefined): string | null {
  */
 let leaving = false;
 
+/** A request that never got an answer (offline, server down) fails in the page's language; a cancelled one stays an AbortError. */
+async function reach(sent: Promise<Response>): Promise<Response> {
+  try {
+    return await sent;
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') throw err;
+    throw new ApiError('Could not reach the server', 0);
+  }
+}
+
 async function withSession(send: (token: string | null) => Promise<Response>): Promise<Response> {
   const sentWith = getToken();
-  let res = await send(sentWith);
+  let res = await reach(send(sentWith));
   if (res.status === 401 && sentWith) {
     // Another request may already have renewed it while this one was out.
     const renewed = getToken() !== sentWith ? !!getToken() : await renewSession();
-    if (renewed) res = await send(getToken());
+    if (renewed) res = await reach(send(getToken()));
   }
   if (res.status === 401) {
     // The first request to find the session over decides where to go; the
@@ -117,7 +130,7 @@ async function withSession(send: (token: string | null) => Promise<Response>): P
       const here = window.location.pathname + window.location.search;
       window.location.href = `/login?${sentWith ? 'expired=1&' : ''}next=${encodeURIComponent(here)}`;
     }
-    throw new Error('Unauthorized');
+    throw new ApiError('Unauthorized', 401);
   }
   return res;
 }
@@ -162,6 +175,14 @@ export class PlanLimitError extends Error {
   }
 }
 
+/** The error for a refused call, in the page's language (see apiErrors.ts). */
+function refused(data: { message?: unknown; error?: unknown; errors?: unknown } | null, status: number, what: 'Request' | 'Upload'): ApiError {
+  const fields = Array.isArray(data?.errors) ? data.errors.map((e: { message?: string }) => e?.message).filter((m): m is string => !!m) : [];
+  const raw = data?.message ?? data?.error;
+  const message = typeof raw === 'string' && raw ? raw : `${what} failed (${status})`;
+  return new ApiError(fields.length ? fields.join(', ') : message, status, fields);
+}
+
 /**
  * Identical reads in flight at the same moment share one request: a page and
  * its shell both ask for /auth/me as they mount, and on a slow phone network
@@ -199,16 +220,16 @@ async function request<T>(
   );
 
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    // A proxy's error page rather than the API's answer.
+    if (res.ok) throw new ApiError('Could not reach the server', 0);
+  }
   if (!res.ok) {
     if (data?.code === 'plan-limit') throw new PlanLimitError(data);
-    const message =
-      (data && (data.message || data.error)) || `Request failed (${res.status})`;
-    throw new Error(
-      Array.isArray(data?.errors) && data.errors.length
-        ? data.errors.map((e: { message: string }) => e.message).join(', ')
-        : message,
-    );
+    throw refused(data, res.status, 'Request');
   }
   return data as T;
 }
@@ -227,9 +248,7 @@ export async function authPostFile<T>(path: string, file: Blob, filename: string
   });
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    const err = new Error((data && (data.message || data.error)) || `Request failed (${res.status})`) as Error & { status?: number };
-    err.status = res.status;
-    throw err;
+    throw refused(data, res.status, 'Request');
   }
   return data as T;
 }
@@ -250,9 +269,15 @@ export async function uploadImage(file: File): Promise<string> {
     }),
   );
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    // A proxy's error page rather than the API's answer.
+    if (res.ok) throw new ApiError('Could not reach the server', 0);
+  }
   if (!res.ok) {
-    throw new Error((data && (data.message || data.error)) || `Upload failed (${res.status})`);
+    throw refused(data, res.status, 'Upload');
   }
   return (data as { url: string }).url;
 }
