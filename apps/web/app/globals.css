@@ -19,8 +19,9 @@
   --v-surface: 0 0% 100%; /* sheets, panels, inputs */
   --v-elevated: 45 14% 97%; /* quiet fills: table headers, inactive tabs, hover */
   --v-fg: 240 6% 10%;
-  --v-muted: 250 3% 38%;
-  --v-faint: 249 3% 59%;
+  --v-muted: 250 3% 34%;
+  /* Tertiary text still has to read: 4.5:1 on the canvas, the darkest ground it sits on. */
+  --v-faint: 249 3% 44%;
   --v-border: 43 14% 90%;
   --v-border-strong: 42 12% 84%;
   /* Aliases a few components read directly. */
