@@ -60,12 +60,12 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
             className="group flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 text-left shadow-sm transition-shadow hover:shadow-md hover:border-line-strong"
           >
             <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[14px] font-semibold text-white" style={{ background: avatarColor(c.name) }}>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-base font-semibold text-white" style={{ background: avatarColor(c.name) }}>
                 {companyInitials(c.name)}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-semibold text-ink transition-colors group-hover:text-accent">{c.name === 'No company' ? t('companies.noCompany') : c.name}</p>
-                <p className="text-[11.5px] font-semibold text-muted">
+                <p className="truncate text-base font-semibold text-ink transition-colors group-hover:text-accent">{c.name === 'No company' ? t('companies.noCompany') : c.name}</p>
+                <p className="text-2xs font-semibold text-muted">
                   {c.name === 'No company' ? t('companies.individualLeads') : t('companies.wonSummary', { won: c.won, contacts: t('companies.contact', { count: total }) })}
                 </p>
               </div>
@@ -93,15 +93,15 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-semibold text-muted">{t('companies.contact', { count: total })}</span>
+              <span className="text-2xs font-semibold text-muted">{t('companies.contact', { count: total })}</span>
             </div>
 
             <div className="flex items-end justify-between border-t border-line/50 pt-2.5">
               <div>
-                <p className="text-[12px] text-faint">{t('companies.pipelineValue')}</p>
-                <p className="text-[16px] font-semibold tabular-nums text-ink">{formatMoney(c.value, locale)}</p>
+                <p className="text-xs text-faint">{t('companies.pipelineValue')}</p>
+                <p className="text-lg font-semibold tabular-nums text-ink">{formatMoney(c.value, locale)}</p>
               </div>
-              <span className="text-[10.5px] font-semibold text-faint">{formatRelativeTime(c.lastAt, locale, 'narrow')}</span>
+              <span className="text-3xs font-semibold text-faint">{formatRelativeTime(c.lastAt, locale, 'narrow')}</span>
             </div>
 
             {/* temperature mix */}
@@ -129,8 +129,8 @@ function EmptyCompanies() {
         <Icon name="briefcase" size={28} />
       </span>
       <div>
-        <p className="text-[16px] font-semibold text-ink">{t('companies.emptyTitle')}</p>
-        <p className="mt-1 max-w-sm text-[13px] text-muted">{t('companies.emptyDesc')}</p>
+        <p className="text-lg font-semibold text-ink">{t('companies.emptyTitle')}</p>
+        <p className="mt-1 max-w-sm text-sm text-muted">{t('companies.emptyDesc')}</p>
       </div>
       <Link href="/cards" className="v-btn"><Icon name="grid" size={15} /> {t('openCards')}</Link>
     </div>

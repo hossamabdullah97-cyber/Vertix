@@ -241,7 +241,7 @@ export default function CardsPage() {
       }
     >
       {cards && cards.length > 0 && (
-        <p className="text-[14px] text-muted">
+        <p className="text-base text-muted">
           <span className="font-medium text-ink">{t('summary.cards', { count: counts.all })}</span>
           <span className="mx-2 text-faint" aria-hidden>
             ·
@@ -259,7 +259,7 @@ export default function CardsPage() {
       )}
 
       {error && (
-        <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+        <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
           <span className="flex-1">{error}</span>
           <button onClick={() => setError('')} aria-label={t('actions.dismiss')} className="-m-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-red-500/10">
             <Icon name="x" size={13} />
@@ -282,12 +282,12 @@ export default function CardsPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setStatus(s)}
-                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-[13.5px] font-medium transition-colors sm:min-h-10 ${
+                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
                     active ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
                   {t(`filters.${s}`)}
-                  <span className="tabular text-[12px] text-faint">{counts[s]}</span>
+                  <span className="tabular text-xs text-faint">{counts[s]}</span>
                   {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
                 </button>
               );
@@ -305,16 +305,16 @@ export default function CardsPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('search')}
-                className="v-field !ps-8 !text-[13px] sm:!h-8"
+                className="v-field !ps-8 !text-sm sm:!h-8"
               />
             </label>
-            <label className="flex items-center gap-2 text-[12.5px] text-faint">
+            <label className="flex items-center gap-2 text-xs text-faint">
               <span className="hidden sm:inline">{t('sort.label')}</span>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as Sort)}
                 aria-label={t('sort.label')}
-                className="v-field !h-11 !w-auto !py-0 !pe-8 !text-[13px] sm:!h-8"
+                className="v-field !h-11 !w-auto !py-0 !pe-8 !text-sm sm:!h-8"
               >
                 <option value="updated">{t('sort.updated')}</option>
                 <option value="created">{t('sort.created')}</option>
@@ -324,8 +324,8 @@ export default function CardsPage() {
             </label>
             {filtersActive && (
               <>
-                <span className="text-[12.5px] text-faint">{t('results', { count: shown.length })}</span>
-                <button onClick={clearFilters} className="min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+                <span className="text-xs text-faint">{t('results', { count: shown.length })}</span>
+                <button onClick={clearFilters} className="min-h-11 text-xs font-medium text-accent hover:underline sm:min-h-0">
                   {t('clearFilters')}
                 </button>
               </>
@@ -337,7 +337,7 @@ export default function CardsPage() {
                   role="radio"
                   aria-checked={layout === l}
                   onClick={() => chooseLayout(l)}
-                  className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition-colors sm:h-7 ${
+                  className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors sm:h-7 ${
                     layout === l ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
                   }`}
                 >
@@ -351,7 +351,7 @@ export default function CardsPage() {
           <div className="mt-4">
             {shown.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-14 text-center">
-                <p className="text-[13.5px] text-muted">{query.trim() ? t('empty.noMatchFor', { query: query.trim() }) : t('empty.noMatch')}</p>
+                <p className="text-sm text-muted">{query.trim() ? t('empty.noMatchFor', { query: query.trim() }) : t('empty.noMatch')}</p>
                 <button onClick={clearFilters} className="v-btn v-btn-ghost">
                   {t('clearFilters')}
                 </button>
@@ -388,7 +388,7 @@ export default function CardsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             role="status"
-            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
+            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-sm font-medium text-white shadow-lg"
           >
             <Icon name="check" size={14} /> {toast}
           </motion.div>
@@ -438,7 +438,7 @@ function CardFace({ card, compact = false }: { card: ListCard; compact?: boolean
 
   if (compact) {
     return (
-      <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-[12px] font-semibold" style={{ background: accent, color: readableOn(accent) }} aria-hidden>
+      <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold" style={{ background: accent, color: readableOn(accent) }} aria-hidden>
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatar} alt="" className="h-full w-full object-cover" />
@@ -460,7 +460,7 @@ function CardFace({ card, compact = false }: { card: ListCard; compact?: boolean
       <div className="h-[38%]" style={coverStyle} />
       <div className="absolute inset-x-0 bottom-0 top-[38%] flex flex-col px-[7%] pb-[6%]">
         <span
-          className="-mt-[22px] flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-[15px] font-semibold"
+          className="-mt-[22px] flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-md font-semibold"
           style={{ background: accent, color: readableOn(accent), boxShadow: `0 0 0 2.5px ${face.bg}` }}
         >
           {avatar ? (
@@ -470,10 +470,10 @@ function CardFace({ card, compact = false }: { card: ListCard; compact?: boolean
             (name || card.slug).charAt(0).toUpperCase()
           )}
         </span>
-        <p className="mt-2 truncate text-[14px] font-semibold leading-tight" style={{ color: face.fg }}>
+        <p className="mt-2 truncate text-base font-semibold leading-tight" style={{ color: face.fg }}>
           {name || t('untitled')}
         </p>
-        <p className="mt-0.5 truncate text-[12px]" style={{ color: face.muted }}>
+        <p className="mt-0.5 truncate text-xs" style={{ color: face.muted }}>
           {role || ' '}
         </p>
         <div className="mt-auto flex items-center gap-1.5" style={{ color: face.muted }}>
@@ -482,7 +482,7 @@ function CardFace({ card, compact = false }: { card: ListCard; compact?: boolean
               <Icon name={actionIcon(a.type)} size={11} />
             </span>
           ))}
-          {actions.length > 5 && <span className="tabular text-[11px]">+{actions.length - 5}</span>}
+          {actions.length > 5 && <span className="tabular text-2xs">+{actions.length - 5}</span>}
         </div>
       </div>
     </div>
@@ -524,7 +524,7 @@ function CardTile({ card, stats, leads, chips, owner, onCopy, onPublish, onDelet
       </Link>
 
       <div className="flex items-center gap-2 px-1.5 pt-3">
-        <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-[12px] text-faint rtl:text-right">
+        <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-xs text-faint rtl:text-right">
           /c/{card.slug}
         </span>
         <StatusBadge live={card.isPublished} />
@@ -534,15 +534,15 @@ function CardTile({ card, stats, leads, chips, owner, onCopy, onPublish, onDelet
       <dl className="mx-1.5 mt-3 grid grid-cols-3 border-t border-line pt-3">
         {metrics.map((m) => (
           <div key={m.key} className="min-w-0">
-            <dt className="text-[11.5px] text-faint">{t(`metrics.${m.key}`)}</dt>
-            <dd className="tabular mt-0.5 text-[15px] font-medium text-ink">
+            <dt className="text-2xs text-faint">{t(`metrics.${m.key}`)}</dt>
+            <dd className="tabular mt-0.5 text-md font-medium text-ink">
               <Num value={m.value} />
             </dd>
           </div>
         ))}
       </dl>
 
-      <p className="mx-1.5 mb-1 mt-3 flex items-center gap-1.5 text-[12px] text-faint">
+      <p className="mx-1.5 mb-1 mt-3 flex items-center gap-1.5 text-xs text-faint">
         {owner && (
           <>
             <span className="truncate text-muted">{owner.name || owner.email}</span>
@@ -600,7 +600,7 @@ function CardsTable({ rows, showOwner }: { rows: RowProps[]; showOwner: boolean 
                     <CardFace card={card} compact />
                     <span className="min-w-0">
                       <span className="block truncate font-medium text-ink">{nameOf(card) || t('untitled')}</span>
-                      <span dir="ltr" className="block truncate text-start font-mono text-[12px] text-faint rtl:text-right">
+                      <span dir="ltr" className="block truncate text-start font-mono text-xs text-faint rtl:text-right">
                         /c/{card.slug}
                       </span>
                     </span>
@@ -683,12 +683,12 @@ function FirstCard({ onCreate, creating }: { onCreate: () => void; creating: boo
   const steps = ['details', 'look', 'share'] as const;
   return (
     <div className="mx-auto mt-6 max-w-[560px] rounded-xl px-6 py-10 text-center ring-1 ring-inset ring-line">
-      <h2 className="text-[17px] font-semibold text-ink">{t('first.title')}</h2>
-      <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-muted">{t('first.body')}</p>
+      <h2 className="text-lg font-semibold text-ink">{t('first.title')}</h2>
+      <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{t('first.body')}</p>
       <ol className="mx-auto mt-6 grid max-w-md gap-2 text-start sm:grid-cols-3">
         {steps.map((s, i) => (
-          <li key={s} className="flex items-start gap-2.5 rounded-lg bg-elevated px-3 py-2.5 text-[12.5px] text-muted ring-1 ring-inset ring-line sm:flex-col sm:gap-1.5">
-            <span className="tabular flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-medium text-ink ring-1 ring-line">{i + 1}</span>
+          <li key={s} className="flex items-start gap-2.5 rounded-lg bg-elevated px-3 py-2.5 text-xs text-muted ring-1 ring-inset ring-line sm:flex-col sm:gap-1.5">
+            <span className="tabular flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface text-2xs font-medium text-ink ring-1 ring-line">{i + 1}</span>
             {t(`first.steps.${s}`)}
           </li>
         ))}

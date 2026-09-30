@@ -82,10 +82,10 @@ export function TasksView({
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div>
-          <h2 className="text-[16px] font-semibold text-ink">{t('tasks.title')}</h2>
-          <p className="text-[12.5px] text-muted">{t('tasks.subtitle')}</p>
+          <h2 className="text-lg font-semibold text-ink">{t('tasks.title')}</h2>
+          <p className="text-xs text-muted">{t('tasks.subtitle')}</p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="v-btn !h-9 px-3.5 text-[12.5px]">
+        <button onClick={() => setShowAdd(true)} className="v-btn !h-9 px-3.5 text-xs">
           <Icon name="plus" size={14} /> {t('tasks.add')}
         </button>
       </div>
@@ -99,7 +99,7 @@ export function TasksView({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('tasks.searchPlaceholder')}
-            className="v-field !h-9 !ps-9 text-[12px]"
+            className="v-field !h-9 !ps-9 text-xs"
           />
         </div>
 
@@ -110,7 +110,7 @@ export function TasksView({
               key={tab}
               onClick={() => setFilterTab(tab)}
               aria-pressed={filterTab === tab}
-              className={`h-11 rounded-md px-3 text-[12.5px] font-medium transition-colors sm:h-7 ${
+              className={`h-11 rounded-md px-3 text-xs font-medium transition-colors sm:h-7 ${
                 filterTab === tab ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
@@ -123,7 +123,7 @@ export function TasksView({
         <select
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value as TaskPriority | 'ALL')}
-          className="v-field !h-9 !w-auto text-[12px] font-semibold"
+          className="v-field !h-9 !w-auto text-xs font-semibold"
         >
           <option value="ALL">{t('tasks.filter.allPriorities')}</option>
           <option value="HIGH">{t('tasks.filter.high')}</option>
@@ -139,8 +139,8 @@ export function TasksView({
             <Icon name="list" size={24} />
           </span>
           <div>
-            <p className="text-[14px] font-semibold text-ink">{t('tasks.emptyTitle')}</p>
-            <p className="mt-1 text-[12px] text-muted">{t('tasks.emptyDesc')}</p>
+            <p className="text-base font-semibold text-ink">{t('tasks.emptyTitle')}</p>
+            <p className="mt-1 text-xs text-muted">{t('tasks.emptyDesc')}</p>
           </div>
         </div>
       ) : (
@@ -175,7 +175,7 @@ export function TasksView({
 
                     {/* Title */}
                     <div className="min-w-0 flex-1">
-                      <p className={`text-[13px] font-semibold ${tk.completed ? 'text-faint line-through' : 'text-ink'}`}>
+                      <p className={`text-sm font-semibold ${tk.completed ? 'text-faint line-through' : 'text-ink'}`}>
                         {tk.title}
                       </p>
                     </div>
@@ -184,7 +184,7 @@ export function TasksView({
                     {tk.lead && (
                       <button
                         onClick={() => tk.leadId && onOpenLead(tk.leadId)}
-                        className="hidden items-center gap-1.5 rounded-lg border border-line bg-canvas/30 px-2 py-1 text-[11.5px] font-semibold text-muted hover:border-line-strong hover:text-accent sm:flex"
+                        className="hidden items-center gap-1.5 rounded-lg border border-line bg-canvas/30 px-2 py-1 text-2xs font-semibold text-muted hover:border-line-strong hover:text-accent sm:flex"
                       >
                         <span className="flex h-4.5 w-4.5 items-center justify-center rounded-full text-[8px] font-semibold text-white" style={{ background: avatarColor(tk.lead.name ?? tk.lead.id) }}>
                           {initials(tk.lead.name)}
@@ -194,7 +194,7 @@ export function TasksView({
                     )}
 
                     {/* Due Date Indicator */}
-                    <span className="w-24 shrink-0 text-end text-[11px] font-semibold" style={{ color: tk.completed ? 'hsl(var(--v-faint))' : toneColor }}>
+                    <span className="w-24 shrink-0 text-end text-2xs font-semibold" style={{ color: tk.completed ? 'hsl(var(--v-faint))' : toneColor }}>
                       {due.label}
                     </span>
                   </motion.div>
@@ -223,7 +223,7 @@ export function TasksView({
               className="fixed inset-x-4 top-20 z-50 mx-auto max-w-sm rounded-2xl border border-line bg-surface p-5 shadow-2xl"
             >
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-[14.5px] font-semibold text-ink">{t('tasks.create')}</h3>
+                <h3 className="text-base font-semibold text-ink">{t('tasks.create')}</h3>
                 <button onClick={() => setShowAdd(false)} className="text-muted hover:text-ink">
                   <Icon name="x" size={16} />
                 </button>
@@ -231,22 +231,22 @@ export function TasksView({
 
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-[12px] text-faint">{t('tasks.description')}</label>
+                  <label className="mb-1.5 block text-xs text-faint">{t('tasks.description')}</label>
                   <input
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder={t('tasks.descPlaceholder')}
-                    className="v-field text-[13px]"
+                    className="v-field text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[12px] text-faint">{t('tasks.linkToLead')}</label>
+                  <label className="mb-1.5 block text-xs text-faint">{t('tasks.linkToLead')}</label>
                   <select
                     value={selectedLeadId}
                     onChange={(e) => setSelectedLeadId(e.target.value)}
-                    className="v-field text-[13px]"
+                    className="v-field text-sm"
                   >
                     <option value="">{t('tasks.noLink')}</option>
                     {leads.map((l) => (
@@ -257,11 +257,11 @@ export function TasksView({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-[12px] text-faint">{t('tasks.priority')}</label>
+                    <label className="mb-1.5 block text-xs text-faint">{t('tasks.priority')}</label>
                     <select
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                      className="v-field text-[13px]"
+                      className="v-field text-sm"
                     >
                       <option value="LOW">{t('tasks.priorityOptions.low')}</option>
                       <option value="MEDIUM">{t('tasks.priorityOptions.medium')}</option>
@@ -270,19 +270,19 @@ export function TasksView({
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-[12px] text-faint">{t('tasks.dueDate')}</label>
+                    <label className="mb-1.5 block text-xs text-faint">{t('tasks.dueDate')}</label>
                     <input
                       type="date"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="v-field text-[13px]"
+                      className="v-field text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => setShowAdd(false)} className="v-btn v-btn-ghost !h-9 text-[12.5px]">{t('tasks.cancel')}</button>
-                  <button type="submit" className="v-btn !h-9 text-[12.5px]">{t('tasks.add')}</button>
+                  <button type="button" onClick={() => setShowAdd(false)} className="v-btn v-btn-ghost !h-9 text-xs">{t('tasks.cancel')}</button>
+                  <button type="submit" className="v-btn !h-9 text-xs">{t('tasks.add')}</button>
                 </div>
               </form>
             </motion.div>

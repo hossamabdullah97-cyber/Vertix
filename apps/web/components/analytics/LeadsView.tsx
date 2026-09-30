@@ -47,7 +47,7 @@ export function LeadsView({ leads, stages }: { leads: Lead[] | null; stages: Pip
 
   return (
     <div className="space-y-4">
-      <p className="text-[14px] text-muted">
+      <p className="text-base text-muted">
         <span className="font-medium text-ink">{t('leads.summary.new', { count: leads.length, value: fmt(leads.length) })}</span>
         <span className="mx-2 text-faint" aria-hidden>
           ·
@@ -69,7 +69,7 @@ export function LeadsView({ leads, stages }: { leads: Lead[] | null; stages: Pip
           <PanelHeader
             title={t('leads.byStage')}
             action={
-              <Link href="/leads" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/leads" className="v-hit text-xs font-medium text-accent hover:underline">
                 {t('leads.open')}
               </Link>
             }

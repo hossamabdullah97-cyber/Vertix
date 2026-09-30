@@ -30,7 +30,7 @@ export function SecondLanguage({ primary, value, onChange }: { primary: Lang; va
 
   const field = (key: keyof Omit<AltIdentity, 'lang'>, label: string, placeholder: string) => (
     <label className="block">
-      <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-ink">{label}</span>
       <input dir={dir} lang={other} className="v-field" value={current?.[key] ?? ''} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} />
     </label>
   );
@@ -39,8 +39,8 @@ export function SecondLanguage({ primary, value, onChange }: { primary: Lang; va
     <div className="mt-6 rounded-xl ring-1 ring-inset ring-line">
       <div className="flex items-center justify-between gap-4 px-3.5 py-3">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-ink">{t('second.title', { language: t(`second.lang.${other}`) })}</p>
-          <p className="mt-0.5 text-[12px] leading-snug text-faint">{t('second.hint', { language: t(`second.lang.${other}`) })}</p>
+          <p className="text-sm font-medium text-ink">{t('second.title', { language: t(`second.lang.${other}`) })}</p>
+          <p className="mt-0.5 text-xs leading-snug text-faint">{t('second.hint', { language: t(`second.lang.${other}`) })}</p>
         </div>
         <Toggle on={on} onChange={() => onChange(on ? undefined : { lang: other })} label={t('second.title', { language: t(`second.lang.${other}`) })} />
       </div>
@@ -51,10 +51,10 @@ export function SecondLanguage({ primary, value, onChange }: { primary: Lang; va
           {field('company', t('profile.company'), other === 'ar' ? 'فيرتكس للمقاولات' : 'Vertex Build')}
           {field('location', t('profile.location'), other === 'ar' ? 'القاهرة، مصر' : 'Cairo, Egypt')}
           <label className="block sm:col-span-2">
-            <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{t('second.about')}</span>
+            <span className="mb-1.5 block text-xs font-medium text-ink">{t('second.about')}</span>
             <textarea dir={dir} lang={other} className="v-field min-h-20" value={current?.about ?? ''} onChange={(e) => set('about', e.target.value)} />
           </label>
-          {!current?.fullName?.trim() && <p className="text-[12.5px] text-amber-700 dark:text-amber-400 sm:col-span-2">{t('second.needName')}</p>}
+          {!current?.fullName?.trim() && <p className="text-xs text-amber-700 dark:text-amber-400 sm:col-span-2">{t('second.needName')}</p>}
         </div>
       )}
     </div>

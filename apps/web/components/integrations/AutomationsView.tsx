@@ -146,7 +146,7 @@ export function AutomationsView({ canManage, handoff, onHandled }: { canManage: 
           />
           {templates.length > 0 && (
             <div className="mt-6">
-              <h2 className="mb-3 text-[13px] font-semibold text-ink">{t('automations.templates')}</h2>
+              <h2 className="mb-3 text-sm font-semibold text-ink">{t('automations.templates')}</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {templates.map((tpl) => (
                   <button
@@ -162,8 +162,8 @@ export function AutomationsView({ canManage, handoff, onHandled }: { canManage: 
                         </span>
                       ))}
                     </span>
-                    <span className="mt-3 text-[14px] font-medium text-ink">{t(`automations.templateNames.${tpl.key}`, { defaultValue: tpl.name })}</span>
-                    <span className="mt-1 text-[12.5px] leading-snug text-muted">{t(`automations.templateBodies.${tpl.key}`, { defaultValue: tpl.description })}</span>
+                    <span className="mt-3 text-base font-medium text-ink">{t(`automations.templateNames.${tpl.key}`, { defaultValue: tpl.name })}</span>
+                    <span className="mt-1 text-xs leading-snug text-muted">{t(`automations.templateBodies.${tpl.key}`, { defaultValue: tpl.description })}</span>
                   </button>
                 ))}
               </div>
@@ -180,15 +180,15 @@ export function AutomationsView({ canManage, handoff, onHandled }: { canManage: 
                 onClick={() => setDraft({ id: a.id, name: a.name, trigger: a.trigger, matchType: a.matchType, conditions: a.conditions, actions: a.actions })}
                 className="min-w-0 flex-1 text-start disabled:cursor-default"
               >
-                <span className={`block truncate text-[14px] font-medium ${a.enabled ? 'text-ink' : 'text-muted'}`}>{a.name}</span>
-                <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[12.5px] text-muted">
+                <span className={`block truncate text-base font-medium ${a.enabled ? 'text-ink' : 'text-muted'}`}>{a.name}</span>
+                <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
                   <span>{eventLabel(t, a.trigger)}</span>
                   {a.conditions.length > 0 && <span className="text-faint">· {t('automations.conditions', { count: a.conditions.length })}</span>}
                   <Icon name="arrow" size={12} className="text-faint rtl:-scale-x-100" />
                   <span>{a.actions.map((x) => t(`automations.actions.${x.type}`, { defaultValue: x.type })).join(locale === 'ar' ? '، ' : ', ')}</span>
                 </span>
               </button>
-              <span className="hidden shrink-0 text-end text-[12.5px] text-faint sm:block">
+              <span className="hidden shrink-0 text-end text-xs text-faint sm:block">
                 {a.runCount > 0 ? t('automations.runs', { count: a.runCount }) : t('automations.neverRan')}
                 {a.lastRunAt && <span className="block">{t('automations.lastRun', { time: formatRelativeTime(a.lastRunAt, locale) })}</span>}
               </span>
@@ -208,7 +208,7 @@ export function AutomationsView({ canManage, handoff, onHandled }: { canManage: 
 
       {runs.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-3 text-[13px] font-semibold text-ink">{t('automations.recent')}</h2>
+          <h2 className="mb-3 text-sm font-semibold text-ink">{t('automations.recent')}</h2>
           <div className="v-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="v-table">
@@ -342,7 +342,7 @@ function Builder({
       title={d.id ? t('automations.edit') : t('automations.new')}
       footer={
         <div className="flex items-center justify-end gap-2">
-          {err && <p className="me-auto text-[12.5px] text-red-600 dark:text-red-400">{err}</p>}
+          {err && <p className="me-auto text-xs text-red-600 dark:text-red-400">{err}</p>}
           <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
             {t('cancel')}
           </button>
@@ -403,7 +403,7 @@ function Builder({
                   role="radio"
                   aria-checked={d.matchType === m}
                   onClick={() => set({ matchType: m })}
-                  className={`h-9 rounded-md px-3 text-[12.5px] font-medium sm:h-7 ${d.matchType === m ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+                  className={`h-9 rounded-md px-3 text-xs font-medium sm:h-7 ${d.matchType === m ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
                 >
                   {t(`automations.form.match.${m}`)}
                 </button>
@@ -436,7 +436,7 @@ function Builder({
                     </button>
                   </div>
                   {custom && (
-                    <input dir="ltr" value={c.field} onChange={(e) => setCond(i, { field: e.target.value })} placeholder={t('automations.form.fieldPath')} aria-label={t('automations.form.field')} className="v-field mt-2 w-full font-mono text-[13px] rtl:text-right" />
+                    <input dir="ltr" value={c.field} onChange={(e) => setCond(i, { field: e.target.value })} placeholder={t('automations.form.fieldPath')} aria-label={t('automations.form.field')} className="v-field mt-2 w-full font-mono text-sm rtl:text-right" />
                   )}
                   <div className={`mt-2 grid gap-2 ${needsValue ? 'grid-cols-2' : 'grid-cols-1'}`}>
                     <select value={c.operator} onChange={(e) => setCond(i, { operator: e.target.value })} aria-label={t('automations.form.operator')} className="v-field min-w-0">
@@ -454,7 +454,7 @@ function Builder({
               );
             })}
           </div>
-          <button type="button" onClick={() => set({ conditions: [...d.conditions, { field: `data.${fields[0] ?? ''}`, operator: 'equals', value: '' }] })} className="v-hit mt-2 flex h-9 items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
+          <button type="button" onClick={() => set({ conditions: [...d.conditions, { field: `data.${fields[0] ?? ''}`, operator: 'equals', value: '' }] })} className="v-hit mt-2 flex h-9 items-center gap-1.5 text-sm font-medium text-accent hover:underline">
             <Icon name="plus" size={14} /> {t('automations.form.addCondition')}
           </button>
         </Step>
@@ -473,7 +473,7 @@ function Builder({
                         aria-checked={a.type === type}
                         title={t(`automations.actions.${type}`)}
                         onClick={() => a.type !== type && setAct(i, { type, config: {} })}
-                        className={`flex h-9 items-center justify-center gap-1.5 rounded-md px-1 text-[12px] font-medium sm:h-8 ${a.type === type ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+                        className={`flex h-9 items-center justify-center gap-1.5 rounded-md px-1 text-xs font-medium sm:h-8 ${a.type === type ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
                       >
                         <Icon name={ACTION_ICON[type]} size={13} className="shrink-0" />
                         <span className="truncate">{t(`automations.actionsShort.${type}`)}</span>
@@ -489,8 +489,8 @@ function Builder({
                 <div className="mt-3 space-y-2">
                   {a.type === 'webhook' ? (
                     <>
-                      <input dir="ltr" value={String(a.config.url ?? '')} onChange={(e) => setAct(i, { config: { url: e.target.value } })} placeholder="https://hooks.slack.com/services/…" aria-label={t('automations.form.url')} className="v-field w-full font-mono text-[13px] rtl:text-right" />
-                      <p className="text-[12px] leading-relaxed text-faint">{t('automations.form.urlHint')}</p>
+                      <input dir="ltr" value={String(a.config.url ?? '')} onChange={(e) => setAct(i, { config: { url: e.target.value } })} placeholder="https://hooks.slack.com/services/…" aria-label={t('automations.form.url')} className="v-field w-full font-mono text-sm rtl:text-right" />
+                      <p className="text-xs leading-relaxed text-faint">{t('automations.form.urlHint')}</p>
                     </>
                   ) : (
                     <>
@@ -498,7 +498,7 @@ function Builder({
                       {a.type === 'notify' ? (
                         <input value={String(a.config.body ?? '')} onChange={(e) => setAct(i, { config: { ...a.config, body: e.target.value } })} placeholder={t('automations.form.message')} aria-label={t('automations.form.message')} className="v-field w-full" />
                       ) : (
-                        <label className="flex items-center gap-3 whitespace-nowrap text-[13px] text-muted">
+                        <label className="flex items-center gap-3 whitespace-nowrap text-sm text-muted">
                           {t('automations.form.dueIn')}
                           <input
                             type="number"
@@ -516,7 +516,7 @@ function Builder({
               </div>
             ))}
           </div>
-          <button type="button" onClick={() => set({ actions: [...d.actions, { type: 'notify', config: {} }] })} className="v-hit mt-2 flex h-9 items-center gap-1.5 text-[13px] font-medium text-accent hover:underline">
+          <button type="button" onClick={() => set({ actions: [...d.actions, { type: 'notify', config: {} }] })} className="v-hit mt-2 flex h-9 items-center gap-1.5 text-sm font-medium text-accent hover:underline">
             <Icon name="plus" size={14} /> {t('automations.form.addAction')}
           </button>
         </Step>
@@ -530,10 +530,10 @@ function Step({ n, title, hint, last, children }: { n: number; title: string; hi
   return (
     <div className="relative flex gap-3">
       {!last && <span aria-hidden className="absolute bottom-[-18px] start-[11px] top-7 w-px bg-line" />}
-      <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-elevated text-[12px] font-semibold text-muted ring-1 ring-inset ring-line">{n}</span>
+      <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-elevated text-xs font-semibold text-muted ring-1 ring-inset ring-line">{n}</span>
       <div className="min-w-0 flex-1">
-        <p className="flex h-6 items-center text-[13px] font-semibold text-ink">{title}</p>
-        {hint && <p className="mb-1 text-[12px] text-faint">{hint}</p>}
+        <p className="flex h-6 items-center text-sm font-semibold text-ink">{title}</p>
+        {hint && <p className="mb-1 text-xs text-faint">{hint}</p>}
         <div className="mt-2">{children}</div>
       </div>
     </div>

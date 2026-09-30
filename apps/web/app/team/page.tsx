@@ -211,8 +211,8 @@ export default function TeamPage() {
       <AppShell title={t('title')}>
         <div className="mx-auto max-w-[560px] space-y-4">
           <div className="rounded-xl px-6 py-8 text-center ring-1 ring-inset ring-line">
-            <h2 className="text-[17px] font-semibold text-ink">{t('personal.title')}</h2>
-            <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-muted">{t('personal.body')}</p>
+            <h2 className="text-lg font-semibold text-ink">{t('personal.title')}</h2>
+            <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{t('personal.body')}</p>
           </div>
           {me && <ProfilePhotoCard me={me} onChange={setMe} />}
         </div>
@@ -240,7 +240,7 @@ export default function TeamPage() {
       }
     >
       {members && members.length > 0 && (
-        <p className="text-[14px] text-muted">
+        <p className="text-base text-muted">
           <span className="font-medium text-ink">{t('summary.people', { count: counts.all, value: fmt(counts.all) })}</span>
           <span className="mx-2 text-faint" aria-hidden>
             ·
@@ -263,8 +263,8 @@ export default function TeamPage() {
 
       {forbidden ? (
         <div className="mx-auto mt-6 max-w-[520px] rounded-xl px-6 py-10 text-center ring-1 ring-inset ring-line">
-          <h2 className="text-[16px] font-semibold text-ink">{t('forbidden.title')}</h2>
-          <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-muted">{t('forbidden.body')}</p>
+          <h2 className="text-lg font-semibold text-ink">{t('forbidden.title')}</h2>
+          <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{t('forbidden.body')}</p>
         </div>
       ) : (
         <>
@@ -278,12 +278,12 @@ export default function TeamPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => chooseView(v)}
-                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-[13.5px] font-medium transition-colors sm:min-h-10 ${
+                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
                     active ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
                   {t(`views.${v}`)}
-                  {count !== undefined && members && <span className="tabular text-[12px] text-faint">{count}</span>}
+                  {count !== undefined && members && <span className="tabular text-xs text-faint">{count}</span>}
                   {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
                 </button>
               );
@@ -291,7 +291,7 @@ export default function TeamPage() {
           </nav>
 
           {error && !selected && !inviting && (
-            <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+            <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
               <span className="flex-1">{error}</span>
               <button onClick={() => setError('')} aria-label={t('actions.dismiss')} className="-m-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-red-500/10">
                 <Icon name="x" size={13} />
@@ -313,9 +313,9 @@ export default function TeamPage() {
                   <span className="pointer-events-none absolute inset-y-0 start-2.5 flex items-center text-faint">
                     <Icon name="search" size={14} />
                   </span>
-                  <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('filters.search')} className="v-field !ps-8 !text-[13px] sm:!h-8" />
+                  <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('filters.search')} className="v-field !ps-8 !text-sm sm:!h-8" />
                 </label>
-                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as Role | '')} aria-label={t('filters.role')} className="v-field !h-11 !w-auto !py-0 !pe-8 !text-[13px] sm:!h-8">
+                <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as Role | '')} aria-label={t('filters.role')} className="v-field !h-11 !w-auto !py-0 !pe-8 !text-sm sm:!h-8">
                   <option value="">{t('filters.allRoles')}</option>
                   {ROLES.map((r) => (
                     <option key={r} value={r}>
@@ -324,7 +324,7 @@ export default function TeamPage() {
                   ))}
                 </select>
                 {teams.length > 0 && (
-                  <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} aria-label={t('filters.team')} className="v-field !h-11 !w-auto !py-0 !pe-8 !text-[13px] sm:!h-8">
+                  <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} aria-label={t('filters.team')} className="v-field !h-11 !w-auto !py-0 !pe-8 !text-sm sm:!h-8">
                     <option value="">{t('filters.allTeams')}</option>
                     {teams.map((tm) => (
                       <option key={tm.id} value={tm.id}>
@@ -336,14 +336,14 @@ export default function TeamPage() {
                 )}
                 {filtersActive && (
                   <>
-                    <span className="text-[12.5px] text-faint">{t('filters.results', { count: shown.length })}</span>
+                    <span className="text-xs text-faint">{t('filters.results', { count: shown.length })}</span>
                     <button
                       onClick={() => {
                         setQuery('');
                         setRoleFilter('');
                         setTeamFilter('');
                       }}
-                      className="min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0"
+                      className="min-h-11 text-xs font-medium text-accent hover:underline sm:min-h-0"
                     >
                       {t('filters.clear')}
                     </button>
@@ -354,7 +354,7 @@ export default function TeamPage() {
               <div className="mt-4">
                 {members.length <= 1 && canManage && !filtersActive ? (
                   <div className="mb-4 flex flex-col items-start gap-3 rounded-xl border border-dashed border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-[13px] text-muted">{t('empty.alone')}</p>
+                    <p className="text-sm text-muted">{t('empty.alone')}</p>
                     <button onClick={() => setInviting(true)} className="v-btn v-btn-ghost shrink-0">
                       <Icon name="plus" size={14} /> {t('invite.button')}
                     </button>
@@ -362,7 +362,7 @@ export default function TeamPage() {
                 ) : null}
                 {shown.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-14 text-center">
-                    <p className="text-[13.5px] text-muted">{t('empty.noMatch')}</p>
+                    <p className="text-sm text-muted">{t('empty.noMatch')}</p>
                   </div>
                 ) : (
                   <div className="v-card overflow-hidden">
@@ -398,10 +398,10 @@ export default function TeamPage() {
                                   <span className="min-w-0">
                                     <span className="flex items-center gap-1.5">
                                       <span className="truncate font-medium text-ink">{personName(m)}</span>
-                                      {m.user.id === me?.id && <span className="shrink-0 text-[12px] text-faint">{t('table.you')}</span>}
+                                      {m.user.id === me?.id && <span className="shrink-0 text-xs text-faint">{t('table.you')}</span>}
                                     </span>
                                     {m.user.name && (
-                                      <span dir="ltr" className="block truncate text-start text-[12px] text-faint rtl:text-right">
+                                      <span dir="ltr" className="block truncate text-start text-xs text-faint rtl:text-right">
                                         {m.user.email}
                                       </span>
                                     )}
@@ -495,7 +495,7 @@ export default function TeamPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             role="status"
-            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
+            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-sm font-medium text-white shadow-lg"
           >
             <Icon name="check" size={14} /> {toast}
           </motion.div>
@@ -539,8 +539,8 @@ function RolePicker({ value, onChange, allowOwner, disabled }: { value: Role; on
               {checked && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
             </span>
             <span className="min-w-0">
-              <span className="block text-[13px] font-medium text-ink">{t(`roles.${r}.name`)}</span>
-              <span className="block text-[12px] leading-relaxed text-faint">{t(`roles.${r}.summary`)}</span>
+              <span className="block text-sm font-medium text-ink">{t(`roles.${r}.name`)}</span>
+              <span className="block text-xs leading-relaxed text-faint">{t(`roles.${r}.summary`)}</span>
             </span>
           </button>
         );
@@ -594,7 +594,7 @@ function MemberDetails({
             <span className="min-w-0">
               <span className="block truncate">{personName(member)}</span>
               {member.user.name && (
-                <span dir="ltr" className="block truncate text-start text-[12.5px] font-normal text-faint rtl:text-right">
+                <span dir="ltr" className="block truncate text-start text-xs font-normal text-faint rtl:text-right">
                   {member.user.email}
                 </span>
               )}
@@ -622,26 +622,26 @@ function MemberDetails({
       {member && (
         <div className="space-y-5">
           {error && (
-            <p role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+            <p role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
               {error}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-faint">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-faint">
             <MemberStatus status={member.status} />
             {member.createdAt && <span>{t(member.status === 'INVITED' ? 'details.invited' : 'details.joined', { when: formatRelativeTime(member.createdAt, locale) })}</span>}
           </div>
-          {member.status === 'INVITED' && <p className="text-[12.5px] leading-relaxed text-muted">{t('details.invitedNote')}</p>}
-          {member.status === 'SUSPENDED' && <p className="text-[12.5px] leading-relaxed text-muted">{t('details.suspendedNote')}</p>}
-          {self && <p className="text-[12.5px] leading-relaxed text-muted">{t('details.selfNote')}</p>}
+          {member.status === 'INVITED' && <p className="text-xs leading-relaxed text-muted">{t('details.invitedNote')}</p>}
+          {member.status === 'SUSPENDED' && <p className="text-xs leading-relaxed text-muted">{t('details.suspendedNote')}</p>}
+          {self && <p className="text-xs leading-relaxed text-muted">{t('details.selfNote')}</p>}
 
           <div>
-            <p className="mb-1.5 text-[12.5px] text-muted">{t('details.role')}</p>
+            <p className="mb-1.5 text-xs text-muted">{t('details.role')}</p>
             <RolePicker value={member.role} onChange={onRole} allowOwner={me?.role === 'OWNER'} disabled={!editable} />
           </div>
 
           <label className="block">
-            <span className="mb-1.5 block text-[12.5px] text-muted">{t('details.team')}</span>
+            <span className="mb-1.5 block text-xs text-muted">{t('details.team')}</span>
             <select className="v-field" value={member.teamId ?? ''} onChange={(e) => onTeam(e.target.value)} disabled={!canManage}>
               <option value="">{t('details.noTeam')}</option>
               {teams.map((tm) => (
@@ -653,19 +653,19 @@ function MemberDetails({
           </label>
 
           <div>
-            <p className="mb-1.5 flex items-baseline gap-2 text-[12.5px] text-muted">
+            <p className="mb-1.5 flex items-baseline gap-2 text-xs text-muted">
               {t('details.cards')}
               <span className="tabular text-faint">{formatNumber(cards.length, locale)}</span>
             </p>
             {cards.length === 0 ? (
-              <p className="text-[13px] text-faint">{t('details.noCards')}</p>
+              <p className="text-sm text-faint">{t('details.noCards')}</p>
             ) : (
               <ul className="divide-y divide-line overflow-hidden rounded-lg ring-1 ring-inset ring-line">
                 {cards.map((c) => (
                   <li key={c.id}>
                     <Link href={`/cards/${c.id}`} className="flex min-h-11 items-center gap-3 px-3 py-2 hover:bg-elevated">
                       <CardThumb card={c} />
-                      <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{((c.vcardData?.fullName as string) || '').trim() || `/c/${c.slug}`}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-ink">{((c.vcardData?.fullName as string) || '').trim() || `/c/${c.slug}`}</span>
                       <span className={`v-badge ${c.isPublished ? 'v-badge-success' : 'v-badge-neutral'}`}>{c.isPublished ? t('details.live') : t('details.draft')}</span>
                     </Link>
                   </li>
@@ -674,7 +674,7 @@ function MemberDetails({
             )}
           </div>
 
-          <p className="flex items-center justify-between text-[13px]">
+          <p className="flex items-center justify-between text-sm">
             <span className="text-muted">{t('details.chips')}</span>
             <Link href="/tags" className="v-hit tabular font-medium text-accent hover:underline">
               {formatNumber(chips, locale)}
@@ -731,22 +731,22 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
       <form onSubmit={submit} className="space-y-4">
         {full && <PlanLimitNotice text={full} />}
         <label className="block">
-          <span className="mb-1.5 block text-[12.5px] text-muted">{t('invite.email')}</span>
+          <span className="mb-1.5 block text-xs text-muted">{t('invite.email')}</span>
           <input type="email" dir="ltr" required className="v-field rtl:text-right" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-[12.5px] text-muted">
+          <span className="mb-1.5 block text-xs text-muted">
             {t('invite.name')} <span className="text-faint">· {t('invite.optional')}</span>
           </span>
           <input className="v-field" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <div>
-          <p className="mb-1.5 text-[12.5px] text-muted">{t('details.role')}</p>
+          <p className="mb-1.5 text-xs text-muted">{t('details.role')}</p>
           <RolePicker value={role} onChange={setRole} allowOwner={myRole === 'OWNER'} />
         </div>
         {teams.length > 0 && (
           <label className="block">
-            <span className="mb-1.5 block text-[12.5px] text-muted">{t('details.team')}</span>
+            <span className="mb-1.5 block text-xs text-muted">{t('details.team')}</span>
             <select className="v-field" value={teamId} onChange={(e) => setTeamId(e.target.value)}>
               <option value="">{t('details.noTeam')}</option>
               {teams.map((tm) => (
@@ -763,7 +763,7 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
         {result?.upgrade ? <PlanLimitNotice text={result.text} /> : result && (
           <p
             role={result.tone === 'error' ? 'alert' : 'status'}
-            className={`rounded-lg px-3 py-2.5 text-[13px] ring-1 ring-inset ${
+            className={`rounded-lg px-3 py-2.5 text-sm ring-1 ring-inset ${
               result.tone === 'ok'
                 ? 'bg-emerald-500/[0.06] text-emerald-800 ring-emerald-500/20 dark:text-emerald-300'
                 : result.tone === 'warn'
@@ -783,7 +783,7 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
 function PlanLimitNotice({ text }: { text: string }) {
   const { t } = useTranslation('common');
   return (
-    <div role="alert" className="rounded-lg bg-amber-500/[0.06] px-3 py-2.5 text-[13px] text-amber-800 ring-1 ring-inset ring-amber-500/25 dark:text-amber-300">
+    <div role="alert" className="rounded-lg bg-amber-500/[0.06] px-3 py-2.5 text-sm text-amber-800 ring-1 ring-inset ring-amber-500/25 dark:text-amber-300">
       <p>{text}</p>
       <Link href="/billing" className="mt-1.5 inline-flex min-h-11 items-center font-medium text-ink underline-offset-2 hover:underline sm:min-h-0">
         {t('planLimit.upgrade')}

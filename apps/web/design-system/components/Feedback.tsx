@@ -25,7 +25,7 @@ export const Badge: React.FC<BadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider border select-none ${styles[variant]} ${className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-3xs font-bold uppercase tracking-wider border select-none ${styles[variant]} ${className}`}
       {...props}
     >
       {children}
@@ -77,8 +77,8 @@ export const Alert: React.FC<AlertProps> = ({
       role="alert"
       {...props}
     >
-      <span className="text-[16px] leading-none shrink-0">{current.icon}</span>
-      <div className="flex-1 space-y-0.5 text-[13px] leading-relaxed">
+      <span className="text-lg leading-none shrink-0">{current.icon}</span>
+      <div className="flex-1 space-y-0.5 text-sm leading-relaxed">
         {title && <p className="font-bold tracking-tight">{title}</p>}
         {children && <div className="font-medium text-current/90">{children}</div>}
       </div>
@@ -187,7 +187,7 @@ export const Toast: React.FC<ToastProps> = ({
     >
       <div className="flex items-center gap-2.5 min-w-0">
         <span
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white`}
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-3xs font-bold text-white`}
           style={{
             background:
               variant === 'success'
@@ -201,12 +201,12 @@ export const Toast: React.FC<ToastProps> = ({
         >
           {icons[variant]}
         </span>
-        <p className="text-[13px] font-bold text-ink truncate">{message}</p>
+        <p className="text-sm font-bold text-ink truncate">{message}</p>
       </div>
       {onClose && (
         <button
           onClick={onClose}
-          className="text-muted hover:text-ink text-[11px] font-bold p-0.5 rounded"
+          className="text-muted hover:text-ink text-2xs font-bold p-0.5 rounded"
           aria-label="Close notification"
         >
           ✕
@@ -234,7 +234,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     <div className="relative group inline-block" {...props}>
       {children}
       <div
-        className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-[hsl(var(--ds-gray-900))] text-[var(--ds-accent-contrast)] text-[11px] font-semibold whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-[var(--ds-z-popover)] shadow-[var(--ds-shadow-sm)] ${className}`}
+        className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-[hsl(var(--ds-gray-900))] text-[var(--ds-accent-contrast)] text-2xs font-semibold whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-[var(--ds-z-popover)] shadow-[var(--ds-shadow-sm)] ${className}`}
       >
         {content}
         <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-width-[5px] border-solid border-transparent border-t-[hsl(var(--ds-gray-900))] content-['']" />

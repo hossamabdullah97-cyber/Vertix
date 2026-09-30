@@ -54,13 +54,13 @@ export default function ActionRow({
         {fields.map((f) => (
           <input
             key={f.key}
-            className="rounded-lg border border-line px-3 py-2 text-sm bg-white"
+            className="rounded-lg border border-line px-3 py-2 text-base bg-white"
             placeholder={f.label}
             value={(config[f.key] as string) ?? ''}
             onChange={(e) => setConfig({ ...config, [f.key]: e.target.value })}
           />
         ))}
-        <label className="flex items-center gap-2 text-sm text-muted">
+        <label className="flex items-center gap-2 text-base text-muted">
           <input
             type="checkbox"
             checked={config.isPrimary === true}

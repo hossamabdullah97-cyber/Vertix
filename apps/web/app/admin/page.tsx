@@ -58,7 +58,7 @@ export default function AdminConsole() {
     return (
       <AppShell title={t('title')}>
         <div className="mx-auto max-w-[520px] rounded-xl px-6 py-10 text-center ring-1 ring-inset ring-line">
-          <p className="text-[13.5px] leading-relaxed text-muted">{t('denied')}</p>
+          <p className="text-sm leading-relaxed text-muted">{t('denied')}</p>
         </div>
       </AppShell>
     );
@@ -75,7 +75,7 @@ export default function AdminConsole() {
               role="tab"
               aria-selected={active}
               onClick={() => choose(id)}
-              className={`relative flex min-h-11 shrink-0 items-center text-[13.5px] font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
+              className={`relative flex min-h-11 shrink-0 items-center text-sm font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
             >
               {t(`tabs.${id}`)}
               {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}

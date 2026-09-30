@@ -139,7 +139,7 @@ export function NfcProduct({
             {/* content */}
             <div className="relative flex h-full flex-col justify-between p-5" style={{ color: s.foreground }}>
               <div className="flex items-start justify-between">
-                <span className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-wide">
+                <span className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wide">
                   <VMark size={16} strokeWidth={2.6} /> Vertex
                 </span>
                 {qrUrl && variant !== 'sticker' && (
@@ -151,12 +151,12 @@ export function NfcProduct({
 
               {variant === 'sticker' ? (
                 <div className="text-center">
-                  <p className="text-[12px] font-bold uppercase tracking-[0.15em]" style={{ color: s.subtle }}>Tap</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.15em]" style={{ color: s.subtle }}>Tap</p>
                 </div>
               ) : (
                 <div>
-                  <p className="truncate text-[16px] font-extrabold leading-tight">{name}</p>
-                  <p className="truncate text-[11px] font-semibold uppercase tracking-wide" style={{ color: s.subtle }}>{org || 'Digital Profile'}</p>
+                  <p className="truncate text-lg font-extrabold leading-tight">{name}</p>
+                  <p className="truncate text-2xs font-semibold uppercase tracking-wide" style={{ color: s.subtle }}>{org || 'Digital Profile'}</p>
                 </div>
               )}
 
@@ -192,13 +192,13 @@ export function NfcProduct({
       </motion.div>
 
       {/* status row */}
-      <div className="flex flex-wrap items-center justify-center gap-2 text-[11px]">
+      <div className="flex flex-wrap items-center justify-center gap-2 text-2xs">
         <span className="rounded-full border border-line bg-canvas/60 px-2.5 py-1 font-semibold text-muted">{s.label}</span>
         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ${assigned ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${assigned ? 'bg-emerald-500' : 'bg-amber-500'}`} />
           {assigned ? 'Assigned & Active' : 'Unassigned'}
         </span>
-        <button onClick={activate} className="v-btn v-btn-ghost h-7 px-2.5 text-[11px] font-semibold">
+        <button onClick={activate} className="v-btn v-btn-ghost h-7 px-2.5 text-2xs font-semibold">
           <Icon name="sparkle" size={12} /> Simulate Tap
         </button>
       </div>

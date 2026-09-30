@@ -65,13 +65,13 @@ export function ConfirmDialog({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-[420px] rounded-xl border border-line bg-surface p-5 shadow-lg"
           >
-            <h2 id="confirm-title" className="text-[15px] font-semibold text-ink">
+            <h2 id="confirm-title" className="text-md font-semibold text-ink">
               {title}
             </h2>
-            <div id="confirm-body" className="mt-1.5 text-[13px] leading-relaxed text-muted">
+            <div id="confirm-body" className="mt-1.5 text-sm leading-relaxed text-muted">
               {body}
             </div>
-            {error && <p className="mt-3 text-[12.5px] text-red-600 dark:text-red-400">{error}</p>}
+            {error && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button ref={cancelRef} onClick={onCancel} className="v-btn v-btn-ghost">
                 {cancelLabel}

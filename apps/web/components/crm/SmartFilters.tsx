@@ -123,13 +123,13 @@ export function SmartFilters({
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className={`flex h-11 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-medium ring-1 ring-inset transition-colors sm:h-8 ${
+        className={`flex h-11 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium ring-1 ring-inset transition-colors sm:h-8 ${
           activeCount ? 'bg-accent/[0.06] text-accent ring-accent/30' : 'text-muted ring-line hover:bg-elevated hover:text-ink'
         }`}
       >
         <Icon name="filter" size={13} /> {t('filters.smartFilters')}
         {activeCount > 0 && (
-          <span className="tabular flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white">
+          <span className="tabular flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-3xs font-semibold text-white">
             {activeCount}
           </span>
         )}
@@ -139,8 +139,8 @@ export function SmartFilters({
         <div className="absolute end-0 top-full z-40 mt-2 w-[300px] max-w-[calc(100vw-2.5rem)] rounded-xl border border-line bg-surface p-1.5 shadow-lg">
           <div className="space-y-3 p-2.5">
             <label className="block">
-              <span className="mb-1.5 block text-[12px] text-faint">{t('filters.priority')}</span>
-              <select value={tempFilter || ''} onChange={(e) => setTempFilter((e.target.value as Temp) || null)} className="v-field !text-[13px]">
+              <span className="mb-1.5 block text-xs text-faint">{t('filters.priority')}</span>
+              <select value={tempFilter || ''} onChange={(e) => setTempFilter((e.target.value as Temp) || null)} className="v-field !text-sm">
                 <option value="">{t('filters.allPriorities')}</option>
                 <option value="HOT">{t('temperature.hot')}</option>
                 <option value="WARM">{t('temperature.warm')}</option>
@@ -148,8 +148,8 @@ export function SmartFilters({
               </select>
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-[12px] text-faint">{t('filters.captureSource')}</span>
-              <select value={sourceFilter || ''} onChange={(e) => setSourceFilter(e.target.value || null)} className="v-field !text-[13px]">
+              <span className="mb-1.5 block text-xs text-faint">{t('filters.captureSource')}</span>
+              <select value={sourceFilter || ''} onChange={(e) => setSourceFilter(e.target.value || null)} className="v-field !text-sm">
                 <option value="">{t('filters.allSources')}</option>
                 {sources.map((s) => (
                   <option key={s} value={s}>
@@ -159,7 +159,7 @@ export function SmartFilters({
               </select>
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-[12px] text-faint">{t('filters.minDealValue')}</span>
+              <span className="mb-1.5 block text-xs text-faint">{t('filters.minDealValue')}</span>
               <input
                 type="number"
                 min={0}
@@ -167,17 +167,17 @@ export function SmartFilters({
                 value={minDealValue || ''}
                 onChange={(e) => setMinDealValue(Number(e.target.value) || 0)}
                 placeholder={t('filters.valuePlaceholder')}
-                className="v-field tabular !text-[13px]"
+                className="v-field tabular !text-sm"
               />
             </label>
           </div>
 
           <div className="border-t border-line p-2.5">
-            <p className="mb-2 text-[12px] text-faint">{t('filters.savedFilters')}</p>
+            <p className="mb-2 text-xs text-faint">{t('filters.savedFilters')}</p>
             <div className="flex flex-wrap gap-1.5">
               {savedFilters.map((f) => (
                 <span key={f.id} className="group inline-flex items-center rounded-md ring-1 ring-inset ring-line">
-                  <button onClick={() => applySavedFilter(f)} className="h-11 ps-2.5 pe-1.5 text-[12.5px] text-ink hover:text-accent sm:h-7">
+                  <button onClick={() => applySavedFilter(f)} className="h-11 ps-2.5 pe-1.5 text-xs text-ink hover:text-accent sm:h-7">
                     {f.name}
                   </button>
                   <button
@@ -196,9 +196,9 @@ export function SmartFilters({
                   value={newFilterName}
                   onChange={(e) => setNewFilterName(e.target.value)}
                   placeholder={t('filters.nameFilter')}
-                  className="v-field !text-[12.5px]"
+                  className="v-field !text-xs"
                 />
-                <button type="submit" disabled={!newFilterName.trim()} className="v-btn shrink-0 !text-[12.5px]">
+                <button type="submit" disabled={!newFilterName.trim()} className="v-btn shrink-0 !text-xs">
                   {t('filters.save')}
                 </button>
               </form>
@@ -212,7 +212,7 @@ export function SmartFilters({
                   onClear();
                   setOpen(false);
                 }}
-                className="flex h-11 w-full items-center gap-2 rounded-lg px-2.5 text-[12.5px] text-muted hover:bg-elevated hover:text-ink sm:h-8"
+                className="flex h-11 w-full items-center gap-2 rounded-lg px-2.5 text-xs text-muted hover:bg-elevated hover:text-ink sm:h-8"
               >
                 <Icon name="x" size={12} /> {t('filters.clearAll')}
               </button>

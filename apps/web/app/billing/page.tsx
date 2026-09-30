@@ -156,7 +156,7 @@ export default function BillingPage() {
     return (
       <AppShell title={t('title')}>
         <div className="mx-auto max-w-[520px] rounded-xl px-6 py-10 text-center ring-1 ring-inset ring-line">
-          <p className="text-[13.5px] leading-relaxed text-muted">{t('personal')}</p>
+          <p className="text-sm leading-relaxed text-muted">{t('personal')}</p>
         </div>
       </AppShell>
     );
@@ -213,10 +213,10 @@ export default function BillingPage() {
 
             <section aria-labelledby="plans-title">
               <div className="mb-4">
-                <h2 id="plans-title" className="text-[15px] font-semibold text-ink">
+                <h2 id="plans-title" className="text-md font-semibold text-ink">
                   {t('plansTitle')}
                 </h2>
-                <p className="mt-1 text-[13px] text-muted">{t('plansHint')}</p>
+                <p className="mt-1 text-sm text-muted">{t('plansHint')}</p>
               </div>
               <div className="grid gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-2 xl:grid-cols-4">
                 {ORDER.filter((p) => plans[p]).map((p) => (
@@ -233,7 +233,7 @@ export default function BillingPage() {
                 ))}
               </div>
               {enabled && (
-                <p className="mt-4 flex items-center gap-2 text-[12.5px] text-faint">
+                <p className="mt-4 flex items-center gap-2 text-xs text-faint">
                   <Icon name="lock" size={13} className="shrink-0" />
                   {t('secure')}
                 </p>
@@ -293,11 +293,11 @@ function PhoneDialog({ plan, price, onPay, onClose }: { plan: string; price: num
           if (valid) onPay(phone.trim());
         }}
       >
-        <p className="text-[13px] leading-relaxed text-muted">
+        <p className="text-sm leading-relaxed text-muted">
           {price !== null ? t('phone.hint', { price: formatCurrency(price, locale, 'EGP') }) : t('phone.hintNoPrice')}
         </p>
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{t('phone.label')}</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink">{t('phone.label')}</span>
           <input
             type="tel"
             dir="ltr"
@@ -327,7 +327,7 @@ function ConfirmCancel({ plan, until, busy, onConfirm, onClose }: { plan: string
   const { t } = useTranslation('billing');
   return (
     <Dialog title={t('cancel.title')} onClose={onClose}>
-      <p className="text-[13px] leading-relaxed text-muted">{until ? t('cancel.body', { plan, date: until }) : t('cancel.bodyNoDate', { plan })}</p>
+      <p className="text-sm leading-relaxed text-muted">{until ? t('cancel.body', { plan, date: until }) : t('cancel.bodyNoDate', { plan })}</p>
       <div className="mt-5 flex justify-end gap-2">
         <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
           {t('cancel.keep')}
@@ -349,7 +349,7 @@ function Dialog({ title, onClose, children }: { title: string; onClose: () => vo
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()} className="w-full max-w-[420px] rounded-xl bg-surface p-5 shadow-xl ring-1 ring-line">
-        <h2 className="text-[16px] font-semibold text-ink">{title}</h2>
+        <h2 className="text-lg font-semibold text-ink">{title}</h2>
         <div className="mt-2">{children}</div>
       </div>
     </div>
@@ -381,7 +381,7 @@ function Banner({
     danger: 'bg-red-500/[0.06] text-red-700 ring-red-500/20 dark:text-red-300',
   };
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={`flex items-start gap-3 rounded-lg px-4 py-3 text-[13px] leading-relaxed ring-1 ring-inset ${tones[tone]}`}>
+    <div role={tone === 'danger' ? 'alert' : 'status'} className={`flex items-start gap-3 rounded-lg px-4 py-3 text-sm leading-relaxed ring-1 ring-inset ${tones[tone]}`}>
       <Icon name={icon} size={15} className="mt-[3px] shrink-0" />
       <span className="flex-1">{children}</span>
       {onDismiss && (
@@ -454,14 +454,14 @@ function Current({
     <section aria-labelledby="current-title" className="v-card overflow-hidden">
       <div className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
         <div className="min-w-0">
-          <p className="text-[12.5px] text-muted">{t('current.label')}</p>
+          <p className="text-xs text-muted">{t('current.label')}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2.5">
-            <h2 id="current-title" className="text-[22px] font-semibold leading-tight tracking-[-0.015em] text-ink rtl:tracking-normal">
+            <h2 id="current-title" className="text-3xl font-semibold leading-tight tracking-[-0.015em] text-ink rtl:tracking-normal">
               {name(plan)}
             </h2>
             {STATUS_BADGE[sub.status] && <span className={`v-badge ${STATUS_BADGE[sub.status]}`}>{t(`status.${sub.status}`)}</span>}
           </div>
-          <p className="mt-1.5 text-[13px] text-muted">
+          <p className="mt-1.5 text-sm text-muted">
             {price}
             {period && (
               <span className="text-faint">
@@ -481,7 +481,7 @@ function Current({
       {sub.status === 'PAST_DUE' && (
         <div className="flex flex-wrap items-center gap-3 border-t border-line bg-amber-500/[0.06] px-5 py-3.5 sm:px-6">
           <Icon name="alert" size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="min-w-0 flex-1 text-[13px] text-ink">{t('current.pastDue', { plan: name(plan) })}</p>
+          <p className="min-w-0 flex-1 text-sm text-ink">{t('current.pastDue', { plan: name(plan) })}</p>
         </div>
       )}
 
@@ -493,7 +493,7 @@ function Current({
 
       {full && next && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 border-t border-line bg-elevated/60 px-5 py-3.5 sm:px-6">
-          <p className="min-w-0 flex-1 text-[13px] text-ink">
+          <p className="min-w-0 flex-1 text-sm text-ink">
             {t(`nudge.${full.key}`)}{' '}
             <span className="text-muted">
               {plans[next][full.key] === null
@@ -529,11 +529,11 @@ function UsageCell({ resource, used, limit, first }: { resource: (typeof RESOURC
   return (
     <li className={`p-5 sm:p-6 ${first ? '' : 'border-t border-line sm:border-t-0 sm:border-s'}`}>
       <div className="flex items-center justify-between gap-3">
-        <Link href={resource.href} className="v-hit group flex items-center gap-2 text-[13px] font-medium text-ink" aria-label={t('usage.open', { page: t(resource.page) })}>
+        <Link href={resource.href} className="v-hit group flex items-center gap-2 text-sm font-medium text-ink" aria-label={t('usage.open', { page: t(resource.page) })}>
           <Icon name={resource.icon} size={14} className="text-faint" />
           <span className="group-hover:underline">{t(`usage.${resource.key}`)}</span>
         </Link>
-        <span className="tabular text-[13px] text-muted">
+        <span className="tabular text-sm text-muted">
           {limit === null ? t('usage.unlimited', { used: n(used) }) : t('usage.of', { used: n(used), limit: n(limit) })}
         </span>
       </div>
@@ -554,7 +554,7 @@ function UsageCell({ resource, used, limit, first }: { resource: (typeof RESOURC
         <span className="mt-3 block h-1.5 rounded-full bg-line" aria-hidden />
       )}
 
-      <p className={`mt-2.5 text-[12.5px] ${isFull ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-faint'}`}>
+      <p className={`mt-2.5 text-xs ${isFull ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-faint'}`}>
         {limit === null ? ' ' : isFull ? t('usage.full') : t('usage.left', { count: limit - used })}
       </p>
     </li>
@@ -574,26 +574,26 @@ function PlanColumn({ plan, def, price, name, current, action, busy }: { plan: P
   return (
     <div className={`relative flex flex-col bg-surface p-5 sm:p-6 ${current ? 'bg-[linear-gradient(to_bottom,rgb(var(--v-accent-ch)/0.05),transparent_140px)]' : ''}`}>
       {current && <span className="absolute inset-x-0 top-0 h-0.5 bg-accent" aria-hidden />}
-      <h3 className="text-[15px] font-semibold text-ink">{name}</h3>
-      <p className="mt-1 min-h-[2.6em] text-[12.5px] leading-snug text-muted">{t(`taglines.${plan}`)}</p>
+      <h3 className="text-md font-semibold text-ink">{name}</h3>
+      <p className="mt-1 min-h-[2.6em] text-xs leading-snug text-muted">{t(`taglines.${plan}`)}</p>
 
       <p className="mt-4 flex items-baseline gap-1.5">
         {plan === 'ENTERPRISE' ? (
-          <span className="text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{t('plan.custom')}</span>
+          <span className="text-4xl font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{t('plan.custom')}</span>
         ) : plan === 'FREE' || price !== null ? (
           <>
-            <span className="tabular text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{formatCurrency(plan === 'FREE' ? 0 : price!, locale, 'EGP')}</span>
-            <span className="text-[13px] text-muted">{t('plan.perMonth')}</span>
+            <span className="tabular text-4xl font-semibold leading-none tracking-[-0.02em] text-ink rtl:tracking-normal">{formatCurrency(plan === 'FREE' ? 0 : price!, locale, 'EGP')}</span>
+            <span className="text-sm text-muted">{t('plan.perMonth')}</span>
           </>
         ) : (
-          <span className="text-[15px] font-medium leading-[26px] text-muted">{t('plan.priceSoon')}</span>
+          <span className="text-md font-medium leading-[26px] text-muted">{t('plan.priceSoon')}</span>
         )}
       </p>
 
       {/* An empty slot keeps side-by-side columns aligned; stacked, it is only a gap. */}
       <div className={`mt-5 ${action.kind === 'none' ? 'hidden sm:grid' : 'grid'}`}>
         {action.kind === 'current' ? (
-          <span className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-elevated text-[13px] font-medium text-muted ring-1 ring-inset ring-line sm:h-9">
+          <span className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-elevated text-sm font-medium text-muted ring-1 ring-inset ring-line sm:h-9">
             <Icon name="check" size={14} /> {t('plan.currentPlan')}
           </span>
         ) : action.kind === 'sales' ? (
@@ -609,7 +609,7 @@ function PlanColumn({ plan, def, price, name, current, action, busy }: { plan: P
         )}
       </div>
 
-      <ul className="mt-5 space-y-2.5 border-t border-line pt-5 text-[13px] text-ink">
+      <ul className="mt-5 space-y-2.5 border-t border-line pt-5 text-sm text-ink">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2.5">
             <Icon name="check" size={14} className="mt-[3px] shrink-0 text-accent" />

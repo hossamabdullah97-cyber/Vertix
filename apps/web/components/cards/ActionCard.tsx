@@ -120,9 +120,9 @@ export default function ActionCard({
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-[13.5px] font-medium ${action.isActive ? 'text-ink' : 'text-faint'}`}>{details?.label ?? action.type}</p>
+          <p className={`truncate text-sm font-medium ${action.isActive ? 'text-ink' : 'text-faint'}`}>{details?.label ?? action.type}</p>
           {summary && (
-            <p dir="ltr" className="truncate text-start font-mono text-[12px] text-faint rtl:text-right">
+            <p dir="ltr" className="truncate text-start font-mono text-xs text-faint rtl:text-right">
               {summary}
             </p>
           )}
@@ -191,19 +191,19 @@ export default function ActionCard({
             {action.type === 'WHATSAPP' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[12px] text-muted">{t('links.whatsappPhone')}</label>
+                  <label className="text-xs text-muted">{t('links.whatsappPhone')}</label>
                   <input
                     dir="ltr"
-                    className="v-field font-mono !text-[12.5px] rtl:text-right"
+                    className="v-field font-mono !text-xs rtl:text-right"
                     defaultValue={(action.config.phone as string) ?? ''}
                     onBlur={(e) => patch('phone', e.target.value)}
                     placeholder={t('links.phonePlaceholder')}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[12px] text-muted">{t('links.whatsappMessage')}</label>
+                  <label className="text-xs text-muted">{t('links.whatsappMessage')}</label>
                   <input
-                    className="v-field !text-[13px]"
+                    className="v-field !text-sm"
                     defaultValue={(action.config.text as string) ?? ''}
                     onBlur={(e) => patch('text', e.target.value)}
                     placeholder={t('links.whatsappMessagePlaceholder')}
@@ -214,10 +214,10 @@ export default function ActionCard({
 
             {action.type === 'CALL' && (
               <div className="space-y-1">
-                <label className="text-[12px] text-muted">{t('links.phoneNumber')}</label>
+                <label className="text-xs text-muted">{t('links.phoneNumber')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono !text-[12.5px] rtl:text-right"
+                  className="v-field font-mono !text-xs rtl:text-right"
                   defaultValue={(action.config.phone as string) ?? ''}
                   onBlur={(e) => patch('phone', e.target.value)}
                   placeholder={t('links.phonePlaceholder')}
@@ -227,10 +227,10 @@ export default function ActionCard({
 
             {action.type === 'EMAIL' && (
               <div className="space-y-1">
-                <label className="text-[12px] text-muted">{t('links.emailAddress')}</label>
+                <label className="text-xs text-muted">{t('links.emailAddress')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono !text-[12.5px] rtl:text-right"
+                  className="v-field font-mono !text-xs rtl:text-right"
                   defaultValue={(action.config.email as string) ?? ''}
                   onBlur={(e) => patch('email', e.target.value)}
                   placeholder={t('links.emailPlaceholder')}
@@ -240,10 +240,10 @@ export default function ActionCard({
 
             {action.type === 'LINKEDIN' && (
               <div className="space-y-1">
-                <label className="text-[12px] text-muted">{t('links.linkedinUrl')}</label>
+                <label className="text-xs text-muted">{t('links.linkedinUrl')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono !text-[12.5px] rtl:text-right"
+                  className="v-field font-mono !text-xs rtl:text-right"
                   defaultValue={(action.config.url as string) ?? ''}
                   onBlur={(e) => patch('url', e.target.value)}
                   placeholder={t('links.linkedinPlaceholder')}
@@ -253,10 +253,10 @@ export default function ActionCard({
 
             {!TYPED_FIELDS.includes(action.type) && (
               <div className="space-y-1">
-                <label className="text-[12px] text-muted">{t('links.destination')}</label>
+                <label className="text-xs text-muted">{t('links.destination')}</label>
                 <input
                   dir="ltr"
-                  className="v-field font-mono !text-[12.5px] rtl:text-right"
+                  className="v-field font-mono !text-xs rtl:text-right"
                   defaultValue={(action.config.url as string) ?? ''}
                   onBlur={(e) => patch('url', e.target.value)}
                   placeholder={t('links.destinationPlaceholder')}
@@ -265,7 +265,7 @@ export default function ActionCard({
             )}
 
             <div className="flex flex-col gap-2 pt-1">
-              <label className="flex min-h-11 cursor-pointer select-none items-center gap-2.5 text-[13px] text-muted sm:min-h-0">
+              <label className="flex min-h-11 cursor-pointer select-none items-center gap-2.5 text-sm text-muted sm:min-h-0">
                 <input
                   type="checkbox"
                   defaultChecked={isQuickAction(action)}
@@ -279,7 +279,7 @@ export default function ActionCard({
               </label>
 
               {/* Any action can be the NFC target — previously only grid links could. */}
-              <label className="flex min-h-11 cursor-pointer select-none items-center gap-2.5 text-[13px] text-muted sm:min-h-0">
+              <label className="flex min-h-11 cursor-pointer select-none items-center gap-2.5 text-sm text-muted sm:min-h-0">
                 <input
                   type="checkbox"
                   defaultChecked={action.config.isPrimary === true}

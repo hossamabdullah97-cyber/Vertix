@@ -115,7 +115,7 @@ export default function WorkspaceSettingsPage() {
     return (
       <AppShell title={t('title')}>
         <div className="mx-auto max-w-[520px] rounded-xl px-6 py-10 text-center ring-1 ring-inset ring-line">
-          <p className="text-[13.5px] leading-relaxed text-muted">{t('personal')}</p>
+          <p className="text-sm leading-relaxed text-muted">{t('personal')}</p>
         </div>
       </AppShell>
     );
@@ -132,7 +132,7 @@ export default function WorkspaceSettingsPage() {
               role="tab"
               aria-selected={active}
               onClick={() => choose(s)}
-              className={`relative flex min-h-11 shrink-0 items-center text-[13.5px] font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
+              className={`relative flex min-h-11 shrink-0 items-center text-sm font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
             >
               {t(`sections.${s}`)}
               {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
@@ -141,10 +141,10 @@ export default function WorkspaceSettingsPage() {
         })}
       </nav>
 
-      {!canEdit && me && section !== 'files' && <p className="mt-4 rounded-lg bg-elevated px-4 py-3 text-[13px] text-muted ring-1 ring-inset ring-line">{t('readOnly')}</p>}
+      {!canEdit && me && section !== 'files' && <p className="mt-4 rounded-lg bg-elevated px-4 py-3 text-sm text-muted ring-1 ring-inset ring-line">{t('readOnly')}</p>}
 
       {error && (
-        <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+        <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
           <span className="flex-1">{error}</span>
           <button onClick={() => setError('')} aria-label={t('dismiss')} className="-m-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-red-500/10">
             <Icon name="x" size={13} />
@@ -174,7 +174,7 @@ export default function WorkspaceSettingsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             role="status"
-            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
+            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-sm font-medium text-white shadow-lg"
           >
             <Icon name="check" size={14} /> {toast}
           </motion.div>
@@ -191,8 +191,8 @@ function Row({ title, hint, children }: { title: string; hint?: string; children
   return (
     <div className="grid gap-3 border-b border-line py-5 last:border-b-0 md:grid-cols-[240px_minmax(0,1fr)] md:gap-8">
       <div>
-        <h2 className="text-[14px] font-medium text-ink">{title}</h2>
-        {hint && <p className="mt-1 text-[12.5px] leading-relaxed text-faint">{hint}</p>}
+        <h2 className="text-base font-medium text-ink">{title}</h2>
+        {hint && <p className="mt-1 text-xs leading-relaxed text-faint">{hint}</p>}
       </div>
       <div className="min-w-0">{children}</div>
     </div>
@@ -241,7 +241,7 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
               aria-checked={language === l}
               disabled={!canEdit}
               onClick={() => language !== l && onSave({ settings: { language: l } }, t('toasts.saved')).catch(() => {})}
-              className={`h-11 rounded-md px-4 text-[13px] font-medium transition-colors disabled:cursor-not-allowed sm:h-8 ${
+              className={`h-11 rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed sm:h-8 ${
                 language === l ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
@@ -258,7 +258,7 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
       <Row title={t('general.plan')} hint={t('general.planHint')}>
         <div className="flex flex-wrap items-center gap-3">
           <span className="v-badge v-badge-neutral">{t(`plans.${org.plan}`, org.plan)}</span>
-          <Link href="/billing" className="v-hit text-[13px] font-medium text-accent hover:underline">
+          <Link href="/billing" className="v-hit text-sm font-medium text-accent hover:underline">
             {t('general.billing')}
           </Link>
         </div>
@@ -266,7 +266,7 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
 
       <Row title={t('general.id')} hint={t('general.idHint')}>
         <div className="flex items-center gap-2">
-          <span dir="ltr" className="flex h-9 min-w-0 flex-1 items-center truncate rounded-lg bg-elevated px-3 font-mono text-[12.5px] text-muted ring-1 ring-inset ring-line rtl:text-right">
+          <span dir="ltr" className="flex h-9 min-w-0 flex-1 items-center truncate rounded-lg bg-elevated px-3 font-mono text-xs text-muted ring-1 ring-inset ring-line rtl:text-right">
             {org.id}
           </span>
           <button
@@ -328,7 +328,7 @@ function PrivacyLink({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onS
           </button>
         )}
       </div>
-      {!valid && <p className="mt-1.5 text-[12.5px] text-red-600 dark:text-red-400">{t('general.privacyInvalid')}</p>}
+      {!valid && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{t('general.privacyInvalid')}</p>}
     </form>
   );
 }
@@ -387,12 +387,12 @@ function Brand({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave: S
                 value={accent}
                 onChange={(e) => setAccent(e.target.value.trim())}
                 disabled={!canEdit}
-                className="w-[72px] bg-transparent font-mono text-[12.5px] text-ink outline-none"
+                className="w-[72px] bg-transparent font-mono text-xs text-ink outline-none"
                 aria-label={t('brand.hex')}
               />
             </label>
           </div>
-          {!valid && <p className="mt-2 text-[12.5px] text-red-600 dark:text-red-400">{t('brand.invalid')}</p>}
+          {!valid && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{t('brand.invalid')}</p>}
         </Row>
 
         {canEdit && (
@@ -425,23 +425,23 @@ function Brand({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave: S
 
       {/* Where the brand shows up, drawn from what is being edited. */}
       <div className="v-card p-5">
-        <h2 className="text-[14px] font-medium text-ink">{t('brand.previewTitle')}</h2>
+        <h2 className="text-base font-medium text-ink">{t('brand.previewTitle')}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="mb-2 text-[12px] text-faint">{t('brand.inSwitcher')}</p>
+            <p className="mb-2 text-xs text-faint">{t('brand.inSwitcher')}</p>
             <div className="flex items-center gap-2.5 rounded-lg bg-surface px-2 py-1.5 shadow-sm ring-1 ring-line">
               <OrgMark name={org.name} branding={preview} size={22} />
-              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{org.name}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{org.name}</span>
               <Icon name="chevron-down" size={14} className="text-faint" />
             </div>
           </div>
           <div>
-            <p className="mb-2 text-[12px] text-faint">{t('brand.inNewCards')}</p>
+            <p className="mb-2 text-xs text-faint">{t('brand.inNewCards')}</p>
             <div className="overflow-hidden rounded-lg ring-1 ring-inset ring-line" aria-hidden>
               <div className="h-10" style={{ background: `linear-gradient(135deg, ${preview.accent}, ${shade(preview.accent as string, -46)})` }} />
               <div className="flex items-center gap-3 bg-surface px-3 pb-3">
                 <span
-                  className="-mt-4 flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold ring-2 ring-surface"
+                  className="-mt-4 flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold ring-2 ring-surface"
                   style={{ background: preview.accent as string, color: readableOn(preview.accent as string) }}
                 >
                   A
@@ -508,7 +508,7 @@ function Files({ canManage, onDone, onError }: { canManage: boolean; onDone: (m:
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="max-w-lg text-[13px] leading-relaxed text-muted">{t('files.intro')}</p>
+        <p className="max-w-lg text-sm leading-relaxed text-muted">{t('files.intro')}</p>
         {canManage && (
           <>
             <button onClick={() => fileRef.current?.click()} disabled={uploading} className="v-btn shrink-0 disabled:opacity-60">
@@ -537,8 +537,8 @@ function Files({ canManage, onDone, onError }: { canManage: boolean; onDone: (m:
         </div>
       ) : assets.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center">
-          <p className="text-[14px] font-medium text-ink">{t('files.emptyTitle')}</p>
-          <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{t('files.emptyBody')}</p>
+          <p className="text-base font-medium text-ink">{t('files.emptyTitle')}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted">{t('files.emptyBody')}</p>
         </div>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -556,10 +556,10 @@ function Files({ canManage, onDone, onError }: { canManage: boolean; onDone: (m:
               </a>
               <div className="flex items-start gap-1 px-3 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium text-ink" title={a.name}>
+                  <p className="truncate text-sm font-medium text-ink" title={a.name}>
                     {a.name}
                   </p>
-                  <p className="truncate text-[12px] text-faint">
+                  <p className="truncate text-xs text-faint">
                     {formatSize(a.size, locale)} · {formatDate(a.createdAt, locale, { day: 'numeric', month: 'short' })}
                   </p>
                 </div>

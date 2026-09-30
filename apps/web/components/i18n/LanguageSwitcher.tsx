@@ -27,7 +27,7 @@ export function LanguageSwitcher({ variant = 'toggle' }: { variant?: 'toggle' | 
             role="radio"
             aria-checked={locale === code}
             onClick={() => setLocale(code)}
-            className={`rounded-lg px-4 py-1.5 text-[13px] font-bold transition-colors ${
+            className={`rounded-lg px-4 py-1.5 text-sm font-bold transition-colors ${
               locale === code ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'
             }`}
           >
@@ -43,7 +43,7 @@ export function LanguageSwitcher({ variant = 'toggle' }: { variant?: 'toggle' | 
       onClick={toggleLocale}
       title={t('toggleLanguage')}
       aria-label={t('toggleLanguage')}
-      className="flex h-11 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-[12.5px] font-bold text-muted transition-colors hover:text-ink md:h-9"
+      className="flex h-11 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-xs font-bold text-muted transition-colors hover:text-ink md:h-9"
     >
       <Icon name="globe" size={15} />
       {LOCALE_LABELS[locale === 'ar' ? 'en' : 'ar']}

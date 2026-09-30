@@ -17,11 +17,11 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left text-[13px]">
+        <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-canvas/30 text-muted">
               {headers.map((h) => (
-                <th key={h} className="whitespace-nowrap px-4 py-2.5 text-start text-[12px] font-medium">{t(`contacts.headers.${h}`)}</th>
+                <th key={h} className="whitespace-nowrap px-4 py-2.5 text-start text-xs font-medium">{t(`contacts.headers.${h}`)}</th>
               ))}
             </tr>
           </thead>
@@ -33,13 +33,13 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
                 <tr key={l.id} onClick={() => onOpen(l.id)} className="cursor-pointer border-b border-line last:border-0 transition-colors hover:bg-canvas/30">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold text-white" style={{ background: avatarColor(l.name || l.email || l.id) }}>
+                      <span className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-2xs font-semibold text-white" style={{ background: avatarColor(l.name || l.email || l.id) }}>
                         {initials(l.name)}
                       </span>
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-ink">{l.name || t('contacts.unknownContact')}</p>
                         {l.card && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent">
+                          <span className="inline-flex items-center gap-1 text-3xs font-semibold text-accent">
                             <Icon name="grid" size={10} /> {t('contacts.card')} {l.card.slug}
                           </span>
                         )}
@@ -48,22 +48,22 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
                   </td>
                   <td className="px-4 py-2.5">
                     <p className="font-semibold text-ink">{l.company || '—'}</p>
-                    {l.card && <p className="text-[11px] text-muted">via /c/{l.card.slug}</p>}
+                    {l.card && <p className="text-2xs text-muted">via /c/{l.card.slug}</p>}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2.5 font-semibold">
-                    <p className="text-[12.5px] text-ink">{l.phone || '—'}</p>
-                    <p className="text-[11px] text-muted font-mono">{l.email || '—'}</p>
+                    <p className="text-xs text-ink">{l.phone || '—'}</p>
+                    <p className="text-2xs text-muted font-mono">{l.email || '—'}</p>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="inline-flex items-center gap-1 text-[12px] text-muted"><Icon name={src.icon} size={12} /> {src.label}</span>
+                    <span className="inline-flex items-center gap-1 text-xs text-muted"><Icon name={src.icon} size={12} /> {src.label}</span>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="v-chip !px-2 !py-0.5 !text-[10px] font-semibold" style={{ background: tm.bg, color: tm.fg, borderColor: tm.border }}>
+                    <span className="v-chip !px-2 !py-0.5 !text-3xs font-semibold" style={{ background: tm.bg, color: tm.fg, borderColor: tm.border }}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: tm.dot }} /> {t(`temperature.${l.temperature.toLowerCase()}`)}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 font-semibold tabular-nums text-emerald-600">{l.value > 0 ? formatMoney(l.value, locale) : '—'}</td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-[11.5px] text-faint">{formatRelativeTime(l.createdAt, locale, 'narrow')}</td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-2xs text-faint">{formatRelativeTime(l.createdAt, locale, 'narrow')}</td>
                 </tr>
               );
             })}
@@ -82,8 +82,8 @@ function EmptyContacts() {
         <Icon name="users" size={28} />
       </span>
       <div>
-        <p className="text-[16px] font-semibold text-ink">{t('contacts.emptyTitle')}</p>
-        <p className="mt-1 max-w-sm text-[13px] text-muted">{t('contacts.emptyDesc')}</p>
+        <p className="text-lg font-semibold text-ink">{t('contacts.emptyTitle')}</p>
+        <p className="mt-1 max-w-sm text-sm text-muted">{t('contacts.emptyDesc')}</p>
       </div>
       <Link href="/cards" className="v-btn"><Icon name="grid" size={15} /> {t('openCards')}</Link>
     </div>

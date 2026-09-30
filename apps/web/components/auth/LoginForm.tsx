@@ -108,7 +108,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
           hint={isLogin ? undefined : t('register.passwordHint')}
           aside={
             isLogin ? (
-              <Link href="/forgot-password" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/forgot-password" className="v-hit text-xs font-medium text-accent hover:underline">
                 {t('login.forgot')}
               </Link>
             ) : undefined
@@ -124,7 +124,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
         />
       </form>
 
-      <p className="mt-8 border-t border-line pt-6 text-center text-[13.5px] text-muted">
+      <p className="mt-8 border-t border-line pt-6 text-center text-sm text-muted">
         {isLogin ? t('login.switchPrompt') : t('register.switchPrompt')}{' '}
         <button type="button" onClick={() => switchTo(isLogin ? 'register' : 'login')} className="v-hit font-medium text-accent hover:underline">
           {isLogin ? t('login.switchAction') : t('register.switchAction')}

@@ -120,7 +120,7 @@ export function NotificationBell() {
             className="absolute end-0 z-50 mt-2 w-[380px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-line bg-surface shadow-xl max-sm:fixed max-sm:inset-x-3 max-sm:top-[3.75rem] max-sm:mt-0 max-sm:w-auto max-sm:max-w-none"
           >
             <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
-              <h3 className="flex-1 text-[14px] font-semibold text-ink">{t('title')}</h3>
+              <h3 className="flex-1 text-base font-semibold text-ink">{t('title')}</h3>
               <div role="radiogroup" className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
                 {([false, true] as const).map((u) => (
                   <button
@@ -128,7 +128,7 @@ export function NotificationBell() {
                     role="radio"
                     aria-checked={unreadOnly === u}
                     onClick={() => setUnreadOnly(u)}
-                    className={`h-7 rounded-md px-2.5 text-[12px] font-medium ${unreadOnly === u ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+                    className={`h-7 rounded-md px-2.5 text-xs font-medium ${unreadOnly === u ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
                   >
                     {u ? t('tabs.unread') : t('tabs.all')}
                   </button>
@@ -154,7 +154,7 @@ export function NotificationBell() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-elevated text-muted">
                     <Icon name={unreadOnly ? 'check' : 'bell'} size={16} />
                   </span>
-                  <p className="mt-2.5 text-[13px] font-medium text-ink">{unreadOnly ? t('empty.unreadTitle') : t('empty.allTitle')}</p>
+                  <p className="mt-2.5 text-sm font-medium text-ink">{unreadOnly ? t('empty.unreadTitle') : t('empty.allTitle')}</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-line">
@@ -168,11 +168,11 @@ export function NotificationBell() {
             </div>
 
             <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2">
-              <Link href="/notifications" onClick={() => setOpen(false)} className="flex h-8 items-center text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/notifications" onClick={() => setOpen(false)} className="flex h-8 items-center text-xs font-medium text-accent hover:underline">
                 {t('viewAll')}
               </Link>
               {count > 0 && (
-                <button onClick={markAll} className="flex h-8 items-center gap-1.5 text-[12.5px] font-medium text-muted hover:text-ink">
+                <button onClick={markAll} className="flex h-8 items-center gap-1.5 text-xs font-medium text-muted hover:text-ink">
                   <Icon name="check" size={13} /> {t('markAll')}
                 </button>
               )}

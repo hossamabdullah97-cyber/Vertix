@@ -177,10 +177,10 @@ export default function NotificationsPage() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(id)}
-                className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-[13.5px] font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
+                className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
               >
                 {t(`tabs.${id}`)}
-                {id === 'unread' && unread > 0 && <span className="tabular rounded-full bg-accent/10 px-1.5 text-[11.5px] font-medium text-accent">{formatNumber(unread, locale)}</span>}
+                {id === 'unread' && unread > 0 && <span className="tabular rounded-full bg-accent/10 px-1.5 text-2xs font-medium text-accent">{formatNumber(unread, locale)}</span>}
                 {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
               </button>
             );
@@ -193,7 +193,7 @@ export default function NotificationsPage() {
               key={c}
               onClick={() => setCat(c)}
               aria-pressed={cat === c}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium transition-colors sm:h-8 ${cat === c ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${cat === c ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
             >
               {c !== 'all' && <Icon name={CATEGORY_ICON[c]} size={13} />}
               {t(`categories.${c}`)}
@@ -219,14 +219,14 @@ export default function NotificationsPage() {
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-elevated text-muted">
                 <Icon name={tab === 'unread' ? 'check' : tab === 'archived' ? 'inbox' : 'bell'} size={19} />
               </span>
-              <p className="mt-3 text-[14.5px] font-medium text-ink">{t(`empty.${tab}Title`)}</p>
-              <p className="mt-1 max-w-[380px] text-[13px] leading-relaxed text-muted">{tab === 'archived' ? t('empty.archivedBody') : t('empty.body')}</p>
+              <p className="mt-3 text-base font-medium text-ink">{t(`empty.${tab}Title`)}</p>
+              <p className="mt-1 max-w-[380px] text-sm leading-relaxed text-muted">{tab === 'archived' ? t('empty.archivedBody') : t('empty.body')}</p>
             </div>
           ) : (
             <div className="space-y-7">
               {groups.map((g) => (
                 <section key={g.key} aria-labelledby={`notif-${g.key}`}>
-                  <h2 id={`notif-${g.key}`} className="mb-2 text-[12.5px] font-medium text-muted">
+                  <h2 id={`notif-${g.key}`} className="mb-2 text-xs font-medium text-muted">
                     {t(`groups.${g.key}`)}
                   </h2>
                   <ul className="v-card divide-y divide-line overflow-hidden">
@@ -284,7 +284,7 @@ function Preferences({ open, onClose }: { open: boolean; onClose: () => void }) 
 
   return (
     <Sheet open={open} onClose={onClose} title={t('settings')} closeLabel={t('close')}>
-      <p className="text-[13px] leading-relaxed text-muted">{t('prefs.intro')}</p>
+      <p className="text-sm leading-relaxed text-muted">{t('prefs.intro')}</p>
       <ul className="-mx-5 mt-4 divide-y divide-line border-y border-line">
         {CATEGORIES.map((c) => {
           const on = prefs?.[c] ?? true;
@@ -295,8 +295,8 @@ function Preferences({ open, onClose }: { open: boolean; onClose: () => void }) 
                   <Icon name={CATEGORY_ICON[c]} size={15} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-medium text-ink">{t(`categories.${c}`)}</span>
-                  <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{t(`prefs.${c}`)}</span>
+                  <span className="block text-sm font-medium text-ink">{t(`categories.${c}`)}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t(`prefs.${c}`)}</span>
                 </span>
                 <button
                   type="button"

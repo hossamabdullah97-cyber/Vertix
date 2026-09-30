@@ -29,8 +29,8 @@ export default function ShareCard({ slug }: { slug: string }) {
 
   return (
     <div className="v-card p-5">
-      <h2 className="mb-1 text-[14px] font-semibold">{t('share.title')}</h2>
-      <p className="mb-4 text-[12.5px] text-muted">
+      <h2 className="mb-1 text-base font-semibold">{t('share.title')}</h2>
+      <p className="mb-4 text-xs text-muted">
         {t('share.subtitle')}
       </p>
 
@@ -41,7 +41,7 @@ export default function ShareCard({ slug }: { slug: string }) {
 
         <div className="mt-4 w-full">
           <div className="flex items-center gap-2 rounded-[var(--v-radius)] border border-line bg-canvas px-3 py-2">
-            <span dir="ltr" className="min-w-0 flex-1 truncate text-[12.5px] text-muted">{url || '…'}</span>
+            <span dir="ltr" className="min-w-0 flex-1 truncate text-xs text-muted">{url || '…'}</span>
             <button onClick={copy} className="flex h-11 w-11 sm:h-auto sm:w-auto shrink-0 items-center justify-center text-muted transition-colors hover:text-ink" aria-label={t('share.copyLink')} title={t('share.copyLink')}>
               <Icon name={copied ? 'check' : 'copy'} size={16} />
             </button>

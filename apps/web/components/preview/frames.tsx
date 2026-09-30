@@ -96,7 +96,7 @@ export function DesktopFrame({ children, url }: { children: ReactNode; url: stri
             <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
             <span className="h-3 w-3 rounded-full bg-[#28c840]" />
           </span>
-          <div className="ms-2 flex flex-1 items-center gap-2 truncate rounded-md bg-canvas px-3 py-1.5 text-[11px] text-muted">
+          <div className="ms-2 flex flex-1 items-center gap-2 truncate rounded-md bg-canvas px-3 py-1.5 text-2xs text-muted">
             <span className="text-emerald-500">🔒</span>
             <span className="truncate">{url}</span>
           </div>

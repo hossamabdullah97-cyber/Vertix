@@ -156,7 +156,7 @@ export function ImportPeople({ open, onClose, onImported }: { open: boolean; onC
   return (
     <Sheet open={open} onClose={close} closeLabel={t('actions.close')} title={t('import.title')} subtitle={t('import.subtitle')} footer={footer}>
       {error && (
-        <p role="alert" className="mb-4 rounded-lg bg-red-500/[0.07] px-3 py-2.5 text-[12.5px] leading-relaxed text-red-700 dark:text-red-300">
+        <p role="alert" className="mb-4 rounded-lg bg-red-500/[0.07] px-3 py-2.5 text-xs leading-relaxed text-red-700 dark:text-red-300">
           {error}
         </p>
       )}
@@ -181,8 +181,8 @@ export function ImportPeople({ open, onClose, onImported }: { open: boolean; onC
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-elevated text-ink ring-1 ring-inset ring-line">
               <Icon name="upload" size={18} />
             </span>
-            <span className="text-[13.5px] font-medium text-ink">{t('import.pick')}</span>
-            <span className="text-[12.5px] text-muted">{t('import.pickHint', { max: fmt(MAX_ROWS) })}</span>
+            <span className="text-sm font-medium text-ink">{t('import.pick')}</span>
+            <span className="text-xs text-muted">{t('import.pickHint', { max: fmt(MAX_ROWS) })}</span>
           </button>
           <input
             ref={input}
@@ -195,15 +195,15 @@ export function ImportPeople({ open, onClose, onImported }: { open: boolean; onC
             }}
           />
 
-          <h3 className="mt-6 text-[13px] font-semibold text-ink">{t('import.columnsTitle')}</h3>
-          <ul className="mt-2 space-y-1.5 text-[12.5px] leading-relaxed text-muted">
+          <h3 className="mt-6 text-sm font-semibold text-ink">{t('import.columnsTitle')}</h3>
+          <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-muted">
             <li>
               <span className="font-medium text-ink">{t('import.columns.email')}</span> · {t('import.required')}
             </li>
             <li>{t('import.columns.others')}</li>
             <li>{t('import.columns.role')}</li>
           </ul>
-          <button type="button" onClick={downloadTemplate} className="v-hit mt-4 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline">
+          <button type="button" onClick={downloadTemplate} className="v-hit mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
             <Icon name="download" size={14} />
             {t('import.template')}
           </button>
@@ -212,13 +212,13 @@ export function ImportPeople({ open, onClose, onImported }: { open: boolean; onC
 
       {preview && (
         <>
-          <p className="text-[13px] text-muted">
+          <p className="text-sm text-muted">
             <span className="font-medium text-ink">{preview.file}</span> · {t('import.ready', { count: ready.length, value: fmt(ready.length) })}
             {skipped > 0 && <span className="text-amber-700 dark:text-amber-400"> · {t('import.skipped', { count: skipped, value: fmt(skipped) })}</span>}
           </p>
-          {preview.tooMany && <p className="mt-2 text-[12.5px] text-amber-700 dark:text-amber-400">{t('import.tooMany', { max: fmt(MAX_ROWS) })}</p>}
+          {preview.tooMany && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{t('import.tooMany', { max: fmt(MAX_ROWS) })}</p>}
           {room && room.members !== null && ready.length > room.members && (
-            <p className="mt-3 rounded-lg bg-amber-500/[0.08] px-3 py-2.5 text-[12.5px] leading-relaxed text-amber-800 dark:text-amber-300">
+            <p className="mt-3 rounded-lg bg-amber-500/[0.08] px-3 py-2.5 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
               {room.members === 0 ? t('import.planFull') : t('import.planRoom', { count: room.members, value: fmt(room.members) })}{' '}
               <Link href="/billing" className="font-medium underline underline-offset-2">
                 {t('import.upgrade')}
@@ -229,21 +229,21 @@ export function ImportPeople({ open, onClose, onImported }: { open: boolean; onC
           <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl p-3 ring-1 ring-inset ring-line">
             <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[hsl(var(--v-accent))]" checked={createCards} onChange={(e) => setCreateCards(e.target.checked)} />
             <span>
-              <span className="block text-[13px] font-medium text-ink">{t('import.createCards')}</span>
-              <span className="mt-0.5 block text-[12px] leading-relaxed text-muted">{t('import.createCardsHint')}</span>
+              <span className="block text-sm font-medium text-ink">{t('import.createCards')}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t('import.createCardsHint')}</span>
             </span>
           </label>
 
           <ul className="-mx-5 mt-4 divide-y divide-line border-y border-line">
             {preview.rows.map((r) => (
               <li key={r.line} className={`flex items-start gap-3 px-5 py-2.5 ${r.problem ? 'bg-amber-500/[0.05]' : ''}`}>
-                <span className="tabular mt-0.5 w-6 shrink-0 text-[11px] text-faint">{r.line}</span>
+                <span className="tabular mt-0.5 w-6 shrink-0 text-2xs text-faint">{r.line}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-medium text-ink">{r.name || r.email || '—'}</span>
-                  <span className="block truncate text-[12px] text-muted" dir="ltr" style={{ textAlign: 'start' }}>
+                  <span className="block truncate text-sm font-medium text-ink">{r.name || r.email || '—'}</span>
+                  <span className="block truncate text-xs text-muted" dir="ltr" style={{ textAlign: 'start' }}>
                     {r.email || t('import.noEmail')}
                   </span>
-                  {(r.title || r.team) && <span className="block truncate text-[12px] text-faint">{[r.title, r.team].filter(Boolean).join(' · ')}</span>}
+                  {(r.title || r.team) && <span className="block truncate text-xs text-faint">{[r.title, r.team].filter(Boolean).join(' · ')}</span>}
                 </span>
                 {r.problem ? (
                   <span className="v-badge v-badge-warning shrink-0">{t(`import.problems.${r.problem}`)}</span>
@@ -282,27 +282,27 @@ function Summary({ results }: { results: Result[] }) {
         <span className={`flex h-9 w-9 items-center justify-center rounded-full ${nobody ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
           <Icon name={nobody ? 'alert' : 'check'} size={18} />
         </span>
-        <p className="text-[14px] font-medium text-ink">{nobody ? t('import.done.nobody') : t('import.done.title')}</p>
+        <p className="text-base font-medium text-ink">{nobody ? t('import.done.nobody') : t('import.done.title')}</p>
       </div>
       <dl className="mt-4 grid grid-cols-3 overflow-hidden rounded-xl ring-1 ring-inset ring-line">
         {stats.map((s, i) => (
           <div key={s.label} className={`px-3 py-3 ${i ? 'border-s border-line' : ''}`}>
-            <dt className="text-[12px] text-muted">{s.label}</dt>
-            <dd className="tabular mt-1 text-[20px] font-semibold text-ink">{fmt(s.value)}</dd>
+            <dt className="text-xs text-muted">{s.label}</dt>
+            <dd className="tabular mt-1 text-2xl font-semibold text-ink">{fmt(s.value)}</dd>
           </div>
         ))}
       </dl>
-      {!nobody && <p className="mt-3 text-[12.5px] leading-relaxed text-muted">{t('import.done.next')}</p>}
+      {!nobody && <p className="mt-3 text-xs leading-relaxed text-muted">{t('import.done.next')}</p>}
       {problems.length > 0 && (
         <>
-          <h3 className="mt-5 text-[13px] font-semibold text-ink">{t('import.done.problems', { count: problems.length, value: fmt(problems.length) })}</h3>
+          <h3 className="mt-5 text-sm font-semibold text-ink">{t('import.done.problems', { count: problems.length, value: fmt(problems.length) })}</h3>
           <ul className="-mx-5 mt-2 divide-y divide-line border-y border-line">
             {problems.map((r) => (
               <li key={`${r.row}-${r.email}`} className="px-5 py-2.5">
-                <span className="block truncate text-[13px] text-ink" dir="ltr" style={{ textAlign: 'start' }}>
+                <span className="block truncate text-sm text-ink" dir="ltr" style={{ textAlign: 'start' }}>
                   {r.email}
                 </span>
-                <span className="block text-[12px] text-muted">
+                <span className="block text-xs text-muted">
                   {r.status === 'duplicate'
                     ? t('import.problems.duplicate')
                     : r.status === 'failed'

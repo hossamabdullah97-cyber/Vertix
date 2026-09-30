@@ -158,7 +158,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
 
   const field = (key: keyof Fields, opts: { type?: string; dir?: 'ltr'; wide?: boolean } = {}) => (
     <label className={`block ${opts.wide ? 'sm:col-span-2' : ''}`}>
-      <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{t(`add.fields.${key}`)}</span>
+      <span className="mb-1.5 block text-xs font-medium text-ink">{t(`add.fields.${key}`)}</span>
       <input
         type={opts.type ?? 'text'}
         dir={opts.dir}
@@ -190,7 +190,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
             <img src={photo} alt={t('add.photoAlt')} className={`max-h-52 w-full object-contain bg-elevated ${reading ? 'opacity-60' : ''}`} />
             {reading && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="rounded-full bg-surface px-3 py-1.5 text-[12.5px] font-medium text-ink shadow-sm ring-1 ring-line">
+                <span className="rounded-full bg-surface px-3 py-1.5 text-xs font-medium text-ink shadow-sm ring-1 ring-line">
                   {progress?.phase === 'loading'
                     ? t('add.preparing')
                     : progress
@@ -200,7 +200,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
               </div>
             )}
             {!reading && (
-              <button type="button" onClick={() => camera.current?.click()} className="absolute bottom-2 end-2 rounded-full bg-surface px-3 py-1.5 text-[12px] font-medium text-ink shadow-sm ring-1 ring-line hover:bg-elevated">
+              <button type="button" onClick={() => camera.current?.click()} className="absolute bottom-2 end-2 rounded-full bg-surface px-3 py-1.5 text-xs font-medium text-ink shadow-sm ring-1 ring-line hover:bg-elevated">
                 {t('add.retake')}
               </button>
             )}
@@ -211,20 +211,20 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
               <Icon name="camera" size={18} />
             </span>
             <span>
-              <span className="block text-[13.5px] font-medium text-ink">{t('add.scan')}</span>
-              <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{t('add.scanHint')}</span>
+              <span className="block text-sm font-medium text-ink">{t('add.scan')}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t('add.scanHint')}</span>
             </span>
           </button>
         )}
         {scanned && !reading && readBy && (
-          <p className={`mt-2 text-[12.5px] leading-relaxed ${readBy === 'deviceArabic' ? 'rounded-lg bg-amber-500/[0.08] px-3 py-2 text-amber-800 dark:text-amber-300' : 'text-muted'}`}>
+          <p className={`mt-2 text-xs leading-relaxed ${readBy === 'deviceArabic' ? 'rounded-lg bg-amber-500/[0.08] px-3 py-2 text-amber-800 dark:text-amber-300' : 'text-muted'}`}>
             {t(`add.readBy.${readBy}`)}
           </p>
         )}
       </div>
 
       {error && (
-        <p role="alert" className="mb-4 rounded-lg bg-red-500/[0.07] px-3 py-2.5 text-[12.5px] leading-relaxed text-red-700 dark:text-red-300">
+        <p role="alert" className="mb-4 rounded-lg bg-red-500/[0.07] px-3 py-2.5 text-xs leading-relaxed text-red-700 dark:text-red-300">
           {error}
         </p>
       )}
@@ -238,7 +238,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
         {field('website', { dir: 'ltr' })}
         {field('address')}
         <label className="block sm:col-span-2">
-          <span className="mb-1.5 block text-[12.5px] font-medium text-ink">{t('add.fields.note')}</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink">{t('add.fields.note')}</span>
           <textarea className="v-field min-h-20" value={fields.note} onChange={(e) => setFields((f) => ({ ...f, note: e.target.value }))} />
         </label>
       </div>

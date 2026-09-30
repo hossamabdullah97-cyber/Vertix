@@ -245,7 +245,7 @@ function DrawerBody({
 
   return (
     <>
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-4 text-[12.5px] text-faint">
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-4 text-xs text-faint">
         <Icon name="inbox" size={14} />
         <span>{t('title')}</span>
         <span aria-hidden>/</span>
@@ -272,9 +272,9 @@ function DrawerBody({
                   if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                 }}
                 placeholder={t('table.unknownLead')}
-                className="w-full rounded-md bg-transparent text-[18px] font-semibold tracking-[-0.015em] text-ink outline-none placeholder:text-faint hover:bg-elevated focus:bg-elevated rtl:tracking-normal"
+                className="w-full rounded-md bg-transparent text-xl font-semibold tracking-[-0.015em] text-ink outline-none placeholder:text-faint hover:bg-elevated focus:bg-elevated rtl:tracking-normal"
               />
-              <p className="truncate text-[13px] text-muted">{[lead.company, sourceLabel].filter(Boolean).join(' · ')}</p>
+              <p className="truncate text-sm text-muted">{[lead.company, sourceLabel].filter(Boolean).join(' · ')}</p>
             </div>
           </div>
 
@@ -286,7 +286,7 @@ function DrawerBody({
                   href={l.href}
                   target={l.key === 'whatsapp' ? '_blank' : undefined}
                   rel="noreferrer"
-                  className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-[10px] py-2 text-[12px] font-medium text-muted ring-1 ring-inset ring-line transition-colors hover:bg-elevated hover:text-ink"
+                  className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-[10px] py-2 text-xs font-medium text-muted ring-1 ring-inset ring-line transition-colors hover:bg-elevated hover:text-ink"
                 >
                   <span className="text-ink">
                     <Icon name={l.icon} size={16} />
@@ -315,12 +315,12 @@ function DrawerBody({
                 role="tab"
                 aria-selected={active}
                 onClick={() => setActiveTab(tab)}
-                className={`relative flex min-h-11 items-center gap-1.5 text-[13px] font-medium transition-colors sm:min-h-10 ${
+                className={`relative flex min-h-11 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
                   active ? 'text-ink' : 'text-muted hover:text-ink'
                 }`}
               >
                 {t(`drawer.tabs.${tab}`)}
-                {tab === 'tasks' && openTasks > 0 && <span className="tabular text-[12px] text-faint">{openTasks}</span>}
+                {tab === 'tasks' && openTasks > 0 && <span className="tabular text-xs text-faint">{openTasks}</span>}
                 {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
               </button>
             );
@@ -329,14 +329,14 @@ function DrawerBody({
 
         <div className="px-5 py-5">
           {activeTab === 'info' && (
-            <dl className="grid grid-cols-[104px_minmax(0,1fr)] items-center gap-x-3 gap-y-3 text-[13px]">
+            <dl className="grid grid-cols-[104px_minmax(0,1fr)] items-center gap-x-3 gap-y-3 text-sm">
               <dt className="text-faint">{t('drawer.stageLabel')}</dt>
               <dd>
                 <select
                   value={lead.stageId ?? ''}
                   disabled={busy}
                   onChange={(e) => e.target.value && onPatch({ stageId: e.target.value })}
-                  className="v-field !h-11 !w-auto !pe-8 !text-[13px] sm:!h-8"
+                  className="v-field !h-11 !w-auto !pe-8 !text-sm sm:!h-8"
                 >
                   {!lead.stageId && <option value="">{t('drawer.unassigned')}</option>}
                   {stages.map((s) => (
@@ -358,7 +358,7 @@ function DrawerBody({
                         disabled={busy}
                         aria-pressed={active}
                         onClick={() => !active && onPatch({ temperature: tp })}
-                        className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition-colors disabled:opacity-50 sm:h-7 ${
+                        className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors disabled:opacity-50 sm:h-7 ${
                           active ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
                         }`}
                       >
@@ -385,16 +385,16 @@ function DrawerBody({
                   }}
                   placeholder="0"
                   disabled={busy}
-                  className="tabular h-11 w-full rounded-md bg-transparent px-1.5 text-[13px] font-medium text-ink outline-none placeholder:text-faint hover:bg-elevated focus:bg-elevated rtl:text-right sm:h-8"
+                  className="tabular h-11 w-full rounded-md bg-transparent px-1.5 text-sm font-medium text-ink outline-none placeholder:text-faint hover:bg-elevated focus:bg-elevated rtl:text-right sm:h-8"
                 />
               </dd>
 
-              <dt className="col-span-2 mt-3 border-t border-line pt-4 text-[12px] font-medium text-faint">{t('drawer.contactDetails')}</dt>
+              <dt className="col-span-2 mt-3 border-t border-line pt-4 text-xs font-medium text-faint">{t('drawer.contactDetails')}</dt>
               <EditableField icon="mail" label={t('drawer.email')} value={editEmail} onChange={setEditEmail} onCommit={() => commitProfileField('email', editEmail)} placeholder={t('drawer.emailPlaceholder')} dir="ltr" />
               <EditableField icon="phone" label={t('drawer.phone')} value={editPhone} onChange={setEditPhone} onCommit={() => commitProfileField('phone', editPhone)} placeholder={t('drawer.phonePlaceholder')} dir="ltr" />
               <EditableField icon="briefcase" label={t('drawer.company')} value={editCompany} onChange={setEditCompany} onCommit={() => commitProfileField('company', editCompany)} placeholder={t('drawer.companyPlaceholder')} />
 
-              <dt className="col-span-2 mt-3 border-t border-line pt-4 text-[12px] font-medium text-faint">{t('drawer.more')}</dt>
+              <dt className="col-span-2 mt-3 border-t border-line pt-4 text-xs font-medium text-faint">{t('drawer.more')}</dt>
               <dt className="text-faint">{t('drawer.sourceLink')}</dt>
               <dd className="flex items-center gap-1.5 text-ink">
                 <span className="text-faint">
@@ -405,7 +405,7 @@ function DrawerBody({
               {lead.card?.slug && (
                 <>
                   <dt className="text-faint">{t('drawer.card')}</dt>
-                  <dd dir="ltr" className="truncate text-start font-mono text-[12.5px] text-muted rtl:text-right">
+                  <dd dir="ltr" className="truncate text-start font-mono text-xs text-muted rtl:text-right">
                     /c/{lead.card.slug}
                   </dd>
                 </>
@@ -427,7 +427,7 @@ function DrawerBody({
                         key={tp}
                         onClick={() => setLogType(tp)}
                         aria-pressed={active}
-                        className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md text-[12px] font-medium transition-colors sm:min-h-7 ${
+                        className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-colors sm:min-h-7 ${
                           active ? 'bg-elevated text-ink ring-1 ring-inset ring-line' : 'text-muted hover:text-ink'
                         }`}
                       >
@@ -444,11 +444,11 @@ function DrawerBody({
                   }}
                   placeholder={t('drawer.addActivity', { type: t(`activity.types.${logType}`, ACTIVITY_META[logType].label).toLowerCase() })}
                   rows={3}
-                  className="block w-full resize-none bg-transparent px-3 py-2.5 text-[13px] text-ink outline-none placeholder:text-faint"
+                  className="block w-full resize-none bg-transparent px-3 py-2.5 text-sm text-ink outline-none placeholder:text-faint"
                 />
                 <div className="flex items-center justify-between border-t border-line px-3 py-2">
-                  <span className="text-[11.5px] text-faint">⌘/Ctrl + Enter</span>
-                  <button onClick={logActivity} disabled={!logText.trim() || logging} className="v-btn !h-11 !px-3 !text-[12.5px] sm:!h-7">
+                  <span className="text-2xs text-faint">⌘/Ctrl + Enter</span>
+                  <button onClick={logActivity} disabled={!logText.trim() || logging} className="v-btn !h-11 !px-3 !text-xs sm:!h-7">
                     {logging ? t('drawer.saving') : t('drawer.log')}
                   </button>
                 </div>
@@ -473,11 +473,11 @@ function DrawerBody({
                         </span>
                         <div className="min-w-0 flex-1 pt-0.5">
                           <div className="flex items-baseline justify-between gap-2">
-                            <p className="text-[13px] font-medium text-ink">{t(`activity.types.${a.type}`, meta.label)}</p>
-                            <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(a.createdAt, locale, 'narrow')}</span>
+                            <p className="text-sm font-medium text-ink">{t(`activity.types.${a.type}`, meta.label)}</p>
+                            <span className="shrink-0 text-xs text-faint">{formatRelativeTime(a.createdAt, locale, 'narrow')}</span>
                           </div>
                           {body && (
-                            <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-elevated px-3 py-2 text-[12.5px] leading-relaxed text-muted ring-1 ring-inset ring-line">
+                            <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-elevated px-3 py-2 text-xs leading-relaxed text-muted ring-1 ring-inset ring-line">
                               {body}
                             </p>
                           )}
@@ -490,8 +490,8 @@ function DrawerBody({
                       <Icon name="user-plus" size={11} />
                     </span>
                     <div className="min-w-0 flex-1 pt-0.5">
-                      <p className="text-[13px] font-medium text-ink">{t('drawer.leadCreated')}</p>
-                      <p className="text-[12px] text-faint">
+                      <p className="text-sm font-medium text-ink">{t('drawer.leadCreated')}</p>
+                      <p className="text-xs text-faint">
                         {t('drawer.createdVia', {
                           source: sourceLabel,
                           date: formatDate(lead.createdAt, locale, { year: 'numeric', month: 'short', day: 'numeric' }),
@@ -514,23 +514,23 @@ function DrawerBody({
                     if (e.key === 'Enter') addTask();
                   }}
                   placeholder={t('drawer.addTaskPlaceholder')}
-                  className="h-9 w-full bg-transparent px-1.5 text-[13px] text-ink outline-none placeholder:text-faint"
+                  className="h-9 w-full bg-transparent px-1.5 text-sm text-ink outline-none placeholder:text-faint"
                 />
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <input
                     type="date"
                     value={taskDue}
                     onChange={(e) => setTaskDue(e.target.value)}
-                    className="h-11 rounded-md bg-elevated px-2.5 text-[12px] text-muted outline-none ring-1 ring-inset ring-line focus:ring-accent sm:h-7"
+                    className="h-11 rounded-md bg-elevated px-2.5 text-xs text-muted outline-none ring-1 ring-inset ring-line focus:ring-accent sm:h-7"
                   />
-                  <button onClick={addTask} disabled={!taskTitle.trim() || taskBusy} className="v-btn !h-11 !px-3 !text-[12.5px] sm:!h-7">
+                  <button onClick={addTask} disabled={!taskTitle.trim() || taskBusy} className="v-btn !h-11 !px-3 !text-xs sm:!h-7">
                     <Icon name="plus" size={12} /> {t('drawer.addTask')}
                   </button>
                 </div>
               </div>
 
               {tasks.length === 0 ? (
-                <p className="py-8 text-center text-[13px] text-muted">{t('drawer.noTasks')}</p>
+                <p className="py-8 text-center text-sm text-muted">{t('drawer.noTasks')}</p>
               ) : (
                 <ul className="divide-y divide-line">
                   {tasks.map((tk) => {
@@ -549,9 +549,9 @@ function DrawerBody({
                           {tk.completed && <Icon name="check" size={12} />}
                         </button>
                         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: pr.color }} title={pr.label} />
-                        <p className={`min-w-0 flex-1 truncate text-[13px] ${tk.completed ? 'text-faint line-through' : 'text-ink'}`}>{tk.title}</p>
+                        <p className={`min-w-0 flex-1 truncate text-sm ${tk.completed ? 'text-faint line-through' : 'text-ink'}`}>{tk.title}</p>
                         {tk.dueDate && (
-                          <span className="shrink-0 text-[12px] font-medium" style={{ color: tk.completed ? 'hsl(var(--v-faint))' : toneColor }}>
+                          <span className="shrink-0 text-xs font-medium" style={{ color: tk.completed ? 'hsl(var(--v-faint))' : toneColor }}>
                             {due.label}
                           </span>
                         )}
@@ -601,7 +601,7 @@ function EditableField({
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
           placeholder={placeholder}
-          className={`h-11 w-full rounded-md bg-transparent px-1.5 text-start text-[13px] text-ink outline-none placeholder:text-faint hover:bg-elevated focus:bg-elevated sm:h-8 ${dir === 'ltr' ? 'rtl:text-right' : ''}`}
+          className={`h-11 w-full rounded-md bg-transparent px-1.5 text-start text-sm text-ink outline-none placeholder:text-faint hover:bg-elevated focus:bg-elevated sm:h-8 ${dir === 'ltr' ? 'rtl:text-right' : ''}`}
         />
       </dd>
     </>

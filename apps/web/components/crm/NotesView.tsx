@@ -145,12 +145,12 @@ export function NotesView() {
         {/* Search & Actions */}
         <div className="p-3 border-b border-line space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-ink flex items-center gap-1.5">
               <Icon name="file-text" size={14} className="text-accent" /> {t('notes.heading')}
             </span>
             <button
               onClick={() => handleCreateNew()}
-              className="v-btn !h-7 !px-2.5 text-[11px] font-semibold"
+              className="v-btn !h-7 !px-2.5 text-2xs font-semibold"
               title={t('notes.newTitle')}
             >
               <Icon name="plus" size={12} /> {t('notes.new')}
@@ -163,7 +163,7 @@ export function NotesView() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('notes.searchPlaceholder')}
-              className="v-field !h-8 !ps-8 text-[11.5px]"
+              className="v-field !h-8 !ps-8 text-2xs"
             />
           </div>
         </div>
@@ -174,7 +174,7 @@ export function NotesView() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className="h-11 shrink-0 rounded-md px-2.5 text-[12px] font-medium transition-colors sm:h-7"
+              className="h-11 shrink-0 rounded-md px-2.5 text-xs font-medium transition-colors sm:h-7"
               style={{
                 backgroundColor: activeCategory === cat ? 'var(--v-accent)' : 'transparent',
                 color: activeCategory === cat ? 'var(--v-accent-contrast)' : 'hsl(var(--v-muted))',
@@ -203,14 +203,14 @@ export function NotesView() {
                         <Icon name="sparkle" size={10} />
                       </span>
                     )}
-                    <h4 className={`truncate text-[12.5px] font-semibold leading-snug ${isSelected ? 'text-accent' : 'text-ink'}`}>
+                    <h4 className={`truncate text-xs font-semibold leading-snug ${isSelected ? 'text-accent' : 'text-ink'}`}>
                       {n.title || t('notes.untitled')}
                     </h4>
                   </div>
-                  <p className="truncate text-[11px] text-muted mt-1">
+                  <p className="truncate text-2xs text-muted mt-1">
                     {n.content.replace(/[#*`_-]/g, '') || t('notes.emptyBody')}
                   </p>
-                  <span className="text-[10px] text-faint font-semibold block mt-1.5">
+                  <span className="text-3xs text-faint font-semibold block mt-1.5">
                     {formatDate(n.updatedAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}
                   </span>
                 </div>
@@ -220,7 +220,7 @@ export function NotesView() {
           {filteredNotes.length === 0 && (
             <div className="p-8 text-center text-faint">
               <Icon name="inbox" size={20} className="mx-auto mb-1.5" />
-              <span className="text-[11px] font-semibold">{t('notes.noNotes')}</span>
+              <span className="text-2xs font-semibold">{t('notes.noNotes')}</span>
             </div>
           )}
         </div>
@@ -242,7 +242,7 @@ export function NotesView() {
                 </button>
                 <button
                   onClick={() => setIsPreview(!isPreview)}
-                  className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-[11px] font-semibold text-muted hover:text-ink"
+                  className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-2xs font-semibold text-muted hover:text-ink"
                 >
                   <Icon name={isPreview ? 'file-text' : 'eye'} size={12} />
                   {isPreview ? t('notes.editEditor') : t('notes.previewMd')}
@@ -251,7 +251,7 @@ export function NotesView() {
 
               {/* Template dropdown list */}
               <div className="flex items-center gap-1.5">
-                <span className="text-[12px] text-faint">{t('notes.templates')}</span>
+                <span className="text-xs text-faint">{t('notes.templates')}</span>
                 <div className="flex gap-1">
                   {(Object.keys(NOTE_TEMPLATES) as Array<keyof typeof NOTE_TEMPLATES>).map((key) => (
                     <button
@@ -259,7 +259,7 @@ export function NotesView() {
                       onClick={() => {
                         saveNote({ title: t(`notes.templateTitles.${key}`), content: NOTE_TEMPLATES[key].content, category: 'Template' });
                       }}
-                      className="px-2 py-1 rounded border border-line bg-surface hover:bg-canvas text-[10px] font-semibold text-muted"
+                      className="px-2 py-1 rounded border border-line bg-surface hover:bg-canvas text-3xs font-semibold text-muted"
                     >
                       {t(`notes.templateNames.${key}`)}
                     </button>
@@ -281,8 +281,8 @@ export function NotesView() {
             {/* Note Editor Area */}
             <div className="flex-1 overflow-y-auto p-5 no-scrollbar">
               {isPreview ? (
-                <div className="prose max-w-none text-[13px] text-muted space-y-4">
-                  <h1 className="text-[18px] font-semibold text-ink border-b border-line pb-2">{editTitle || t('notes.untitled')}</h1>
+                <div className="prose max-w-none text-sm text-muted space-y-4">
+                  <h1 className="text-xl font-semibold text-ink border-b border-line pb-2">{editTitle || t('notes.untitled')}</h1>
                   <div className="whitespace-pre-wrap leading-relaxed">
                     {editContent || <span className="text-faint italic">{t('notes.noContent')}</span>}
                   </div>
@@ -296,7 +296,7 @@ export function NotesView() {
                       saveNote({ title: e.target.value });
                     }}
                     placeholder={t('notes.titlePlaceholder')}
-                    className="w-full bg-transparent text-[18px] font-semibold text-ink outline-none placeholder:text-faint border-b border-line pb-2"
+                    className="w-full bg-transparent text-xl font-semibold text-ink outline-none placeholder:text-faint border-b border-line pb-2"
                   />
                   <textarea
                     value={editContent}
@@ -305,7 +305,7 @@ export function NotesView() {
                       saveNote({ content: e.target.value });
                     }}
                     placeholder={t('notes.contentPlaceholder')}
-                    className="w-full flex-1 resize-none bg-transparent text-[13px] text-ink outline-none placeholder:text-faint leading-relaxed"
+                    className="w-full flex-1 resize-none bg-transparent text-sm text-ink outline-none placeholder:text-faint leading-relaxed"
                   />
                 </div>
               )}
@@ -314,8 +314,8 @@ export function NotesView() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
             <Icon name="file-text" size={32} className="text-faint mb-3" />
-            <h3 className="text-[14px] font-semibold text-ink">{t('notes.noneSelected')}</h3>
-            <p className="text-[12px] text-muted mt-1 max-w-xs">{t('notes.noneSelectedDesc')}</p>
+            <h3 className="text-base font-semibold text-ink">{t('notes.noneSelected')}</h3>
+            <p className="text-xs text-muted mt-1 max-w-xs">{t('notes.noneSelectedDesc')}</p>
           </div>
         )}
       </div>

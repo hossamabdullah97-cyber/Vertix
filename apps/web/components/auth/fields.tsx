@@ -25,14 +25,14 @@ export function Field({
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-[13px] font-medium text-ink">
+        <label htmlFor={id} className="text-sm font-medium text-ink">
           {label}
         </label>
         {aside}
       </div>
       {children({ id, ...(hint ? { 'aria-describedby': hintId } : {}) })}
       {hint && (
-        <p id={hintId} className="mt-1.5 text-[12.5px] text-faint">
+        <p id={hintId} className="mt-1.5 text-xs text-faint">
           {hint}
         </p>
       )}
@@ -103,7 +103,7 @@ export function FormMessage({ tone, children }: { tone: 'danger' | 'info'; child
   return (
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
-      className={`flex items-start gap-2.5 rounded-lg px-3.5 py-3 text-[13.5px] leading-snug ring-1 ring-inset ${
+      className={`flex items-start gap-2.5 rounded-lg px-3.5 py-3 text-sm leading-snug ring-1 ring-inset ${
         tone === 'danger'
           ? 'bg-red-500/[0.07] text-red-700 ring-red-500/20 dark:text-red-300'
           : 'bg-accent/[0.06] text-ink ring-accent/20'
@@ -117,7 +117,7 @@ export function FormMessage({ tone, children }: { tone: 'danger' | 'info'; child
 
 export function SubmitButton({ busy, label, busyLabel }: { busy: boolean; label: string; busyLabel: string }) {
   return (
-    <button type="submit" disabled={busy} className="v-btn w-full !h-11 text-[14px] sm:!h-10">
+    <button type="submit" disabled={busy} className="v-btn w-full !h-11 text-base sm:!h-10">
       {busy && <Icon name="loader" size={15} className="animate-spin" />}
       {busy ? busyLabel : label}
     </button>

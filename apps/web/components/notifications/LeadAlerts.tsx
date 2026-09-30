@@ -119,10 +119,10 @@ export function LeadAlerts({ open }: { open: boolean }) {
 
   return (
     <section className="mt-6" aria-labelledby="lead-alerts-title">
-      <h3 id="lead-alerts-title" className="text-[13.5px] font-semibold text-ink">
+      <h3 id="lead-alerts-title" className="text-sm font-semibold text-ink">
         {t('alerts.title')}
       </h3>
-      <p className="mt-1 text-[12.5px] leading-relaxed text-muted">{t('alerts.intro')}</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">{t('alerts.intro')}</p>
 
       <ul className="-mx-5 mt-3 divide-y divide-line border-y border-line">
         <li className="flex items-start gap-3 px-5 py-4">
@@ -130,13 +130,13 @@ export function LeadAlerts({ open }: { open: boolean }) {
             <Icon name="mail" size={15} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[13.5px] font-medium text-ink">{t('alerts.email')}</span>
-            <span className="mt-0.5 block truncate text-[12.5px] text-muted">
+            <span className="block text-sm font-medium text-ink">{t('alerts.email')}</span>
+            <span className="mt-0.5 block truncate text-xs text-muted">
               <bdi dir="ltr">{s?.address ?? '…'}</bdi>
             </span>
             {/* See exactly what arrives before a real visitor does. */}
             {s?.email && s.address && (
-              <button type="button" className="v-hit mt-1.5 text-[12.5px] font-medium text-accent hover:underline disabled:opacity-60" disabled={busy !== null} onClick={() => test('email')}>
+              <button type="button" className="v-hit mt-1.5 text-xs font-medium text-accent hover:underline disabled:opacity-60" disabled={busy !== null} onClick={() => test('email')}>
                 {busy === 'test-email' ? t('loading') : t('alerts.testEmail')}
               </button>
             )}
@@ -150,8 +150,8 @@ export function LeadAlerts({ open }: { open: boolean }) {
               <Icon name="whatsapp" size={15} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[13.5px] font-medium text-ink">{t('alerts.whatsapp')}</span>
-              <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">
+              <span className="block text-sm font-medium text-ink">{t('alerts.whatsapp')}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted">
                 {s && !s.whatsappReady ? t('alerts.notReady') : t('alerts.whatsappHint')}
               </span>
             </span>
@@ -165,7 +165,7 @@ export function LeadAlerts({ open }: { open: boolean }) {
 
           {s?.whatsappReady && (
             <div className="mt-3 ps-11">
-              <label className="block text-[12.5px] font-medium text-ink" htmlFor="wa-number">
+              <label className="block text-xs font-medium text-ink" htmlFor="wa-number">
                 {t('alerts.number')}
               </label>
               <div className="mt-1.5 flex gap-2">
@@ -203,7 +203,7 @@ export function LeadAlerts({ open }: { open: boolean }) {
         </li>
       </ul>
 
-      <p role="status" aria-live="polite" className={`mt-2 min-h-[18px] text-[12.5px] ${status?.kind === 'error' ? 'text-red-600 dark:text-red-400' : 'text-muted'}`}>
+      <p role="status" aria-live="polite" className={`mt-2 min-h-[18px] text-xs ${status?.kind === 'error' ? 'text-red-600 dark:text-red-400' : 'text-muted'}`}>
         {status?.text}
       </p>
     </section>

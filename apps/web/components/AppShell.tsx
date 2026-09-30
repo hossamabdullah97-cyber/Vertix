@@ -539,11 +539,11 @@ export default function AppShell({
       }`}
     >
       <div className="px-2.5 pb-2 pt-1.5">
-        <p className="truncate text-[13px] font-medium text-ink">{me?.name || me?.email || '—'}</p>
-        {me?.name && <p className="truncate text-[12px] text-faint">{me.email}</p>}
+        <p className="truncate text-sm font-medium text-ink">{me?.name || me?.email || '—'}</p>
+        {me?.name && <p className="truncate text-xs text-faint">{me.email}</p>}
       </div>
       <div className="border-t border-line px-2.5 py-2">
-        <p className="mb-1.5 text-[12px] text-faint">{t('account.language')}</p>
+        <p className="mb-1.5 text-xs text-faint">{t('account.language')}</p>
         <div className="grid grid-cols-2 gap-1 rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
           {(['en', 'ar'] as const).map((code) => (
             <button
@@ -551,7 +551,7 @@ export default function AppShell({
               role="menuitemradio"
               aria-checked={locale === code}
               onClick={() => setLocale(code)}
-              className={`h-9 rounded-md text-[12.5px] font-medium transition-colors md:h-7 ${
+              className={`h-9 rounded-md text-xs font-medium transition-colors md:h-7 ${
                 locale === code ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
@@ -559,7 +559,7 @@ export default function AppShell({
             </button>
           ))}
         </div>
-        <p className="mb-1.5 mt-3 text-[12px] text-faint">{t('account.theme')}</p>
+        <p className="mb-1.5 mt-3 text-xs text-faint">{t('account.theme')}</p>
         <div className="grid grid-cols-3 gap-1 rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
           {(['light', 'dark', 'system'] as const).map((mode) => (
             <button
@@ -567,7 +567,7 @@ export default function AppShell({
               role="menuitemradio"
               aria-checked={themePref === mode}
               onClick={() => chooseTheme(mode)}
-              className={`flex h-9 items-center justify-center gap-1.5 rounded-md text-[12.5px] font-medium transition-colors md:h-7 ${
+              className={`flex h-9 items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-colors md:h-7 ${
                 themePref === mode ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
@@ -581,7 +581,7 @@ export default function AppShell({
         <button
           role="menuitem"
           onClick={signOut}
-          className="flex h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] text-muted transition-colors hover:bg-elevated hover:text-ink md:h-8"
+          className="flex h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted transition-colors hover:bg-elevated hover:text-ink md:h-8"
         >
           <Icon name="logout" size={15} />
           {t('signOut')}
@@ -598,7 +598,7 @@ export default function AppShell({
           <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-accent text-white">
             <VMark size={14} strokeWidth={3} />
           </span>
-          <span className="text-[14px] font-semibold tracking-tight text-ink">Vertex</span>
+          <span className="text-base font-semibold tracking-tight text-ink">Vertex</span>
         </Link>
 
         {/* Workspace switcher */}
@@ -615,7 +615,7 @@ export default function AppShell({
                 <Icon name="user" size={12} />
               </span>
             )}
-            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{activeOrgName}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{activeOrgName}</span>
             <span className="text-faint">
               <Icon name="chevron-down" size={14} />
             </span>
@@ -624,7 +624,7 @@ export default function AppShell({
           {switcherOpen && (
             <div className="absolute inset-x-0 top-full z-50 mt-1.5 space-y-1.5 rounded-xl border border-line bg-surface p-1.5 text-start shadow-lg">
               {totalWorkspacesCount <= 1 ? (
-                <p className="px-2.5 py-3 text-center text-[12.5px] text-muted">{t('switcher.onlyOne')}</p>
+                <p className="px-2.5 py-3 text-center text-xs text-muted">{t('switcher.onlyOne')}</p>
               ) : (
                 <>
                   <div className="relative">
@@ -640,7 +640,7 @@ export default function AppShell({
                         setSwitcherIndex(0);
                       }}
                       onKeyDown={handleSwitcherKeyDown}
-                      className="h-8 w-full rounded-md border border-line bg-surface pe-2 ps-8 text-[12.5px] text-ink placeholder:text-faint focus:border-accent focus:outline-none"
+                      className="h-8 w-full rounded-md border border-line bg-surface pe-2 ps-8 text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none"
                       autoFocus
                     />
                   </div>
@@ -648,7 +648,7 @@ export default function AppShell({
                   <div className="no-scrollbar max-h-[240px] space-y-1 overflow-y-auto">
                     {favorites.length > 0 && switcherSearch === '' && (
                       <div className="border-b border-line pb-1">
-                        <p className="px-2.5 pb-1 pt-1 text-[11.5px] text-faint">{t('switcher.favorites')}</p>
+                        <p className="px-2.5 pb-1 pt-1 text-2xs text-faint">{t('switcher.favorites')}</p>
                         {allWorkspaceItems
                           .filter((item) => favorites.includes(item.id))
                           .map((item) => {
@@ -657,7 +657,7 @@ export default function AppShell({
                               <button
                                 key={`fav-${item.id}`}
                                 onClick={() => handleSwitchOrg(item.isOrg ? item.id : null)}
-                                className={`flex h-8 w-full items-center justify-between gap-2 rounded-md px-2.5 text-start text-[12.5px] text-ink transition-colors hover:bg-elevated ${
+                                className={`flex h-8 w-full items-center justify-between gap-2 rounded-md px-2.5 text-start text-xs text-ink transition-colors hover:bg-elevated ${
                                   isHighlighted ? 'bg-elevated' : ''
                                 }`}
                               >
@@ -677,7 +677,7 @@ export default function AppShell({
 
                     {recents.length > 0 && switcherSearch === '' && (
                       <div className="border-b border-line pb-1">
-                        <p className="px-2.5 pb-1 pt-1 text-[11.5px] text-faint">{t('switcher.recents')}</p>
+                        <p className="px-2.5 pb-1 pt-1 text-2xs text-faint">{t('switcher.recents')}</p>
                         {allWorkspaceItems
                           .filter((item) => recents.includes(item.id))
                           .map((item) => {
@@ -686,7 +686,7 @@ export default function AppShell({
                               <button
                                 key={`rec-${item.id}`}
                                 onClick={() => handleSwitchOrg(item.isOrg ? item.id : null)}
-                                className={`flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-start text-[12.5px] text-ink transition-colors hover:bg-elevated ${
+                                className={`flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-start text-xs text-ink transition-colors hover:bg-elevated ${
                                   isHighlighted ? 'bg-elevated' : ''
                                 }`}
                               >
@@ -698,7 +698,7 @@ export default function AppShell({
                     )}
 
                     <div>
-                      <p className="px-2.5 pb-1 pt-1 text-[11.5px] text-faint">{t('switcher.workspaces')}</p>
+                      <p className="px-2.5 pb-1 pt-1 text-2xs text-faint">{t('switcher.workspaces')}</p>
                       {filteredItems.map((item) => {
                         const active = selectedOrgId === (item.isOrg ? item.id : null);
                         const isFav = favorites.includes(item.id);
@@ -709,7 +709,7 @@ export default function AppShell({
                             key={item.id}
                             role="button"
                             tabIndex={0}
-                            className={`group flex h-8 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 text-[12.5px] transition-colors ${
+                            className={`group flex h-8 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 text-xs transition-colors ${
                               active ? 'text-ink' : isHighlighted ? 'bg-elevated text-ink' : 'text-muted hover:bg-elevated hover:text-ink'
                             }`}
                             onClick={() => handleSwitchOrg(item.isOrg ? item.id : null)}
@@ -742,7 +742,7 @@ export default function AppShell({
                         );
                       })}
                       {filteredItems.length === 0 && (
-                        <p className="py-4 text-center text-[12px] text-faint">{t('switcher.noResults')}</p>
+                        <p className="py-4 text-center text-xs text-faint">{t('switcher.noResults')}</p>
                       )}
                     </div>
                   </div>
@@ -755,14 +755,14 @@ export default function AppShell({
         <button onClick={() => setPaletteOpen(true)} className="v-nav-item w-full text-faint">
           <Icon name="search" size={16} />
           <span className="flex-1 text-start">{t('search')}</span>
-          <kbd className="font-mono text-[11px] text-faint">{shortcut}</kbd>
+          <kbd className="font-mono text-2xs text-faint">{shortcut}</kbd>
         </button>
 
         <nav className="flex flex-col gap-0.5">
           {GROUPS.map((group) => (
             <div key={group.labelKey} className="flex flex-col gap-0.5">
               {group.showLabel && (
-                <p className="px-2 pb-1 pt-4 text-[11.5px] font-medium text-faint">{t(group.labelKey)}</p>
+                <p className="px-2 pb-1 pt-4 text-2xs font-medium text-faint">{t(group.labelKey)}</p>
               )}
               {group.items.map((item) => {
                 const active = isActive(item.href);
@@ -780,7 +780,7 @@ export default function AppShell({
 
           {me?.isSuperAdmin && (
             <div className="flex flex-col gap-0.5">
-              <p className="px-2 pb-1 pt-4 text-[11.5px] font-medium text-faint">{t('groups.administration')}</p>
+              <p className="px-2 pb-1 pt-4 text-2xs font-medium text-faint">{t('groups.administration')}</p>
               <Link href="/admin" className="v-nav-item" data-active={pathname.startsWith('/admin')}>
                 <span className={pathname.startsWith('/admin') ? 'text-accent' : 'text-faint'}>
                   <Icon name="shield" size={16} />
@@ -797,7 +797,7 @@ export default function AppShell({
               href="/billing"
               className="block rounded-xl bg-surface p-3 shadow-sm ring-1 ring-line transition-colors hover:bg-elevated"
             >
-              <span className="flex items-baseline justify-between gap-2 text-[12.5px]">
+              <span className="flex items-baseline justify-between gap-2 text-xs">
                 <span className="font-medium text-ink">{t(`billing:plans.${usage.plan}`)}</span>
                 <span className="tabular text-faint">
                   {cardLimit === null
@@ -824,7 +824,7 @@ export default function AppShell({
                   )}
                 </span>
               )}
-              <span className="mt-2.5 block text-[12.5px] font-medium text-accent">{t('plan.compare')}</span>
+              <span className="mt-2.5 block text-xs font-medium text-accent">{t('plan.compare')}</span>
             </Link>
           )}
 
@@ -837,8 +837,8 @@ export default function AppShell({
             >
               {me && <Avatar user={me} size={28} verified={me.verified} />}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-medium text-ink">{me?.name || me?.email || '—'}</span>
-                {roleLabel && <span className="block truncate text-[11.5px] text-faint">{roleLabel}</span>}
+                <span className="block truncate text-sm font-medium text-ink">{me?.name || me?.email || '—'}</span>
+                {roleLabel && <span className="block truncate text-2xs text-faint">{roleLabel}</span>}
               </span>
               <span className="text-faint">
                 <Icon name="dots" size={16} />
@@ -856,7 +856,7 @@ export default function AppShell({
             <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-accent text-white">
               <VMark size={14} strokeWidth={3} />
             </span>
-            <span className="text-[15px] font-semibold tracking-tight">Vertex</span>
+            <span className="text-md font-semibold tracking-tight">Vertex</span>
           </Link>
           <div className="flex items-center">
             <button
@@ -886,7 +886,7 @@ export default function AppShell({
       <div className="min-w-0 flex-1 md:py-2 md:pe-2">
         <div className="bg-surface md:h-full md:overflow-y-auto md:rounded-[14px] md:shadow-[0_0_0_1px_hsl(var(--v-border)),0_1px_2px_rgba(23,23,26,0.04)]">
           <header className="sticky top-0 z-20 hidden h-14 items-center gap-3 border-b border-line bg-surface/90 px-7 backdrop-blur-md md:flex">
-            <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-[14.5px] font-semibold text-ink">{title}</h1>
+            <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold text-ink">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <NotificationBell />
               {action}
@@ -895,7 +895,7 @@ export default function AppShell({
 
           {mobileTitle && (title || action) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">
-              <h1 className="flex min-w-0 items-center gap-2 text-[20px] font-semibold tracking-tight text-ink">{title}</h1>
+              <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight text-ink">{title}</h1>
               {action}
             </div>
           )}
@@ -923,7 +923,7 @@ export default function AppShell({
                 <Link
                   href={href}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${active ? 'text-accent' : 'text-muted'}`}
+                  className={`flex h-full flex-col items-center justify-center gap-1 text-2xs font-medium transition-colors ${active ? 'text-accent' : 'text-muted'}`}
                 >
                   <Icon name={item.icon} size={21} />
                   <span className="max-w-full truncate px-1">{t(`mobile.short.${item.labelKey.split('.').pop()}`, { defaultValue: t(item.labelKey) })}</span>
@@ -937,7 +937,7 @@ export default function AppShell({
               onClick={() => setMoreOpen(true)}
               aria-expanded={moreOpen}
               aria-haspopup="dialog"
-              className={`flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${moreActive ? 'text-accent' : 'text-muted'}`}
+              className={`flex h-full w-full flex-col items-center justify-center gap-1 text-2xs font-medium transition-colors ${moreActive ? 'text-accent' : 'text-muted'}`}
             >
               <Icon name="menu" size={21} />
               <span>{t('mobile.more')}</span>
@@ -963,7 +963,7 @@ export default function AppShell({
                       href={item.href}
                       onClick={() => setMoreOpen(false)}
                       aria-current={active ? 'page' : undefined}
-                      className={`flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl text-center text-[12.5px] font-medium ring-1 ring-inset transition-colors ${
+                      className={`flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl text-center text-xs font-medium ring-1 ring-inset transition-colors ${
                         active ? 'bg-accent/10 text-accent ring-accent/30' : 'bg-elevated text-ink ring-line'
                       }`}
                     >
@@ -977,7 +977,7 @@ export default function AppShell({
 
             {totalWorkspacesCount > 1 && (
               <div className="border-t border-line px-4 pb-2 pt-3">
-                <p className="px-1 pb-1.5 text-[12px] font-medium text-faint">{t('switcher.workspaces')}</p>
+                <p className="px-1 pb-1.5 text-xs font-medium text-faint">{t('switcher.workspaces')}</p>
                 <ul>
                   {allWorkspaceItems.map((item) => {
                     const active = selectedOrgId === (item.isOrg ? item.id : null);
@@ -989,7 +989,7 @@ export default function AppShell({
                             setMoreOpen(false);
                             if (!active) handleSwitchOrg(item.isOrg ? item.id : null);
                           }}
-                          className="flex min-h-12 w-full items-center gap-3 rounded-lg px-2 text-start text-[14px] text-ink hover:bg-elevated"
+                          className="flex min-h-12 w-full items-center gap-3 rounded-lg px-2 text-start text-base text-ink hover:bg-elevated"
                         >
                           {item.isOrg ? (
                             <OrgMark name={item.name} branding={item.branding} size={26} />
@@ -1038,7 +1038,7 @@ export default function AppShell({
                 }}
                 onKeyDown={handlePaletteKeyDown}
                 placeholder={t('searchPlaceholder')}
-                className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-faint focus:outline-none"
+                className="h-14 min-w-0 flex-1 bg-transparent text-md text-ink placeholder:text-faint focus:outline-none"
                 aria-activedescendant={paletteItems[paletteIndex]?.key}
               />
               <button onClick={() => setPaletteOpen(false)} className="v-kbd shrink-0" aria-label={t('searchKeys.close')}>
@@ -1048,20 +1048,20 @@ export default function AppShell({
 
             <div className="max-h-[min(420px,60vh)] overflow-y-auto p-1.5">
               {searchQuery && searchLoading && !searchLoaded ? (
-                <p className="px-3 py-6 text-center text-[13px] text-muted">{t('searchLoading')}</p>
+                <p className="px-3 py-6 text-center text-sm text-muted">{t('searchLoading')}</p>
               ) : paletteItems.length === 0 ? (
-                <p className="px-3 py-6 text-center text-[13px] text-muted">{t('searchEmpty', { query: searchQuery })}</p>
+                <p className="px-3 py-6 text-center text-sm text-muted">{t('searchEmpty', { query: searchQuery })}</p>
               ) : (
                 paletteGroups.map((group) => (
                   <div key={group.name} className="pb-1">
-                    <p className="px-2.5 pb-1 pt-2 text-[11.5px] font-medium text-faint">{group.name}</p>
+                    <p className="px-2.5 pb-1 pt-2 text-2xs font-medium text-faint">{group.name}</p>
                     {group.rows.map(({ item, index }) => (
                       <button
                         key={item.key}
                         id={item.key}
                         onMouseEnter={() => setPaletteIndex(index)}
                         onClick={() => openPaletteItem(item)}
-                        className={`flex h-11 w-full items-center gap-3 rounded-lg px-2.5 text-start text-[13.5px] text-ink sm:h-10 ${
+                        className={`flex h-11 w-full items-center gap-3 rounded-lg px-2.5 text-start text-sm text-ink sm:h-10 ${
                           index === paletteIndex ? 'bg-elevated' : ''
                         }`}
                       >
@@ -1070,7 +1070,7 @@ export default function AppShell({
                         </span>
                         <span className="min-w-0 truncate">{item.label}</span>
                         {item.meta && (
-                          <span className={`min-w-0 truncate text-[12px] text-faint ${item.metaMono ? 'font-mono' : ''}`}>
+                          <span className={`min-w-0 truncate text-xs text-faint ${item.metaMono ? 'font-mono' : ''}`}>
                             {item.meta}
                           </span>
                         )}
@@ -1086,7 +1086,7 @@ export default function AppShell({
               )}
             </div>
 
-            <div className="hidden items-center gap-4 border-t border-line bg-elevated px-4 py-2.5 text-[12px] text-faint sm:flex">
+            <div className="hidden items-center gap-4 border-t border-line bg-elevated px-4 py-2.5 text-xs text-faint sm:flex">
               <span className="flex items-center gap-1.5">
                 <span className="v-kbd">↑</span>
                 <span className="v-kbd">↓</span>

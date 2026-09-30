@@ -107,7 +107,7 @@ export function GoogleButton({ mode, onDone }: { mode: 'login' | 'register'; onD
         </div>
       )}
       <div ref={box} aria-busy={busy} className={`flex min-h-[44px] justify-center ${busy ? 'pointer-events-none opacity-60' : ''}`} />
-      <div className="mt-6 flex items-center gap-3 text-[12px] text-faint" aria-hidden>
+      <div className="mt-6 flex items-center gap-3 text-xs text-faint" aria-hidden>
         <span className="h-px flex-1 bg-line" />
         {t('google.or')}
         <span className="h-px flex-1 bg-line" />

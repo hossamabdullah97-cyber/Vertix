@@ -75,12 +75,12 @@ export function TeamView({ from }: { from: Date }) {
                 <tr key={r.user.id}>
                   <td className="w-full max-w-0">
                     <span className="flex min-w-0 items-center gap-3">
-                      <span className="tabular w-4 shrink-0 text-[12px] text-faint">{fmt(i + 1)}</span>
+                      <span className="tabular w-4 shrink-0 text-xs text-faint">{fmt(i + 1)}</span>
                       <Avatar user={r.user} size={28} />
                       <span className="min-w-0">
                         <span className="block truncate font-medium text-ink">{r.user.name || r.user.email}</span>
                         {r.user.name && (
-                          <span dir="ltr" className="block truncate text-start text-[12px] text-faint rtl:text-right">
+                          <span dir="ltr" className="block truncate text-start text-xs text-faint rtl:text-right">
                             {r.user.email}
                           </span>
                         )}

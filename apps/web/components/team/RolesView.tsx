@@ -59,12 +59,12 @@ export function RolesView({ myRole, members }: { myRole?: Role; members: Member[
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {ROLES.map((r) => (
           <div key={r} className={`rounded-xl px-4 py-3.5 ring-1 ring-inset ${r === myRole ? 'bg-accent/[0.05] ring-accent/30' : 'ring-line'}`}>
-            <p className="flex items-center gap-2 text-[14px] font-medium text-ink">
+            <p className="flex items-center gap-2 text-base font-medium text-ink">
               {t(`roles.${r}.name`)}
               {r === myRole && <span className="v-badge v-badge-neutral">{t('rolesView.yours')}</span>}
-              <span className="tabular ms-auto text-[12.5px] font-normal text-faint">{t('rolesView.people', { count: count(r), value: formatNumber(count(r), locale) })}</span>
+              <span className="tabular ms-auto text-xs font-normal text-faint">{t('rolesView.people', { count: count(r), value: formatNumber(count(r), locale) })}</span>
             </p>
-            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">{t(`roles.${r}.summary`)}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">{t(`roles.${r}.summary`)}</p>
           </div>
         ))}
       </div>
@@ -86,7 +86,7 @@ export function RolesView({ myRole, members }: { myRole?: Role; members: Member[
               {GROUPS.map((g) => (
                 <Fragment key={g.key}>
                   <tr className="[&>td]:!bg-elevated hover:[&>td]:!bg-elevated">
-                    <td colSpan={ROLES.length + 1} className="!py-2 text-[12px] font-medium text-faint">
+                    <td colSpan={ROLES.length + 1} className="!py-2 text-xs font-medium text-faint">
                       {t(`rolesView.groups.${g.key}`)}
                     </td>
                   </tr>
@@ -94,7 +94,7 @@ export function RolesView({ myRole, members }: { myRole?: Role; members: Member[
                     <tr key={p.key}>
                       <td className="min-w-[220px]">
                         <span className="block text-ink">{t(`rolesView.perms.${p.key}.label`)}</span>
-                        <span className="block text-[12px] text-faint">{t(`rolesView.perms.${p.key}.desc`)}</span>
+                        <span className="block text-xs text-faint">{t(`rolesView.perms.${p.key}.desc`)}</span>
                       </td>
                       {ROLES.map((r) => {
                         const allowed = p.allow.includes(r);
@@ -118,7 +118,7 @@ export function RolesView({ myRole, members }: { myRole?: Role; members: Member[
           </table>
         </div>
       </div>
-      <p className="text-[12.5px] leading-relaxed text-faint">{t('rolesView.note')}</p>
+      <p className="text-xs leading-relaxed text-faint">{t('rolesView.note')}</p>
     </div>
   );
 }

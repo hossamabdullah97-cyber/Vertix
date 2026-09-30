@@ -90,14 +90,14 @@ export function MeetingHours({ cardId, slug, stored, lang }: { cardId: string; s
   if (!value) return <div className="h-40 animate-pulse rounded-xl bg-elevated" />;
   const set = (patch: Partial<MeetingHoursValue>) => setValue((v) => (v ? { ...v, ...patch } : v));
   const badHours = value.end <= value.start;
-  const label = 'mb-1.5 block text-[12.5px] font-medium text-ink';
+  const label = 'mb-1.5 block text-xs font-medium text-ink';
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4 rounded-xl px-3.5 py-3 ring-1 ring-inset ring-line">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-ink">{t('meetings.enabled')}</p>
-          <p className="mt-0.5 text-[12px] leading-snug text-faint">{t('meetings.enabledHint')}</p>
+          <p className="text-sm font-medium text-ink">{t('meetings.enabled')}</p>
+          <p className="mt-0.5 text-xs leading-snug text-faint">{t('meetings.enabledHint')}</p>
         </div>
         <Toggle on={value.enabled} onChange={() => set({ enabled: !value.enabled })} label={t('meetings.enabled')} />
       </div>
@@ -117,7 +117,7 @@ export function MeetingHours({ cardId, slug, stored, lang }: { cardId: string; s
                     type="button"
                     aria-pressed={on}
                     onClick={() => set({ days: on ? value.days.filter((x) => x !== d) : [...value.days, d].sort() })}
-                    className={`h-11 min-w-[52px] rounded-lg px-3 text-[13px] font-medium transition-colors sm:h-9 ${
+                    className={`h-11 min-w-[52px] rounded-lg px-3 text-sm font-medium transition-colors sm:h-9 ${
                       on ? 'bg-accent text-white' : 'text-muted ring-1 ring-inset ring-line hover:bg-elevated hover:text-ink'
                     }`}
                   >
@@ -158,7 +158,7 @@ export function MeetingHours({ cardId, slug, stored, lang }: { cardId: string; s
               </select>
             </label>
           </div>
-          {badHours && <p className="text-[12.5px] text-red-600 dark:text-red-400">{t('meetings.badHours')}</p>}
+          {badHours && <p className="text-xs text-red-600 dark:text-red-400">{t('meetings.badHours')}</p>}
 
           <label className="block max-w-sm">
             <span className={label}>{t('meetings.timezone')}</span>
@@ -173,7 +173,7 @@ export function MeetingHours({ cardId, slug, stored, lang }: { cardId: string; s
         </>
       )}
 
-      <p aria-live="polite" className="h-4 text-[12px] text-faint">
+      <p aria-live="polite" className="h-4 text-xs text-faint">
         {status === 'saving' ? t('meetings.saving') : status === 'saved' ? t('meetings.saved') : status === 'failed' ? t('meetings.failed') : ''}
       </p>
     </div>

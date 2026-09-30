@@ -41,16 +41,16 @@ function Hero() {
     <section aria-labelledby="hero-title">
       <div className={`${WRAP} grid items-center gap-8 pb-16 pt-10 sm:pt-16 lg:grid-cols-2 lg:gap-6 lg:pb-20 lg:pt-16`}>
         <div className="max-w-xl">
-          <p className="inline-flex h-7 items-center gap-2 rounded-full bg-surface px-3 text-[12.5px] text-muted ring-1 ring-line">
+          <p className="inline-flex h-7 items-center gap-2 rounded-full bg-surface px-3 text-xs text-muted ring-1 ring-line">
             <Contactless size={13} className="text-accent" />
             {t('hero.eyebrow')}
           </p>
           <h1 id="hero-title" className="mt-6 text-[38px] font-semibold leading-[1.06] tracking-[-0.035em] text-ink sm:text-[52px] lg:text-[56px] rtl:leading-[1.3] rtl:tracking-normal">
             {t('hero.title')}
           </h1>
-          <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-muted sm:text-[17px]">{t('hero.subtitle')}</p>
+          <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted sm:text-lg">{t('hero.subtitle')}</p>
           <HeroActions />
-          <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-muted">
+          <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
             {(['free', 'phones', 'languages'] as const).map((k) => (
               <li key={k} className="flex items-center gap-1.5">
                 <Icon name="check" size={14} className="text-accent" />
@@ -83,11 +83,11 @@ function How() {
           {STEPS.map((s, i) => (
             <li key={s}>
               <div className="flex items-center gap-4">
-                <span className="tabular flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[14px] font-semibold text-accent">{i + 1}</span>
+                <span className="tabular flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-base font-semibold text-accent">{i + 1}</span>
                 {i < STEPS.length - 1 && <span aria-hidden className="hidden h-px flex-1 bg-line md:block" />}
               </div>
-              <h3 className="mt-5 text-[16px] font-semibold text-ink">{t(`how.steps.${s}.title`)}</h3>
-              <p className="mt-1.5 max-w-xs text-[14px] leading-relaxed text-muted">{t(`how.steps.${s}.body`)}</p>
+              <h3 className="mt-5 text-lg font-semibold text-ink">{t(`how.steps.${s}.title`)}</h3>
+              <p className="mt-1.5 max-w-xs text-base leading-relaxed text-muted">{t(`how.steps.${s}.body`)}</p>
             </li>
           ))}
         </ol>
@@ -107,10 +107,10 @@ function Closing() {
             className="absolute inset-y-0 end-0 w-1/2 [background-image:radial-gradient(hsl(var(--v-border-strong))_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(to_left,black,transparent)] rtl:[mask-image:linear-gradient(to_right,black,transparent)]"
           />
           <div className="relative max-w-xl">
-            <h2 id="cta-title" className="text-[26px] font-semibold leading-tight tracking-[-0.025em] text-ink sm:text-[32px] rtl:leading-snug rtl:tracking-normal">
+            <h2 id="cta-title" className="text-4xl font-semibold leading-tight tracking-[-0.025em] text-ink sm:text-5xl rtl:leading-snug rtl:tracking-normal">
               {t('cta.title')}
             </h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-muted">{t('cta.body')}</p>
+            <p className="mt-2 text-md leading-relaxed text-muted">{t('cta.body')}</p>
           </div>
           <ClosingActions />
         </div>

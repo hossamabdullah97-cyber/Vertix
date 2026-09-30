@@ -52,7 +52,7 @@ export function ChipsView({ from }: { from: Date }) {
   return (
     <div className="space-y-4">
       {rows.length > 0 && (
-        <p className="text-[14px] text-muted">
+        <p className="text-base text-muted">
           {t('chips.summary', {
             taps: fmt(sum('scans')),
             chips: fmt(rows.length),
@@ -65,7 +65,7 @@ export function ChipsView({ from }: { from: Date }) {
         <PanelHeader
           title={t('chips.title')}
           action={
-            <Link href="/tags" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
+            <Link href="/tags" className="v-hit text-xs font-medium text-accent hover:underline">
               {t('chips.manage')}
             </Link>
           }
@@ -93,18 +93,18 @@ export function ChipsView({ from }: { from: Date }) {
                   <tr key={r.tagId}>
                     <td>
                       {r.uid ? (
-                        <span dir="ltr" className="block font-mono text-[12.5px] text-ink rtl:text-right">
+                        <span dir="ltr" className="block font-mono text-xs text-ink rtl:text-right">
                           {r.uid}
                         </span>
                       ) : (
-                        <span className="block text-[12.5px] text-faint">{t('deletedChip')}</span>
+                        <span className="block text-xs text-faint">{t('deletedChip')}</span>
                       )}
-                      {r.hardwareType && <span className="block text-[12px] text-faint">{t(`nfc:hardwareType.${r.hardwareType.toLowerCase()}`, r.hardwareType)}</span>}
+                      {r.hardwareType && <span className="block text-xs text-faint">{t(`nfc:hardwareType.${r.hardwareType.toLowerCase()}`, r.hardwareType)}</span>}
                     </td>
                     <td className="hidden text-muted md:table-cell">{r.holder ? r.holder.name || r.holder.email : '—'}</td>
                     <td className="hidden lg:table-cell">
                       {r.cardSlug ? (
-                        <span dir="ltr" className="font-mono text-[12px] text-muted">
+                        <span dir="ltr" className="font-mono text-xs text-muted">
                           /c/{r.cardSlug}
                         </span>
                       ) : (

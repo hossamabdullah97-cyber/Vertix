@@ -81,7 +81,7 @@ export function ActionMenu({ label, items }: { label: string; items: ActionItem[
   }, [open]);
 
   const itemCls = (danger?: boolean) =>
-    `flex min-h-11 w-full items-center gap-2.5 rounded-md px-2.5 text-start text-[13px] outline-none hover:bg-elevated focus:bg-elevated sm:min-h-8 ${
+    `flex min-h-11 w-full items-center gap-2.5 rounded-md px-2.5 text-start text-sm outline-none hover:bg-elevated focus:bg-elevated sm:min-h-8 ${
       danger ? 'text-red-600 dark:text-red-400' : 'text-ink'
     }`;
 

@@ -82,7 +82,7 @@ export function CardsView({ cards, leads }: { cards: Card[]; leads: Lead[] | nul
   return (
     <section className="v-card overflow-hidden">
       <PanelHeader title={t('cards.title')} meta={t('cards.meta')} />
-      <p className="px-4 pb-3 text-[12.5px] text-faint">{t('cards.note')}</p>
+      <p className="px-4 pb-3 text-xs text-faint">{t('cards.note')}</p>
       <div className="overflow-x-auto">
         <table className="v-table">
           <thead>
@@ -110,7 +110,7 @@ export function CardsView({ cards, leads }: { cards: Card[]; leads: Lead[] | nul
                       <CardThumb card={c} />
                       <span className="min-w-0">
                         <span className="block truncate font-medium text-ink">{name || `/c/${c.slug}`}</span>
-                        <span dir="ltr" className="block truncate text-start font-mono text-[12px] text-faint rtl:text-right">
+                        <span dir="ltr" className="block truncate text-start font-mono text-xs text-faint rtl:text-right">
                           /c/{c.slug}
                         </span>
                       </span>

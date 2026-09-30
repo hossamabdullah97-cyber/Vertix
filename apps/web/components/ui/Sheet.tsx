@@ -59,8 +59,8 @@ export function Sheet({
           >
             <header className="flex items-start gap-3 border-b border-line px-5 py-4">
               <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-semibold text-ink">{title}</div>
-                {subtitle && <div className="mt-0.5 text-[12.5px] text-faint">{subtitle}</div>}
+                <div className="text-md font-semibold text-ink">{title}</div>
+                {subtitle && <div className="mt-0.5 text-xs text-faint">{subtitle}</div>}
               </div>
               <button
                 onClick={onClose}

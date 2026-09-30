@@ -42,7 +42,7 @@ export { Toggle } from '@/components/ui/Toggle';
 export function Intro({ text, action }: { text: string; action?: React.ReactNode }) {
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <p className="max-w-[620px] text-[13.5px] leading-relaxed text-muted">{text}</p>
+      <p className="max-w-[620px] text-sm leading-relaxed text-muted">{text}</p>
       {action}
     </div>
   );
@@ -54,8 +54,8 @@ export function Empty({ icon, title, body, action }: { icon: string; title: stri
       <span className="flex h-10 w-10 items-center justify-center rounded-full bg-elevated text-muted">
         <Icon name={icon} size={18} />
       </span>
-      <p className="mt-3 text-[14px] font-medium text-ink">{title}</p>
-      <p className="mt-1 max-w-[380px] text-[13px] leading-relaxed text-muted">{body}</p>
+      <p className="mt-3 text-base font-medium text-ink">{title}</p>
+      <p className="mt-1 max-w-[380px] text-sm leading-relaxed text-muted">{body}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -69,7 +69,7 @@ export function Notice({ tone = 'neutral', icon, children, onDismiss }: { tone?:
     danger: 'bg-red-500/[0.06] text-red-700 ring-red-500/20 dark:text-red-300',
   };
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={`mb-4 flex items-start gap-3 rounded-lg px-4 py-3 text-[13px] leading-relaxed ring-1 ring-inset ${tones[tone]}`}>
+    <div role={tone === 'danger' ? 'alert' : 'status'} className={`mb-4 flex items-start gap-3 rounded-lg px-4 py-3 text-sm leading-relaxed ring-1 ring-inset ${tones[tone]}`}>
       <Icon name={icon} size={15} className="mt-[3px] shrink-0" />
       <span className="min-w-0 flex-1 break-words">{children}</span>
       {onDismiss && (
@@ -85,11 +85,11 @@ export function Notice({ tone = 'neutral', icon, children, onDismiss }: { tone?:
 export function Field({ label, hint, children, htmlFor }: { label: string; hint?: React.ReactNode; children: React.ReactNode; htmlFor?: string }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-[12.5px] font-medium text-ink">
+      <label htmlFor={htmlFor} className="mb-1.5 block text-xs font-medium text-ink">
         {label}
       </label>
       {children}
-      {hint && <p className="mt-1.5 text-[12px] leading-relaxed text-faint">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs leading-relaxed text-faint">{hint}</p>}
     </div>
   );
 }
@@ -119,7 +119,7 @@ export function CopyButton({ value, className = '' }: { value: string; className
 export function CopyField({ value }: { value: string }) {
   return (
     <div className="flex items-stretch gap-2">
-      <code dir="ltr" className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-elevated px-3 py-2.5 font-mono text-[12.5px] text-ink ring-1 ring-inset ring-line">
+      <code dir="ltr" className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-elevated px-3 py-2.5 font-mono text-xs text-ink ring-1 ring-inset ring-line">
         {value}
       </code>
       <CopyButton value={value} />
@@ -155,11 +155,11 @@ export function SecretDialog({ open, title, value, children, onDone }: { open: b
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <Icon name="lock" size={15} />
               </span>
-              <h2 id="secret-title" className="text-[15px] font-semibold text-ink">
+              <h2 id="secret-title" className="text-md font-semibold text-ink">
                 {title}
               </h2>
             </div>
-            <p className="mt-2.5 text-[13px] leading-relaxed text-muted">{t('secretDialog.body')}</p>
+            <p className="mt-2.5 text-sm leading-relaxed text-muted">{t('secretDialog.body')}</p>
             <div className="mt-4">
               <CopyField value={value} />
             </div>
@@ -180,8 +180,8 @@ export function SecretDialog({ open, title, value, children, onDone }: { open: b
 export function SheetSection({ title, children, hint }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-line pt-5 first:border-t-0 first:pt-0">
-      <h3 className="text-[13px] font-semibold text-ink">{title}</h3>
-      {hint && <p className="mt-1 text-[12.5px] leading-relaxed text-faint">{hint}</p>}
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      {hint && <p className="mt-1 text-xs leading-relaxed text-faint">{hint}</p>}
       <div className="mt-3">{children}</div>
     </section>
   );

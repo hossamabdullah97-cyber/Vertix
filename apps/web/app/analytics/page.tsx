@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
       }
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <p className="min-h-[22px] text-[14px] text-muted">
+        <p className="min-h-[22px] text-base text-muted">
           {data ? (
             <>
               <span className="font-medium text-ink">{t(`summary.period${period}`)}</span>
@@ -201,7 +201,7 @@ export default function AnalyticsPage() {
               role="radio"
               aria-checked={period === p}
               onClick={() => setPeriod(p)}
-              className={`h-11 rounded-md px-3 text-[12.5px] font-medium transition-colors sm:h-7 ${
+              className={`h-11 rounded-md px-3 text-xs font-medium transition-colors sm:h-7 ${
                 period === p ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
               role="tab"
               aria-selected={active}
               onClick={() => chooseView(v.id)}
-              className={`relative flex min-h-11 shrink-0 items-center text-[13.5px] font-medium transition-colors sm:min-h-10 ${
+              className={`relative flex min-h-11 shrink-0 items-center text-sm font-medium transition-colors sm:min-h-10 ${
                 active ? 'text-ink' : 'text-muted hover:text-ink'
               }`}
             >
@@ -232,7 +232,7 @@ export default function AnalyticsPage() {
       </nav>
 
       {error && (
-        <div role="alert" className="mt-4 rounded-lg bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+        <div role="alert" className="mt-4 rounded-lg bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
           {error}
         </div>
       )}
@@ -332,16 +332,16 @@ function OverviewView({
                 }`}
               >
                 {active && <span className="absolute inset-x-0 top-0 h-0.5 bg-accent" />}
-                <span className="block truncate text-[12.5px] font-medium text-muted">{t(`metrics.${m}`)}</span>
+                <span className="block truncate text-xs font-medium text-muted">{t(`metrics.${m}`)}</span>
                 <span className="mt-2 flex items-baseline gap-2">
-                  <span className="tabular text-[26px] font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(value)}</span>
+                  <span className="tabular text-4xl font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(value)}</span>
                   {pct !== null && (
                     <span dir="ltr" className={`v-badge ${pct >= 0 ? 'v-badge-success' : 'v-badge-danger'}`}>
                       {formatChange(pct)}
                     </span>
                   )}
                 </span>
-                <span className="mt-1.5 block truncate text-[12px] text-faint">{t('metrics.before', { value: fmt(before) })}</span>
+                <span className="mt-1.5 block truncate text-xs text-faint">{t('metrics.before', { value: fmt(before) })}</span>
               </button>
             );
           })}
@@ -358,7 +358,7 @@ function OverviewView({
               markers={markersFor(occasions, windows.keys)}
             />
           ) : (
-            <div className="flex h-[232px] items-center justify-center px-6 text-center text-[13px] leading-relaxed text-muted">
+            <div className="flex h-[232px] items-center justify-center px-6 text-center text-sm leading-relaxed text-muted">
               <p className="max-w-sm">{t('metrics.noActivity')}</p>
             </div>
           )}
@@ -397,7 +397,7 @@ function OverviewView({
                   aside: `${fmt(Math.round(shareOf(r.events, refTotal)))}%`,
                 }))}
               />
-              <p className="border-t border-line px-4 py-2.5 text-[12px] text-faint">{t('sources.note')}</p>
+              <p className="border-t border-line px-4 py-2.5 text-xs text-faint">{t('sources.note')}</p>
             </>
           )}
         </section>
@@ -406,7 +406,7 @@ function OverviewView({
           <PanelHeader
             title={t('topCards.title')}
             action={
-              <button onClick={() => onView('cards')} className="v-hit text-[12.5px] font-medium text-accent hover:underline">
+              <button onClick={() => onView('cards')} className="v-hit text-xs font-medium text-accent hover:underline">
                 {t('topCards.all')}
               </button>
             }

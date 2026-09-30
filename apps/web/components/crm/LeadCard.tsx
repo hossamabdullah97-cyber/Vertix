@@ -70,14 +70,14 @@ export function LeadCard({
       style={{ opacity: dragging ? 0.45 : 1 }}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 truncate text-[13.5px] font-medium text-ink">{lead.name || t('table.unknownLead')}</p>
+        <p className="min-w-0 truncate text-sm font-medium text-ink">{lead.name || t('table.unknownLead')}</p>
         <span className="mt-1 shrink-0">
           <Heat temp={lead.temperature} label={t(`temperature.${lead.temperature.toLowerCase()}`)} />
         </span>
       </div>
-      {lead.company && <p className="mt-0.5 truncate text-[12.5px] text-faint">{lead.company}</p>}
+      {lead.company && <p className="mt-0.5 truncate text-xs text-faint">{lead.company}</p>}
 
-      <div className="mt-3 flex items-center gap-2 text-[12px] text-faint">
+      <div className="mt-3 flex items-center gap-2 text-xs text-faint">
         <span className="inline-flex min-w-0 items-center gap-1 truncate">
           <Icon name={src.icon} size={12} />
           {t(`sources.${lead.source}`, src.label)}
