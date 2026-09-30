@@ -158,7 +158,7 @@ export function AppsView({
               role="tab"
               aria-selected={cat === c}
               onClick={() => setCat(c)}
-              className={`h-9 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${
+              className={`h-11 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${
                 cat === c ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'
               }`}
             >

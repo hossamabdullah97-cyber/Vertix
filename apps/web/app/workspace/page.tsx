@@ -132,7 +132,7 @@ export default function WorkspaceSettingsPage() {
               role="tab"
               aria-selected={active}
               onClick={() => choose(s)}
-              className={`relative flex min-h-11 shrink-0 items-center text-sm font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
+              className={`relative flex min-h-11 min-w-11 shrink-0 items-center justify-center text-sm font-medium transition-colors sm:min-h-10 ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
             >
               {t(`sections.${s}`)}
               {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}

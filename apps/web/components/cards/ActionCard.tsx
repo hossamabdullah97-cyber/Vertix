@@ -161,7 +161,7 @@ export default function ActionCard({
           title={t('links.toggleVisibility')}
           // The track is small by design; `before` stretches the hit area to
           // 44px on a phone without changing how the switch looks.
-          className={`relative inline-flex h-[18px] w-[30px] shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent before:absolute before:-inset-3 before:content-[''] sm:before:hidden ${
+          className={`relative inline-flex h-[18px] w-[30px] shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent before:absolute before:-inset-x-3 before:-inset-y-[13px] before:content-[''] sm:before:hidden ${
             action.isActive ? 'bg-accent' : 'bg-line-strong'
           }`}
           style={action.isActive ? undefined : { background: 'hsl(var(--v-border-strong))' }}

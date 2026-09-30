@@ -87,7 +87,7 @@ export function Pills<T extends string>({ value, options, onChange, label }: { v
           role="radio"
           aria-checked={value === o.key}
           onClick={() => onChange(o.key)}
-          className={`h-9 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${value === o.key ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
+          className={`h-11 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${value === o.key ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
         >
           {o.label}
         </button>

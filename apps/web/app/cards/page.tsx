@@ -313,7 +313,7 @@ export default function CardsPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setStatus(s)}
-                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
+                  className={`relative flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
                     active ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >

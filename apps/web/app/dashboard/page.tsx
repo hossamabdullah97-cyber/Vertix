@@ -418,7 +418,7 @@ export default function HomePage() {
           ))}
         </ul>
       )}
-      <Link href="/leads" className="mt-auto border-t border-line px-4 py-3 text-xs font-medium text-accent hover:underline">
+      <Link href="/leads" className="mt-auto flex min-h-11 items-center border-t border-line px-4 py-3 text-xs font-medium text-accent hover:underline">
         {t('recent.all')}
       </Link>
     </section>
@@ -867,7 +867,7 @@ export default function HomePage() {
                   return (
                     <tr key={row.cardId} className="border-t border-line">
                       <td className="w-full max-w-0 px-4 py-2.5">
-                        <Link href={card ? `/cards/${card.id}` : '/cards'} className="flex min-w-0 items-center gap-3">
+                        <Link href={card ? `/cards/${card.id}` : '/cards'} className="flex min-h-11 min-w-0 items-center gap-3 sm:min-h-0">
                           {card ? <CardThumb card={card} /> : <span className="h-[25px] w-10 rounded bg-elevated" />}
                           <span className="min-w-0">
                             <span className={`block truncate font-medium ${row.slug ? 'text-ink' : 'text-faint'}`}>{card ? cardName(card) : row.slug ?? t('deletedCard')}</span>
@@ -949,8 +949,8 @@ export default function HomePage() {
             ) : (
               <ul className="mt-1">
                 {largestTeams.map((tm) => (
-                  <li key={tm.id} className="flex items-center justify-between gap-3 py-1.5 text-sm">
-                    <Link href={`/team?team=${tm.id}`} className="truncate text-ink hover:underline">
+                  <li key={tm.id} className="flex items-center justify-between gap-3 text-sm">
+                    <Link href={`/team?team=${tm.id}`} className="flex min-h-11 min-w-0 flex-1 items-center truncate text-ink hover:underline sm:min-h-8">
                       {tm.name}
                     </Link>
                     <span className="shrink-0 text-faint">{t('team.seat', { count: tm.seats })}</span>
@@ -959,7 +959,7 @@ export default function HomePage() {
               </ul>
             )}
           </div>
-          <Link href="/team" className="mt-auto border-t border-line px-4 py-3 text-xs font-medium text-accent hover:underline">
+          <Link href="/team" className="mt-auto flex min-h-11 items-center border-t border-line px-4 py-3 text-xs font-medium text-accent hover:underline">
             {t('team.manage')}
           </Link>
         </section>
@@ -1069,7 +1069,7 @@ function Onboarding({
             <span key={s.id} className={`h-1 w-6 rounded-full ${s.completed ? 'bg-accent' : 'bg-line'}`} />
           ))}
         </span>
-        <button onClick={onToggle} className="ms-auto min-h-11 text-xs text-muted hover:text-ink sm:min-h-0">
+        <button onClick={onToggle} className="ms-auto min-h-11 min-w-11 px-1 text-xs text-muted hover:text-ink sm:min-h-0 sm:min-w-0">
           {t('onboarding.hide')}
         </button>
       </div>

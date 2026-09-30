@@ -827,7 +827,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   const title = (
     <>
-      <Link href="/cards" className="shrink-0 font-normal text-faint transition-colors hover:text-ink">
+      <Link href="/cards" className="v-hit shrink-0 font-normal text-faint transition-colors hover:text-ink">
         {t('commandBar.backToCards')}
       </Link>
       <span className="shrink-0 font-normal text-faint" aria-hidden>
@@ -955,7 +955,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   role="tab"
                   aria-selected={active}
                   onClick={() => switchTab(tab.id)}
-                  className={`relative flex min-h-11 shrink-0 items-center gap-2 text-sm font-medium transition-colors ${
+                  className={`relative flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 text-sm font-medium transition-colors ${
                     active ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
