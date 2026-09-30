@@ -339,3 +339,13 @@ describe('a page opened again starts from its last answer', () => {
     expect(peek('/tags')).toBeUndefined();
   });
 });
+
+describe('a studio being open does not forget the cards', () => {
+  it('keeps reads across the presence beat, which changes nothing', async () => {
+    const { authFetch, peek } = await import('./client');
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => ({ ok: true, text: async () => '[]' }) as Response));
+    await authFetch('/cards');
+    await authFetch('/cards/c1/presence', { method: 'PUT' });
+    expect(peek('/cards')).toEqual([]);
+  });
+});

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import { motion, AnimatePresence } from 'framer-motion';
-import { authFetch, getToken, type Card as CardType, type Section, type CardAction, type NfcTag } from '@/lib/client';
+import { authFetch, getToken, peek, remember, type Card as CardType, type Section, type CardAction, type NfcTag } from '@/lib/client';
 
 import type { Template } from '@/lib/templates';
 import { TemplateMarketplace } from '@/components/TemplateMarketplace';
@@ -319,14 +319,28 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     );
   }, []);
 
+  // A card opened again shows what it showed last time at once (see `peek`);
+  // the first fresh answer then replaces it only if it differs and nothing
+  // has been edited meanwhile, so it never overwrites what someone typed.
+  const shownRef = useRef<string | null>(null);
+  const touchedRef = useRef(false);
+  // The identity + theme body waiting for its debounced save, if any.
+  const pendingRef = useRef<string | null>(null);
+
   const load = useCallback(async () => {
     try {
       const [c, tg] = await Promise.all([
         authFetch<CardType>(`/cards/${id}`),
         authFetch<NfcTag[]>('/nfc/tags'),
       ]);
-      applyCard(c);
       setTags(tg);
+      const shown = shownRef.current;
+      shownRef.current = null;
+      if (shown !== null && (touchedRef.current || shown === JSON.stringify(c))) {
+        loadedRef.current = true;
+        return;
+      }
+      applyCard(c);
       pushHistory(JSON.stringify({ c, sections: c.sections, actions: c.actions }));
 
       // Decide the guided path only on the very first load, so finishing it (or
@@ -343,23 +357,62 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     }
   }, [id, applyCard, pushHistory]);
 
+  // Leaving, the studio records the card as it now stands (its own saves
+  // cleared the earlier copy), so opening it again is instant too.
+  const latestRef = useRef<CardType | null>(null);
+  latestRef.current = card ? { ...card, sections, actions } : null;
+  useEffect(() => {
+    // An edit still waiting for its save goes out now rather than being
+    // dropped with the page: on leaving the studio, or closing the tab.
+    const flush = () => {
+      const pending = pendingRef.current;
+      if (!pending || pending === lastSavedRef.current) return false;
+      pendingRef.current = null;
+      const latest = latestRef.current;
+      void authFetch<CardType>(`/cards/${id}`, { method: 'PATCH', body: pending, keepalive: true })
+        .then((updated) => latest && remember(`/cards/${id}`, { ...latest, ...updated, sections: latest.sections, actions: latest.actions }))
+        .catch(() => {});
+      return true;
+    };
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      if (!flush() && latestRef.current) remember(`/cards/${id}`, latestRef.current);
+    };
+  }, [id]);
+
   // Initial load — runs once per card id (stable deps, so no loop).
   useEffect(() => {
     if (!getToken()) { router.replace('/login'); return; }
+    const seen = peek<CardType>(`/cards/${id}`);
+    const seenTags = peek<NfcTag[]>('/nfc/tags');
+    if (seen && !loadedRef.current) {
+      applyCard(seen);
+      if (seenTags) setTags(seenTags);
+      pushHistory(JSON.stringify({ c: seen, sections: seen.sections, actions: seen.actions }));
+      const vc = (seen.vcardData as Record<string, string>) ?? {};
+      setGuided(!vc.fullName && (seen.actions?.length ?? 0) === 0 && (seen.sections?.length ?? 0) === 0);
+      shownRef.current = JSON.stringify(seen);
+      loadedRef.current = true;
+    }
     load();
-  }, [id, router, load]);
+  }, [id, router, load, applyCard, pushHistory]);
 
   // --- Debounced auto-save: the single writer for identity + theme ----------
   useEffect(() => {
     if (!loadedRef.current) return; // don't save before the first load lands
+    if (!latestRef.current) return; // nor before its values are on screen (a re-run of this effect can see the blank first render)
     if (suppressSaveRef.current) { suppressSaveRef.current = false; return; } // ignore server echoes
     const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand }));
     if (body === lastSavedRef.current) return; // nothing actually changed
+    touchedRef.current = true;
+    pendingRef.current = body;
     setAutoSaveStatus('Saving...');
     const handle = setTimeout(async () => {
       try {
         const updated = await authFetch<CardType>(`/cards/${id}`, { method: 'PATCH', body });
         lastSavedRef.current = body;
+        if (pendingRef.current === body) pendingRef.current = null;
         setCard((prev) => (prev ? { ...prev, ...updated } : updated));
         setAutoSaveStatus('Saved');
       } catch (e) {

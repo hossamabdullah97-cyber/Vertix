@@ -200,12 +200,19 @@ const inflight = new Map<string, Promise<unknown>>();
  * which clears it; answers are kept per workspace besides.
  */
 const lastSeen = new Map<string, unknown>();
+// Writes that change nothing a page reads back: a card studio's "I am here" beat.
+const KEEPS_READS = [/^\/cards\/[^/]+\/presence$/];
 const seenKey = (path: string) => `${getActiveOrgId() ?? ''} ${path}`;
 const rootOf = (path: string) => path.split(/[/?]/)[1] ?? '';
 
 /** The last answer to GET `path` in this workspace, if the app has one; nothing is fetched. */
 export function peek<T>(path: string): T | undefined {
   return lastSeen.get(seenKey(path)) as T | undefined;
+}
+
+/** Records what a page knows `path` now reads, after changes it made itself; the next read replaces it. */
+export function remember(path: string, data: unknown) {
+  lastSeen.set(seenKey(path), data);
 }
 
 function forget(path: string) {
@@ -217,6 +224,7 @@ function forget(path: string) {
 export function authFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase();
   if (method !== 'GET') {
+    if (KEEPS_READS.some((re) => re.test(path))) return request<T>(path, init);
     // Forgotten on the way out too, so a read made while it is in flight is not kept.
     forget(path);
     return request<T>(path, init).finally(() => forget(path));
