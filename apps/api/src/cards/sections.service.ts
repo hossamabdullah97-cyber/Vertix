@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type TenantContext } from '@vertex/db';
 import type { CreateSectionInput, UpdateSectionInput } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { CardsService } from './cards.service';
+import { recentlyDeleted } from './restore-window';
 
 /**
  * CardSection has no orgId — isolation happens through the verified parent (Card).
@@ -66,6 +67,14 @@ export class SectionsService {
     await this.cards.ensureEditable(tenant, cardId);
     await this.db.cardSection.softDelete({ id: sectionId, cardId });
     return { id: sectionId, deleted: true };
+  }
+
+  /** Brings back one deleted moments ago (the Undo after a delete). */
+  async restore(tenant: TenantContext, cardId: string, sectionId: string) {
+    await this.cards.ensureEditable(tenant, cardId);
+    const row = await this.db.cardSection.findFirst({ where: { id: sectionId, cardId, ...recentlyDeleted() } });
+    if (!row) throw new NotFoundException('Section not found');
+    return this.db.cardSection.update({ where: { id: sectionId, cardId }, data: { deletedAt: null } });
   }
 
   async reorder(tenant: TenantContext, cardId: string, ids: string[]) {

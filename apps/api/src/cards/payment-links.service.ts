@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type { TenantContext } from '@vertex/db';
 import type { CreatePaymentLinkInput, UpdatePaymentLinkInput } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { CardsService } from './cards.service';
+import { recentlyDeleted } from './restore-window';
 
 /**
  * External payment links (InstaPay, e-wallets). Link-sharing only — no payment
@@ -78,6 +79,14 @@ export class PaymentLinksService {
     await this.cards.ensureEditable(tenant, cardId);
     await this.db.paymentLink.softDelete({ id: linkId, cardId });
     return { id: linkId, deleted: true };
+  }
+
+  /** Brings back one deleted moments ago (the Undo after a delete). */
+  async restore(tenant: TenantContext, cardId: string, linkId: string) {
+    await this.cards.ensureEditable(tenant, cardId);
+    const row = await this.db.paymentLink.findFirst({ where: { id: linkId, cardId, ...recentlyDeleted() } });
+    if (!row) throw new NotFoundException('Payment link not found');
+    return this.db.paymentLink.update({ where: { id: linkId, cardId }, data: { deletedAt: null } });
   }
 
   async reorder(tenant: TenantContext, cardId: string, ids: string[]) {

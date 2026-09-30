@@ -60,5 +60,9 @@
       "BUSINESS": "Business",
       "ENTERPRISE": "Enterprise"
     }
+  },
+  "undo": {
+    "action": "Undo",
+    "failed": "Could not undo that. Try again."
   }
 }

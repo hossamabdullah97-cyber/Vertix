@@ -31,5 +31,6 @@
     "urlRequired": "Payment link is required.",
     "invalidUrl": "Enter a valid link starting with https://",
     "saveFailed": "Could not save the payment link. Please try again."
-  }
+  },
+  "removed": "Payment link removed"
 }

@@ -147,7 +147,8 @@
     "openInApp": {
       "title": "Open in the visitor's app",
       "hint": "On a phone, WhatsApp and LinkedIn links open their apps instead of a browser tab."
-    }
+    },
+    "removed": "Link removed"
   },
   "platformPicker": {
     "searchPlaceholder": "Search platforms",
@@ -243,7 +244,8 @@
       "titlePlaceholder": "Clients",
       "help": "Logos show on white tiles, so transparent or white-background images look best.",
       "add": "Add a client logo"
-    }
+    },
+    "removed": "Section removed"
   },
   "design": {
     "title": "Design",
@@ -486,7 +488,7 @@
     "added": "Profile added as a copy of your default.",
     "deleted": "Profile deleted.",
     "copied": "Link copied.",
-    "deleteConfirm": "Delete this profile? Its link and content will stop working.",
+    "deleteConfirm": "Its private link and content will stop working. This cannot be undone.",
     "conflictsTitle": "Some profiles overlap",
     "conflictMultiple": "{{count}} profiles are switched on at once, so only “{{name}}” shows.",
     "conflictOverlap": "“{{a}}” and “{{b}}” have overlapping schedules, so “{{a}}” shows.",
@@ -556,7 +558,11 @@
         "BOOKING": "https://calendly.com/…",
         "VIDEO": "YouTube or Vimeo link"
       }
-    }
+    },
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteAction": "Delete profile",
+    "deleting": "Deleting…",
+    "cancel": "Cancel"
   },
   "presence": {
     "one": "{{name}} is here too",

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type TenantContext } from '@vertex/db';
 import type { CreateActionInput, UpdateActionInput } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { CardsService } from './cards.service';
+import { recentlyDeleted } from './restore-window';
 
 /**
  * CardAction has no orgId — isolation happens through the verified parent (Card).
@@ -62,6 +63,14 @@ export class ActionsService {
     await this.cards.ensureEditable(tenant, cardId);
     await this.db.cardAction.softDelete({ id: actionId, cardId });
     return { id: actionId, deleted: true };
+  }
+
+  /** Brings back one deleted moments ago (the Undo after a delete). */
+  async restore(tenant: TenantContext, cardId: string, actionId: string) {
+    await this.cards.ensureEditable(tenant, cardId);
+    const row = await this.db.cardAction.findFirst({ where: { id: actionId, cardId, ...recentlyDeleted() } });
+    if (!row) throw new NotFoundException('Action not found');
+    return this.db.cardAction.update({ where: { id: actionId, cardId }, data: { deletedAt: null } });
   }
 
   async reorder(tenant: TenantContext, cardId: string, ids: string[]) {

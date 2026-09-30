@@ -18,6 +18,7 @@ import { VMark } from '@/components/brand/VMark';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 import { LOCALE_LABELS } from '@/lib/i18n/config';
+import { UndoToast } from '@/components/ui/UndoToast';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
@@ -1144,6 +1145,7 @@ export default function AppShell({
           </div>
         </div>
       )}
+      <UndoToast />
     </div>
   );
 }

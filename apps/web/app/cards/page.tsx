@@ -12,7 +12,7 @@ import { readableOn, shade } from '@/lib/color';
 import { Icon, actionIcon } from '@/components/Icon';
 import AppShell from '@/components/AppShell';
 import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { offerUndo } from '@/lib/undo';
 
 /** The list endpoint returns a little more than the shared Card type declares. */
 type ListCard = Card & { updatedAt?: string; _count?: { variants: number } };
@@ -73,7 +73,6 @@ export default function CardsPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [creating, setCreating] = useState(false);
-  const [deleting, setDeleting] = useState<ListCard | null>(null);
 
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<Status>('all');
@@ -226,14 +225,23 @@ export default function CardsPage() {
     }
   }
 
+  // Gone at once, with Undo in its place of a "Are you sure?": the API keeps
+  // a deleted card long enough to bring it back where it was.
   async function remove(card: ListCard) {
-    await authFetch(`/cards/${card.id}`, { method: 'DELETE' });
+    const at = cards?.findIndex((c) => c.id === card.id) ?? -1;
     setCards((prev) => prev?.filter((c) => c.id !== card.id) ?? prev);
-    setDeleting(null);
-    flash(t('toasts.deleted'));
+    try {
+      await authFetch(`/cards/${card.id}`, { method: 'DELETE' });
+    } catch (e) {
+      setCards((prev) => (prev && at >= 0 ? [...prev.slice(0, at), card, ...prev.slice(at)] : prev));
+      setError((e as Error).message);
+      return;
+    }
+    offerUndo(t('toasts.deletedNamed', { name: nameOf(card) || card.slug }), async () => {
+      await authFetch(`/cards/${card.id}/restore`, { method: 'POST' });
+      setCards((prev) => (prev && !prev.some((c) => c.id === card.id) ? [...prev.slice(0, Math.max(0, at)), card, ...prev.slice(Math.max(0, at))] : prev));
+    });
   }
-
-  const closeDelete = useCallback(() => setDeleting(null), []);
 
   const filtersActive = query.trim() !== '' || status !== 'all';
   const clearFilters = () => {
@@ -249,7 +257,7 @@ export default function CardsPage() {
     owner: showOwner ? owners[card.ownerId] ?? null : undefined,
     onCopy: () => copyLink(card),
     onPublish: (v) => setPublished(card, v),
-    onDelete: () => setDeleting(card),
+    onDelete: () => void remove(card),
   });
 
   return (
@@ -391,18 +399,6 @@ export default function CardsPage() {
           </div>
         </>
       )}
-
-      <ConfirmDialog
-        open={deleting !== null}
-        title={deleting ? t('delete.title', { name: nameOf(deleting) || deleting.slug }) : ''}
-        body={t('delete.body')}
-        confirmLabel={t('actions.delete')}
-        busyLabel={t('actions.deleting')}
-        cancelLabel={t('actions.cancel')}
-        danger
-        onConfirm={() => (deleting ? remove(deleting) : undefined)}
-        onCancel={closeDelete}
-      />
 
       <AnimatePresence>
         {toast && (

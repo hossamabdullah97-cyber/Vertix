@@ -74,4 +74,13 @@ export class PaymentLinksController {
   ) {
     return this.paymentLinks.remove(tenant, cardId, linkId);
   }
+
+  @Post(':linkId/restore')
+  restore(
+    @Tenant() tenant: TenantContext,
+    @Param('cardId') cardId: string,
+    @Param('linkId') linkId: string,
+  ) {
+    return this.paymentLinks.restore(tenant, cardId, linkId);
+  }
 }

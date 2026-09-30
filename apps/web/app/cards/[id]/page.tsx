@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import { motion, AnimatePresence } from 'framer-motion';
+import { offerUndo } from '@/lib/undo';
 import { authFetch, getToken, peek, remember, type Card as CardType, type Section, type CardAction, type NfcTag } from '@/lib/client';
 
 import type { Template } from '@/lib/templates';
@@ -258,8 +259,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteSlugConfirm, setDeleteSlugConfirm] = useState('');
 
-  // Undo / Redo history. The index also lives in a ref so callbacks never need
-  // `historyIndex` in their dependency array (that was causing a render loop).
+  // Undo / Redo of what was typed and chosen (identity and theme), one step
+  // per saved change. Each step is the saved body, and stepping back saves
+  // it again, so an undo reaches the live card. Removed links and sections
+  // come back through the Undo toast instead (lib/undo.ts). The index also
+  // lives in a ref so callbacks never need `historyIndex` in their deps.
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const historyIndexRef = useRef(-1);
@@ -272,9 +276,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const lastSavedRef = useRef(''); // serialized identity/theme last persisted to the DB
   const suppressSaveRef = useRef(false); // set when we apply server data, to skip the echo save
 
+  const restoringRef = useRef<string | null>(null); // the step being put back, so its save is not a new step
   const pushHistory = useCallback((snapshot: string) => {
     setHistory((prev) => {
       const base = prev.slice(0, historyIndexRef.current + 1);
+      if (base[base.length - 1] === snapshot) return prev;
       base.push(snapshot);
       historyIndexRef.current = base.length - 1;
       setHistoryIndex(historyIndexRef.current);
@@ -341,7 +347,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
         return;
       }
       applyCard(c);
-      pushHistory(JSON.stringify({ c, sections: c.sections, actions: c.actions }));
+      pushHistory(lastSavedRef.current);
 
       // Decide the guided path only on the very first load, so finishing it (or
       // skipping) is never undone by a later refetch.
@@ -389,7 +395,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     if (seen && !loadedRef.current) {
       applyCard(seen);
       if (seenTags) setTags(seenTags);
-      pushHistory(JSON.stringify({ c: seen, sections: seen.sections, actions: seen.actions }));
+      pushHistory(lastSavedRef.current);
       const vc = (seen.vcardData as Record<string, string>) ?? {};
       setGuided(!vc.fullName && (seen.actions?.length ?? 0) === 0 && (seen.sections?.length ?? 0) === 0);
       shownRef.current = JSON.stringify(seen);
@@ -413,6 +419,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
         const updated = await authFetch<CardType>(`/cards/${id}`, { method: 'PATCH', body });
         lastSavedRef.current = body;
         if (pendingRef.current === body) pendingRef.current = null;
+        if (restoringRef.current === body) restoringRef.current = null;
+        else pushHistory(body);
         setCard((prev) => (prev ? { ...prev, ...updated } : updated));
         setAutoSaveStatus('Saved');
       } catch (e) {
@@ -459,10 +467,25 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   // Undo / Redo Actions — both restore a full snapshot through applyCard, the
   // single entry point for turning a card object into editor state.
   const restoreSnapshot = (index: number) => {
+    const step = history[index];
+    if (!step) return;
     setHistoryIndex(index);
     historyIndexRef.current = index;
-    const { c, sections: s, actions: a } = JSON.parse(history[index]);
-    applyCard({ ...c, sections: s ?? c.sections, actions: a ?? c.actions });
+    const { slug: sl, templateId: tpl, theme: th, vcardData } = JSON.parse(step) as ReturnType<typeof identityPayload>;
+    // Set as edits, not as server data: the autosave then writes the step back.
+    restoringRef.current = step;
+    suppressSaveRef.current = false;
+    setSlug(sl);
+    setTemplateId(tpl);
+    setVcard(vcardData);
+    setAccent(th.accent);
+    setMode(th.mode as typeof mode);
+    setCover(th.cover as CoverStyle);
+    setLang(th.lang === 'ar' ? 'ar' : 'en');
+    setLinkStyle(th.links);
+    setOpenInApp(th.openInApp);
+    setLayout(th.layout);
+    setShowBrand(th.brand);
   };
   const handleUndo = () => {
     if (historyIndex <= 0) return;
@@ -482,6 +505,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     if (body === lastSavedRef.current) return;
     await authFetch(`/cards/${id}`, { method: 'PATCH', body });
     lastSavedRef.current = body;
+    pushHistory(body);
   };
 
   // Structural mutation helper (sections / actions / publish). Flushes identity
@@ -494,7 +518,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       await fn();
       const c = await authFetch<CardType>(`/cards/${id}`);
       applyCard(c);
-      pushHistory(JSON.stringify({ c, sections: c.sections, actions: c.actions }));
+      pushHistory(lastSavedRef.current);
       setAutoSaveStatus('Saved');
       return c;
     } catch (e) {
@@ -580,6 +604,13 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       setAutoSaveStatus('Offline');
     }
   };
+
+  // Links and sections go at once, with Undo in the toast: the API keeps a
+  // removed one long enough to put it back where it was.
+  const removeWithUndo = (kind: 'actions' | 'sections', itemId: string, message: string) =>
+    run(() => authFetch(`/cards/${id}/${kind}/${itemId}`, { method: 'DELETE' }))
+      .then(() => offerUndo(message, () => run(() => authFetch(`/cards/${id}/${kind}/${itemId}/restore`, { method: 'POST' }))))
+      .catch(() => {});
 
   const addAction = async (type: string, initialConfig: Record<string, unknown> = {}) => {
     const oldIds = new Set(actions.map((a) => a.id));
@@ -1123,7 +1154,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       )
                                     }
                                     onDuplicate={() => duplicateAction(a)}
-                                    onDelete={() => run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' }))}
+                                    onDelete={() => removeWithUndo('actions', a.id, t('links.removed'))}
                                     onDragStart={(e) => {
                                       setDraggedActionId(a.id);
                                       e.dataTransfer.effectAllowed = 'move';
@@ -1234,7 +1265,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               <RowButton label={t('links.moveDown')} disabled={i === sections.length - 1} onClick={() => move(sections, i, 1, 'sections')}>
                                 <Icon name="chevron-down" size={15} />
                               </RowButton>
-                              <RowButton label={t('sections.deleteBlock')} danger onClick={() => run(() => authFetch(`/cards/${id}/sections/${s.id}`, { method: 'DELETE' }))}>
+                              <RowButton label={t('sections.deleteBlock')} danger onClick={() => removeWithUndo('sections', s.id, t('sections.removed'))}>
                                 <Icon name="trash" size={14} />
                               </RowButton>
                             </div>

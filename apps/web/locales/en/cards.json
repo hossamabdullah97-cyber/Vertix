@@ -61,13 +61,8 @@
     "publish": "Publish",
     "unpublish": "Unpublish",
     "delete": "Delete",
-    "deleting": "Deleting…",
     "cancel": "Cancel",
     "dismiss": "Dismiss"
-  },
-  "delete": {
-    "title": "Delete “{{name}}”?",
-    "body": "The card, its links and sections are removed and its link stops working. Chips linked to it become unassigned."
   },
   "empty": {
     "noMatch": "No cards match these filters.",
@@ -83,11 +78,11 @@
     }
   },
   "toasts": {
-    "deleted": "Card deleted.",
     "linkCopied": "Link copied.",
     "copyFailed": "Couldn’t copy the link.",
     "published": "Card published.",
-    "unpublished": "Card unpublished."
+    "unpublished": "Card unpublished.",
+    "deletedNamed": "“{{name}}” deleted"
   },
   "notFound": {
     "title": "Card not found",

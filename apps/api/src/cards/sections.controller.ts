@@ -75,4 +75,13 @@ export class CardSectionsController {
   ) {
     return this.sections.remove(tenant, cardId, sectionId);
   }
+
+  @Post(':sectionId/restore')
+  restore(
+    @Tenant() tenant: TenantContext,
+    @Param('cardId') cardId: string,
+    @Param('sectionId') sectionId: string,
+  ) {
+    return this.sections.restore(tenant, cardId, sectionId);
+  }
 }
