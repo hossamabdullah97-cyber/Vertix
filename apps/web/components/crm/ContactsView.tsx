@@ -6,11 +6,13 @@ import { Icon } from '@/components/Icon';
 import { type Lead, TEMP_META, initials, avatarColor, sourceMeta, formatMoney } from '@/lib/crm';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatRelativeTime } from '@/lib/format';
+import { ShowMore, useShowMore } from '@/components/crm/ShowMore';
 
 /** Contacts workspace — every captured lead as a contact record. Opens the shared drawer. */
 export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: string) => void }) {
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
+  const page = useShowMore(leads);
   if (leads.length === 0) return <EmptyContacts />;
 
   const headers = ['contact', 'companyTitle', 'phoneEmail', 'source', 'status', 'pipelineValue', 'lastSeen'] as const;
@@ -26,7 +28,7 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
             </tr>
           </thead>
           <tbody>
-            {leads.map((l) => {
+            {page.shown.map((l) => {
               const tm = TEMP_META[l.temperature];
               const src = sourceMeta(l.source);
               return (
@@ -70,6 +72,7 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
           </tbody>
         </table>
       </div>
+      <ShowMore rest={page.rest} shown={page.shown.length} onMore={page.more} className="border-t border-line" />
     </div>
   );
 }

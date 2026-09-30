@@ -350,11 +350,15 @@
       "qr": "Read from the card's QR code, exactly as its owner saved it.",
       "ai": "Read by AI. Check the details before saving; the photo isn't kept.",
       "device": "Read on this phone; the photo never left it. Check the name, title and company before saving.",
-        "deviceArabic": "Read on this phone; the photo never left it. Arabic is harder to read this way: check every field, the phone number above all, before saving."
+      "deviceArabic": "Read on this phone; the photo never left it. Arabic is harder to read this way: check every field, the phone number above all, before saving."
     }
   },
   "list": {
     "allStages": "All",
     "stages": "Stages"
+  },
+  "showMore": {
+    "button": "Show {{n}} more",
+    "of": "{{shown}} of {{total}}"
   }
 }

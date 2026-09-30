@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { authFetch, getToken, peek } from '@/lib/client';
+import { BOARD_PAGE, ShowMore, useShowMore } from '@/components/crm/ShowMore';
 import { Icon } from '@/components/Icon';
 import AppShell, { OPEN_LEAD_EVENT } from '@/components/AppShell';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -41,6 +42,8 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>(() => peek<Lead[]>('/leads') ?? []);
   const [stages, setStages] = useState<Stage[]>(() => peek<Stage[]>('/leads/stages') ?? []);
   const [tasks, setTasks] = useState<Task[]>(() => peek<Task[]>('/tasks') ?? []);
+  // How many cards each board column draws (see ShowMore).
+  const [boardLimit, setBoardLimit] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(() => !(peek('/leads') && peek('/leads/stages') && peek('/tasks')));
   const [error, setError] = useState('');
 
@@ -401,18 +404,25 @@ export default function LeadsPage() {
 
                       <div className="no-scrollbar flex min-h-[80px] flex-1 flex-col gap-2 overflow-y-auto p-0.5">
                         <AnimatePresence>
-                          {items.map((lead) => (
+                          {items.slice(0, boardLimit[stage.id] ?? BOARD_PAGE).map((lead) => (
                             <LeadCard
                               key={lead.id}
                               lead={lead}
                               selected={selected === lead.id}
                               dragging={dragId === lead.id}
+                              still={filtered.length > 100}
                               onOpen={() => setSelected(lead.id)}
                               onDragStart={() => setDragId(lead.id)}
                               onDragEnd={() => setDragId(null)}
                             />
                           ))}
                         </AnimatePresence>
+                        <ShowMore
+                          rest={items.length - (boardLimit[stage.id] ?? BOARD_PAGE)}
+                          shown={Math.min(items.length, boardLimit[stage.id] ?? BOARD_PAGE)}
+                          step={BOARD_PAGE}
+                          onMore={() => setBoardLimit((b) => ({ ...b, [stage.id]: (b[stage.id] ?? BOARD_PAGE) + BOARD_PAGE }))}
+                        />
                         {items.length === 0 && (
                           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line py-8 text-xs text-faint">
                             {isOver ? t('board.releaseToDrop') : t('board.noLeads')}
@@ -535,6 +545,7 @@ function LeadTable({ leads, stages, onOpen, selected }: { leads: Lead[]; stages:
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
   const stageOf = (id: string | null) => stages.find((s) => s.id === id);
+  const { shown, rest, more } = useShowMore(leads);
   return (
     <div className="v-card overflow-hidden">
       <div className="overflow-x-auto">
@@ -551,7 +562,7 @@ function LeadTable({ leads, stages, onOpen, selected }: { leads: Lead[]; stages:
             </tr>
           </thead>
           <tbody>
-            {leads.map((l) => {
+            {shown.map((l) => {
               const stage = stageOf(l.stageId);
               const src = sourceMeta(l.source);
               return (
@@ -610,6 +621,7 @@ function LeadTable({ leads, stages, onOpen, selected }: { leads: Lead[]; stages:
           </tbody>
         </table>
       </div>
+      <ShowMore rest={rest} shown={shown.length} onMore={more} className="border-t border-line" />
     </div>
   );
 }

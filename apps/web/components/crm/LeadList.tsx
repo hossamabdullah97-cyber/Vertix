@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Heat } from './LeadCard';
 import { type Lead, type Stage, quickLinks, sourceMeta, stageKey } from '@/lib/crm';
+import { ShowMore, useShowMore } from '@/components/crm/ShowMore';
 
 /**
  * The pipeline on a phone: one list instead of columns that scroll sideways,
@@ -35,6 +36,7 @@ export function LeadList({
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const chips = [{ id: null as string | null, label: t('list.allStages'), count: total }, ...stages.map((s) => ({ id: s.id as string | null, label: t(stageKey(s.name), s.name), count: counts[s.id] ?? 0 }))];
 
+  const page = useShowMore(leads);
   return (
     <div>
       <div role="radiogroup" aria-label={t('list.stages')} className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-3">
@@ -62,7 +64,7 @@ export function LeadList({
         <p className="rounded-xl px-4 py-12 text-center text-sm text-muted ring-1 ring-inset ring-line">{t('table.noMatch')}</p>
       ) : (
         <ul className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
-          {leads.map((l) => {
+          {page.shown.map((l) => {
             const s = l.stageId ? byId.get(l.stageId) : undefined;
             const src = sourceMeta(l.source);
             const reach = quickLinks(l).filter((q) => q.key === 'call' || q.key === 'whatsapp');
@@ -101,6 +103,7 @@ export function LeadList({
           })}
         </ul>
       )}
+      <ShowMore rest={page.rest} shown={page.shown.length} onMore={page.more} />
     </div>
   );
 }

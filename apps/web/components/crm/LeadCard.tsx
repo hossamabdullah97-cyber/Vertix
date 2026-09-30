@@ -34,6 +34,7 @@ export function LeadCard({
   onDragEnd,
   dragging,
   selected,
+  still,
 }: {
   lead: Lead;
   onOpen: () => void;
@@ -41,34 +42,16 @@ export function LeadCard({
   onDragEnd: () => void;
   dragging?: boolean;
   selected?: boolean;
+  /** No layout animation (a large board). */
+  still?: boolean;
 }) {
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
   const src = sourceMeta(lead.source);
   const links = quickLinks(lead);
 
-  return (
-    <motion.div
-      layout
-      layoutId={lead.id}
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-      className={`group relative cursor-pointer rounded-[10px] bg-surface p-3 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-accent active:cursor-grabbing ${
-        selected ? 'ring-2 ring-accent' : 'shadow-[0_0_0_1px_hsl(var(--v-border)),0_1px_2px_rgba(23,23,26,0.04)] hover:shadow-[0_0_0_1px_hsl(var(--v-border-strong)),0_4px_12px_-6px_rgba(23,23,26,0.12)]'
-      }`}
-      style={{ opacity: dragging ? 0.45 : 1 }}
-    >
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 truncate text-sm font-medium text-ink">{lead.name || t('table.unknownLead')}</p>
         <span className="mt-1 shrink-0">
@@ -110,6 +93,46 @@ export function LeadCard({
           ))}
         </div>
       )}
+    </>
+  );
+  const className = `group relative cursor-pointer rounded-[10px] bg-surface p-3 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-accent active:cursor-grabbing ${
+    selected ? 'ring-2 ring-accent' : 'shadow-[0_0_0_1px_hsl(var(--v-border)),0_1px_2px_rgba(23,23,26,0.04)] hover:shadow-[0_0_0_1px_hsl(var(--v-border-strong)),0_4px_12px_-6px_rgba(23,23,26,0.12)]'
+  }`;
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen();
+    }
+  };
+  // Cards below a column's fold are not laid out or painted until scrolled to.
+  const style = { opacity: dragging ? 0.45 : 1, contentVisibility: 'auto', containIntrinsicSize: 'auto 112px' } as const;
+
+  // Sliding into a new column measures every card on the board and costs a
+  // motion component per card: worth it for a small board, too costly for
+  // hundreds, where no one would see it anyway.
+  if (still) {
+    return (
+      <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd} onClick={onOpen} onKeyDown={onKeyDown} role="button" tabIndex={0} className={className} style={style}>
+        {content}
+      </div>
+    );
+  }
+  return (
+    <motion.div
+      layout
+      layoutId={lead.id}
+      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={onOpen}
+      onKeyDown={onKeyDown}
+      role="button"
+      tabIndex={0}
+      className={className}
+      style={style}
+    >
+      {content}
     </motion.div>
   );
 }

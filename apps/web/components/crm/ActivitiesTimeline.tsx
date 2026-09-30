@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon';
 import { type Lead, type Stage, type LeadActivity, type ActivityType, ACTIVITY_META, sourceMeta, initials, avatarColor, formatMoney } from '@/lib/crm';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatRelativeTime } from '@/lib/format';
+import { ShowMore, useShowMore } from '@/components/crm/ShowMore';
 
 interface FlatActivity extends LeadActivity {
   leadId: string;
@@ -52,6 +53,7 @@ export function ActivitiesTimeline({
     return activities.filter((a) => a.type === filterType);
   }, [activities, filterType]);
 
+  const page = useShowMore(filtered);
   const types: (ActivityType | 'ALL')[] = ['ALL', 'NOTE', 'CALL', 'EMAIL', 'MEETING', 'STAGE_CHANGE', 'SCAN'];
 
   return (
@@ -103,7 +105,7 @@ export function ActivitiesTimeline({
       ) : (
         <div className="relative border-s border-line ps-6 space-y-6">
           <AnimatePresence initial={false}>
-            {filtered.map((a, index) => {
+            {page.shown.map((a, index) => {
               const meta = ACTIVITY_META[a.type] || { label: t('activity.fallback'), icon: 'sparkle', color: 'var(--v-accent)' };
               const typeLabel = t(`activity.types.${a.type}`, t('activity.fallback'));
               const noteText = (a.metadata?.note as string) || '';
@@ -164,6 +166,7 @@ export function ActivitiesTimeline({
           </AnimatePresence>
         </div>
       )}
+      <ShowMore rest={page.rest} shown={page.shown.length} onMore={page.more} />
     </div>
   );
 }
