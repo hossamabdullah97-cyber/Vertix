@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authFetch, authPostFile } from '@/lib/client';
+import { authFetch, authPostFile, apiMessageOf } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/ui/Sheet';
 import type { Lead } from '@/lib/crm';
@@ -150,7 +150,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
       onAdded(lead);
       close();
     } catch (e) {
-      setError(/email/i.test((e as Error).message) ? t('add.errors.email') : t('add.errors.save'));
+      setError(/email/i.test(apiMessageOf(e)) ? t('add.errors.email') : t('add.errors.save'));
     } finally {
       setSaving(false);
     }

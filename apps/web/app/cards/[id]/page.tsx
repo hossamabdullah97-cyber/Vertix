@@ -631,9 +631,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       <AppShell title={t('shell.loadingTitle')}>
         <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
           <span className="text-faint">
-            <Icon name="loader" size={22} className="animate-spin" />
+            <Icon name={error ? 'x' : 'loader'} size={22} className={error ? '' : 'animate-spin'} />
           </span>
           <p className="text-sm text-muted">{error || t('shell.loading')}</p>
+          {error && (
+            <Link href="/cards" className="v-btn v-btn-ghost mt-1 text-sm">
+              {t('common:actions.back')}
+            </Link>
+          )}
         </div>
       </AppShell>
     );
