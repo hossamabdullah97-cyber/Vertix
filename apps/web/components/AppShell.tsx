@@ -94,6 +94,17 @@ type PaletteItem = {
   leadId?: string;
 };
 
+type OrgRow = { org: { id: string; name: string; slug: string; branding?: Record<string, unknown> | null }; role: string };
+
+/**
+ * What the sidebar last showed. Every page mounts its own shell, so without
+ * this each move between pages started it empty (no name, no workspace, no
+ * plan) until the same answers came back again. It starts from these and
+ * refreshes behind them; a sign-out or a workspace switch reloads the page,
+ * which clears it.
+ */
+let shellCache: { me: Me | null; orgs: OrgRow[] | null; usage: UsageSummary | null; orgId: string | null } | null = null;
+
 export default function AppShell({
   title,
   action,
@@ -117,13 +128,20 @@ export default function AppShell({
   const { t } = useTranslation('nav');
   const { locale, setLocale } = useLocale();
   const { theme, pref: themePref, setPref: chooseTheme } = useTheme();
-  const [me, setMe] = useState<Me | null>(null);
-  const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [me, setMe] = useState<Me | null>(shellCache?.me ?? null);
+  const [usage, setUsage] = useState<UsageSummary | null>(shellCache?.usage ?? null);
 
   // Workspace switcher
   const [moreOpen, setMoreOpen] = useState(false);
-  const [orgs, setOrgs] = useState<{ org: { id: string; name: string; slug: string; branding?: Record<string, unknown> | null }; role: string }[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [orgs, setOrgsState] = useState<OrgRow[]>(shellCache?.orgs ?? []);
+  const [orgsLoaded, setOrgsLoaded] = useState(!!shellCache?.orgs);
+  const setOrgs = (list: OrgRow[]) => {
+    setOrgsState(list);
+    setOrgsLoaded(true);
+  };
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(shellCache?.orgId ?? null);
+  // Whether the active workspace is known yet: it is read from storage after mount.
+  const [ready, setReady] = useState(!!shellCache);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [switcherSearch, setSwitcherSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -159,6 +177,7 @@ export default function AppShell({
 
     const activeId = getActiveOrgId();
     setSelectedOrgId(activeId);
+    setReady(true);
 
     authFetch<Me>('/auth/me')
       .then(setMe)
@@ -215,6 +234,10 @@ export default function AppShell({
       window.removeEventListener(ORG_UPDATED, onOrg);
     };
   }, []);
+
+  useEffect(() => {
+    if (ready) shellCache = { me, orgs: orgsLoaded ? orgs : null, usage, orgId: selectedOrgId };
+  }, [ready, me, orgs, orgsLoaded, usage, selectedOrgId]);
 
   // Opening the menu loads the search index once, and always starts clean.
   useEffect(() => {
@@ -502,6 +525,8 @@ export default function AppShell({
     }
   };
 
+  // Until then the switcher shows a placeholder, not "Personal" or a blank name.
+  const orgPending = !ready || (!!selectedOrgId && !orgsLoaded);
   const activeOrgName = selectedOrgId
     ? orgs.find((o) => o.org.id === selectedOrgId)?.org.name ?? ''
     : t('switcher.personal');
@@ -608,14 +633,22 @@ export default function AppShell({
             aria-expanded={switcherOpen}
             className="flex w-full items-center gap-2.5 rounded-lg bg-surface px-2 py-1.5 text-start shadow-sm ring-1 ring-line transition-colors hover:bg-elevated"
           >
-            {selectedOrgId ? (
+            {orgPending ? (
+              <span aria-hidden className="v-skeleton h-[22px] w-[22px] shrink-0 rounded-md" />
+            ) : selectedOrgId ? (
               <OrgMark name={activeOrgName} branding={orgs.find((o) => o.org.id === selectedOrgId)?.org.branding} size={22} />
             ) : (
               <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-elevated text-muted ring-1 ring-inset ring-line">
                 <Icon name="user" size={12} />
               </span>
             )}
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{activeOrgName}</span>
+            {orgPending ? (
+              <span aria-hidden className="flex-1">
+                <span className="v-skeleton block h-3 w-24 rounded" />
+              </span>
+            ) : (
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{activeOrgName}</span>
+            )}
             <span className="text-faint">
               <Icon name="chevron-down" size={14} />
             </span>
@@ -835,11 +868,18 @@ export default function AppShell({
               aria-haspopup="menu"
               className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-ink/[0.045]"
             >
-              {me && <Avatar user={me} size={28} verified={me.verified} />}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-ink">{me?.name || me?.email || '—'}</span>
-                {roleLabel && <span className="block truncate text-2xs text-faint">{roleLabel}</span>}
-              </span>
+              {me ? <Avatar user={me} size={28} verified={me.verified} /> : <span aria-hidden className="v-skeleton h-7 w-7 shrink-0 rounded-full" />}
+              {me ? (
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink">{me.name || me.email}</span>
+                  {roleLabel && <span className="block truncate text-2xs text-faint">{roleLabel}</span>}
+                </span>
+              ) : (
+                <span aria-hidden className="flex-1 space-y-1.5">
+                  <span className="v-skeleton block h-3 w-24 rounded" />
+                  <span className="v-skeleton block h-2.5 w-12 rounded" />
+                </span>
+              )}
               <span className="text-faint">
                 <Icon name="dots" size={16} />
               </span>

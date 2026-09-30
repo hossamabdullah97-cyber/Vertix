@@ -80,48 +80,77 @@ function humanizeAction(action: string) {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+/** What Home last showed, per workspace; a sign-out or a workspace switch reloads the page, which clears it. */
+type HomeState = {
+  activeOrgId: string | null;
+  me: Me | null;
+  alertsChosen: boolean;
+  cards: CardType[];
+  tags: NfcTag[];
+  leads: Lead[];
+  stages: Stage[];
+  members: Member[];
+  teams: Team[];
+  departments: Department[];
+  approvals: ApprovalRequest[];
+  auditLogs: AuditLog[];
+  personalTasks: any[];
+  personalNotifications: any[];
+  period: Period;
+  ov: Overview | null;
+  ovPrev: Overview | null;
+  ts: Point[];
+  tsPrev: Point[];
+  topCards: TopCard[];
+  occasions: Occasion[];
+};
+let homeCache: { orgId: string | null; state: HomeState } | null = null;
+
 export default function HomePage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard');
   const { locale } = useLocale();
-  const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Coming back to Home in the same workspace starts from what it showed last time.
+  const [home] = useState(() => (homeCache && homeCache.orgId === getActiveOrgId() ? homeCache.state : null));
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(home ? home.activeOrgId : null);
+  const [loading, setLoading] = useState(!home);
   const [error, setError] = useState('');
-  const [me, setMe] = useState<Me | null>(null);
-  const [alertsChosen, setAlertsChosen] = useState(true);
+  const [me, setMe] = useState<Me | null>(home ? home.me : null);
+  const [alertsChosen, setAlertsChosen] = useState(home ? home.alertsChosen : true);
 
-  const [cards, setCards] = useState<CardType[]>([]);
-  const [tags, setTags] = useState<NfcTag[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [stages, setStages] = useState<Stage[]>([]);
+  const [cards, setCards] = useState<CardType[]>(home ? home.cards : []);
+  const [tags, setTags] = useState<NfcTag[]>(home ? home.tags : []);
+  const [leads, setLeads] = useState<Lead[]>(home ? home.leads : []);
+  const [stages, setStages] = useState<Stage[]>(home ? home.stages : []);
 
   // Organization workspace
-  const [members, setMembers] = useState<Member[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [approvals, setApprovals] = useState<ApprovalRequest[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [members, setMembers] = useState<Member[]>(home ? home.members : []);
+  const [teams, setTeams] = useState<Team[]>(home ? home.teams : []);
+  const [departments, setDepartments] = useState<Department[]>(home ? home.departments : []);
+  const [approvals, setApprovals] = useState<ApprovalRequest[]>(home ? home.approvals : []);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(home ? home.auditLogs : []);
 
   // Personal workspace
-  const [personalTasks, setPersonalTasks] = useState<any[]>([]);
-  const [personalNotifications, setPersonalNotifications] = useState<any[]>([]);
+  const [personalTasks, setPersonalTasks] = useState<any[]>(home ? home.personalTasks : []);
+  const [personalNotifications, setPersonalNotifications] = useState<any[]>(home ? home.personalNotifications : []);
 
   // Analytics for the chosen period and the one before it
-  const [period, setPeriod] = useState<Period>(30);
+  const [period, setPeriod] = useState<Period>(home ? home.period : 30);
   const [metric, setMetric] = useState<MetricKey>('VIEW');
-  const [ov, setOv] = useState<Overview | null>(null);
-  const [ovPrev, setOvPrev] = useState<Overview | null>(null);
-  const [ts, setTs] = useState<Point[]>([]);
-  const [tsPrev, setTsPrev] = useState<Point[]>([]);
-  const [topCards, setTopCards] = useState<TopCard[]>([]);
-  const [occasions, setOccasions] = useState<Occasion[]>([]);
+  const [ov, setOv] = useState<Overview | null>(home ? home.ov : null);
+  const [ovPrev, setOvPrev] = useState<Overview | null>(home ? home.ovPrev : null);
+  const [ts, setTs] = useState<Point[]>(home ? home.ts : []);
+  const [tsPrev, setTsPrev] = useState<Point[]>(home ? home.tsPrev : []);
+  const [topCards, setTopCards] = useState<TopCard[]>(home ? home.topCards : []);
+  const [occasions, setOccasions] = useState<Occasion[]>(home ? home.occasions : []);
   const [showOccasions, setShowOccasions] = useState(false);
   const loadOccasions = useCallback(() => authFetch<Occasion[]>('/orgs/occasions').then(setOccasions).catch(() => setOccasions([])), []);
 
   const [showOnboarding, setShowOnboarding] = useState(true);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    // With something on screen already, refresh it in place rather than blanking the page.
+    if (!homeCache) setLoading(true);
     setError('');
     const orgId = getActiveOrgId();
     setActiveOrgId(orgId);
@@ -189,6 +218,11 @@ export default function HomePage() {
     load().catch((e) => setError(e.message));
   }, [router, load]);
 
+  useEffect(() => {
+    if (loading) return;
+    homeCache = { orgId: activeOrgId, state: { activeOrgId, me, alertsChosen, cards, tags, leads, stages, members, teams, departments, approvals, auditLogs, personalTasks, personalNotifications, period, ov, ovPrev, ts, tsPrev, topCards, occasions } };
+  }, [loading, activeOrgId, me, alertsChosen, cards, tags, leads, stages, members, teams, departments, approvals, auditLogs, personalTasks, personalNotifications, period, ov, ovPrev, ts, tsPrev, topCards, occasions]);
+
   // The window is whole UTC days ending today; the comparison window is the
   // same number of days immediately before it.
   const windows = useMemo(() => periodWindows(period), [period]);
@@ -217,23 +251,29 @@ export default function HomePage() {
     };
   }, [activeOrgId, windows]);
 
+  // Both answer at once and put things back if the API refuses, instead of
+  // reloading the whole home page after the fact.
   const handleResolveApproval = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+    const before = approvals;
+    setApprovals((list) => list.map((a) => (a.id === id ? { ...a, status } : a)));
     try {
       await authFetch(`/orgs/approvals/${id}/resolve`, {
         method: 'PATCH',
         body: JSON.stringify({ status, comment: `${status} from the home page` }),
       });
-      load();
     } catch (e) {
+      setApprovals(before);
       setError((e as Error).message);
     }
   };
 
   const handleToggleTask = async (taskId: string, completed: boolean) => {
+    const before = personalTasks;
+    setPersonalTasks((list) => list.map((tk) => (tk.id === taskId ? { ...tk, completed } : tk)));
     try {
       await authFetch(`/tasks/${taskId}`, { method: 'PATCH', body: JSON.stringify({ completed }) });
-      load();
     } catch (e) {
+      setPersonalTasks(before);
       setError((e as Error).message);
     }
   };
