@@ -192,9 +192,41 @@ export default function BillingPage() {
 
       <div className="mt-3 max-w-[1040px] space-y-10">
         {!sub || !plans[sub.plan] ? (
-          <div className="space-y-4">
-            <div className="v-skeleton h-[228px] w-full rounded-xl" />
-            <div className="v-skeleton h-[380px] w-full rounded-xl" />
+          // The page's own outline: the plan with its three meters, then the plans.
+          <div role="status" aria-label={t('common:states.loading')} className="space-y-10">
+            <div className="v-card overflow-hidden">
+              <div className="space-y-2.5 p-6">
+                <span className="v-skeleton block h-3 w-12 rounded" />
+                <span className="v-skeleton block h-7 w-48 rounded-md" />
+              </div>
+              <div className="grid border-t border-line sm:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-3 border-line p-6 max-sm:[&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-e">
+                    <span className="flex justify-between">
+                      <span className="v-skeleton block h-3.5 w-20 rounded" />
+                      <span className="v-skeleton block h-3.5 w-10 rounded" />
+                    </span>
+                    <span className="v-skeleton block h-1.5 w-full rounded-full" />
+                    <span className="v-skeleton block h-2.5 w-16 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="v-skeleton block h-4 w-16 rounded" />
+              <span className="v-skeleton mt-2.5 block h-3 w-72 max-w-full rounded" />
+              <div className="v-card mt-4 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-3 border-line p-6 [&:not(:last-child)]:border-e">
+                    <span className="v-skeleton block h-4 w-24 rounded" />
+                    <span className="v-skeleton block h-3 w-32 rounded" />
+                    <span className="v-skeleton mt-5 block h-7 w-20 rounded-md" />
+                    <span className="v-skeleton mt-6 block h-3 w-28 rounded" />
+                    <span className="v-skeleton block h-3 w-24 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <>

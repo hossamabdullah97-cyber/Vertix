@@ -8,6 +8,7 @@ import { resetPassword } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { AuthShell } from './AuthShell';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText } from './fields';
+import { problemOf, useChecks } from '@/lib/validate';
 
 export function ResetForm({ token }: { token: string }) {
   const { t } = useTranslation('auth');
@@ -16,10 +17,13 @@ export function ResetForm({ token }: { token: string }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<{ text: string; link: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const checks = useChecks({ password: problemOf(password, { required: true, min: 8 }) });
+  const pwError = checks.shown('password') ? t(`common:validation.${checks.shown('password')}`, { min: 8 }) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!checks.check()) return;
     setBusy(true);
     try {
       await resetPassword(token, password);
@@ -64,14 +68,14 @@ export function ResetForm({ token }: { token: string }) {
 
   return (
     <AuthShell title={t('reset.title')} subtitle={t('reset.subtitle')}>
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} noValidate className="space-y-5">
         {error && <FormMessage tone="danger">{error.text}</FormMessage>}
         {error?.link ? (
           requestNew
         ) : (
           <>
-            <Field label={t('reset.newPassword')} hint={t('register.passwordHint')}>
-              {(p) => <PasswordInput {...p} value={password} onChange={setPassword} autoComplete="new-password" minLength={8} />}
+            <Field label={t('reset.newPassword')} hint={t('register.passwordHint')} error={pwError}>
+              {(p) => <PasswordInput {...p} {...checks.bind('password')} value={password} onChange={setPassword} autoComplete="new-password" minLength={8} />}
             </Field>
             <SubmitButton busy={busy} label={t('reset.submit')} busyLabel={t('reset.saving')} />
           </>

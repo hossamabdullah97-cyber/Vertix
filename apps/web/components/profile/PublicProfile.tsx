@@ -15,6 +15,7 @@ import { PaymentBrandLogo } from '@/components/brand/PaymentBrandLogo';
 import { QRCode } from '@/components/QRCode';
 import { Lightbox } from '@/components/Lightbox';
 import { Constellation } from '@/components/profile/Constellation';
+import { isEmail, useChecks } from '@/lib/validate';
 
 function visitorId(): string | undefined {
   try {
@@ -988,6 +989,16 @@ function zoneLabel(tz: string, at: Date): string {
   return offset ? `${city} (${offset})` : city;
 }
 
+/** The line under a card-form field that says what is wrong, in the card's own colours. */
+function FormProblem({ id, text }: { id: string; text: string }) {
+  if (!text) return null;
+  return (
+    <p id={id} className="-mt-1 px-1 text-sm text-[#d4453a]">
+      {text}
+    </p>
+  );
+}
+
 function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: ProfileData; t: ProfileStrings; preview: boolean; tagUid?: string; vcardUrl: string }) {
   const [intent, setIntent] = useState<Intent>('CONTACT');
   const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', note: '', website: '' });
@@ -1023,13 +1034,22 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  // Checked as the visitor types, under each field, in the card's language.
+  const digits = form.phone.replace(/\D/g, '').length;
+  const checks = useChecks({
+    name: form.name.trim() ? null : 'required',
+    email: form.email.trim() && !isEmail(form.email) ? 'email' : null,
+    phone: form.phone.trim() && (digits < 7 || !/^[+\d\s().-]+$/.test(form.phone.trim())) ? 'phone' : null,
+    contact: !form.email.trim() && !form.phone.trim() ? 'oneOf' : null,
+    note: intent === 'QUOTE' && !form.note.trim() ? 'required' : null,
+  });
+  const words = { name: t.nameNeeded, email: t.emailWrong, phone: t.phoneWrong, contact: t.needContact, note: t.noteNeeded };
+  const problem = (k: keyof typeof words) => (checks.shown(k) ? words[k] : '');
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (!form.email.trim() && !form.phone.trim()) {
-      setError(t.needContact);
-      return;
-    }
+    if (!checks.check()) return;
     if (preview) {
       setDone(intent);
       return;
@@ -1103,10 +1123,10 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
     );
   }
 
-  const field = 'h-12 w-full rounded-[12px] bg-[var(--p-elevated)] px-3.5 text-lg text-[var(--p-fg)] outline-none ring-1 ring-inset ring-transparent placeholder:text-[var(--p-faint)] focus:ring-[var(--p-accent)]';
+  const field = 'h-12 w-full rounded-[12px] bg-[var(--p-elevated)] px-3.5 text-lg text-[var(--p-fg)] outline-none ring-1 ring-inset ring-transparent placeholder:text-[var(--p-faint)] focus:ring-[var(--p-accent)] aria-[invalid=true]:ring-[#d4453a]';
 
   return (
-    <form onSubmit={submit} className="space-y-2.5">
+    <form onSubmit={submit} noValidate className="space-y-2.5">
       <p className="text-base text-[var(--p-muted)]">{t.exchangeHint}</p>
       <div role="radiogroup" className="flex rounded-[12px] bg-[var(--p-elevated)] p-1">
         {intents.map((i) => (
@@ -1133,9 +1153,12 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
           <input tabIndex={-1} autoComplete="off" value={form.website} onChange={set('website')} name="website" />
         </label>
       </div>
-      <input className={field} placeholder={t.fullName} value={form.name} onChange={set('name')} required autoComplete="name" aria-label={t.fullName} />
-      <input className={field} type="email" dir="ltr" placeholder={t.email} value={form.email} onChange={set('email')} autoComplete="email" aria-label={t.email} style={{ textAlign: profile.lang === 'ar' ? 'right' : 'left' }} />
-      <input className={field} type="tel" dir="ltr" placeholder={t.phone} value={form.phone} onChange={set('phone')} autoComplete="tel" aria-label={t.phone} style={{ textAlign: profile.lang === 'ar' ? 'right' : 'left' }} />
+      <input className={field} placeholder={t.fullName} value={form.name} onChange={set('name')} autoComplete="name" aria-label={t.fullName} {...checks.bind('name', 'xf-name')} />
+      <FormProblem id="xf-name" text={problem('name')} />
+      <input className={field} type="email" dir="ltr" placeholder={t.email} value={form.email} onChange={set('email')} autoComplete="email" aria-label={t.email} style={{ textAlign: profile.lang === 'ar' ? 'right' : 'left' }} {...checks.bind('email', 'xf-email')} />
+      <FormProblem id="xf-email" text={problem('email')} />
+      <input className={field} type="tel" dir="ltr" placeholder={t.phone} value={form.phone} onChange={set('phone')} autoComplete="tel" aria-label={t.phone} style={{ textAlign: profile.lang === 'ar' ? 'right' : 'left' }} {...checks.bind('phone', 'xf-phone')} />
+      <FormProblem id="xf-phone" text={problem('phone') || problem('contact')} />
       <input className={field} placeholder={`${t.company} (${t.optional})`} value={form.company} onChange={set('company')} autoComplete="organization" aria-label={t.company} />
 
       {intent === 'MEETING' && (
@@ -1218,9 +1241,12 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
           placeholder={intent === 'QUOTE' ? t.quoteNote : `${t.note} (${t.optional})`}
           value={form.note}
           onChange={set('note')}
-          required={intent === 'QUOTE'}
           aria-label={t.note}
+          {...checks.bind('note', 'xf-note')}
         />
+      )}
+      {intent !== 'CONTACT' && (
+        <FormProblem id="xf-note" text={problem('note')} />
       )}
 
       {error && <p role="alert" className="text-sm text-[#d4453a]">{error}</p>}

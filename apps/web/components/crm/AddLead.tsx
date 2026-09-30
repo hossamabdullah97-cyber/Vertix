@@ -8,6 +8,8 @@ import { Sheet } from '@/components/ui/Sheet';
 import type { Lead } from '@/lib/crm';
 import { contactFromQr, contactFromText, mergeContacts, type CardContact } from '@/lib/card-text';
 import { canvasJpeg, photoCanvas, readQr, readText, type ReadProgress } from '@/lib/card-reader';
+import { problemOf, useChecks, type Problem } from '@/lib/validate';
+import { FieldError } from '@/components/ui/FieldError';
 
 type Scanned = CardContact;
 /** How the card was read: its QR code (exact), Claude on the server, or this phone. */
@@ -136,11 +138,18 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
     }
   }
 
+  // Shown under the field as it is left, and on save; the API applies the same rules.
+  const checks = useChecks<keyof Fields>({
+    name: !fields.name.trim() && !fields.email.trim() && !fields.phone.trim() ? 'oneOf' : null,
+    email: problemOf(fields.email, { kind: 'email' }),
+  } as Record<keyof Fields, Problem | null>);
+  const problemText = (key: keyof Fields) => {
+    const p = checks.shown(key);
+    return p === 'oneOf' ? t('add.errors.empty') : p === 'email' ? t('add.errors.email') : null;
+  };
+
   async function save() {
-    if (!fields.name.trim() && !fields.email.trim() && !fields.phone.trim()) {
-      setError(t('add.errors.empty'));
-      return;
-    }
+    if (!checks.check()) return;
     setSaving(true);
     setError(null);
     try {
@@ -165,7 +174,9 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
         className="v-field"
         value={fields[key]}
         onChange={(e) => setFields((f) => ({ ...f, [key]: e.target.value }))}
+        {...checks.bind(key, `add-lead-${key}-err`)}
       />
+      <FieldError id={`add-lead-${key}-err`}>{problemText(key)}</FieldError>
     </label>
   );
 

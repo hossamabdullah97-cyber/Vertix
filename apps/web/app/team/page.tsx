@@ -7,6 +7,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
 import { authFetch, getActiveOrgId, getToken, inviteMember, PlanLimitError, type Card, type Me, type Member, type NfcTag, type Role, type Team, apiMessageOf, type ApiError, peek } from '@/lib/client';
+import { problemOf, useChecks } from '@/lib/validate';
+import { FieldError } from '@/components/ui/FieldError';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import AppShell from '@/components/AppShell';
@@ -714,8 +716,12 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
       .catch(() => setFull(null));
   }, [open]);
 
+  const checks = useChecks({ email: problemOf(email, { required: true, kind: 'email' }) });
+  const emailProblem = checks.shown('email');
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!checks.check()) return;
     setBusy(true);
     setResult(null);
     try {
@@ -724,6 +730,7 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
       setResult(res.emailSent ? { tone: 'ok', text: t('invite.sent', { email: email.trim() }) } : { tone: 'warn', text: t('invite.emailFailed', { email: email.trim() }) });
       setEmail('');
       setName('');
+      checks.reset();
       onInvited();
     } catch (err) {
       setResult({ tone: 'error', text: (err as Error).message, upgrade: err instanceof PlanLimitError });
@@ -734,11 +741,12 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
 
   return (
     <Sheet open={open} onClose={onClose} closeLabel={t('actions.close')} title={t('invite.title')} subtitle={t('invite.subtitle')}>
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} noValidate className="space-y-4">
         {full && <PlanLimitNotice text={full} />}
         <label className="block">
           <span className="mb-1.5 block text-xs text-muted">{t('invite.email')}</span>
-          <input type="email" dir="ltr" required className="v-field rtl:text-right" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+          <input type="email" dir="ltr" className="v-field rtl:text-right" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" {...checks.bind('email', 'invite-email-err')} />
+          <FieldError id="invite-email-err">{emailProblem && t(`common:validation.${emailProblem}`)}</FieldError>
         </label>
         <label className="block">
           <span className="mb-1.5 block text-xs text-muted">
@@ -763,7 +771,7 @@ function InvitePeople({ open, onClose, teams, myRole, onInvited }: { open: boole
             </select>
           </label>
         )}
-        <button disabled={busy || !email.trim() || !!full} className="v-btn w-full disabled:opacity-60">
+        <button disabled={busy || !!full} className="v-btn w-full disabled:opacity-60">
           {busy ? t('invite.sending') : t('invite.send')}
         </button>
         {result?.upgrade ? <PlanLimitNotice text={result.text} /> : result && (

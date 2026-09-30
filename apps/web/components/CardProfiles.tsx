@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '@/lib/client';
 import { Icon } from '@/components/Icon';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import PaymentLinksManager from '@/components/cards/PaymentLinksManager';
 import { TEMPLATES } from '@/lib/templates';
 
@@ -182,13 +183,16 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
     }
   };
 
+  // A profile is gone for good once deleted (it has no Undo), so it is confirmed first, in the app's own dialog.
+  const [removing, setRemoving] = useState<string | null>(null);
   const removeVariant = async (id: string) => {
-    if (!window.confirm(t('variants.deleteConfirm'))) return;
     try {
       await authFetch(`/cards/${cardId}/variants/${id}`, { method: 'DELETE' });
+      setRemoving(null);
       await load();
       flash(t('variants.deleted'));
     } catch (e) {
+      setRemoving(null);
       setError((e as Error).message);
     }
   };
@@ -268,10 +272,22 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
       ) : (
         <div className="space-y-4">
           {variants.map((v) => (
-            <VariantCard key={v.id} cardId={cardId} v={v} baseLink={baseLink} onSaveLocal={setLocal} onSave={save} onDelete={removeVariant} onCopy={copy} onChanged={load} />
+            <VariantCard key={v.id} cardId={cardId} v={v} baseLink={baseLink} onSaveLocal={setLocal} onSave={save} onDelete={setRemoving} onCopy={copy} onChanged={load} />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={removing !== null}
+        title={t('variants.deleteTitle', { name: nameOf(removing ?? '') })}
+        body={t('variants.deleteConfirm')}
+        confirmLabel={t('variants.deleteAction')}
+        busyLabel={t('variants.deleting')}
+        cancelLabel={t('variants.cancel')}
+        danger
+        onConfirm={() => (removing ? removeVariant(removing) : undefined)}
+        onCancel={() => setRemoving(null)}
+      />
 
       {toast && (
         <div role="status" className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-sm text-surface shadow-lg">

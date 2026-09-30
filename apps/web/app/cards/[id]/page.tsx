@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import { motion, AnimatePresence } from 'framer-motion';
+import { offerUndo } from '@/lib/undo';
+import { problemOf, useChecks } from '@/lib/validate';
+import { FieldError } from '@/components/ui/FieldError';
 import { authFetch, getToken, peek, remember, type Card as CardType, type Section, type CardAction, type NfcTag } from '@/lib/client';
 
 import type { Template } from '@/lib/templates';
@@ -258,8 +261,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteSlugConfirm, setDeleteSlugConfirm] = useState('');
 
-  // Undo / Redo history. The index also lives in a ref so callbacks never need
-  // `historyIndex` in their dependency array (that was causing a render loop).
+  // Undo / Redo of what was typed and chosen (identity and theme), one step
+  // per saved change. Each step is the saved body, and stepping back saves
+  // it again, so an undo reaches the live card. Removed links and sections
+  // come back through the Undo toast instead (lib/undo.ts). The index also
+  // lives in a ref so callbacks never need `historyIndex` in their deps.
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const historyIndexRef = useRef(-1);
@@ -272,9 +278,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const lastSavedRef = useRef(''); // serialized identity/theme last persisted to the DB
   const suppressSaveRef = useRef(false); // set when we apply server data, to skip the echo save
 
+  const restoringRef = useRef<string | null>(null); // the step being put back, so its save is not a new step
   const pushHistory = useCallback((snapshot: string) => {
     setHistory((prev) => {
       const base = prev.slice(0, historyIndexRef.current + 1);
+      if (base[base.length - 1] === snapshot) return prev;
       base.push(snapshot);
       historyIndexRef.current = base.length - 1;
       setHistoryIndex(historyIndexRef.current);
@@ -341,7 +349,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
         return;
       }
       applyCard(c);
-      pushHistory(JSON.stringify({ c, sections: c.sections, actions: c.actions }));
+      pushHistory(lastSavedRef.current);
 
       // Decide the guided path only on the very first load, so finishing it (or
       // skipping) is never undone by a later refetch.
@@ -389,7 +397,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     if (seen && !loadedRef.current) {
       applyCard(seen);
       if (seenTags) setTags(seenTags);
-      pushHistory(JSON.stringify({ c: seen, sections: seen.sections, actions: seen.actions }));
+      pushHistory(lastSavedRef.current);
       const vc = (seen.vcardData as Record<string, string>) ?? {};
       setGuided(!vc.fullName && (seen.actions?.length ?? 0) === 0 && (seen.sections?.length ?? 0) === 0);
       shownRef.current = JSON.stringify(seen);
@@ -404,7 +412,16 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     if (!latestRef.current) return; // nor before its values are on screen (a re-run of this effect can see the blank first render)
     if (suppressSaveRef.current) { suppressSaveRef.current = false; return; } // ignore server echoes
     const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand }));
-    if (body === lastSavedRef.current) return; // nothing actually changed
+    if (body === lastSavedRef.current) {
+      // Nothing to save: back to what the card already holds (e.g. the link put right again).
+      setAutoSaveStatus((st) => (st === 'Offline' ? 'Saved' : st));
+      return;
+    }
+    if (problemOf(slug, { required: true, min: 3 })) {
+      // The link field says what to fix; saving now would only be refused.
+      setAutoSaveStatus('Offline');
+      return;
+    }
     touchedRef.current = true;
     pendingRef.current = body;
     setAutoSaveStatus('Saving...');
@@ -413,6 +430,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
         const updated = await authFetch<CardType>(`/cards/${id}`, { method: 'PATCH', body });
         lastSavedRef.current = body;
         if (pendingRef.current === body) pendingRef.current = null;
+        if (restoringRef.current === body) restoringRef.current = null;
+        else pushHistory(body);
         setCard((prev) => (prev ? { ...prev, ...updated } : updated));
         setAutoSaveStatus('Saved');
       } catch (e) {
@@ -459,10 +478,25 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   // Undo / Redo Actions — both restore a full snapshot through applyCard, the
   // single entry point for turning a card object into editor state.
   const restoreSnapshot = (index: number) => {
+    const step = history[index];
+    if (!step) return;
     setHistoryIndex(index);
     historyIndexRef.current = index;
-    const { c, sections: s, actions: a } = JSON.parse(history[index]);
-    applyCard({ ...c, sections: s ?? c.sections, actions: a ?? c.actions });
+    const { slug: sl, templateId: tpl, theme: th, vcardData } = JSON.parse(step) as ReturnType<typeof identityPayload>;
+    // Set as edits, not as server data: the autosave then writes the step back.
+    restoringRef.current = step;
+    suppressSaveRef.current = false;
+    setSlug(sl);
+    setTemplateId(tpl);
+    setVcard(vcardData);
+    setAccent(th.accent);
+    setMode(th.mode as typeof mode);
+    setCover(th.cover as CoverStyle);
+    setLang(th.lang === 'ar' ? 'ar' : 'en');
+    setLinkStyle(th.links);
+    setOpenInApp(th.openInApp);
+    setLayout(th.layout);
+    setShowBrand(th.brand);
   };
   const handleUndo = () => {
     if (historyIndex <= 0) return;
@@ -482,6 +516,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     if (body === lastSavedRef.current) return;
     await authFetch(`/cards/${id}`, { method: 'PATCH', body });
     lastSavedRef.current = body;
+    pushHistory(body);
   };
 
   // Structural mutation helper (sections / actions / publish). Flushes identity
@@ -494,7 +529,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       await fn();
       const c = await authFetch<CardType>(`/cards/${id}`);
       applyCard(c);
-      pushHistory(JSON.stringify({ c, sections: c.sections, actions: c.actions }));
+      pushHistory(lastSavedRef.current);
       setAutoSaveStatus('Saved');
       return c;
     } catch (e) {
@@ -539,6 +574,19 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   // Completion analyzer scoring computation
   // A number or address counts whether it is in the profile or on a button (the quick start adds buttons).
+  // Checked as they are typed; a bad link waits here rather than being refused by the API.
+  const phoneDigits = (vcard.phone ?? '').replace(/\D/g, '').length;
+  const checks = useChecks({
+    phone: vcard.phone?.trim() && (phoneDigits < 7 || !/^[+\d\s().-]+$/.test(vcard.phone.trim())) ? 'phone' : null,
+    email: problemOf(vcard.email ?? '', { kind: 'email' }),
+    slug: problemOf(slug, { required: true, min: 3 }),
+  });
+  const say = (k: 'phone' | 'email' | 'slug') => {
+    // The link shows its problem at once: while it has one, nothing on the card saves.
+    const p = k === 'slug' ? (loadedRef.current ? problemOf(slug, { required: true, min: 3 }) : null) : checks.shown(k);
+    return p ? t(`common:validation.${p}`, { min: 3 }) : null;
+  };
+
   const hasPhone = !!vcard.phone || actions.some((a) => (a.type === 'CALL' || a.type === 'WHATSAPP') && !!a.config?.phone);
   const hasEmail = !!vcard.email || actions.some((a) => a.type === 'EMAIL' && !!a.config?.email);
   const profileScore = useMemo(() => {
@@ -580,6 +628,13 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
       setAutoSaveStatus('Offline');
     }
   };
+
+  // Links and sections go at once, with Undo in the toast: the API keeps a
+  // removed one long enough to put it back where it was.
+  const removeWithUndo = (kind: 'actions' | 'sections', itemId: string, message: string) =>
+    run(() => authFetch(`/cards/${id}/${kind}/${itemId}`, { method: 'DELETE' }))
+      .then(() => offerUndo(message, () => run(() => authFetch(`/cards/${id}/${kind}/${itemId}/restore`, { method: 'POST' }))))
+      .catch(() => {});
 
   const addAction = async (type: string, initialConfig: Record<string, unknown> = {}) => {
     const oldIds = new Set(actions.map((a) => a.id));
@@ -983,18 +1038,21 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         autoComplete="organization"
                       />
                     </Field>
-                    <Field label={t('profile.phone')}>
+                    <Field label={t('profile.phone')} error={say('phone')} errorId="studio-phone-err">
                       <input
                         dir="ltr"
+                        {...checks.bind('phone', 'studio-phone-err')}
                         className="v-field tabular rtl:text-right"
                         value={vcard.phone ?? ''}
                         onChange={(e) => setVcard({ ...vcard, phone: e.target.value })}
                         placeholder={t('profile.phonePlaceholder')}
                       />
                     </Field>
-                    <Field label={t('profile.email')}>
+                    <Field label={t('profile.email')} error={say('email')} errorId="studio-email-err">
                       <input
                         dir="ltr"
+                        inputMode="email"
+                        {...checks.bind('email', 'studio-email-err')}
                         className="v-field rtl:text-right"
                         value={vcard.email ?? ''}
                         onChange={(e) => setVcard({ ...vcard, email: e.target.value })}
@@ -1123,7 +1181,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                       )
                                     }
                                     onDuplicate={() => duplicateAction(a)}
-                                    onDelete={() => run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' }))}
+                                    onDelete={() => removeWithUndo('actions', a.id, t('links.removed'))}
                                     onDragStart={(e) => {
                                       setDraggedActionId(a.id);
                                       e.dataTransfer.effectAllowed = 'move';
@@ -1234,7 +1292,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               <RowButton label={t('links.moveDown')} disabled={i === sections.length - 1} onClick={() => move(sections, i, 1, 'sections')}>
                                 <Icon name="chevron-down" size={15} />
                               </RowButton>
-                              <RowButton label={t('sections.deleteBlock')} danger onClick={() => run(() => authFetch(`/cards/${id}/sections/${s.id}`, { method: 'DELETE' }))}>
+                              <RowButton label={t('sections.deleteBlock')} danger onClick={() => removeWithUndo('sections', s.id, t('sections.removed'))}>
                                 <Icon name="trash" size={14} />
                               </RowButton>
                             </div>
@@ -1683,12 +1741,15 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               <div className="space-y-10">
                 <StudioSection title={t('settings.general')} description={t('settings.subtitle')}>
                   <div className="space-y-6">
-                    <Field label={t('settings.title')} hint={t('settings.slugHint')}>
-                      <div dir="ltr" className="flex max-w-md items-center rounded-lg ring-1 ring-inset ring-line-strong focus-within:ring-accent">
+                    <Field label={t('settings.title')} hint={t('settings.slugHint')} error={say('slug')} errorId="studio-slug-err">
+                      <div dir="ltr" className={`flex max-w-md items-center rounded-lg ring-1 ring-inset focus-within:ring-accent ${say('slug') ? 'ring-red-600/70' : 'ring-line-strong'}`}>
                         <span className="ps-3 font-mono text-sm text-faint">/c/</span>
                         <input
                           className="h-11 min-w-0 flex-1 bg-transparent pe-3 font-mono text-sm text-ink outline-none sm:h-9"
                           value={slug}
+                          {...checks.bind('slug', 'studio-slug-err')}
+                          aria-invalid={!!say('slug') || undefined}
+                          aria-describedby={say('slug') ? 'studio-slug-err' : undefined}
                           onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
                         />
                       </div>
@@ -1940,7 +2001,7 @@ function StudioSection({
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, error, errorId, children }: { label: string; hint?: string; error?: string | null; errorId?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1.5 flex items-baseline gap-1.5 text-xs text-muted">
@@ -1948,6 +2009,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
         {hint && <span className="text-xs text-faint">· {hint}</span>}
       </span>
       {children}
+      {errorId && <FieldError id={errorId}>{error}</FieldError>}
     </label>
   );
 }

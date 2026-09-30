@@ -338,15 +338,47 @@ export default function HomePage() {
   if (loading) {
     return (
       <AppShell title={t('titles.command')} action={newCardAction} mobileTitle={false}>
-        <div className="space-y-5">
-          <div className="v-skeleton h-14 w-80" />
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="v-skeleton h-[420px]" />
-            <div className="v-skeleton h-[420px]" />
+        {/* Home's own outline: the greeting, the numbers over the chart, the latest leads. */}
+        <div role="status" aria-label={t('common:states.loading')}>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="space-y-2.5">
+              <span className="v-skeleton block h-7 w-56 rounded-md" />
+              <span className="v-skeleton block h-3.5 w-80 max-w-[70vw] rounded" />
+            </div>
+            <div className="flex gap-2">
+              <span className="v-skeleton block h-8 w-28 rounded-lg" />
+              <span className="v-skeleton block h-8 w-40 rounded-lg" />
+            </div>
           </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="v-skeleton h-60" />
-            <div className="v-skeleton h-60" />
+          <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="v-card overflow-hidden">
+              <div className="grid grid-cols-2 border-b border-line lg:grid-cols-4">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-2.5 border-line p-4 [&:not(:last-child)]:border-e">
+                    <span className="v-skeleton block h-3 w-20 rounded" />
+                    <span className="v-skeleton block h-7 w-14 rounded-md" />
+                    <span className="v-skeleton block h-2.5 w-24 rounded" />
+                  </div>
+                ))}
+              </div>
+              <div className="h-[260px] p-5">
+                <span className="v-skeleton block h-full w-full rounded-lg" />
+              </div>
+            </div>
+            <div className="v-card p-4">
+              <span className="v-skeleton block h-4 w-28 rounded" />
+              <div className="mt-4 space-y-4">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="v-skeleton block h-8 w-8 shrink-0 rounded-full" />
+                    <span className="flex-1 space-y-1.5">
+                      <span className="v-skeleton block h-3 w-28 rounded" />
+                      <span className="v-skeleton block h-2.5 w-40 max-w-full rounded" />
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </AppShell>
@@ -1041,11 +1073,17 @@ function Onboarding({
           {t('onboarding.hide')}
         </button>
       </div>
-      <ol className="grid gap-px bg-line sm:grid-cols-2 xl:grid-cols-3">
-        {shown.map((s) => {
+      <ol className={`grid gap-px bg-line ${shown.length > 1 ? 'sm:grid-cols-2' : ''} ${shown.length >= 3 ? 'xl:grid-cols-3' : ''}`}>
+        {shown.map((s, i) => {
           const n = steps.indexOf(s) + 1;
+          // The last step widens to end its row, so no empty grey cell is left beside it.
+          const last = i === shown.length - 1;
+          const three = shown.length >= 3;
+          const span = last
+            ? `${shown.length % 2 === 1 && shown.length > 1 ? 'sm:col-span-2' : ''} ${three ? (shown.length % 3 === 1 ? 'xl:col-span-3' : shown.length % 3 === 2 ? 'xl:col-span-2' : 'xl:col-span-1') : ''}`
+            : '';
           return (
-            <li key={s.id} className="flex gap-3 bg-surface p-4">
+            <li key={s.id} className={`flex gap-3 bg-surface p-4 ${span}`}>
               <span
                 className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-2xs font-semibold ${
                   s.completed ? 'bg-accent text-white' : 'text-faint ring-1 ring-inset ring-faint/40'

@@ -59,4 +59,9 @@ export class CardsController {
   remove(@Tenant() tenant: TenantContext, @Param('id') id: string) {
     return this.cards.remove(tenant, id);
   }
+
+  @Post(':id/restore')
+  restore(@Tenant() tenant: TenantContext, @Param('id') id: string) {
+    return this.cards.restore(tenant, id);
+  }
 }

@@ -9,6 +9,7 @@ import { isPaidPlan, type CreateCardInput, type UpdateCardInput } from '@vertex/
 import { PrismaService } from '../prisma/prisma.service';
 import { LimitsService } from '../billing/limits.service';
 import { isPlaceholderSlug, slugFromName } from './card-slug';
+import { recentlyDeleted } from './restore-window';
 
 const MANAGER_ROLES = ['OWNER', 'ADMIN', 'MANAGER'];
 
@@ -187,6 +188,16 @@ export class CardsService {
     await this.ensureEditable(tenant, id);
     await this.db.card.softDelete({ id });
     return { id, deleted: true };
+  }
+
+  /** Brings back a card deleted moments ago (the Undo after a delete). It counts against the plan again. */
+  async restore(tenant: TenantContext, id: string) {
+    const card = await this.db.card.findFirst({ where: { id, ...recentlyDeleted() } });
+    if (!card) throw new NotFoundException('Card not found');
+    if (!isManager(tenant.role) && card.ownerId !== tenant.userId) {
+      throw new ForbiddenException('You do not have permission to edit this card');
+    }
+    return this.limits.guard(tenant.orgId, 'cards', (tx) => tx.card.update({ where: { id }, data: { deletedAt: null } }));
   }
 
   /**

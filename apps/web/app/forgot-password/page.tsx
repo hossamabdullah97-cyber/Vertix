@@ -7,6 +7,7 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { forgotPassword } from '@/lib/client';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { Field, FormMessage, SubmitButton, authErrorText, emailProps } from '@/components/auth/fields';
+import { problemOf, useChecks } from '@/lib/validate';
 import { Icon } from '@/components/Icon';
 import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 
@@ -17,10 +18,13 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const checks = useChecks({ email: problemOf(email, { required: true, kind: 'email' }) });
+  const emailError = checks.shown('email') ? t(`common:validation.${checks.shown('email')}`) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (!checks.check()) return;
     setBusy(true);
     try {
       await forgotPassword(email);
@@ -60,10 +64,10 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthShell title={t('forgot.title')} subtitle={t('forgot.subtitle')}>
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} noValidate className="space-y-5">
         {error && <FormMessage tone="danger">{error}</FormMessage>}
-        <Field label={t('login.email')}>
-          {(p) => <input {...p} {...emailProps('email')} value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('login.emailPlaceholder')} autoFocus />}
+        <Field label={t('login.email')} error={emailError}>
+          {(p) => <input {...p} {...checks.bind('email')} {...emailProps('email')} value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('login.emailPlaceholder')} autoFocus />}
         </Field>
         <SubmitButton busy={busy} label={t('forgot.submit')} busyLabel={t('forgot.sending')} />
       </form>

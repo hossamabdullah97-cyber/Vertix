@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PAYMENT_PLATFORMS, type PaymentPlatformKey } from '@vertex/shared';
 import { authFetch } from '@/lib/client';
+import { offerUndo } from '@/lib/undo';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
 import { PaymentBrandLogo } from '@/components/brand/PaymentBrandLogo';
@@ -151,7 +152,13 @@ export default function PaymentLinksManager({
       await authFetch(`${base}/${id}${qs}`, { method: 'DELETE' });
     } catch {
       sync(prev);
+      return;
     }
+    const gone = prev.find((l) => l.id === id);
+    offerUndo(t('removed'), async () => {
+      await authFetch(`${base}/${id}/restore`, { method: 'POST' });
+      if (gone) setLinks((cur) => (cur.some((l) => l.id === id) ? cur : [...cur, gone].sort((a, b) => a.order - b.order)));
+    });
   }
 
   async function persistOrder(next: PaymentLinkRow[]) {

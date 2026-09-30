@@ -1,27 +1,33 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { forwardRef, useId, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { AuthError } from '@/lib/client';
 import { formatTime } from '@/lib/format';
 import type { Locale } from '@/lib/i18n/config';
 import { Icon } from '@/components/Icon';
+import { FieldError } from '@/components/ui/FieldError';
 
 /** A labelled field; `aside` sits across from the label (the "forgot" link). */
+/** A labelled field; `aside` sits across from the label (the "forgot" link), `error` under it in place of the hint. */
 export function Field({
   label,
   aside,
   hint,
+  error,
   children,
 }: {
   label: React.ReactNode;
   aside?: React.ReactNode;
   hint?: string;
+  error?: string | null;
   children: (props: { id: string; 'aria-describedby'?: string }) => React.ReactNode;
 }) {
   const id = useId();
   const hintId = `${id}-hint`;
+  const errId = `${id}-err`;
+  const describedBy = error ? errId : hint ? hintId : undefined;
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
@@ -30,36 +36,40 @@ export function Field({
         </label>
         {aside}
       </div>
-      {children({ id, ...(hint ? { 'aria-describedby': hintId } : {}) })}
-      {hint && (
-        <p id={hintId} className="mt-1.5 text-xs text-faint">
-          {hint}
-        </p>
+      {children({ id, ...(describedBy ? { 'aria-describedby': describedBy } : {}) })}
+      {error ? (
+        <FieldError id={errId}>{error}</FieldError>
+      ) : (
+        hint && (
+          <p id={hintId} className="mt-1.5 text-xs text-faint">
+            {hint}
+          </p>
+        )
       )}
     </div>
   );
 }
 
-export function PasswordInput({
-  value,
-  onChange,
-  autoComplete,
-  minLength,
-  ...rest
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  autoComplete: 'current-password' | 'new-password';
-  minLength?: number;
-  id: string;
-  'aria-describedby'?: string;
-}) {
+export const PasswordInput = forwardRef<
+  HTMLInputElement,
+  {
+    value: string;
+    onChange: (v: string) => void;
+    autoComplete: 'current-password' | 'new-password';
+    minLength?: number;
+    id: string;
+    'aria-describedby'?: string;
+    'aria-invalid'?: boolean;
+    onBlur?: () => void;
+  }
+>(function PasswordInput({ value, onChange, autoComplete, minLength, ...rest }, ref) {
   const { t } = useTranslation('auth');
   const [shown, setShown] = useState(false);
   return (
     <div className="relative">
       <input
         {...rest}
+        ref={ref}
         type={shown ? 'text' : 'password'}
         dir="ltr"
         className="v-field !pe-11 rtl:text-right"
@@ -69,7 +79,6 @@ export function PasswordInput({
         minLength={minLength}
         autoCapitalize="none"
         spellCheck={false}
-        required
       />
       <button
         type="button"
@@ -82,7 +91,7 @@ export function PasswordInput({
       </button>
     </div>
   );
-}
+});
 
 /** Email as people type it on a phone: no capitals, no autocorrect. */
 export function emailProps(autoComplete: 'username' | 'email') {
@@ -95,7 +104,6 @@ export function emailProps(autoComplete: 'username' | 'email') {
     autoCapitalize: 'none',
     autoCorrect: 'off',
     spellCheck: false,
-    required: true,
   } as const;
 }
 

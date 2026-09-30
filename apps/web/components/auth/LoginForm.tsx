@@ -8,6 +8,7 @@ import { login, register, safeNext } from '@/lib/client';
 import { AuthShell } from './AuthShell';
 import { GoogleButton } from './GoogleButton';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText, emailProps } from './fields';
+import { problemOf, useChecks } from '@/lib/validate';
 
 type Mode = 'login' | 'register';
 
@@ -27,9 +28,22 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   const [error, setError] = useState<{ text: string; taken?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const isLogin = mode === 'login';
+  const checks = useChecks({
+    name: isLogin ? null : problemOf(name, { required: true }),
+    org: isLogin ? null : problemOf(org, { required: true }),
+    email: problemOf(email, { required: true, kind: 'email' }),
+    password: problemOf(password, { required: true, min: isLogin ? undefined : 8 }),
+  });
+  const say = (key: Parameters<typeof checks.shown>[0]) => {
+    const p = checks.shown(key);
+    return p ? t(`common:validation.${p}`, { min: 8 }) : null;
+  };
+
   function switchTo(m: Mode) {
     setMode(m);
     setError(null);
+    checks.reset();
     const q = new URLSearchParams(window.location.search);
     if (m === 'register') q.set('mode', 'register');
     else q.delete('mode');
@@ -40,6 +54,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!checks.check()) return;
     setBusy(true);
     try {
       if (mode === 'login') {
@@ -55,7 +70,6 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
     }
   }
 
-  const isLogin = mode === 'login';
   const afterGoogle = useCallback(() => {
     window.location.href = safeNext(next) ?? '/dashboard';
   }, [next]);
@@ -63,7 +77,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   return (
     <AuthShell title={isLogin ? t('login.title') : t('register.title')} subtitle={isLogin ? t('login.subtitle') : t('register.subtitle')}>
       <GoogleButton mode={mode} onDone={afterGoogle} />
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} noValidate className="space-y-5">
         {isLogin && expired && !error && <FormMessage tone="info">{t('login.expired')}</FormMessage>}
         {error && (
           <FormMessage tone="danger">
@@ -81,19 +95,20 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
 
         {!isLogin && (
           <>
-            <Field label={t('register.name')}>
-              {(p) => <input {...p} className="v-field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('register.namePlaceholder')} autoComplete="name" required />}
+            <Field label={t('register.name')} error={say('name')}>
+              {(p) => <input {...p} {...checks.bind('name')} className="v-field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('register.namePlaceholder')} autoComplete="name" />}
             </Field>
-            <Field label={t('register.organization')} hint={t('register.organizationHint')}>
-              {(p) => <input {...p} className="v-field" value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t('register.organizationPlaceholder')} autoComplete="organization" required />}
+            <Field label={t('register.organization')} hint={t('register.organizationHint')} error={say('org')}>
+              {(p) => <input {...p} {...checks.bind('org')} className="v-field" value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t('register.organizationPlaceholder')} autoComplete="organization" />}
             </Field>
           </>
         )}
 
-        <Field label={t('login.email')}>
+        <Field label={t('login.email')} error={say('email')}>
           {(p) => (
             <input
               {...p}
+              {...checks.bind('email')}
               {...emailProps(isLogin ? 'username' : 'email')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -106,6 +121,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
         <Field
           label={t('login.password')}
           hint={isLogin ? undefined : t('register.passwordHint')}
+          error={say('password')}
           aside={
             isLogin ? (
               <Link href="/forgot-password" className="v-hit text-xs font-medium text-accent hover:underline">
@@ -114,7 +130,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
             ) : undefined
           }
         >
-          {(p) => <PasswordInput {...p} value={password} onChange={setPassword} autoComplete={isLogin ? 'current-password' : 'new-password'} minLength={isLogin ? undefined : 8} />}
+          {(p) => <PasswordInput {...p} {...checks.bind('password')} value={password} onChange={setPassword} autoComplete={isLogin ? 'current-password' : 'new-password'} minLength={isLogin ? undefined : 8} />}
         </Field>
 
         <SubmitButton

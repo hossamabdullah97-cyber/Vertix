@@ -74,4 +74,13 @@ export class CardActionsController {
   ) {
     return this.actions.remove(tenant, cardId, actionId);
   }
+
+  @Post(':actionId/restore')
+  restore(
+    @Tenant() tenant: TenantContext,
+    @Param('cardId') cardId: string,
+    @Param('actionId') actionId: string,
+  ) {
+    return this.actions.restore(tenant, cardId, actionId);
+  }
 }

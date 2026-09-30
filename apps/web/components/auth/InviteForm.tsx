@@ -6,6 +6,7 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { acceptInvite } from '@/lib/client';
 import { AuthShell } from './AuthShell';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText } from './fields';
+import { problemOf, useChecks } from '@/lib/validate';
 
 export function InviteForm({ token }: { token: string }) {
   const { t } = useTranslation('auth');
@@ -14,10 +15,13 @@ export function InviteForm({ token }: { token: string }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<{ text: string; link: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const checks = useChecks({ password: problemOf(password, { required: true, min: 8 }) });
+  const pwError = checks.shown('password') ? t(`common:validation.${checks.shown('password')}`, { min: 8 }) : null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!checks.check()) return;
     setBusy(true);
     try {
       await acceptInvite(token, password, name);
@@ -35,7 +39,7 @@ export function InviteForm({ token }: { token: string }) {
 
   return (
     <AuthShell title={t('invite.title')} subtitle={t('invite.subtitle')}>
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} noValidate className="space-y-5">
         {error && (
           <FormMessage tone="danger">
             {error.text}
@@ -53,8 +57,8 @@ export function InviteForm({ token }: { token: string }) {
             >
               {(p) => <input {...p} className="v-field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('invite.namePlaceholder')} autoComplete="name" autoFocus />}
             </Field>
-            <Field label={t('login.password')} hint={t('register.passwordHint')}>
-              {(p) => <PasswordInput {...p} value={password} onChange={setPassword} autoComplete="new-password" minLength={8} />}
+            <Field label={t('login.password')} hint={t('register.passwordHint')} error={pwError}>
+              {(p) => <PasswordInput {...p} {...checks.bind('password')} value={password} onChange={setPassword} autoComplete="new-password" minLength={8} />}
             </Field>
             <SubmitButton busy={busy} label={t('invite.submit')} busyLabel={t('invite.joining')} />
           </>
