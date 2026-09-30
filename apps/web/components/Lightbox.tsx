@@ -80,7 +80,7 @@ export function Lightbox({
       </button>
 
       {/* Image counter */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[13px] font-semibold text-white/80 backdrop-blur-sm">
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80 backdrop-blur-sm">
         {idx + 1} / {total}
       </div>
 

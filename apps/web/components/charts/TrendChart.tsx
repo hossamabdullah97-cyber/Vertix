@@ -145,7 +145,7 @@ export function TrendChart({
       {ticks.map((v) => (
         <span
           key={v}
-          className="tabular pointer-events-none absolute start-0 text-[11px] leading-[14px] text-faint"
+          className="tabular pointer-events-none absolute start-0 text-2xs leading-[14px] text-faint"
           style={{ top: yAt(v) - 7 }}
         >
           {compact(v)}
@@ -169,7 +169,7 @@ export function TrendChart({
           className={`pointer-events-none absolute flex ${centred ? 'w-0 justify-center' : ''}`}
           style={{ ...place, top: yAt(0) - 26 }}
         >
-          <span className="flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md bg-surface px-1.5 py-0.5 text-[11px] font-medium text-accent shadow-sm ring-1 ring-inset ring-accent/25">
+          <span className="flex max-w-[180px] items-center gap-1 whitespace-nowrap rounded-md bg-surface px-1.5 py-0.5 text-2xs font-medium text-accent shadow-sm ring-1 ring-inset ring-accent/25">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
             <span className="truncate">{b.label}</span>
           </span>
@@ -195,12 +195,12 @@ export function TrendChart({
             />
           )}
           <div
-            className="pointer-events-none absolute top-1 z-10 min-w-[176px] rounded-lg border border-line bg-surface px-3 py-2.5 text-[12.5px] shadow-lg"
+            className="pointer-events-none absolute top-1 z-10 min-w-[176px] rounded-lg border border-line bg-surface px-3 py-2.5 text-xs shadow-lg"
             style={readoutAfter ? { insetInlineStart: hx + 16 } : { insetInlineEnd: w - hx + 16 }}
           >
-            <p className="mb-1.5 text-[11.5px] text-faint">{labels[hover]}</p>
+            <p className="mb-1.5 text-2xs text-faint">{labels[hover]}</p>
             {hoverMarker && (
-              <p className="-mt-1 mb-1.5 flex items-center gap-1 text-[11.5px] font-medium text-accent">
+              <p className="-mt-1 mb-1.5 flex items-center gap-1 text-2xs font-medium text-accent">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                 <span className="truncate">{hoverMarker.label}</span>
               </p>
@@ -234,7 +234,7 @@ export function TrendChart({
           <span
             key={i}
             // The first and last dates grow inwards, so neither is cut off at the edge.
-            className={`absolute top-2 flex w-0 whitespace-nowrap text-[11.5px] text-faint ${
+            className={`absolute top-2 flex w-0 whitespace-nowrap text-2xs text-faint ${
               k === 0 ? 'justify-start' : k === axisIdx.length - 1 ? 'justify-end' : 'justify-center'
             }`}
             style={{ insetInlineStart: xAt(i) }}

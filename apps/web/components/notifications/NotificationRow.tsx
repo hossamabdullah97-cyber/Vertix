@@ -90,20 +90,20 @@ export function NotificationRow({
       <Leading n={n} size={compact ? 32 : 36} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-3">
-          <p className={`min-w-0 flex-1 ${compact ? 'text-[13px]' : 'text-[13.5px]'} leading-snug ${unread ? 'font-medium text-ink' : 'text-ink/80'}`}>
+          <p className={`min-w-0 flex-1 ${compact ? 'text-sm' : 'text-sm'} leading-snug ${unread ? 'font-medium text-ink' : 'text-ink/80'}`}>
             {unread && <span className="sr-only">{t('tabs.unread')}: </span>}
             {title}
           </p>
-          <span className="shrink-0 whitespace-nowrap text-[12px] text-faint">{when}</span>
+          <span className="shrink-0 whitespace-nowrap text-xs text-faint">{when}</span>
         </div>
         {body && (
-          <p className={`mt-0.5 text-muted ${compact ? 'truncate text-[12.5px]' : 'line-clamp-2 text-[13px]'}`}>
+          <p className={`mt-0.5 text-muted ${compact ? 'truncate text-xs' : 'line-clamp-2 text-sm'}`}>
             {/* Isolated so a name in the other script keeps its order, while the
                 line still aligns with the page. */}
             <bdi>{body}</bdi>
           </p>
         )}
-        {otherWorkspace && !compact && <p className="mt-1 text-[12px] text-faint">{t('otherWorkspace', { name: `\u2068${otherWorkspace}\u2069` })}</p>}
+        {otherWorkspace && !compact && <p className="mt-1 text-xs text-faint">{t('otherWorkspace', { name: `\u2068${otherWorkspace}\u2069` })}</p>}
       </div>
       {!compact && items.length > 0 && (
         <span className="-me-1.5 -mt-1 shrink-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

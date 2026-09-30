@@ -24,8 +24,8 @@ export function CardCompanion({ slug, lang, variant }: { slug: string; lang: Lan
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--p-elevated)] text-[var(--p-accent)]">
           <Icon name="qr" size={17} />
         </span>
-        <h2 className="mt-3 text-[16px] font-semibold leading-snug">{t.companionTitle}</h2>
-        <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--p-muted)]">{t.companionHint}</p>
+        <h2 className="mt-3 text-lg font-semibold leading-snug">{t.companionTitle}</h2>
+        <p className="mt-1.5 text-sm leading-relaxed text-[var(--p-muted)]">{t.companionHint}</p>
         <div className="mx-auto mt-4 w-fit rounded-[14px] bg-white p-3 ring-1 ring-inset ring-black/5">
           {url ? <QRCode value={url} size={176} /> : <div className="h-[176px] w-[176px]" />}
         </div>

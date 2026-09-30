@@ -278,18 +278,18 @@ export default function LivePreview({
   const toolbar = (
     <div className="flex flex-wrap items-center justify-center gap-0.5">
       <ToolButton label={t('preview.zoomOut')} onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)))} disabled={!canZoom}>
-        <span className="text-[15px] leading-none">−</span>
+        <span className="text-md leading-none">−</span>
       </ToolButton>
       <button
         onClick={() => setZoom(1)}
         disabled={!canZoom}
         title={t('preview.zoomReset')}
-        className="tabular h-8 min-w-11 rounded-md px-1 text-[12px] text-muted hover:bg-surface hover:text-ink disabled:opacity-40"
+        className="tabular h-8 min-w-11 rounded-md px-1 text-xs text-muted hover:bg-surface hover:text-ink disabled:opacity-40"
       >
         {Math.round(zoom * 100)}%
       </button>
       <ToolButton label={t('preview.zoomIn')} onClick={() => setZoom((z) => Math.min(1.2, +(z + 0.1).toFixed(2)))} disabled={!canZoom}>
-        <span className="text-[15px] leading-none">+</span>
+        <span className="text-md leading-none">+</span>
       </ToolButton>
       <Divider />
       <ToolButton label={t('preview.rotate')} onClick={() => setLandscape((l) => !l)} active={landscape} disabled={!canRotate}>
@@ -299,7 +299,7 @@ export default function LivePreview({
         <Icon name={effDark ? 'moon' : 'sun'} size={14} />
       </ToolButton>
       <ToolButton label={t('preview.rtl')} onClick={() => setRtlOverride((r) => !(r ?? cardLang === 'ar'))} active={effRtl}>
-        <span className="text-[12px] font-semibold leading-none">{effRtl ? 'ع' : 'A'}</span>
+        <span className="text-xs font-semibold leading-none">{effRtl ? 'ع' : 'A'}</span>
       </ToolButton>
       <Divider />
       <ToolButton label={t('preview.screenshot')} onClick={screenshot} disabled={shooting}>
@@ -324,7 +324,7 @@ export default function LivePreview({
           setLandscape(false);
           setZoom(1);
         }}
-        className="h-8 appearance-none rounded-lg bg-surface pe-8 ps-3 text-[13px] font-medium text-ink shadow-sm ring-1 ring-inset ring-line outline-none focus:ring-accent"
+        className="h-8 appearance-none rounded-lg bg-surface pe-8 ps-3 text-sm font-medium text-ink shadow-sm ring-1 ring-inset ring-line outline-none focus:ring-accent"
       >
         {GROUPS.map((g) => (
           <optgroup key={g.label} label={t(`preview.groups.${g.label}`)}>
@@ -384,7 +384,7 @@ export default function LivePreview({
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
+            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-sm font-medium text-white shadow-lg"
           >
             <Icon name="check" size={15} /> {toast}
           </motion.div>

@@ -48,7 +48,7 @@ export function Workspaces({ orgs, reload }: { orgs: AdminOrg[] | null; reload: 
       {!orgs ? (
         <div className="v-skeleton h-72 rounded-xl" />
       ) : shown.length === 0 ? (
-        <p className="rounded-xl py-14 text-center text-[13.5px] text-muted ring-1 ring-inset ring-line">{t('workspaces.empty')}</p>
+        <p className="rounded-xl py-14 text-center text-sm text-muted ring-1 ring-inset ring-line">{t('workspaces.empty')}</p>
       ) : (
         <div className="v-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -82,7 +82,7 @@ export function Workspaces({ orgs, reload }: { orgs: AdminOrg[] | null; reload: 
                             <span className="truncate font-medium text-ink">{o.name}</span>
                             {!o.isActive && <span className="v-badge v-badge-warning shrink-0">{t('workspaces.suspended')}</span>}
                           </span>
-                          <span dir="ltr" className="block truncate font-mono text-[12px] text-faint rtl:text-right">
+                          <span dir="ltr" className="block truncate font-mono text-xs text-faint rtl:text-right">
                             {o.slug}
                           </span>
                         </span>
@@ -90,9 +90,9 @@ export function Workspaces({ orgs, reload }: { orgs: AdminOrg[] | null; reload: 
                     </td>
                     <td className="hidden max-w-[220px] md:table-cell">
                       {o.owner ? (
-                        <span className="block truncate text-[13px] text-muted">{o.owner.name || o.owner.email}</span>
+                        <span className="block truncate text-sm text-muted">{o.owner.name || o.owner.email}</span>
                       ) : (
-                        <span className="text-[13px] text-faint">{t('workspaces.noOwner')}</span>
+                        <span className="text-sm text-faint">{t('workspaces.noOwner')}</span>
                       )}
                     </td>
                     <td>
@@ -102,7 +102,7 @@ export function Workspaces({ orgs, reload }: { orgs: AdminOrg[] | null; reload: 
                     <td className="tabular hidden !text-end lg:table-cell">{n(o.cardsCount)}</td>
                     <td className="tabular hidden !text-end lg:table-cell">{n(o.nfcCount)}</td>
                     <td className="tabular hidden !text-end xl:table-cell">{n(o.leadsCount)}</td>
-                    <td className="hidden whitespace-nowrap text-[13px] text-muted md:table-cell">{formatDate(o.createdAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                    <td className="hidden whitespace-nowrap text-sm text-muted md:table-cell">{formatDate(o.createdAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -181,11 +181,11 @@ function WorkspaceSheet({ org, onClose, reload }: { org: AdminOrg | null; onClos
               {msg.text}
             </Notice>
           )}
-          <p className="text-[13px] text-muted">{t('workspaces.counts', { members: n(o.membersCount), cards: n(o.cardsCount), chips: n(o.nfcCount), leads: n(o.leadsCount) })}</p>
+          <p className="text-sm text-muted">{t('workspaces.counts', { members: n(o.membersCount), cards: n(o.cardsCount), chips: n(o.nfcCount), leads: n(o.leadsCount) })}</p>
 
           <Section title={t('workspaces.status')}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-[13px] text-ink">
+              <span className="flex items-center gap-2 text-sm text-ink">
                 <span className={`h-2 w-2 rounded-full ${o.isActive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                 {o.isActive ? t('workspaces.active') : t('workspaces.suspended')}
               </span>
@@ -203,7 +203,7 @@ function WorkspaceSheet({ org, onClose, reload }: { org: AdminOrg | null; onClos
                 </button>
               )}
             </div>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-faint">{o.isActive ? t('workspaces.statusActive') : t('workspaces.statusSuspended')}</p>
+            <p className="mt-2 text-xs leading-relaxed text-faint">{o.isActive ? t('workspaces.statusActive') : t('workspaces.statusSuspended')}</p>
           </Section>
 
           <Section title={t('workspaces.plan')}>
@@ -223,7 +223,7 @@ function WorkspaceSheet({ org, onClose, reload }: { org: AdminOrg | null; onClos
                 {busy === 'plan' ? t('saving') : t('save')}
               </button>
             </div>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-faint">{t('workspaces.planHint')}</p>
+            <p className="mt-2 text-xs leading-relaxed text-faint">{t('workspaces.planHint')}</p>
           </Section>
 
           <Section title={t('workspaces.owner')}>
@@ -231,15 +231,15 @@ function WorkspaceSheet({ org, onClose, reload }: { org: AdminOrg | null; onClos
               <span className="min-w-0">
                 {o.owner ? (
                   <>
-                    <span className="block truncate text-[13.5px] font-medium text-ink">{o.owner.name || o.owner.email}</span>
+                    <span className="block truncate text-sm font-medium text-ink">{o.owner.name || o.owner.email}</span>
                     {o.owner.name && (
-                      <span dir="ltr" className="block truncate text-[12.5px] text-faint rtl:text-right">
+                      <span dir="ltr" className="block truncate text-xs text-faint rtl:text-right">
                         {o.owner.email}
                       </span>
                     )}
                   </>
                 ) : (
-                  <span className="text-[13px] text-faint">{t('workspaces.noOwner')}</span>
+                  <span className="text-sm text-faint">{t('workspaces.noOwner')}</span>
                 )}
               </span>
               {!ownerOpen && (
@@ -292,7 +292,7 @@ function WorkspaceSheet({ org, onClose, reload }: { org: AdminOrg | null; onClos
             </button>
           </Section>
 
-          <p className="text-[12px] text-faint">{formatDate(o.createdAt, locale)}</p>
+          <p className="text-xs text-faint">{formatDate(o.createdAt, locale)}</p>
         </div>
       </Sheet>
 
@@ -334,7 +334,7 @@ function WorkspaceSheet({ org, onClose, reload }: { org: AdminOrg | null; onClos
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-line pt-5">
-      <h3 className="mb-3 text-[13px] font-semibold text-ink">{title}</h3>
+      <h3 className="mb-3 text-sm font-semibold text-ink">{title}</h3>
       {children}
     </section>
   );
@@ -387,7 +387,7 @@ function NewWorkspace({ open, onClose, onCreated }: { open: boolean; onClose: ()
       title={t('workspaces.new')}
       footer={
         <div className="flex items-center justify-end gap-2">
-          {err && <p className="me-auto text-[12.5px] text-red-600 dark:text-red-400">{err}</p>}
+          {err && <p className="me-auto text-xs text-red-600 dark:text-red-400">{err}</p>}
           <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
             {t('cancel')}
           </button>
@@ -411,7 +411,7 @@ function NewWorkspace({ open, onClose, onCreated }: { open: boolean; onClose: ()
           </select>
         </Field>
         <div>
-          <p className="mb-1.5 text-[12.5px] font-medium text-ink">{t('workspaces.form.ownerChoice')}</p>
+          <p className="mb-1.5 text-xs font-medium text-ink">{t('workspaces.form.ownerChoice')}</p>
           <div role="radiogroup" className="grid grid-cols-2 rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
             {(['existing', 'new'] as const).map((w) => (
               <button
@@ -420,7 +420,7 @@ function NewWorkspace({ open, onClose, onCreated }: { open: boolean; onClose: ()
                 role="radio"
                 aria-checked={f.who === w}
                 onClick={() => setF({ ...f, who: w })}
-                className={`h-9 rounded-md text-[13px] font-medium sm:h-8 ${f.who === w ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+                className={`h-9 rounded-md text-sm font-medium sm:h-8 ${f.who === w ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
               >
                 {w === 'existing' ? t('workspaces.form.existing') : t('workspaces.form.newPerson')}
               </button>

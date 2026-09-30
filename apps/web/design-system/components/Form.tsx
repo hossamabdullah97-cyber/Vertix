@@ -25,16 +25,16 @@ const FieldWrapper: React.FC<FieldWrapperProps> = ({
     <div className={`space-y-1.5 w-full ${className}`}>
       {label && (
         <div className="flex items-center justify-between">
-          <label className="text-[12.5px] font-bold text-[hsl(var(--ds-fg-muted))] uppercase tracking-wider">
+          <label className="text-xs font-bold text-[hsl(var(--ds-fg-muted))] uppercase tracking-wider">
             {label}
             {required && <span className="text-[hsl(var(--ds-error-accent))] ml-0.5">*</span>}
           </label>
-          {hint && <span className="text-[12px] text-[hsl(var(--ds-fg-faint))] font-semibold">{hint}</span>}
+          {hint && <span className="text-xs text-[hsl(var(--ds-fg-faint))] font-semibold">{hint}</span>}
         </div>
       )}
       {children}
       {error && (
-        <p className="text-[12px] font-semibold text-[hsl(var(--ds-error-accent))] flex items-center gap-1 animate-pulse">
+        <p className="text-xs font-semibold text-[hsl(var(--ds-error-accent))] flex items-center gap-1 animate-pulse">
           <span>⚠️</span> {error}
         </p>
       )}
@@ -137,7 +137,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   ({ label, error, className = '', ...props }, ref) => {
     return (
       <div className="space-y-1">
-        <label className="flex items-center gap-2.5 cursor-pointer text-[13.5px] font-semibold text-ink select-none">
+        <label className="flex items-center gap-2.5 cursor-pointer text-sm font-semibold text-ink select-none">
           <input
             ref={ref}
             type="checkbox"
@@ -146,7 +146,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           />
           <span>{label}</span>
         </label>
-        {error && <p className="text-[12px] font-semibold text-[hsl(var(--ds-error-accent))]">{error}</p>}
+        {error && <p className="text-xs font-semibold text-[hsl(var(--ds-error-accent))]">{error}</p>}
       </div>
     );
   }
@@ -161,7 +161,7 @@ export interface RadioProps extends React.InputHTMLAttributes<HTMLInputElement> 
 export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
   ({ label, className = '', ...props }, ref) => {
     return (
-      <label className="flex items-center gap-2.5 cursor-pointer text-[13.5px] font-semibold text-ink select-none">
+      <label className="flex items-center gap-2.5 cursor-pointer text-sm font-semibold text-ink select-none">
         <input
           ref={ref}
           type="radio"
@@ -185,7 +185,7 @@ export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
   ({ label, checked, className = '', ...props }, ref) => {
     return (
       <label className="flex items-center justify-between gap-4 cursor-pointer select-none">
-        {label && <span className="text-[13.5px] font-bold text-ink">{label}</span>}
+        {label && <span className="text-sm font-bold text-ink">{label}</span>}
         <div className="relative inline-flex items-center">
           <input
             ref={ref}

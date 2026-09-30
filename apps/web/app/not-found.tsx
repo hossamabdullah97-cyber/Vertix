@@ -17,9 +17,9 @@ export default function NotFound() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="max-w-md text-center">
-        <h1 className="text-2xl font-semibold">{t.title}</h1>
+        <h1 className="text-3xl font-semibold">{t.title}</h1>
         <p className="mt-2 text-muted">{t.body}</p>
-        <a href="/dashboard" className="v-btn mt-6 !h-11 px-6 text-[13.5px] font-bold sm:!h-10">
+        <a href="/dashboard" className="v-btn mt-6 !h-11 px-6 text-sm font-bold sm:!h-10">
           {t.home}
         </a>
       </div>

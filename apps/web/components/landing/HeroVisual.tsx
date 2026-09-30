@@ -111,17 +111,17 @@ export function HeroVisual() {
                 <Icon name="calendar" size={15} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="flex items-center justify-between gap-2 text-[12px] text-muted">
+                <p className="flex items-center justify-between gap-2 text-xs text-muted">
                   <span className="flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                     {t('sample.lead.title')}
                   </span>
                   <span className="text-faint">{t('sample.lead.time')}</span>
                 </p>
-                <p className="mt-1 text-[13.5px] leading-snug text-ink">
+                <p className="mt-1 text-sm leading-snug text-ink">
                   <span className="font-medium">{t('sample.lead.name')}</span> {t('sample.lead.what')}
                 </p>
-                <p className="mt-0.5 text-[12px] text-faint">{t('sample.lead.via')}</p>
+                <p className="mt-0.5 text-xs text-faint">{t('sample.lead.via')}</p>
               </div>
             </div>
           </div>
@@ -146,8 +146,8 @@ function ChipCard({ name, title }: { name: string; title: string }) {
           <Contactless size={18} className="text-white/60" />
         </div>
         <div>
-          <p className="text-[14px] font-medium leading-tight">{name}</p>
-          <p className="mt-0.5 truncate text-[11px] text-white/55">{title}</p>
+          <p className="text-base font-medium leading-tight">{name}</p>
+          <p className="mt-0.5 truncate text-2xs text-white/55">{title}</p>
         </div>
       </div>
     </div>

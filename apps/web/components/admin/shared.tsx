@@ -35,11 +35,11 @@ export interface AdminUser {
 export function Field({ label, hint, htmlFor, children }: { label: string; hint?: React.ReactNode; htmlFor?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-[12.5px] font-medium text-ink">
+      <label htmlFor={htmlFor} className="mb-1.5 block text-xs font-medium text-ink">
         {label}
       </label>
       {children}
-      {hint && <p className="mt-1.5 text-[12px] leading-relaxed text-faint">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs leading-relaxed text-faint">{hint}</p>}
     </div>
   );
 }
@@ -52,7 +52,7 @@ export function Notice({ tone = 'neutral', children, onDismiss }: { tone?: 'neut
     danger: 'bg-red-500/[0.06] text-red-700 ring-red-500/20 dark:text-red-300',
   };
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={`mb-4 flex items-start gap-3 rounded-lg px-4 py-3 text-[13px] leading-relaxed ring-1 ring-inset ${tones[tone]}`}>
+    <div role={tone === 'danger' ? 'alert' : 'status'} className={`mb-4 flex items-start gap-3 rounded-lg px-4 py-3 text-sm leading-relaxed ring-1 ring-inset ${tones[tone]}`}>
       <Icon name={tone === 'success' ? 'check' : tone === 'danger' ? 'alert' : 'info'} size={15} className="mt-[3px] shrink-0" />
       <span className="min-w-0 flex-1 break-words">{children}</span>
       {onDismiss && (
@@ -87,7 +87,7 @@ export function Pills<T extends string>({ value, options, onChange, label }: { v
           role="radio"
           aria-checked={value === o.key}
           onClick={() => onChange(o.key)}
-          className={`h-9 shrink-0 rounded-full px-3.5 text-[13px] font-medium transition-colors sm:h-8 ${value === o.key ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
+          className={`h-9 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${value === o.key ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'}`}
         >
           {o.label}
         </button>
@@ -109,7 +109,7 @@ export function PasswordField({ id, value, onChange }: { id: string; value: stri
   const { t } = useTranslation('admin');
   return (
     <div className="flex gap-2">
-      <input id={id} dir="ltr" value={value} onChange={(e) => onChange(e.target.value)} autoComplete="new-password" spellCheck={false} className="v-field min-w-0 flex-1 font-mono text-[13px] rtl:text-right" />
+      <input id={id} dir="ltr" value={value} onChange={(e) => onChange(e.target.value)} autoComplete="new-password" spellCheck={false} className="v-field min-w-0 flex-1 font-mono text-sm rtl:text-right" />
       <button type="button" onClick={() => onChange(generatePassword())} className="v-btn v-btn-ghost shrink-0">
         <Icon name="refresh" size={14} /> {t('workspaces.form.generate')}
       </button>

@@ -61,11 +61,11 @@ export function ActivityView() {
   };
 
   if (logs === null) return <div className="v-skeleton mt-4 h-64 w-full rounded-xl" />;
-  if (error) return <p className="mt-4 text-[13px] text-muted">{error}</p>;
+  if (error) return <p className="mt-4 text-sm text-muted">{error}</p>;
   if (logs.length === 0) {
     return (
       <div className="mt-4 rounded-xl border border-dashed border-line px-6 py-12 text-center">
-        <p className="text-[13.5px] text-muted">{t('activity.empty')}</p>
+        <p className="text-sm text-muted">{t('activity.empty')}</p>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export function ActivityView() {
     <div className="mt-4 space-y-4">
       {days.map(([day, entries]) => (
         <section key={day} className="v-card overflow-hidden">
-          <h2 className="border-b border-line px-4 py-2.5 text-[12.5px] font-medium text-faint">{formatDate(`${day}T12:00:00Z`, locale, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
+          <h2 className="border-b border-line px-4 py-2.5 text-xs font-medium text-faint">{formatDate(`${day}T12:00:00Z`, locale, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
           <ul className="divide-y divide-line">
             {entries.map((l) => {
               const who = l.actor ? l.actor.name || l.actor.email : t('activity.system');
@@ -85,7 +85,7 @@ export function ActivityView() {
                     <Icon name={iconFor(l.action)} size={14} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13.5px] text-ink">
+                    <span className="block text-sm text-ink">
                       <span className="font-medium">{who}</span> <span className="text-muted">{describe(l.action)}</span>
                       {what && (
                         <>
@@ -97,7 +97,7 @@ export function ActivityView() {
                       )}
                     </span>
                   </span>
-                  <time dateTime={l.createdAt} title={formatDate(l.createdAt, locale, { dateStyle: 'medium', timeStyle: 'short' } as Intl.DateTimeFormatOptions)} className="shrink-0 whitespace-nowrap text-[12px] text-faint">
+                  <time dateTime={l.createdAt} title={formatDate(l.createdAt, locale, { dateStyle: 'medium', timeStyle: 'short' } as Intl.DateTimeFormatOptions)} className="shrink-0 whitespace-nowrap text-xs text-faint">
                     {formatRelativeTime(l.createdAt, locale, 'short')}
                   </time>
                 </li>

@@ -113,8 +113,8 @@ export function ProfilePhotoCard({
     <div className="v-card p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-[14px] font-semibold tracking-tight">Your profile</h3>
-          <p className="mt-0.5 text-[11.5px] text-muted">
+          <h3 className="text-base font-semibold tracking-tight">Your profile</h3>
+          <p className="mt-0.5 text-2xs text-muted">
             Shown next to your name across the workspace. Separate from your card artwork.
           </p>
         </div>
@@ -141,7 +141,7 @@ export function ProfilePhotoCard({
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={busy === 'photo'}
-              className="v-btn h-9 px-3.5 text-[12.5px] disabled:opacity-60"
+              className="v-btn h-9 px-3.5 text-xs disabled:opacity-60"
             >
               <Icon name="upload" size={13} />
               {user.avatarUrl ? 'Change photo' : 'Upload photo'}
@@ -151,13 +151,13 @@ export function ProfilePhotoCard({
                 type="button"
                 onClick={removePhoto}
                 disabled={busy === 'photo'}
-                className="v-btn v-btn-ghost h-9 px-3.5 text-[12.5px] disabled:opacity-60"
+                className="v-btn v-btn-ghost h-9 px-3.5 text-xs disabled:opacity-60"
               >
                 Remove
               </button>
             )}
           </div>
-          <p className="text-[11px] text-faint">JPG, PNG, WebP, GIF or AVIF · up to 5 MB</p>
+          <p className="text-2xs text-faint">JPG, PNG, WebP, GIF or AVIF · up to 5 MB</p>
         </div>
       </div>
 
@@ -179,21 +179,21 @@ export function ProfilePhotoCard({
           onBlur={saveName}
           maxLength={120}
           placeholder="Your full name"
-          className="v-field h-9 min-w-[200px] flex-1 text-[13px]"
+          className="v-field h-9 min-w-[200px] flex-1 text-sm"
         />
         <button
           type="button"
           onClick={saveName}
           disabled={busy === 'name' || name.trim() === (user.name ?? '')}
-          className="v-btn v-btn-ghost h-9 px-3.5 text-[12.5px] disabled:opacity-50"
+          className="v-btn v-btn-ghost h-9 px-3.5 text-xs disabled:opacity-50"
         >
           Save
         </button>
       </div>
-      <p className="mt-1.5 text-[11px] text-faint">{user.email}</p>
+      <p className="mt-1.5 text-2xs text-faint">{user.email}</p>
 
       {error && (
-        <p className="mt-3 flex items-center gap-1.5 text-[11.5px] font-medium text-red-500">
+        <p className="mt-3 flex items-center gap-1.5 text-2xs font-medium text-red-500">
           <Icon name="x" size={12} /> {error}
         </p>
       )}

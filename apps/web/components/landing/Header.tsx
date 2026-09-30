@@ -39,7 +39,7 @@ export function Header() {
         <Brand />
         <nav aria-label={t('nav.label')} className="hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
-            <a key={l.key} href={l.href} className="rounded-md px-3 py-1.5 text-[13.5px] text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink">
+            <a key={l.key} href={l.href} className="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink">
               {t(`nav.${l.key}`)}
             </a>
           ))}

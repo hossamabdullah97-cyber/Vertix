@@ -34,6 +34,24 @@ const config: Config = {
           fg: 'var(--v-accent-contrast)',
         },
       },
+      // One type scale for the whole app, in whole pixels. Each is a font size
+      // only (no line height), so a size never moves the lines around it.
+      // Smaller sizes (badges inside fixed circles) and display headings above
+      // 32px stay as literal values where they are used.
+      fontSize: {
+        '3xs': '10px',
+        '2xs': '11px',
+        xs: '12px',
+        sm: '13px',
+        base: '14px',
+        md: '15px',
+        lg: '16px',
+        xl: '18px',
+        '2xl': '20px',
+        '3xl': '24px',
+        '4xl': '28px',
+        '5xl': '32px',
+      },
       fontFamily: {
         sans: ['Geist', '"IBM Plex Sans Arabic"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],

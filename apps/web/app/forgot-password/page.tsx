@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
   }
 
   const back = (
-    <Link href="/login" className="mt-8 inline-flex min-h-11 items-center gap-1.5 text-[13.5px] text-muted transition-colors hover:text-ink">
+    <Link href="/login" className="mt-8 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted transition-colors hover:text-ink">
       <DirectionalIcon name="arrow-left" size={14} /> {t('forgot.backToLogin')}
     </Link>
   );
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
             <Icon name="mail" size={15} />
           </span>
-          <p className="text-[14px] leading-relaxed text-ink">
+          <p className="text-base leading-relaxed text-ink">
             {/* The address is bolded inside the sentence, so it has to be a Trans. */}
             <Trans i18nKey="forgot.sentTo" ns="auth" values={{ email: email.trim() }} components={{ 1: <bdi className="font-medium" /> }} />
           </p>

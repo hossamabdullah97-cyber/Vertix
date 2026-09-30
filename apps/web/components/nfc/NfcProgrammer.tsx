@@ -146,8 +146,8 @@ export default function NfcProgrammer({
             <Icon name="tag" size={15} />
           </span>
           <div>
-            <h4 className="text-[13.5px] font-semibold text-ink">{t('nfcProgram.title')}</h4>
-            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+            <h4 className="text-sm font-semibold text-ink">{t('nfcProgram.title')}</h4>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
               {blocker === 'insecure' ? t('nfcProgram.insecure') : t('nfcProgram.unsupported')}
             </p>
           </div>
@@ -174,8 +174,8 @@ export default function NfcProgrammer({
         </span>
 
         <div className="min-w-0 flex-1">
-          <h4 className="text-[13.5px] font-semibold text-ink">{t('nfcProgram.title')}</h4>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+          <h4 className="text-sm font-semibold text-ink">{t('nfcProgram.title')}</h4>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
             {phase === 'idle' && t('nfcProgram.idle')}
             {phase === 'waiting' && t('nfcProgram.waiting')}
             {phase === 'writing' && t('nfcProgram.writing')}
@@ -185,7 +185,7 @@ export default function NfcProgrammer({
           </p>
 
           {uid && phase !== 'error' && (
-            <p dir="ltr" className="mt-2 font-mono text-[11px] text-faint">
+            <p dir="ltr" className="mt-2 font-mono text-2xs text-faint">
               {uid}
             </p>
           )}
@@ -193,19 +193,19 @@ export default function NfcProgrammer({
           <div className="mt-4 flex items-center gap-2">
             {busy ? (
               <>
-                <span className="flex items-center gap-2 text-[12.5px] font-semibold text-accent">
+                <span className="flex items-center gap-2 text-xs font-semibold text-accent">
                   <Icon name="loader" size={14} className="animate-spin" />
                   {phase === 'waiting' ? t('nfcProgram.holdTag') : t('nfcProgram.keepHolding')}
                 </span>
                 <button
                   onClick={cancel}
-                  className="ms-auto text-[12px] font-semibold text-muted underline-offset-2 hover:text-ink hover:underline"
+                  className="ms-auto text-xs font-semibold text-muted underline-offset-2 hover:text-ink hover:underline"
                 >
                   {t('nfcProgram.cancel')}
                 </button>
               </>
             ) : (
-              <button onClick={program} className="v-btn !h-10 px-5 text-[13px] font-semibold">
+              <button onClick={program} className="v-btn !h-10 px-5 text-sm font-semibold">
                 {phase === 'done' || phase === 'error'
                   ? t('nfcProgram.again')
                   : t('nfcProgram.start')}

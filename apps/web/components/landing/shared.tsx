@@ -13,7 +13,7 @@ export function Brand() {
       <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-accent text-white">
         <VMark size={14} strokeWidth={3} />
       </span>
-      <span className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-ink">Vertex Connect</span>
+      <span className="whitespace-nowrap text-md font-semibold tracking-tight text-ink">Vertex Connect</span>
     </Link>
   );
 }
@@ -21,11 +21,11 @@ export function Brand() {
 export function SectionHead({ label, title, subtitle, id }: { label: string; title: string; subtitle?: string; id?: string }) {
   return (
     <div className="max-w-2xl">
-      <p className="text-[13px] font-medium text-accent">{label}</p>
-      <h2 id={id} className="mt-2 text-[28px] font-semibold leading-[1.15] tracking-[-0.025em] text-ink sm:text-[36px] rtl:leading-[1.35] rtl:tracking-normal">
+      <p className="text-sm font-medium text-accent">{label}</p>
+      <h2 id={id} className="mt-2 text-4xl font-semibold leading-[1.15] tracking-[-0.025em] text-ink sm:text-[36px] rtl:leading-[1.35] rtl:tracking-normal">
         {title}
       </h2>
-      {subtitle && <p className="mt-3 text-[15px] leading-relaxed text-muted sm:text-[16px]">{subtitle}</p>}
+      {subtitle && <p className="mt-3 text-md leading-relaxed text-muted sm:text-lg">{subtitle}</p>}
     </div>
   );
 }
@@ -38,7 +38,7 @@ export function Initials({ name, hue, size = 28 }: { name: string; hue: number; 
   return (
     <span
       aria-hidden
-      className="flex shrink-0 items-center justify-center rounded-full bg-[hsl(var(--h)_70%_92%)] text-[11px] font-semibold text-[hsl(var(--h)_55%_32%)] dark:bg-[hsl(var(--h)_30%_20%)] dark:text-[hsl(var(--h)_70%_80%)]"
+      className="flex shrink-0 items-center justify-center rounded-full bg-[hsl(var(--h)_70%_92%)] text-2xs font-semibold text-[hsl(var(--h)_55%_32%)] dark:bg-[hsl(var(--h)_30%_20%)] dark:text-[hsl(var(--h)_70%_80%)]"
       style={{ width: size, height: size, ['--h' as string]: hue }}
     >
       {letters}

@@ -253,7 +253,7 @@ export default function LeadsPage() {
         </div>
       }
     >
-      <p className="text-[14px] text-muted">
+      <p className="text-base text-muted">
         <span className="font-medium text-ink">{t('summary.open', { count: summary.open })}</span>
         <span className="mx-2 text-faint" aria-hidden>·</span>
         {t('summary.pipeline', { value: formatMoney(summary.pipeline, locale) })}
@@ -270,12 +270,12 @@ export default function LeadsPage() {
               role="tab"
               aria-selected={active}
               onClick={() => setView(tab.id)}
-              className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-[13.5px] font-medium transition-colors sm:min-h-10 ${
+              className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
                 active ? 'text-ink' : 'text-muted hover:text-ink'
               }`}
             >
               {tab.label}
-              {tab.count !== undefined && <span className="tabular text-[12px] text-faint">{tab.count}</span>}
+              {tab.count !== undefined && <span className="tabular text-xs text-faint">{tab.count}</span>}
               {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
             </button>
           );
@@ -292,7 +292,7 @@ export default function LeadsPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('toolbar.search')}
-              className="v-field !ps-8 !text-[13px] sm:!h-8"
+              className="v-field !ps-8 !text-sm sm:!h-8"
             />
           </label>
           <SmartFilters
@@ -307,8 +307,8 @@ export default function LeadsPage() {
           />
           {filtersActive && (
             <>
-              <span className="text-[12.5px] text-faint">{t('toolbar.results', { count: filtered.length })}</span>
-              <button onClick={clearFilters} className="min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+              <span className="text-xs text-faint">{t('toolbar.results', { count: filtered.length })}</span>
+              <button onClick={clearFilters} className="min-h-11 text-xs font-medium text-accent hover:underline sm:min-h-0">
                 {t('toolbar.clear')}
               </button>
             </>
@@ -321,7 +321,7 @@ export default function LeadsPage() {
                   role="radio"
                   aria-checked={layout === l}
                   onClick={() => chooseLayout(l)}
-                  className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium transition-colors sm:h-7 ${
+                  className={`flex h-11 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors sm:h-7 ${
                     layout === l ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
                   }`}
                 >
@@ -335,7 +335,7 @@ export default function LeadsPage() {
       )}
 
       {error && (
-        <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 dark:text-red-300">
+        <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
@@ -384,9 +384,9 @@ export default function LeadsPage() {
                     >
                       <header className="flex items-center gap-2 px-1.5 pb-2.5 pt-1">
                         <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: stage.color || 'hsl(var(--v-faint))' }} />
-                        <h3 className="truncate text-[13px] font-medium text-ink">{t(stageKey(stage.name), stage.name)}</h3>
-                        <span className="tabular text-[12px] text-faint">{items.length}</span>
-                        {colValue > 0 && <span className="tabular ms-auto text-[12px] text-faint">{formatMoney(colValue, locale)}</span>}
+                        <h3 className="truncate text-sm font-medium text-ink">{t(stageKey(stage.name), stage.name)}</h3>
+                        <span className="tabular text-xs text-faint">{items.length}</span>
+                        {colValue > 0 && <span className="tabular ms-auto text-xs text-faint">{formatMoney(colValue, locale)}</span>}
                       </header>
 
                       <div className="no-scrollbar flex min-h-[80px] flex-1 flex-col gap-2 overflow-y-auto p-0.5">
@@ -404,7 +404,7 @@ export default function LeadsPage() {
                           ))}
                         </AnimatePresence>
                         {items.length === 0 && (
-                          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line py-8 text-[12.5px] text-faint">
+                          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line py-8 text-xs text-faint">
                             {isOver ? t('board.releaseToDrop') : t('board.noLeads')}
                           </div>
                         )}
@@ -471,7 +471,7 @@ export default function LeadsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             role="status"
-            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
+            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-sm font-medium text-white shadow-lg"
           >
             <Icon name="check" size={14} /> {toast}
           </motion.div>
@@ -506,8 +506,8 @@ function EmptyState() {
         <Icon name="inbox" size={20} />
       </span>
       <div>
-        <p className="text-[15px] font-semibold text-ink">{t('emptyStateTitle')}</p>
-        <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{t('emptyStateDesc')}</p>
+        <p className="text-md font-semibold text-ink">{t('emptyStateTitle')}</p>
+        <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted">{t('emptyStateDesc')}</p>
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         <Link href="/cards" className="v-btn">
@@ -557,7 +557,7 @@ function LeadTable({ leads, stages, onOpen, selected }: { leads: Lead[]; stages:
                   <td>
                     <span className="block font-medium text-ink">{l.name || t('table.unknownLead')}</span>
                     {(l.email || l.phone) && (
-                      <span dir="ltr" className="block text-start text-[12px] text-faint rtl:text-right">
+                      <span dir="ltr" className="block text-start text-xs text-faint rtl:text-right">
                         {l.email || l.phone}
                       </span>
                     )}
@@ -565,7 +565,7 @@ function LeadTable({ leads, stages, onOpen, selected }: { leads: Lead[]; stages:
                   <td className="text-muted">{l.company || '—'}</td>
                   <td>
                     {stage ? (
-                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-elevated px-2 py-0.5 text-[12px] text-ink ring-1 ring-inset ring-line">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-elevated px-2 py-0.5 text-xs text-ink ring-1 ring-inset ring-line">
                         <span className="h-1.5 w-1.5 rounded-full" style={{ background: stage.color || 'hsl(var(--v-faint))' }} />
                         {t(stageKey(stage.name), stage.name)}
                       </span>

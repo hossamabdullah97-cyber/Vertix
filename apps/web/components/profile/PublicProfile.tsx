@@ -143,14 +143,14 @@ export function PublicProfile({
               setSaved(true);
               setTimeout(() => setSaved(false), 2200);
             }}
-            className="flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[var(--p-accent)] px-3 text-[15px] font-medium text-[var(--p-on-accent)] transition-opacity active:opacity-85"
+            className="flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[var(--p-accent)] px-3 text-md font-medium text-[var(--p-on-accent)] transition-opacity active:opacity-85"
           >
             <Icon name={saved ? 'check' : 'user-plus'} size={17} />
             <span className="truncate">{saved ? t.saved : t.save}</span>
           </a>
           <button
             onClick={() => setSheet('exchange')}
-            className="flex h-12 items-center justify-center gap-2 rounded-[12px] px-3 text-[15px] font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+            className="flex h-12 items-center justify-center gap-2 rounded-[12px] px-3 text-md font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
           >
             <Icon name="swap" size={17} className="text-[var(--p-muted)]" />
             <span className="truncate">{t.exchange}</span>
@@ -169,7 +169,7 @@ export function PublicProfile({
                 className="flex h-[62px] flex-col items-center justify-center gap-1 rounded-[12px] bg-[var(--p-elevated)] transition-opacity active:opacity-80"
               >
                 <Icon name={l.icon} size={19} className="text-[var(--p-accent)]" />
-                <span className="max-w-full truncate px-1 text-[12px] font-medium text-[var(--p-muted)]">{l.label}</span>
+                <span className="max-w-full truncate px-1 text-xs font-medium text-[var(--p-muted)]">{l.label}</span>
               </a>
             ))}
           </div>
@@ -214,7 +214,7 @@ export function PublicProfile({
                       target={/^https?:/.test(l.href) ? '_blank' : undefined}
                       rel="noreferrer"
                       onClick={(e) => onLink(e, l)}
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] px-4 text-[15px] font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] px-4 text-md font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
                     >
                       <span style={inkStyle(l.color, profile.mode)} className="p-ink flex shrink-0">
                         <Icon name={l.icon} size={18} />
@@ -279,7 +279,7 @@ export function PublicProfile({
           />
         ))}
 
-        <footer className="mt-12 flex items-center justify-center gap-1.5 text-[12px] text-[var(--p-faint)]">
+        <footer className="mt-12 flex items-center justify-center gap-1.5 text-xs text-[var(--p-faint)]">
           {t.poweredBy}
           <a href="/" onClick={guard} className="v-hit flex items-center gap-1 font-medium text-[var(--p-muted)]">
             <VMark size={12} strokeWidth={3} />
@@ -329,7 +329,7 @@ function WalletButtons({ profile, t, query, preview }: { profile: ProfileData; t
     if (preview) return e.preventDefault();
     track(profile.slug, 'SAVE', { via });
   };
-  const button = 'flex h-11 min-w-0 items-center justify-center gap-2 rounded-[12px] bg-[#0b0b0e] px-3 text-[14px] font-medium text-white transition-opacity active:opacity-85';
+  const button = 'flex h-11 min-w-0 items-center justify-center gap-2 rounded-[12px] bg-[#0b0b0e] px-3 text-base font-medium text-white transition-opacity active:opacity-85';
   return (
     // One above the other: side by side, the names would be cut short.
     <div className="mt-2 flex flex-col gap-2">
@@ -391,8 +391,8 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
             <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black/80 via-black/40 to-transparent" aria-hidden />
             <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
             <div className="absolute inset-x-0 bottom-0 px-5 pb-5 text-white">
-              <Name profile={profile} t={t} className="text-[28px]" />
-              {profile.title && <p className="mt-1 text-[15px] leading-snug text-white/80">{profile.title}</p>}
+              <Name profile={profile} t={t} className="text-4xl" />
+              {profile.title && <p className="mt-1 text-md leading-snug text-white/80">{profile.title}</p>}
               <Company profile={profile} className="mt-2 text-white/90" />
             </div>
           </div>
@@ -410,12 +410,12 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
         <div className="px-5 pt-5">
           <div className="flex h-10 items-center justify-between gap-3">
             {profile.brand ? (
-              <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-[var(--p-muted)]">
+              <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-[var(--p-muted)]">
                 <BrandMark brand={profile.brand} size={24} />
                 <span className="truncate">{profile.brand.name}</span>
               </span>
             ) : profile.profileName ? (
-              <span className="truncate text-[13px] font-medium text-[var(--p-muted)]">{profile.profileName}</span>
+              <span className="truncate text-sm font-medium text-[var(--p-muted)]">{profile.profileName}</span>
             ) : (
               <span />
             )}
@@ -434,8 +434,8 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
           <div className="mt-8 flex items-center gap-4">
             <Avatar profile={profile} size={76} ring={false} />
             <div className="min-w-0 flex-1">
-              <Name profile={profile} t={t} className="text-[22px]" />
-              {profile.title && <p className="mt-0.5 text-[14.5px] leading-snug text-[var(--p-muted)]">{profile.title}</p>}
+              <Name profile={profile} t={t} className="text-3xl" />
+              {profile.title && <p className="mt-0.5 text-base leading-snug text-[var(--p-muted)]">{profile.title}</p>}
             </div>
           </div>
           {/* Shown at the top already; here only when it is a different name. */}
@@ -467,8 +467,8 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
 function Identity({ profile, t, meta, center = false }: { profile: ProfileData; t: ProfileStrings; meta: MetaItem[]; center?: boolean }) {
   return (
     <div className={center ? 'flex flex-col items-center' : ''}>
-      <Name profile={profile} t={t} className="mt-3 text-[24px]" />
-      {profile.title && <p className="mt-1 text-[15px] leading-snug text-[var(--p-muted)]">{profile.title}</p>}
+      <Name profile={profile} t={t} className="mt-3 text-3xl" />
+      {profile.title && <p className="mt-1 text-md leading-snug text-[var(--p-muted)]">{profile.title}</p>}
       <Company profile={profile} className="mt-2.5" />
       <Meta items={meta} center={center} />
     </div>
@@ -494,7 +494,7 @@ function Company({ profile, className = '', noLogo = false }: { profile: Profile
   if (!name) return null;
   const logo = !noLogo && profile.brand?.logo ? profile.brand : null;
   return (
-    <p className={`flex min-w-0 items-center gap-2 text-[14px] font-medium ${className}`}>
+    <p className={`flex min-w-0 items-center gap-2 text-base font-medium ${className}`}>
       {logo ? <BrandMark brand={logo} size={22} /> : <Icon name="briefcase" size={15} className="shrink-0 opacity-60" />}
       <span className="min-w-0 truncate">{name}</span>
     </p>
@@ -522,7 +522,7 @@ function BrandMark({ brand, size }: { brand: { name: string; logo: string | null
 function Meta({ items, center = false }: { items: MetaItem[]; center?: boolean }) {
   if (!items.length) return null;
   return (
-    <ul className={`mt-3 flex flex-wrap gap-x-3.5 gap-y-1.5 text-[13px] text-[var(--p-muted)] ${center ? 'justify-center' : ''}`}>
+    <ul className={`mt-3 flex flex-wrap gap-x-3.5 gap-y-1.5 text-sm text-[var(--p-muted)] ${center ? 'justify-center' : ''}`}>
       {items.map((m) => (
         <li key={m.key} className="flex items-center gap-1.5">
           {m.dot ? <span className="h-2 w-2 rounded-full bg-[#22a06b]" aria-hidden /> : <Icon name={m.icon!} size={14} className="text-[var(--p-faint)]" />}
@@ -582,7 +582,7 @@ function CoverChrome({ profile, t, onShare, lang }: { profile: ProfileData; t: P
       {/* A soft floor so the share button and the tag read on any cover. */}
       <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/20 to-transparent" aria-hidden />
       {profile.profileName && (
-        <span className="absolute start-4 top-4 flex h-8 max-w-[60%] items-center gap-1.5 rounded-full bg-black/30 px-3 text-[12.5px] font-medium text-white backdrop-blur-md">
+        <span className="absolute start-4 top-4 flex h-8 max-w-[60%] items-center gap-1.5 rounded-full bg-black/30 px-3 text-xs font-medium text-white backdrop-blur-md">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white" aria-hidden />
           <span className="truncate">{profile.profileName}</span>
         </span>
@@ -616,7 +616,7 @@ function LangSwitch({ lang, className }: { lang: LangLink; className: string }) 
       hrefLang={lang.lang}
       lang={lang.lang}
       dir={lang.lang === 'ar' ? 'rtl' : 'ltr'}
-      className={`flex h-10 items-center rounded-full px-3.5 text-[13px] font-medium transition-colors ${className}`}
+      className={`flex h-10 items-center rounded-full px-3.5 text-sm font-medium transition-colors ${className}`}
     >
       {label}
     </a>
@@ -650,7 +650,7 @@ function Avatar({ profile, size, ring = true }: { profile: ProfileData; size: nu
 function Block({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      {title && <h2 className="mb-2.5 text-[13px] font-medium text-[var(--p-faint)]">{title}</h2>}
+      {title && <h2 className="mb-2.5 text-sm font-medium text-[var(--p-faint)]">{title}</h2>}
       {children}
     </section>
   );
@@ -694,9 +694,9 @@ function Row({
       >
         {icon}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-medium">{label}</span>
+          <span className="block truncate text-md font-medium">{label}</span>
           {sub && (
-            <span dir={plainSub ? undefined : 'ltr'} className={`block truncate text-[13px] text-[var(--p-faint)] ${plainSub ? '' : 'text-start rtl:text-right'}`}>
+            <span dir={plainSub ? undefined : 'ltr'} className={`block truncate text-sm text-[var(--p-faint)] ${plainSub ? '' : 'text-start rtl:text-right'}`}>
               {sub}
             </span>
           )}
@@ -712,9 +712,9 @@ function About({ text, t }: { text: string; t: ProfileStrings }) {
   const long = text.length > 220 || text.split('\n').length > 4;
   return (
     <div>
-      <p dir="auto" className={`whitespace-pre-line text-[15px] leading-[1.6] ${!open && long ? 'line-clamp-4' : ''}`}>{text}</p>
+      <p dir="auto" className={`whitespace-pre-line text-md leading-[1.6] ${!open && long ? 'line-clamp-4' : ''}`}>{text}</p>
       {long && (
-        <button onClick={() => setOpen((o) => !o)} className="mt-1.5 min-h-[44px] text-[14px] font-medium text-[var(--p-accent)]">
+        <button onClick={() => setOpen((o) => !o)} className="mt-1.5 min-h-[44px] text-base font-medium text-[var(--p-accent)]">
           {open ? t.showLess : t.readMore}
         </button>
       )}
@@ -782,9 +782,9 @@ function SectionBlock({
                 <Icon name="award" size={18} className="text-[var(--p-accent)]" />
               </Tile>
               <span className="min-w-0 flex-1">
-                <span dir="auto" className="block text-[15px] font-medium leading-snug">{c.name}</span>
+                <span dir="auto" className="block text-md font-medium leading-snug">{c.name}</span>
                 {(c.issuer || c.year) && (
-                  <span dir="auto" className="block text-[13px] text-[var(--p-faint)]">
+                  <span dir="auto" className="block text-sm text-[var(--p-faint)]">
                     {[c.issuer, c.year].filter(Boolean).join(' · ')}
                   </span>
                 )}
@@ -840,8 +840,8 @@ function SectionBlock({
   if (!text) return null;
   return (
     <Block title={title}>
-      {pick(section.content, 'subtitle') && <p className="mb-1.5 text-[15px] font-medium">{pick(section.content, 'subtitle')}</p>}
-      <p dir="auto" className="whitespace-pre-line text-[15px] leading-[1.6] text-[var(--p-muted)]">{text}</p>
+      {pick(section.content, 'subtitle') && <p className="mb-1.5 text-md font-medium">{pick(section.content, 'subtitle')}</p>}
+      <p dir="auto" className="whitespace-pre-line text-md leading-[1.6] text-[var(--p-muted)]">{text}</p>
     </Block>
   );
 }
@@ -907,7 +907,7 @@ function BottomSheet({
       >
         <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-[var(--p-line-strong)]" aria-hidden />
         <div className="flex items-start gap-3 px-5 pb-2 pt-3">
-          <h2 className="min-w-0 flex-1 text-[17px] font-semibold leading-snug">{title}</h2>
+          <h2 className="min-w-0 flex-1 text-lg font-semibold leading-snug">{title}</h2>
           <button onClick={onClose} aria-label={closeLabel} className="-m-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--p-muted)] active:bg-[var(--p-elevated)]">
             <Icon name="x" size={18} />
           </button>
@@ -955,19 +955,19 @@ function ShareBody({ slug, name, t, preview }: { slug: string; name: string; t: 
 
   return (
     <div className="text-center">
-      <p className="text-[14px] text-[var(--p-muted)]">{t.shareHint}</p>
+      <p className="text-base text-[var(--p-muted)]">{t.shareHint}</p>
       <div className="mx-auto mt-4 w-fit rounded-[16px] bg-white p-3 ring-1 ring-inset ring-black/5">
         <QRCode value={url || `/c/${slug}`} size={196} />
       </div>
-      <p dir="ltr" className="mx-auto mt-3 max-w-full truncate font-mono text-[12.5px] text-[var(--p-faint)]">
+      <p dir="ltr" className="mx-auto mt-3 max-w-full truncate font-mono text-xs text-[var(--p-faint)]">
         {url.replace(/^https?:\/\//, '')}
       </p>
       <div className={`mt-5 grid gap-2 ${canShare ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        <button onClick={copy} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[15px] font-medium ring-1 ring-inset ring-[var(--p-line-strong)] active:bg-[var(--p-elevated)]">
+        <button onClick={copy} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-md font-medium ring-1 ring-inset ring-[var(--p-line-strong)] active:bg-[var(--p-elevated)]">
           <Icon name={copied ? 'check' : 'copy'} size={16} /> {copied ? t.linkCopied : t.copyLink}
         </button>
         {canShare && (
-          <button onClick={share} className="flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[var(--p-accent)] text-[15px] font-medium text-[var(--p-on-accent)] active:opacity-85">
+          <button onClick={share} className="flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[var(--p-accent)] text-md font-medium text-[var(--p-on-accent)] active:opacity-85">
             <Icon name="share" size={16} /> {t.shareVia}
           </button>
         )}
@@ -1080,8 +1080,8 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--p-accent)] text-[var(--p-on-accent)]">
           <Icon name="check" size={22} />
         </span>
-        <p className="mt-4 text-[17px] font-semibold">{t.done[done]}</p>
-        <p className="mt-1 text-[14px] text-[var(--p-muted)]">{fill(t.doneHint, { name: profile.name })}</p>
+        <p className="mt-4 text-lg font-semibold">{t.done[done]}</p>
+        <p className="mt-1 text-base text-[var(--p-muted)]">{fill(t.doneHint, { name: profile.name })}</p>
         {/* The exchange goes both ways: now keep their number too. */}
         <a
           href={vcardUrl}
@@ -1089,21 +1089,21 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
             if (preview) e.preventDefault();
             else track(profile.slug, 'SAVE');
           }}
-          className="mx-auto mt-6 flex h-12 max-w-[320px] items-center justify-center gap-2 rounded-[12px] bg-[var(--p-elevated)] px-4 text-[15px] font-medium text-[var(--p-fg)] ring-1 ring-inset ring-[var(--p-line)] transition-opacity active:opacity-85"
+          className="mx-auto mt-6 flex h-12 max-w-[320px] items-center justify-center gap-2 rounded-[12px] bg-[var(--p-elevated)] px-4 text-md font-medium text-[var(--p-fg)] ring-1 ring-inset ring-[var(--p-line)] transition-opacity active:opacity-85"
         >
           <Icon name="user-plus" size={17} />
           <span className="truncate">{fill(t.saveBack, { name: profile.name })}</span>
         </a>
-        {preview && <p className="mt-3 text-[12.5px] text-[var(--p-faint)]">{t.previewOnly}</p>}
+        {preview && <p className="mt-3 text-xs text-[var(--p-faint)]">{t.previewOnly}</p>}
       </div>
     );
   }
 
-  const field = 'h-12 w-full rounded-[12px] bg-[var(--p-elevated)] px-3.5 text-[16px] text-[var(--p-fg)] outline-none ring-1 ring-inset ring-transparent placeholder:text-[var(--p-faint)] focus:ring-[var(--p-accent)]';
+  const field = 'h-12 w-full rounded-[12px] bg-[var(--p-elevated)] px-3.5 text-lg text-[var(--p-fg)] outline-none ring-1 ring-inset ring-transparent placeholder:text-[var(--p-faint)] focus:ring-[var(--p-accent)]';
 
   return (
     <form onSubmit={submit} className="space-y-2.5">
-      <p className="text-[14px] text-[var(--p-muted)]">{t.exchangeHint}</p>
+      <p className="text-base text-[var(--p-muted)]">{t.exchangeHint}</p>
       <div role="radiogroup" className="flex rounded-[12px] bg-[var(--p-elevated)] p-1">
         {intents.map((i) => (
           <button
@@ -1115,7 +1115,7 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
               setIntent(i);
               setError('');
             }}
-            className={`h-10 flex-1 rounded-[9px] text-[14px] font-medium transition-colors ${intent === i ? 'bg-[var(--p-surface)] text-[var(--p-fg)] shadow-sm' : 'text-[var(--p-muted)]'}`}
+            className={`h-10 flex-1 rounded-[9px] text-base font-medium transition-colors ${intent === i ? 'bg-[var(--p-surface)] text-[var(--p-fg)] shadow-sm' : 'text-[var(--p-muted)]'}`}
           >
             {t.intents[i]}
           </button>
@@ -1137,15 +1137,15 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
       {intent === 'MEETING' && (
         <div className="space-y-2.5 pt-1">
           {!times ? (
-            <p className="flex h-24 items-center justify-center gap-2 text-[13.5px] text-[var(--p-muted)]">
+            <p className="flex h-24 items-center justify-center gap-2 text-sm text-[var(--p-muted)]">
               <Icon name="loader" size={15} className="animate-spin" /> {t.loadingTimes}
             </p>
           ) : times.days.length === 0 ? (
-            <p className="rounded-[12px] bg-[var(--p-elevated)] px-3.5 py-3 text-[13.5px] leading-snug text-[var(--p-muted)]">{fill(t.noTimes, { name: profile.name })}</p>
+            <p className="rounded-[12px] bg-[var(--p-elevated)] px-3.5 py-3 text-sm leading-snug text-[var(--p-muted)]">{fill(t.noTimes, { name: profile.name })}</p>
           ) : (
             <>
               <div>
-                <span className="mb-1.5 block text-[13px] text-[var(--p-muted)]">{t.pickDay}</span>
+                <span className="mb-1.5 block text-sm text-[var(--p-muted)]">{t.pickDay}</span>
                 {/* Two weeks of working days, scrolled sideways. */}
                 <div role="radiogroup" aria-label={t.pickDay} className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5">
                   {times.days.map((d) => {
@@ -1163,8 +1163,8 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
                         }}
                         className={`flex h-[58px] w-[52px] shrink-0 flex-col items-center justify-center rounded-[12px] ${on ? 'bg-[var(--p-accent)] text-[var(--p-on-accent)]' : 'bg-[var(--p-elevated)] text-[var(--p-fg)]'}`}
                       >
-                        <span className={`text-[11.5px] ${on ? '' : 'text-[var(--p-muted)]'}`}>{new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(at)}</span>
-                        <span className="text-[17px] font-semibold tabular-nums">{new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone: 'UTC' }).format(at)}</span>
+                        <span className={`text-2xs ${on ? '' : 'text-[var(--p-muted)]'}`}>{new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(at)}</span>
+                        <span className="text-lg font-semibold tabular-nums">{new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone: 'UTC' }).format(at)}</span>
                       </button>
                     );
                   })}
@@ -1172,7 +1172,7 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
               </div>
               {day && (
                 <div>
-                  <span className="mb-1.5 block text-[13px] text-[var(--p-muted)]">
+                  <span className="mb-1.5 block text-sm text-[var(--p-muted)]">
                     {new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${day.date}T12:00:00Z`))}
                   </span>
                   <div className="grid grid-cols-4 gap-1.5">
@@ -1182,7 +1182,7 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
                         type="button"
                         onClick={() => setSlot(s.at)}
                         aria-pressed={slot === s.at}
-                        className={`h-11 rounded-[10px] text-[14px] tabular-nums ${slot === s.at ? 'bg-[var(--p-accent)] text-[var(--p-on-accent)]' : 'bg-[var(--p-elevated)] text-[var(--p-fg)]'}`}
+                        className={`h-11 rounded-[10px] text-base tabular-nums ${slot === s.at ? 'bg-[var(--p-accent)] text-[var(--p-on-accent)]' : 'bg-[var(--p-elevated)] text-[var(--p-fg)]'}`}
                       >
                         {new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone: times.timezone }).format(new Date(s.at))}
                       </button>
@@ -1190,7 +1190,7 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
                   </div>
                 </div>
               )}
-              <p className="text-[12.5px] leading-snug text-[var(--p-faint)]">
+              <p className="text-xs leading-snug text-[var(--p-faint)]">
                 {fill(t.timesIn, { zone: zoneLabel(times.timezone, new Date(slot || Date.now())), length: String(times.length) })}
                 {/* A visitor elsewhere sees the time on their own clock too. */}
                 {slot && visitorZone && visitorZone !== times.timezone && (
@@ -1219,9 +1219,9 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
         />
       )}
 
-      {error && <p role="alert" className="text-[13.5px] text-[#d4453a]">{error}</p>}
+      {error && <p role="alert" className="text-sm text-[#d4453a]">{error}</p>}
 
-      <p className="flex items-start gap-2 pt-1 text-[12.5px] leading-snug text-[var(--p-faint)]">
+      <p className="flex items-start gap-2 pt-1 text-xs leading-snug text-[var(--p-faint)]">
         <Icon name="lock" size={13} className="mt-0.5 shrink-0" />
         <span>
           {fill(t.privacy, { name: profile.name })}
@@ -1236,7 +1236,7 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
         </span>
       </p>
 
-      <button type="submit" disabled={busy || (intent === 'MEETING' && !slot)} className="mt-1 flex h-12 w-full items-center justify-center rounded-[12px] bg-[var(--p-accent)] text-[15px] font-medium text-[var(--p-on-accent)] disabled:opacity-50">
+      <button type="submit" disabled={busy || (intent === 'MEETING' && !slot)} className="mt-1 flex h-12 w-full items-center justify-center rounded-[12px] bg-[var(--p-accent)] text-md font-medium text-[var(--p-on-accent)] disabled:opacity-50">
         {busy ? t.sending : t.send[intent]}
       </button>
     </form>

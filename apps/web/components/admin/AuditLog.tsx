@@ -100,7 +100,7 @@ export function AuditLog() {
       {!rows ? (
         <div className="v-skeleton h-72 rounded-xl" />
       ) : rows.length === 0 ? (
-        <p className="rounded-xl py-14 text-center text-[13.5px] text-muted ring-1 ring-inset ring-line">{t('log.empty')}</p>
+        <p className="rounded-xl py-14 text-center text-sm text-muted ring-1 ring-inset ring-line">{t('log.empty')}</p>
       ) : (
         <div className="v-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -118,7 +118,7 @@ export function AuditLog() {
                   return (
                     <tr key={e.id} tabIndex={0} onClick={() => setOpen(e)} onKeyDown={(k) => k.key === 'Enter' && setOpen(e)} className="cursor-pointer outline-none focus-visible:[&>td]:bg-elevated">
                       <td className="w-full max-w-0">
-                        <span className="block truncate text-[13.5px] text-ink">
+                        <span className="block truncate text-sm text-ink">
                           <span className="font-medium">{who(e)}</span> <span className="text-muted">{describeAction(e.action, t)}</span>
                           {target && (
                             <>
@@ -127,14 +127,14 @@ export function AuditLog() {
                             </>
                           )}
                         </span>
-                        <span dir="ltr" className="block truncate font-mono text-[11.5px] text-faint rtl:text-right">
+                        <span dir="ltr" className="block truncate font-mono text-2xs text-faint rtl:text-right">
                           {e.action}
                         </span>
                       </td>
                       <td className="hidden max-w-[220px] md:table-cell">
-                        <span className="block truncate text-[13px] text-muted">{e.orgName}</span>
+                        <span className="block truncate text-sm text-muted">{e.orgName}</span>
                       </td>
-                      <td className="whitespace-nowrap !text-end text-[13px] text-muted">
+                      <td className="whitespace-nowrap !text-end text-sm text-muted">
                         {formatDate(e.createdAt, locale, { month: 'short', day: 'numeric' })} · {formatTime(e.createdAt, locale)}
                       </td>
                     </tr>
@@ -148,23 +148,23 @@ export function AuditLog() {
 
       <Sheet open={!!open} onClose={() => setOpen(null)} closeLabel={t('close')} title={open ? describeAction(open.action, t) : ''} subtitle={open ? `${formatDate(open.createdAt, locale)} · ${formatTime(open.createdAt, locale)}` : undefined}>
         {open && (
-          <dl className="space-y-4 text-[13px]">
+          <dl className="space-y-4 text-sm">
             {[
               [t('log.cols.who'), open.actor ? `${open.actor.name ? `${open.actor.name} · ` : ''}${open.actor.email}` : t('log.system')],
               [t('log.cols.workspace'), open.orgName],
               [t('log.target'), [open.targetType, open.targetId].filter(Boolean).join(' · ') || '—'],
             ].map(([label, value]) => (
               <div key={label}>
-                <dt className="text-[12.5px] text-muted">{label}</dt>
+                <dt className="text-xs text-muted">{label}</dt>
                 <dd className="mt-0.5 break-words text-ink">
                   <bdi>{value}</bdi>
                 </dd>
               </div>
             ))}
             <div>
-              <dt className="text-[12.5px] text-muted">{t('log.details')}</dt>
+              <dt className="text-xs text-muted">{t('log.details')}</dt>
               <dd className="mt-1.5">
-                <pre dir="ltr" className="overflow-x-auto rounded-lg bg-elevated px-3.5 py-3 text-start font-mono text-[12px] leading-relaxed text-ink ring-1 ring-inset ring-line">
+                <pre dir="ltr" className="overflow-x-auto rounded-lg bg-elevated px-3.5 py-3 text-start font-mono text-xs leading-relaxed text-ink ring-1 ring-inset ring-line">
                   {JSON.stringify({ action: open.action, ...(open.metadata ?? {}) }, null, 2)}
                 </pre>
               </dd>

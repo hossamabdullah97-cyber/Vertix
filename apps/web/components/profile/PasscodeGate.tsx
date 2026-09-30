@@ -55,8 +55,8 @@ export function PasscodeGate({
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--p-elevated)] text-[var(--p-muted)]">
           <Icon name="lock" size={20} />
         </span>
-        <h1 className="mt-4 text-[20px] font-semibold">{t.lockedTitle}</h1>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--p-muted)]">{profileName ? fill(t.lockedBody, { name: profileName }) : t.lockedBodyNoName}</p>
+        <h1 className="mt-4 text-2xl font-semibold">{t.lockedTitle}</h1>
+        <p className="mt-1.5 text-base leading-relaxed text-[var(--p-muted)]">{profileName ? fill(t.lockedBody, { name: profileName }) : t.lockedBodyNoName}</p>
 
         <input
           autoFocus
@@ -68,15 +68,15 @@ export function PasscodeGate({
           placeholder={t.passcode}
           aria-label={t.passcode}
           aria-invalid={wrongCode}
-          className="mt-5 h-12 w-full rounded-[12px] bg-[var(--p-elevated)] px-4 text-center text-[18px] font-medium tracking-[0.3em] outline-none ring-1 ring-inset ring-transparent placeholder:tracking-normal placeholder:text-[var(--p-faint)] focus:ring-[var(--p-accent)]"
+          className="mt-5 h-12 w-full rounded-[12px] bg-[var(--p-elevated)] px-4 text-center text-xl font-medium tracking-[0.3em] outline-none ring-1 ring-inset ring-transparent placeholder:tracking-normal placeholder:text-[var(--p-faint)] focus:ring-[var(--p-accent)]"
         />
-        {wrongCode && <p className="mt-2 text-[13.5px] text-[#d4453a]">{t.wrongCode}</p>}
+        {wrongCode && <p className="mt-2 text-sm text-[#d4453a]">{t.wrongCode}</p>}
 
-        <button type="submit" disabled={submitting || !code.trim()} className="mt-3 h-12 w-full rounded-[12px] bg-[var(--p-accent)] text-[15px] font-medium text-[var(--p-on-accent)] disabled:opacity-50">
+        <button type="submit" disabled={submitting || !code.trim()} className="mt-3 h-12 w-full rounded-[12px] bg-[var(--p-accent)] text-md font-medium text-[var(--p-on-accent)] disabled:opacity-50">
           {submitting ? t.unlocking : t.unlock}
         </button>
 
-        <p className="mt-6 flex items-center justify-center gap-1.5 text-[12px] text-[var(--p-faint)]">
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-[var(--p-faint)]">
           {t.poweredBy}
           <span className="flex items-center gap-1 font-medium text-[var(--p-muted)]">
             <VMark size={12} strokeWidth={3} /> Vertex Connect

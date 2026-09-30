@@ -140,23 +140,23 @@ export function KeysView() {
                             <span className="v-badge v-badge-warning shrink-0">{t('keys.status.expired')}</span>
                           ) : null}
                         </span>
-                        <span className="block truncate text-[12px] text-faint">
+                        <span className="block truncate text-xs text-faint">
                           {k.createdBy ? t('keys.createdBy', { name: iso(k.createdBy), date: iso(formatDate(k.createdAt, locale)) }) : formatDate(k.createdAt, locale)}
                           {k.expiresAt && !k.revoked && !expired(k) && ` · ${t('keys.expires', { date: iso(formatDate(k.expiresAt, locale)) })}`}
                         </span>
-                        <span className="mt-0.5 block truncate text-[12px] text-muted lg:hidden">{access(k)}</span>
+                        <span className="mt-0.5 block truncate text-xs text-muted lg:hidden">{access(k)}</span>
                       </td>
                       <td className="hidden whitespace-nowrap md:table-cell">
-                        <span dir="ltr" className="font-mono text-[12.5px] text-muted">
+                        <span dir="ltr" className="font-mono text-xs text-muted">
                           {k.keyHint}
                         </span>
                       </td>
                       <td className="hidden min-w-[240px] max-w-[340px] lg:table-cell">
-                        <span className="line-clamp-2 text-[12.5px] text-muted" title={access(k)}>
+                        <span className="line-clamp-2 text-xs text-muted" title={access(k)}>
                           {access(k)}
                         </span>
                       </td>
-                      <td className="hidden whitespace-nowrap text-[12.5px] text-muted sm:table-cell">{k.lastUsedAt ? formatRelativeTime(k.lastUsedAt, locale) : t('never')}</td>
+                      <td className="hidden whitespace-nowrap text-xs text-muted sm:table-cell">{k.lastUsedAt ? formatRelativeTime(k.lastUsedAt, locale) : t('never')}</td>
                       <td>
                         <ActionMenu
                           label={t('more')}
@@ -193,8 +193,8 @@ export function KeysView() {
       />
 
       <SecretDialog open={!!secret} title={t('secretDialog.keyTitle')} value={secret} onDone={() => setSecret('')}>
-        <p className="text-[12.5px] text-muted">{t('keys.use.body')}</p>
-        <pre dir="ltr" className="mt-2 overflow-x-auto rounded-lg bg-elevated px-3 py-2.5 text-start font-mono text-[12px] text-ink ring-1 ring-inset ring-line">{`Authorization: Bearer ${secret.slice(0, 10)}…`}</pre>
+        <p className="text-xs text-muted">{t('keys.use.body')}</p>
+        <pre dir="ltr" className="mt-2 overflow-x-auto rounded-lg bg-elevated px-3 py-2.5 text-start font-mono text-xs text-ink ring-1 ring-inset ring-line">{`Authorization: Bearer ${secret.slice(0, 10)}…`}</pre>
       </SecretDialog>
 
       <ConfirmDialog
@@ -229,14 +229,14 @@ function Usage() {
   const example = `curl ${API_URL}/cards \\\n  -H "Authorization: Bearer <your key>"`;
   return (
     <details className="group mt-6 rounded-xl ring-1 ring-inset ring-line">
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-[13px] font-medium text-ink sm:px-5 [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-ink sm:px-5 [&::-webkit-details-marker]:hidden">
         <Icon name="file-text" size={14} className="text-faint" />
         {t('keys.use.title')}
         <Icon name="chevron-down" size={14} className="ms-auto text-faint transition-transform group-open:rotate-180" />
       </summary>
       <div className="border-t border-line px-4 py-4 sm:px-5">
-        <p className="text-[13px] text-muted">{t('keys.use.body')}</p>
-        <pre dir="ltr" className="mt-3 overflow-x-auto rounded-lg bg-elevated px-3.5 py-3 text-start font-mono text-[12px] leading-relaxed text-ink ring-1 ring-inset ring-line">
+        <p className="text-sm text-muted">{t('keys.use.body')}</p>
+        <pre dir="ltr" className="mt-3 overflow-x-auto rounded-lg bg-elevated px-3.5 py-3 text-start font-mono text-xs leading-relaxed text-ink ring-1 ring-inset ring-line">
           {example}
         </pre>
       </div>
@@ -289,7 +289,7 @@ function NewKeySheet({ open, scopes, onClose, onCreated }: { open: boolean; scop
       title={t('keys.new')}
       footer={
         <div className="flex items-center justify-end gap-2">
-          {err && <p className="me-auto text-[12.5px] text-red-600 dark:text-red-400">{err}</p>}
+          {err && <p className="me-auto text-xs text-red-600 dark:text-red-400">{err}</p>}
           <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
             {t('cancel')}
           </button>
@@ -305,13 +305,13 @@ function NewKeySheet({ open, scopes, onClose, onCreated }: { open: boolean; scop
         </Field>
 
         <div>
-          <p className="mb-2 text-[12.5px] font-medium text-ink">{t('keys.form.access')}</p>
+          <p className="mb-2 text-xs font-medium text-ink">{t('keys.form.access')}</p>
           <div className="divide-y divide-line rounded-lg ring-1 ring-inset ring-line">
             {resources.map((r) => {
               const value = levels[r.key] ?? 'none';
               return (
                 <div key={r.key} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
-                  <span className="text-[13px] text-ink">{t(`keys.resources.${r.key}`, { defaultValue: r.key })}</span>
+                  <span className="text-sm text-ink">{t(`keys.resources.${r.key}`, { defaultValue: r.key })}</span>
                   <div role="radiogroup" aria-label={t(`keys.resources.${r.key}`, { defaultValue: r.key })} className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
                     {r.levels.map((lvl) => (
                       <button
@@ -320,7 +320,7 @@ function NewKeySheet({ open, scopes, onClose, onCreated }: { open: boolean; scop
                         role="radio"
                         aria-checked={value === lvl}
                         onClick={() => setLevels((v) => ({ ...v, [r.key]: lvl }))}
-                        className={`h-9 rounded-md px-2.5 text-[12.5px] font-medium sm:h-7 ${value === lvl ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+                        className={`h-9 rounded-md px-2.5 text-xs font-medium sm:h-7 ${value === lvl ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
                       >
                         {t(`keys.levels.${lvl}`)}
                       </button>

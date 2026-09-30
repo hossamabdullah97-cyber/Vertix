@@ -111,16 +111,16 @@ export function TeamsView({
 
       {teams.length === 0 && departments.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center">
-          <p className="text-[14px] font-medium text-ink">{t('teams.emptyTitle')}</p>
-          <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{t('teams.emptyBody')}</p>
+          <p className="text-base font-medium text-ink">{t('teams.emptyTitle')}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted">{t('teams.emptyBody')}</p>
         </div>
       ) : (
         groups.map(({ dept: d, teams: list }) => (
           <section key={d?.id ?? 'none'} className="v-card overflow-hidden">
             <header className="flex items-center gap-2 border-b border-line px-4 py-3">
-              <h2 className="truncate text-[14px] font-semibold text-ink">{d ? d.name : departments.length ? t('teams.noDepartment') : t('teams.allTeams')}</h2>
+              <h2 className="truncate text-base font-semibold text-ink">{d ? d.name : departments.length ? t('teams.noDepartment') : t('teams.allTeams')}</h2>
               {d && (
-                <span className="tabular shrink-0 text-[12.5px] text-faint">
+                <span className="tabular shrink-0 text-xs text-faint">
                   {t('teams.teamsCount', { count: list.length, value: fmt(list.length) })}
                   {' · '}
                   {(() => {
@@ -129,7 +129,7 @@ export function TeamsView({
                   })()}
                 </span>
               )}
-              {d?.manager && <span className="hidden truncate text-[12.5px] text-faint sm:inline">· {t('teams.ledBy', { name: personName(d.manager) })}</span>}
+              {d?.manager && <span className="hidden truncate text-xs text-faint sm:inline">· {t('teams.ledBy', { name: personName(d.manager) })}</span>}
               {d && canManage && (
                 <span className="ms-auto">
                   <ActionMenu
@@ -143,7 +143,7 @@ export function TeamsView({
               )}
             </header>
             {list.length === 0 ? (
-              <p className="px-4 py-4 text-[13px] text-faint">{t('teams.deptEmpty')}</p>
+              <p className="px-4 py-4 text-sm text-faint">{t('teams.deptEmpty')}</p>
             ) : (
               <ul className="divide-y divide-line">
                 {list.map((tm) => (
@@ -151,8 +151,8 @@ export function TeamsView({
                     <button onClick={() => setOpenTeam(tm.id)} className="flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-start hover:bg-elevated">
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: tm.color || 'hsl(var(--v-faint))' }} aria-hidden />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13.5px] font-medium text-ink">{tm.name}</span>
-                        <span className="block truncate text-[12px] text-faint">
+                        <span className="block truncate text-sm font-medium text-ink">{tm.name}</span>
+                        <span className="block truncate text-xs text-faint">
                           {tm.manager ? t('teams.ledBy', { name: personName(tm.manager) }) : t('teams.noLead')}
                         </span>
                       </span>
@@ -161,8 +161,8 @@ export function TeamsView({
                           <Avatar key={m.id} user={m.user} size={24} ring />
                         ))}
                       </span>
-                      <span className="tabular w-20 shrink-0 text-end text-[12.5px] text-muted">{t('teams.people', { count: tm._count.memberships, value: fmt(tm._count.memberships) })}</span>
-                      <span className="tabular hidden w-24 shrink-0 text-end text-[12.5px] text-muted md:block">{t('teams.leads', { count: tm.leads ?? 0, value: fmt(tm.leads ?? 0) })}</span>
+                      <span className="tabular w-20 shrink-0 text-end text-xs text-muted">{t('teams.people', { count: tm._count.memberships, value: fmt(tm._count.memberships) })}</span>
+                      <span className="tabular hidden w-24 shrink-0 text-end text-xs text-muted md:block">{t('teams.leads', { count: tm.leads ?? 0, value: fmt(tm.leads ?? 0) })}</span>
                       <Icon name="chevron-down" size={14} className="shrink-0 -rotate-90 text-faint rtl:rotate-90" />
                     </button>
                   </li>
@@ -248,7 +248,7 @@ export function TeamsView({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[12.5px] text-muted">{label}</span>
+      <span className="mb-1.5 block text-xs text-muted">{label}</span>
       {children}
     </label>
   );
@@ -372,7 +372,7 @@ function TeamSheet({
               {leadOptions}
             </select>
           </Field>
-          {error && <p role="alert" className="text-[12.5px] text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</p>}
           <button disabled={busy || !name.trim()} className="v-btn w-full disabled:opacity-60">
             {busy ? t('actions.saving') : t('teams.create')}
           </button>
@@ -405,7 +405,7 @@ function TeamSheet({
     >
       <div className="space-y-5">
         {error && (
-          <p role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+          <p role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
             {error}
           </p>
         )}
@@ -417,12 +417,12 @@ function TeamSheet({
             { label: t('teams.tasksLabel'), value: tasksLabel },
           ].map((s) => (
             <div key={s.label} className="bg-surface px-3 py-2.5">
-              <p className="text-[12px] text-faint">{s.label}</p>
-              <p className="tabular mt-0.5 text-[15px] font-medium text-ink">{s.value}</p>
+              <p className="text-xs text-faint">{s.label}</p>
+              <p className="tabular mt-0.5 text-md font-medium text-ink">{s.value}</p>
             </div>
           ))}
         </div>
-        <p className="-mt-3 text-[12px] leading-relaxed text-faint">{t('teams.statsNote')}</p>
+        <p className="-mt-3 text-xs leading-relaxed text-faint">{t('teams.statsNote')}</p>
 
         {canManage && (
           <>
@@ -464,20 +464,20 @@ function TeamSheet({
         )}
 
         <div>
-          <p className="mb-1.5 flex items-baseline gap-2 text-[12.5px] text-muted">
+          <p className="mb-1.5 flex items-baseline gap-2 text-xs text-muted">
             {t('teams.members')}
             <span className="tabular text-faint">{fmt(inTeam.length)}</span>
           </p>
           {inTeam.length === 0 ? (
-            <p className="text-[13px] text-faint">{t('teams.noMembers')}</p>
+            <p className="text-sm text-faint">{t('teams.noMembers')}</p>
           ) : (
             <ul className="divide-y divide-line overflow-hidden rounded-lg ring-1 ring-inset ring-line">
               {inTeam.map((m) => (
                 <li key={m.id} className="flex items-center gap-2 pe-1.5">
                   <button onClick={() => onOpenMember(m.id)} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-3 py-2 text-start hover:bg-elevated">
                     <Avatar user={m.user} size={26} />
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{personName(m.user)}</span>
-                    <span className="shrink-0 text-[12px] text-faint">{t(`roles.${m.role}.name`)}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">{personName(m.user)}</span>
+                    <span className="shrink-0 text-xs text-faint">{t(`roles.${m.role}.name`)}</span>
                   </button>
                   {canManage && (
                     <button
@@ -514,7 +514,7 @@ function TeamSheet({
               </button>
             </div>
           )}
-          {canManage && others.length > 0 && <p className="mt-1.5 text-[12px] text-faint">{t('teams.moveNote')}</p>}
+          {canManage && others.length > 0 && <p className="mt-1.5 text-xs text-faint">{t('teams.moveNote')}</p>}
         </div>
       </div>
     </Sheet>
@@ -583,7 +583,7 @@ function DepartmentSheet({
             ))}
           </select>
         </Field>
-        {error && <p role="alert" className="text-[12.5px] text-red-600 dark:text-red-400">{error}</p>}
+        {error && <p role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</p>}
         <button disabled={busy || !name.trim()} className="v-btn w-full disabled:opacity-60">
           {busy ? t('actions.saving') : department ? t('actions.save') : t('teams.createDepartment')}
         </button>

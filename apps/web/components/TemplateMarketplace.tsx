@@ -50,7 +50,7 @@ function MiniPreview({ t, cta }: { t: Template; cta: string }) {
         {/* `relative` lifts the avatar above the positioned cover it overlaps. */}
         <div className="relative -mt-4 mb-2">
           <div
-            className={`flex h-8 w-8 items-center justify-center text-[12px] font-semibold ${round}`}
+            className={`flex h-8 w-8 items-center justify-center text-xs font-semibold ${round}`}
             style={{ background: accent, color: contrast, boxShadow: `0 0 0 2px ${dark ? '#0e0e12' : '#fff'}` }}
           >
             A
@@ -88,7 +88,7 @@ function Segmented<T extends string>({
           role="radio"
           aria-checked={value === o.key}
           onClick={() => onChange(o.key)}
-          className={`h-11 rounded-md px-3 text-[12.5px] font-medium transition-colors sm:h-8 ${
+          className={`h-11 rounded-md px-3 text-xs font-medium transition-colors sm:h-8 ${
             value === o.key ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
           }`}
         >
@@ -209,7 +209,7 @@ export function TemplateMarketplace({
                 key={f ?? 'all'}
                 onClick={() => setFamilyFilter(f)}
                 aria-pressed={selected}
-                className={`h-11 shrink-0 rounded-md px-2.5 text-[12.5px] transition-colors sm:h-7 ${
+                className={`h-11 shrink-0 rounded-md px-2.5 text-xs transition-colors sm:h-7 ${
                   selected ? 'bg-elevated font-medium text-ink ring-1 ring-inset ring-line' : 'text-muted hover:text-ink'
                 }`}
               >
@@ -218,13 +218,13 @@ export function TemplateMarketplace({
             );
           })}
         </div>
-        <span className="tabular shrink-0 text-[12px] text-faint">{t('templates.count', { count: filtered.length })}</span>
+        <span className="tabular shrink-0 text-xs text-faint">{t('templates.count', { count: filtered.length })}</span>
       </div>
 
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-14 text-center">
-          <p className="text-[13px] text-muted">{t('templates.empty')}</p>
+          <p className="text-sm text-muted">{t('templates.empty')}</p>
           {filtersActive && (
             <button
               onClick={() => {
@@ -266,8 +266,8 @@ export function TemplateMarketplace({
 
                 <div className="flex items-start gap-1 px-1 pt-2.5">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-medium text-ink">{tpl.name}</p>
-                    <p className="truncate text-[12px] text-faint">
+                    <p className="truncate text-sm font-medium text-ink">{tpl.name}</p>
+                    <p className="truncate text-xs text-faint">
                       {family(tpl)} · {modeLabel(tpl.mode)}
                     </p>
                   </div>
@@ -298,7 +298,7 @@ export function TemplateMarketplace({
 
                 <div className="px-1 pb-1 pt-2">
                   {active ? (
-                    <span className="flex h-11 items-center justify-center gap-1.5 text-[12.5px] font-medium text-accent sm:h-8">
+                    <span className="flex h-11 items-center justify-center gap-1.5 text-xs font-medium text-accent sm:h-8">
                       <Icon name="check" size={13} /> {t('templates.applied')}
                     </span>
                   ) : (
@@ -328,7 +328,7 @@ export function TemplateMarketplace({
             exit={{ opacity: 0, y: 12 }}
             className="fixed inset-x-0 bottom-[calc(1.25rem+var(--v-dock,0px))] z-40 mx-auto flex w-fit items-center gap-3 rounded-xl border border-line bg-surface py-2 pe-2 ps-4 shadow-lg"
           >
-            <span className="text-[12.5px] text-ink">{t('templates.selected', { count: compare.length })}</span>
+            <span className="text-xs text-ink">{t('templates.selected', { count: compare.length })}</span>
             <div className="flex -space-x-1.5 rtl:space-x-reverse">
               {compareTemplates.map((tpl) => (
                 <span key={tpl.id} className="h-5 w-5 rounded-full ring-2 ring-surface" style={{ background: tpl.accent }} title={tpl.name} />
@@ -364,7 +364,7 @@ export function TemplateMarketplace({
 function CompareRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <tr className="border-t border-line align-top">
-      <td className="w-28 py-3 pe-3 text-[12px] text-faint">{label}</td>
+      <td className="w-28 py-3 pe-3 text-xs text-faint">{label}</td>
       {children}
     </tr>
   );
@@ -417,8 +417,8 @@ function CompareView({
           >
             <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
               <div>
-                <h2 className="text-[15px] font-semibold text-ink">{t('templates.compareTitle')}</h2>
-                <p className="text-[12.5px] text-faint">{t('templates.compareCount', { count: templates.length })}</p>
+                <h2 className="text-md font-semibold text-ink">{t('templates.compareTitle')}</h2>
+                <p className="text-xs text-faint">{t('templates.compareCount', { count: templates.length })}</p>
               </div>
               <button
                 onClick={onClose}
@@ -446,7 +446,7 @@ function CompareView({
                           </button>
                           <MiniPreview t={tpl} cta={t('templates.miniCta')} />
                         </div>
-                        <p className="mt-2 truncate text-[13px] font-medium text-ink">{tpl.name}</p>
+                        <p className="mt-2 truncate text-sm font-medium text-ink">{tpl.name}</p>
                       </td>
                     ))}
                   </tr>
@@ -454,14 +454,14 @@ function CompareView({
                 <tbody>
                   <CompareRow label={t('templates.rows.style')}>
                     {templates.map((tpl) => (
-                      <td key={tpl.id} className="px-2 py-3 text-[13px] text-ink">
+                      <td key={tpl.id} className="px-2 py-3 text-sm text-ink">
                         {family(tpl)}
                       </td>
                     ))}
                   </CompareRow>
                   <CompareRow label={t('design.themeMode')}>
                     {templates.map((tpl) => (
-                      <td key={tpl.id} className="px-2 py-3 text-[13px] text-ink">
+                      <td key={tpl.id} className="px-2 py-3 text-sm text-ink">
                         {tpl.mode === 'dark' ? t('design.darkMode') : t('design.lightMode')}
                       </td>
                     ))}
@@ -473,7 +473,7 @@ function CompareView({
                           {[tpl.accent, shade(tpl.accent, -40), shade(tpl.accent, 40)].map((c, i) => (
                             <span key={i} className="h-4 w-4 rounded-full ring-1 ring-inset ring-black/10" style={{ background: c }} />
                           ))}
-                          <span dir="ltr" className="ms-1 font-mono text-[11.5px] text-muted">
+                          <span dir="ltr" className="ms-1 font-mono text-2xs text-muted">
                             {tpl.accent}
                           </span>
                         </span>
@@ -482,14 +482,14 @@ function CompareView({
                   </CompareRow>
                   <CompareRow label={t('design.cover')}>
                     {templates.map((tpl) => (
-                      <td key={tpl.id} className="px-2 py-3 text-[13px] text-muted">
+                      <td key={tpl.id} className="px-2 py-3 text-sm text-muted">
                         {t(`design.covers.${coverOf(tpl)}`)}
                       </td>
                     ))}
                   </CompareRow>
                   <CompareRow label={t('templates.rows.avatar')}>
                     {templates.map((tpl) => (
-                      <td key={tpl.id} className="px-2 py-3 text-[13px] text-muted">
+                      <td key={tpl.id} className="px-2 py-3 text-sm text-muted">
                         {t(`templates.avatars.${tpl.avatar ?? 'circle'}`)}
                       </td>
                     ))}
@@ -500,7 +500,7 @@ function CompareView({
                       return (
                         <td key={tpl.id} className="px-2 py-3">
                           {active ? (
-                            <span className="flex h-8 items-center justify-center gap-1.5 text-[12.5px] font-medium text-accent">
+                            <span className="flex h-8 items-center justify-center gap-1.5 text-xs font-medium text-accent">
                               <Icon name="check" size={13} /> {t('templates.applied')}
                             </span>
                           ) : (

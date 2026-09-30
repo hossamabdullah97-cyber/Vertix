@@ -43,8 +43,8 @@ export function QrCard({ url, name }: { url: string; name: string }) {
         className="relative w-[300px] overflow-hidden rounded-[24px] border border-line bg-surface p-6 text-center shadow-xl"
       >
         <div className="mb-4">
-          <p className="text-[15px] font-bold tracking-tight text-ink">{name || 'Your Profile'}</p>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Scan to connect</p>
+          <p className="text-md font-bold tracking-tight text-ink">{name || 'Your Profile'}</p>
+          <p className="text-2xs font-semibold uppercase tracking-wide text-muted">Scan to connect</p>
         </div>
 
         <div className="relative mx-auto w-fit overflow-hidden rounded-2xl border border-line bg-white p-3">
@@ -68,17 +68,17 @@ export function QrCard({ url, name }: { url: string; name: string }) {
           ))}
         </div>
 
-        <p className="mt-4 truncate text-[11px] text-muted">{url}</p>
+        <p className="mt-4 truncate text-2xs text-muted">{url}</p>
       </motion.div>
 
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <button onClick={() => downloadQrPng(url, `${name || 'vertex'}-qr.png`)} className="v-btn v-btn-ghost h-9 px-3 text-[12px] font-semibold">
+        <button onClick={() => downloadQrPng(url, `${name || 'vertex'}-qr.png`)} className="v-btn v-btn-ghost h-9 px-3 text-xs font-semibold">
           <Icon name="download" size={14} /> Download
         </button>
-        <button onClick={share} className="v-btn v-btn-ghost h-9 px-3 text-[12px] font-semibold">
+        <button onClick={share} className="v-btn v-btn-ghost h-9 px-3 text-xs font-semibold">
           <Icon name="send" size={14} /> Share
         </button>
-        <button onClick={copy} className="v-btn v-btn-ghost h-9 px-3 text-[12px] font-semibold">
+        <button onClick={copy} className="v-btn v-btn-ghost h-9 px-3 text-xs font-semibold">
           <Icon name={copied ? 'check' : 'copy'} size={14} /> {copied ? 'Copied' : 'Copy link'}
         </button>
       </div>

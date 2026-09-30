@@ -104,10 +104,10 @@ function LinkRow({ href, onCopy, label, note }: { href: string; onCopy: () => vo
   return (
     <div className="flex items-center gap-2">
       <div className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg bg-elevated px-3 ring-1 ring-inset ring-line">
-        <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-[12px] text-muted rtl:text-right">
+        <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-xs text-muted rtl:text-right">
           {href}
         </span>
-        {note && <span className="shrink-0 text-[11.5px] text-faint">{note}</span>}
+        {note && <span className="shrink-0 text-2xs text-faint">{note}</span>}
       </div>
       <button onClick={onCopy} className="v-btn v-btn-ghost shrink-0 !h-11 sm:!h-9">
         <Icon name="copy" size={13} /> {label}
@@ -207,8 +207,8 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-[16px] font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{t('variants.title')}</h2>
-          <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-muted">{t('variants.subtitle')}</p>
+          <h2 className="text-lg font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{t('variants.title')}</h2>
+          <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted">{t('variants.subtitle')}</p>
         </div>
         <button onClick={addVariant} disabled={busy} className="v-btn v-btn-ghost shrink-0">
           <Icon name={busy ? 'loader' : 'plus'} size={14} className={busy ? 'animate-spin' : undefined} /> {t('variants.add')}
@@ -216,15 +216,15 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
       </div>
 
       {error && (
-        <div role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-400">
+        <div role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-400">
           {error}
         </div>
       )}
 
       {conflicts.length > 0 && (
         <div className="rounded-lg bg-amber-500/[0.06] px-3.5 py-3 ring-1 ring-inset ring-amber-500/25">
-          <p className="text-[13px] font-medium text-amber-800 dark:text-amber-300">{t('variants.conflictsTitle')}</p>
-          <ul className="mt-1 list-disc space-y-0.5 ps-5 text-[12.5px] text-muted">
+          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{t('variants.conflictsTitle')}</p>
+          <ul className="mt-1 list-disc space-y-0.5 ps-5 text-xs text-muted">
             {conflicts.map((c, i) => (
               <li key={i}>{conflictText(c)}</li>
             ))}
@@ -239,11 +239,11 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
             <Icon name="user" size={15} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-2 text-[14px] font-medium text-ink">
+            <p className="flex items-center gap-2 text-base font-medium text-ink">
               {t('variants.default.title')}
               <span className="v-badge v-badge-neutral">{t('variants.default.badge')}</span>
             </p>
-            <p className="mt-0.5 text-[12.5px] text-muted">{t('variants.default.hint')}</p>
+            <p className="mt-0.5 text-xs text-muted">{t('variants.default.hint')}</p>
           </div>
         </div>
         <div className="mt-3">
@@ -259,8 +259,8 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
         </div>
       ) : variants.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line px-6 py-10 text-center">
-          <p className="text-[14px] font-medium text-ink">{t('variants.emptyTitle')}</p>
-          <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{t('variants.emptyBody')}</p>
+          <p className="text-base font-medium text-ink">{t('variants.emptyTitle')}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted">{t('variants.emptyBody')}</p>
           <button onClick={addVariant} disabled={busy} className="v-btn v-btn-ghost mt-4">
             <Icon name="plus" size={14} /> {t('variants.add')}
           </button>
@@ -274,7 +274,7 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
       )}
 
       {toast && (
-        <div role="status" className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-[13px] text-surface shadow-lg">
+        <div role="status" className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-sm text-surface shadow-lg">
           <Icon name="check" size={14} /> {toast}
         </div>
       )}
@@ -306,7 +306,7 @@ function VariantCard({
   const live = isLiveNow(v);
   const vcard = (v.vcardData ?? {}) as Record<string, string>;
   const shareLink = v.accessKey ? `${baseLink}?p=${encodeURIComponent(v.accessKey)}` : baseLink;
-  const label = 'mb-1.5 flex items-baseline gap-1.5 text-[12.5px] text-muted';
+  const label = 'mb-1.5 flex items-baseline gap-1.5 text-xs text-muted';
 
   return (
     <div className="rounded-xl ring-1 ring-inset ring-line">
@@ -316,7 +316,7 @@ function VariantCard({
           aria-label={t('variants.nameLabel')}
           onChange={(e) => onSaveLocal(v.id, { name: e.target.value })}
           onBlur={(e) => onSave(v.id, { name: e.target.value.trim() || t('variants.fallbackName') })}
-          className="-ms-1.5 min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-[14px] font-medium text-ink outline-none hover:bg-elevated focus:bg-elevated"
+          className="-ms-1.5 min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-base font-medium text-ink outline-none hover:bg-elevated focus:bg-elevated"
         />
         {v.accessKey ? (
           <span className="v-badge v-badge-neutral shrink-0">
@@ -341,7 +341,7 @@ function VariantCard({
 
       <div className="grid gap-5 p-4 lg:grid-cols-2">
         <div className="space-y-3">
-          <p className="text-[12.5px] font-medium text-ink">{t('variants.look')}</p>
+          <p className="text-xs font-medium text-ink">{t('variants.look')}</p>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
               <span className={label}>{t('variants.displayName')}</span>
@@ -377,11 +377,11 @@ function VariantCard({
         </div>
 
         <div className="space-y-3 lg:border-s lg:border-line lg:ps-5">
-          <p className="text-[12.5px] font-medium text-ink">{t('variants.audience')}</p>
+          <p className="text-xs font-medium text-ink">{t('variants.audience')}</p>
           <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 ring-1 ring-inset ring-line">
             <span className="min-w-0">
-              <span className="block text-[13px] text-ink">{t('variants.manual')}</span>
-              <span className="block text-[12px] text-faint">{t('variants.manualHint')}</span>
+              <span className="block text-sm text-ink">{t('variants.manual')}</span>
+              <span className="block text-xs text-faint">{t('variants.manualHint')}</span>
             </span>
             <Switch on={v.manualActive} onChange={() => onSave(v.id, { manualActive: !v.manualActive })} label={t('variants.manual')} />
           </div>
@@ -391,7 +391,7 @@ function VariantCard({
               <input
                 type="datetime-local"
                 dir="ltr"
-                className="v-field tabular !text-[12.5px] rtl:text-right"
+                className="v-field tabular !text-xs rtl:text-right"
                 value={toLocalInput(v.scheduleStart)}
                 onChange={(e) => onSave(v.id, { scheduleStart: fromLocalInput(e.target.value) })}
               />
@@ -401,7 +401,7 @@ function VariantCard({
               <input
                 type="datetime-local"
                 dir="ltr"
-                className="v-field tabular !text-[12.5px] rtl:text-right"
+                className="v-field tabular !text-xs rtl:text-right"
                 value={toLocalInput(v.scheduleEnd)}
                 onChange={(e) => onSave(v.id, { scheduleEnd: fromLocalInput(e.target.value) })}
               />
@@ -410,11 +410,11 @@ function VariantCard({
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
               <span className={label}>
-                {t('variants.key')} <span className="text-[12px] text-faint">· ?p=</span>
+                {t('variants.key')} <span className="text-xs text-faint">· ?p=</span>
               </span>
               <input
                 dir="ltr"
-                className="v-field font-mono !text-[12.5px] rtl:text-right"
+                className="v-field font-mono !text-xs rtl:text-right"
                 value={v.accessKey ?? ''}
                 onChange={(e) => onSaveLocal(v.id, { accessKey: e.target.value })}
                 onBlur={(e) => onSave(v.id, { accessKey: e.target.value.trim() || null })}
@@ -425,7 +425,7 @@ function VariantCard({
               <span className={label}>{t('variants.passcode')}</span>
               <input
                 dir="ltr"
-                className="v-field font-mono !text-[12.5px] rtl:text-right"
+                className="v-field font-mono !text-xs rtl:text-right"
                 value={v.passcode ?? ''}
                 onChange={(e) => onSaveLocal(v.id, { passcode: e.target.value })}
                 onBlur={(e) => onSave(v.id, { passcode: e.target.value.trim() || null })}
@@ -441,11 +441,11 @@ function VariantCard({
         <button
           onClick={() => setShowContent((s) => !s)}
           aria-expanded={showContent}
-          className="flex min-h-11 w-full items-center gap-2 px-4 py-2.5 text-start text-[13px] text-ink hover:bg-elevated"
+          className="flex min-h-11 w-full items-center gap-2 px-4 py-2.5 text-start text-sm text-ink hover:bg-elevated"
         >
           <Icon name="chevron-down" size={14} className={`shrink-0 text-faint transition-transform ${showContent ? '' : '-rotate-90 rtl:rotate-90'}`} />
           <span className="flex-1">{t('variants.contentToggle')}</span>
-          <span className="tabular text-[12px] text-faint">{t('variants.contentCount', { links: v.actions.length, sections: v.sections.length })}</span>
+          <span className="tabular text-xs text-faint">{t('variants.contentCount', { links: v.actions.length, sections: v.sections.length })}</span>
         </button>
         {showContent && (
           <div className="px-4 pb-4">
@@ -498,8 +498,8 @@ function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; 
   return (
     <div className="grid gap-5 rounded-lg bg-elevated/60 p-3.5 ring-1 ring-inset ring-line lg:grid-cols-2">
       <div className="space-y-2">
-        <p className="text-[12.5px] font-medium text-ink">{t('variants.links.title')}</p>
-        {v.actions.length === 0 && <p className="text-[12.5px] text-faint">{t('variants.links.empty')}</p>}
+        <p className="text-xs font-medium text-ink">{t('variants.links.title')}</p>
+        {v.actions.length === 0 && <p className="text-xs text-faint">{t('variants.links.empty')}</p>}
         {v.actions.map((a) => {
           const m = linkMeta(a.type);
           return (
@@ -510,7 +510,7 @@ function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; 
               <input
                 dir="ltr"
                 aria-label={linkLabel(a.type)}
-                className="v-field min-w-0 flex-1 !text-[12.5px] rtl:text-right"
+                className="v-field min-w-0 flex-1 !text-xs rtl:text-right"
                 defaultValue={(a.config[m.field] as string) ?? ''}
                 placeholder={m.placeholder}
                 onBlur={(e) => patchLink(a, { ...a.config, [m.field]: e.target.value })}
@@ -550,8 +550,8 @@ function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; 
       </div>
 
       <div className="space-y-2 lg:border-s lg:border-line lg:ps-5">
-        <p className="text-[12.5px] font-medium text-ink">{t('variants.sections.title')}</p>
-        {v.sections.length === 0 && <p className="text-[12.5px] text-faint">{t('variants.sections.empty')}</p>}
+        <p className="text-xs font-medium text-ink">{t('variants.sections.title')}</p>
+        {v.sections.length === 0 && <p className="text-xs text-faint">{t('variants.sections.empty')}</p>}
         {v.sections.map((s) => {
           const m = sectionMeta(s.type);
           const placeholder = t(`variants.sections.placeholders.${s.type}`, '');
@@ -560,7 +560,7 @@ function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; 
             <div key={s.id} className="rounded-lg bg-surface p-2.5 ring-1 ring-inset ring-line">
               <div className="mb-1.5 flex items-center gap-1">
                 <Icon name={m.icon} size={13} className="shrink-0 text-faint" />
-                <span className="flex-1 text-[12.5px] font-medium text-ink">{sectionLabel(s.type)}</span>
+                <span className="flex-1 text-xs font-medium text-ink">{sectionLabel(s.type)}</span>
                 <button
                   onClick={() => toggleSection(s)}
                   aria-pressed={!s.isVisible}
@@ -581,7 +581,7 @@ function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; 
               </div>
               {m.multiline ? (
                 <textarea
-                  className="v-field !h-auto py-2 !text-[12.5px]"
+                  className="v-field !h-auto py-2 !text-xs"
                   rows={2}
                   aria-label={sectionLabel(s.type)}
                   defaultValue={(s.content[m.field] as string) ?? ''}
@@ -592,7 +592,7 @@ function VariantContent({ cardId, v, onChanged }: { cardId: string; v: Variant; 
                 <input
                   dir={url ? 'ltr' : undefined}
                   aria-label={sectionLabel(s.type)}
-                  className={`v-field !text-[12.5px] ${url ? 'rtl:text-right' : ''}`}
+                  className={`v-field !text-xs ${url ? 'rtl:text-right' : ''}`}
                   defaultValue={(s.content[m.field] as string) ?? ''}
                   placeholder={placeholder}
                   onBlur={(e) => patchSection(s, { ...s.content, [m.field]: e.target.value })}

@@ -59,8 +59,8 @@ export function ActivitiesTimeline({
       {/* Header and Filter */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div>
-          <h2 className="text-[16px] font-semibold text-ink">{t('activity.title')}</h2>
-          <p className="text-[12.5px] text-muted">{t('activity.subtitle')}</p>
+          <h2 className="text-lg font-semibold text-ink">{t('activity.title')}</h2>
+          <p className="text-xs text-muted">{t('activity.subtitle')}</p>
         </div>
         
         <div className="flex flex-wrap gap-1 rounded-xl border border-line bg-canvas/50 p-0.5">
@@ -71,7 +71,7 @@ export function ActivitiesTimeline({
               <button
                 key={ty}
                 onClick={() => setFilterType(ty)}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold transition-all"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all"
                 style={
                   active
                     ? {
@@ -96,8 +96,8 @@ export function ActivitiesTimeline({
             <Icon name="clock" size={28} />
           </span>
           <div>
-            <p className="text-[15px] font-semibold text-ink">{t('activity.noMatch')}</p>
-            <p className="mt-1 text-[12.5px] text-muted">{t('activity.noMatchDesc')}</p>
+            <p className="text-md font-semibold text-ink">{t('activity.noMatch')}</p>
+            <p className="mt-1 text-xs text-muted">{t('activity.noMatchDesc')}</p>
           </div>
         </div>
       ) : (
@@ -130,7 +130,7 @@ export function ActivitiesTimeline({
                       <div className="flex items-center gap-2.5">
                         <button
                           onClick={() => onOpenLead(a.leadId)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold text-white transition-opacity hover:opacity-90"
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-3xs font-semibold text-white transition-opacity hover:opacity-90"
                           style={{ background: avatarColor(a.leadName) }}
                         >
                           {initials(a.leadName)}
@@ -138,24 +138,24 @@ export function ActivitiesTimeline({
                         <div>
                           <button
                             onClick={() => onOpenLead(a.leadId)}
-                            className="text-[13px] font-semibold text-ink hover:text-accent"
+                            className="text-sm font-semibold text-ink hover:text-accent"
                           >
                             {a.leadName}
                           </button>
                           {a.leadCompany && (
-                            <span className="text-[11px] font-semibold text-muted"> · {a.leadCompany}</span>
+                            <span className="text-2xs font-semibold text-muted"> · {a.leadCompany}</span>
                           )}
                         </div>
                       </div>
 
-                      <span className="text-[11px] font-semibold text-faint">{formatRelativeTime(a.createdAt, locale, 'narrow')}</span>
+                      <span className="text-2xs font-semibold text-faint">{formatRelativeTime(a.createdAt, locale, 'narrow')}</span>
                     </div>
 
                     <div className="mt-3">
-                      <span className="v-chip mb-2 !px-2 !py-0.5 !text-[11.5px] !font-medium">
+                      <span className="v-chip mb-2 !px-2 !py-0.5 !text-2xs !font-medium">
                         {typeLabel}
                       </span>
-                      <p className="text-[13px] text-muted leading-relaxed whitespace-pre-wrap">{noteText}</p>
+                      <p className="text-sm text-muted leading-relaxed whitespace-pre-wrap">{noteText}</p>
                     </div>
                   </div>
                 </motion.div>

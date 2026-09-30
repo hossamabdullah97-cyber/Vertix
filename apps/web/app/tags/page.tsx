@@ -168,7 +168,7 @@ export default function TagsPage() {
       }
     >
       {tags && tags.length > 0 && (
-        <p className="text-[14px] text-muted">
+        <p className="text-base text-muted">
           <span className="font-medium text-ink">{t('summary.chips', { count: counts.all, value: fmt(counts.all) })}</span>
           <span className="mx-2 text-faint" aria-hidden>
             ·
@@ -182,7 +182,7 @@ export default function TagsPage() {
       )}
 
       {error && !selected && !adding && (
-        <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+        <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
           <span className="flex-1">{error}</span>
           <button onClick={() => setError('')} aria-label={t('actions.dismiss')} className="-m-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-red-500/10">
             <Icon name="x" size={13} />
@@ -209,12 +209,12 @@ export default function TagsPage() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setStatus(s)}
-                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-[13.5px] font-medium transition-colors sm:min-h-10 ${
+                  className={`relative flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-medium transition-colors sm:min-h-10 ${
                     active ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
                   {t(`filters.${s}`)}
-                  <span className="tabular text-[12px] text-faint">{counts[s]}</span>
+                  <span className="tabular text-xs text-faint">{counts[s]}</span>
                   {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
                 </button>
               );
@@ -227,10 +227,10 @@ export default function TagsPage() {
               <span className="pointer-events-none absolute inset-y-0 start-2.5 flex items-center text-faint">
                 <Icon name="search" size={14} />
               </span>
-              <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('search')} className="v-field !ps-8 !text-[13px] sm:!h-8" />
+              <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('search')} className="v-field !ps-8 !text-sm sm:!h-8" />
             </label>
             {batches.length > 0 && (
-              <select value={batch} onChange={(e) => setBatch(e.target.value)} aria-label={t('filters.batch')} className="v-field !h-11 !w-auto !py-0 !pe-8 !text-[13px] sm:!h-8">
+              <select value={batch} onChange={(e) => setBatch(e.target.value)} aria-label={t('filters.batch')} className="v-field !h-11 !w-auto !py-0 !pe-8 !text-sm sm:!h-8">
                 <option value="">{t('filters.allBatches')}</option>
                 {batches.map((b) => (
                   <option key={b} value={b}>
@@ -241,8 +241,8 @@ export default function TagsPage() {
             )}
             {filtersActive && (
               <>
-                <span className="text-[12.5px] text-faint">{t('results', { count: shown.length })}</span>
-                <button onClick={clearFilters} className="min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+                <span className="text-xs text-faint">{t('results', { count: shown.length })}</span>
+                <button onClick={clearFilters} className="min-h-11 text-xs font-medium text-accent hover:underline sm:min-h-0">
                   {t('clearFilters')}
                 </button>
               </>
@@ -252,7 +252,7 @@ export default function TagsPage() {
           <div className="mt-4">
             {shown.length === 0 ? (
               <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-14 text-center">
-                <p className="text-[13.5px] text-muted">{t('empty.noMatch')}</p>
+                <p className="text-sm text-muted">{t('empty.noMatch')}</p>
                 <button onClick={clearFilters} className="v-btn v-btn-ghost">
                   {t('clearFilters')}
                 </button>
@@ -291,10 +291,10 @@ export default function TagsPage() {
                               {/* Pinned LTR: the bidi algorithm would otherwise move the
                                   first group of a colon-separated serial to the end. It
                                   wraps rather than truncates: the tail tells chips apart. */}
-                              <span dir="ltr" className="block font-mono text-[12px] text-ink rtl:text-right sm:text-[13px]">
+                              <span dir="ltr" className="block font-mono text-xs text-ink rtl:text-right sm:text-sm">
                                 <Serial uid={tg.uid} />
                               </span>
-                              <span className="block truncate text-[12px] text-faint">
+                              <span className="block truncate text-xs text-faint">
                                 {t(`hardwareType.${tg.hardwareType.toLowerCase()}`)}
                                 {tg.batchId && (
                                   <>
@@ -407,7 +407,7 @@ export default function TagsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             role="status"
-            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-[13px] font-medium text-white shadow-lg"
+            className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[110] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-sm font-medium text-white shadow-lg"
           >
             <Icon name="check" size={14} /> {toast}
           </motion.div>
@@ -450,9 +450,9 @@ function StatusBadge({ status }: { status: NfcTag['status'] }) {
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[12.5px] text-muted">{label}</span>
+      <span className="mb-1.5 block text-xs text-muted">{label}</span>
       {children}
-      {hint && <span className="mt-1.5 block text-[12px] leading-relaxed text-faint">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-xs leading-relaxed text-faint">{hint}</span>}
     </label>
   );
 }
@@ -533,29 +533,29 @@ function ChipDetails({
       {tag && (
         <div className="space-y-5">
           {error && (
-            <p role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-[13px] text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
+            <p role="alert" className="rounded-lg bg-red-500/[0.06] px-3 py-2.5 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
               {error}
             </p>
           )}
 
           <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg bg-line ring-1 ring-line">
             <div className="bg-surface px-3 py-2.5">
-              <p className="text-[12px] text-faint">{t('details.status')}</p>
+              <p className="text-xs text-faint">{t('details.status')}</p>
               <div className="mt-1">
                 <StatusBadge status={tag.status} />
               </div>
             </div>
             <div className="bg-surface px-3 py-2.5">
-              <p className="text-[12px] text-faint">{t('table.taps')}</p>
-              <p className="tabular mt-0.5 text-[15px] font-medium text-ink">{formatNumber(tag.activationCount ?? 0, locale)}</p>
+              <p className="text-xs text-faint">{t('table.taps')}</p>
+              <p className="tabular mt-0.5 text-md font-medium text-ink">{formatNumber(tag.activationCount ?? 0, locale)}</p>
             </div>
             <div className="bg-surface px-3 py-2.5">
-              <p className="text-[12px] text-faint">{t('table.lastTap')}</p>
-              <p className="mt-0.5 truncate text-[13px] text-ink">{tag.lastScanAt ? formatRelativeTime(tag.lastScanAt, locale, 'short') : t('table.never')}</p>
+              <p className="text-xs text-faint">{t('table.lastTap')}</p>
+              <p className="mt-0.5 truncate text-sm text-ink">{tag.lastScanAt ? formatRelativeTime(tag.lastScanAt, locale, 'short') : t('table.never')}</p>
             </div>
           </div>
 
-          {tag.status === 'DISABLED' && <p className="text-[12.5px] leading-relaxed text-muted">{t('details.disabledNote')}</p>}
+          {tag.status === 'DISABLED' && <p className="text-xs leading-relaxed text-muted">{t('details.disabledNote')}</p>}
 
           <Field label={t('details.opens')} hint={t('details.opensHint')}>
             <select className="v-field" value={tag.cardId ?? ''} onChange={(e) => onLink(e.target.value)}>
@@ -582,17 +582,17 @@ function ChipDetails({
           )}
 
           <div>
-            <p className="mb-1.5 text-[12.5px] text-muted">{t('details.tapLink')}</p>
+            <p className="mb-1.5 text-xs text-muted">{t('details.tapLink')}</p>
             <div className="flex items-center gap-2">
-              <span dir="ltr" className="flex h-9 min-w-0 flex-1 items-center truncate rounded-lg bg-elevated px-3 font-mono text-[12px] text-muted ring-1 ring-inset ring-line rtl:text-right">
+              <span dir="ltr" className="flex h-9 min-w-0 flex-1 items-center truncate rounded-lg bg-elevated px-3 font-mono text-xs text-muted ring-1 ring-inset ring-line rtl:text-right">
                 {tapUrl(tag.uid)}
               </span>
               <button onClick={onCopy} className="v-btn v-btn-ghost shrink-0 !h-11 sm:!h-9">
                 <Icon name="copy" size={13} /> {t('actions.copy')}
               </button>
             </div>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-faint">{t('details.tapLinkHint')}</p>
-            <a href={tapUrl(tag.uid)} target="_blank" rel="noreferrer" onClick={onTestTap} className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+            <p className="mt-1.5 text-xs leading-relaxed text-faint">{t('details.tapLinkHint')}</p>
+            <a href={tapUrl(tag.uid)} target="_blank" rel="noreferrer" onClick={onTestTap} className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-accent hover:underline sm:min-h-0">
               <Icon name="external-link" size={13} /> {t('actions.testTap')}
             </a>
           </div>
@@ -726,7 +726,7 @@ function AddChips({
                 setMode(m);
                 setError('');
               }}
-              className={`h-11 flex-1 rounded-md px-3 text-[12.5px] font-medium transition-colors sm:h-8 ${
+              className={`h-11 flex-1 rounded-md px-3 text-xs font-medium transition-colors sm:h-8 ${
                 mode === m ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
@@ -766,15 +766,15 @@ function AddChips({
         <div className="border-t border-line pt-5">
           {mode === 'tap' &&
             (scanner.blocker !== 'none' ? (
-              <p className="rounded-lg bg-elevated px-3.5 py-3 text-[13px] leading-relaxed text-muted ring-1 ring-inset ring-line">
+              <p className="rounded-lg bg-elevated px-3.5 py-3 text-sm leading-relaxed text-muted ring-1 ring-inset ring-line">
                 {scanner.blocker === 'insecure' ? t('addSheet.tap.insecure') : t('addSheet.tap.unsupported')}
               </p>
             ) : (
               <div className="space-y-3">
-                <p className="text-[13px] leading-relaxed text-muted">{t('addSheet.tap.hint')}</p>
+                <p className="text-sm leading-relaxed text-muted">{t('addSheet.tap.hint')}</p>
                 {scanner.scanning ? (
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-2 text-[13px] font-medium text-accent">
+                    <span className="flex items-center gap-2 text-sm font-medium text-accent">
                       <Icon name="loader" size={14} className="animate-spin" /> {t('addSheet.tap.listening')}
                     </span>
                     <button onClick={scanner.stop} className="v-btn v-btn-ghost ms-auto">
@@ -786,7 +786,7 @@ function AddChips({
                     {t('addSheet.tap.start')}
                   </button>
                 )}
-                {scanner.error && scanner.error !== 'read' && <p className="text-[12.5px] text-red-600 dark:text-red-400">{scanner.error}</p>}
+                {scanner.error && scanner.error !== 'read' && <p className="text-xs text-red-600 dark:text-red-400">{scanner.error}</p>}
               </div>
             ))}
 
@@ -807,7 +807,7 @@ function AddChips({
                 <textarea
                   dir="ltr"
                   rows={6}
-                  className="v-field !h-auto py-2 font-mono !text-[12.5px] rtl:text-right"
+                  className="v-field !h-auto py-2 font-mono !text-xs rtl:text-right"
                   value={uids}
                   onChange={(e) => setUids(e.target.value)}
                   placeholder={'04:A1:B2:C3:D4:E5:01\n04:A1:B2:C3:D4:E5:02'}
@@ -817,10 +817,10 @@ function AddChips({
                 {busy ? t('addSheet.adding') : t('addSheet.paste.add')}
               </button>
               {result && (
-                <div className="rounded-lg bg-elevated px-3.5 py-3 text-[13px] ring-1 ring-inset ring-line">
+                <div className="rounded-lg bg-elevated px-3.5 py-3 text-sm ring-1 ring-inset ring-line">
                   <p className="text-ink">{t('addSheet.paste.result', { created: result.created, requested: result.requested })}</p>
                   {result.rejected.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-[12.5px] text-muted">
+                    <ul className="mt-2 space-y-1 text-xs text-muted">
                       {result.rejected.map((r) => (
                         <li key={r.uid} className="flex flex-wrap gap-x-2">
                           <span dir="ltr" className="font-mono text-ink">
@@ -836,15 +836,15 @@ function AddChips({
             </form>
           )}
 
-          {error && <p role="alert" className="mt-3 text-[12.5px] text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>}
         </div>
 
         {log.length > 0 && mode !== 'paste' && (
           <div>
-            <p className="mb-2 text-[12.5px] font-medium text-ink">{t('addSheet.log')}</p>
+            <p className="mb-2 text-xs font-medium text-ink">{t('addSheet.log')}</p>
             <ul className="max-h-48 space-y-1.5 overflow-y-auto">
               {log.map((x, i) => (
-                <li key={`${x.uid}-${i}`} className="flex items-start gap-2 text-[12.5px]">
+                <li key={`${x.uid}-${i}`} className="flex items-start gap-2 text-xs">
                   <Icon name={x.ok ? 'check' : 'x'} size={13} className={`mt-0.5 shrink-0 ${x.ok ? 'text-emerald-600' : 'text-red-600'}`} />
                   <span className="min-w-0">
                     <span dir="ltr" className="font-mono text-ink">
@@ -868,12 +868,12 @@ function FirstChip({ onAdd }: { onAdd: () => void }) {
   const steps = ['add', 'link', 'tap'] as const;
   return (
     <div className="mx-auto mt-6 max-w-[560px] rounded-xl px-6 py-10 text-center ring-1 ring-inset ring-line">
-      <h2 className="text-[17px] font-semibold text-ink">{t('first.title')}</h2>
-      <p className="mx-auto mt-1.5 max-w-sm text-[13.5px] leading-relaxed text-muted">{t('first.body')}</p>
+      <h2 className="text-lg font-semibold text-ink">{t('first.title')}</h2>
+      <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{t('first.body')}</p>
       <ol className="mx-auto mt-6 grid max-w-md gap-2 text-start sm:grid-cols-3">
         {steps.map((s, i) => (
-          <li key={s} className="flex items-start gap-2.5 rounded-lg bg-elevated px-3 py-2.5 text-[12.5px] text-muted ring-1 ring-inset ring-line sm:flex-col sm:gap-1.5">
-            <span className="tabular flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-medium text-ink ring-1 ring-line">{i + 1}</span>
+          <li key={s} className="flex items-start gap-2.5 rounded-lg bg-elevated px-3 py-2.5 text-xs text-muted ring-1 ring-inset ring-line sm:flex-col sm:gap-1.5">
+            <span className="tabular flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface text-2xs font-medium text-ink ring-1 ring-line">{i + 1}</span>
             {t(`first.steps.${s}`)}
           </li>
         ))}

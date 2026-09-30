@@ -33,7 +33,7 @@ export function ResetForm({ token }: { token: string }) {
   }
 
   const requestNew = (
-    <Link href="/forgot-password" className="v-btn mt-6 w-full !h-11 text-[14px] sm:!h-10">
+    <Link href="/forgot-password" className="v-btn mt-6 w-full !h-11 text-base sm:!h-10">
       {t('reset.requestNew')}
     </Link>
   );
@@ -53,9 +53,9 @@ export function ResetForm({ token }: { token: string }) {
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <Icon name="check" size={15} />
           </span>
-          <p className="text-[14px] leading-relaxed text-ink">{t('reset.done')}</p>
+          <p className="text-base leading-relaxed text-ink">{t('reset.done')}</p>
         </div>
-        <Link href="/login" className="v-btn mt-6 w-full !h-11 text-[14px] sm:!h-10">
+        <Link href="/login" className="v-btn mt-6 w-full !h-11 text-base sm:!h-10">
           {t('reset.signIn')}
         </Link>
       </AuthShell>

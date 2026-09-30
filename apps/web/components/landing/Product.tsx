@@ -47,8 +47,8 @@ function Tile({ title, body, className = '', children }: { title: string; body: 
   return (
     <article className={`v-card flex flex-col overflow-hidden ${className}`}>
       <div className="p-6 pb-5">
-        <h3 className="text-[16px] font-semibold tracking-tight text-ink">{title}</h3>
-        <p className="mt-1.5 max-w-lg text-[14px] leading-relaxed text-muted">{body}</p>
+        <h3 className="text-lg font-semibold tracking-tight text-ink">{title}</h3>
+        <p className="mt-1.5 max-w-lg text-base leading-relaxed text-muted">{body}</p>
       </div>
       {/* Illustration: read by the text above, not by a screen reader. */}
       <div aria-hidden className="mt-auto select-none px-6 pb-6">
@@ -111,10 +111,10 @@ function Chips() {
         <li key={r.uid} className="flex items-center gap-3 px-3.5 py-2.5">
           <span className={`h-2 w-2 shrink-0 rounded-full ${r.on ? 'bg-emerald-500' : 'bg-faint/60'}`} />
           <span className="min-w-0 flex-1">
-            <span dir="ltr" className="block truncate font-mono text-[12px] text-ink rtl:text-right">
+            <span dir="ltr" className="block truncate font-mono text-xs text-ink rtl:text-right">
               {r.uid}
             </span>
-            <span className="block truncate text-[12px] text-muted">{r.who}</span>
+            <span className="block truncate text-xs text-muted">{r.who}</span>
           </span>
           <span className={`v-badge ${r.on ? 'v-badge-success' : 'v-badge-neutral'}`}>{r.on ? t('product.chips.active') : t('product.chips.disabled')}</span>
         </li>
@@ -140,13 +140,13 @@ function Leads() {
         <li key={r.name} className="flex items-center gap-3 rounded-lg bg-surface px-3 py-2.5 ring-1 ring-line">
           <Initials name={r.name} hue={r.hue} />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-medium text-ink">{r.name}</span>
-            <span className="flex items-center gap-1 text-[12px] text-muted">
+            <span className="block truncate text-sm font-medium text-ink">{r.name}</span>
+            <span className="flex items-center gap-1 text-xs text-muted">
               <Icon name={r.icon} size={12} />
               <span className="truncate">{t(`product.leads.kinds.${r.kind}`)}</span>
             </span>
           </span>
-          <span className="shrink-0 text-[11.5px] text-faint">{formatRelativeTime(now - r.ago, locale, 'short')}</span>
+          <span className="shrink-0 text-2xs text-faint">{formatRelativeTime(now - r.ago, locale, 'short')}</span>
         </li>
       ))}
     </ul>
@@ -168,25 +168,25 @@ function Board() {
       <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {columns.map((c) => (
           <div key={c.stage} className={`min-w-0 rounded-lg bg-elevated p-2 ring-1 ring-inset ring-line ${c.className ?? ''}`}>
-            <p className="flex items-center justify-between px-1 pb-2 text-[12px] font-medium text-muted">
+            <p className="flex items-center justify-between px-1 pb-2 text-xs font-medium text-muted">
               <span className="truncate">{t(`crm:stages.${c.stage}`)}</span>
               <span className="tabular text-faint">{c.cards.length}</span>
             </p>
             <div className="space-y-1.5">
               {c.cards.map((card) => (
                 <div key={card.name} className="rounded-md bg-surface px-2.5 py-2 shadow-sm ring-1 ring-line">
-                  <p className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink">
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-ink">
                     <span className="truncate">{card.name}</span>
                     {card.hot && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />}
                   </p>
-                  <p className="truncate text-[11.5px] text-faint">{card.card}</p>
+                  <p className="truncate text-2xs text-faint">{card.card}</p>
                 </div>
               ))}
             </div>
           </div>
         ))}
       </div>
-      <div className="flex w-10 shrink-0 items-start justify-center rounded-lg bg-elevated pt-2 text-[12px] font-medium text-faint ring-1 ring-inset ring-line">
+      <div className="flex w-10 shrink-0 items-start justify-center rounded-lg bg-elevated pt-2 text-xs font-medium text-faint ring-1 ring-inset ring-line">
         <span dir="ltr">{t('landing:product.pipeline.more', { count: 3 })}</span>
       </div>
     </div>
@@ -215,15 +215,15 @@ function Chart() {
     <div className="rounded-lg bg-surface p-4 ring-1 ring-line">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-[12px] text-muted">{t('product.analytics.views')}</p>
+          <p className="text-xs text-muted">{t('product.analytics.views')}</p>
           <p className="mt-1 flex items-center gap-2">
-            <span className="tabular text-[22px] font-semibold leading-none tracking-tight text-ink">{formatNumber(1232, locale)}</span>
+            <span className="tabular text-3xl font-semibold leading-none tracking-tight text-ink">{formatNumber(1232, locale)}</span>
             <span dir="ltr" className="v-badge v-badge-success">
               +28%
             </span>
           </p>
         </div>
-        <p className="flex items-center gap-3 text-[11.5px] text-muted">
+        <p className="flex items-center gap-3 text-2xs text-muted">
           <span className="flex items-center gap-1.5">
             <span className="h-0.5 w-3 rounded-full bg-accent" /> {t('product.analytics.views')}
           </span>
@@ -259,10 +259,10 @@ function Team() {
       {people.map((p) => (
         <li key={p.role} className="flex items-center gap-3 px-3.5 py-2.5">
           <Initials name={p.name} hue={p.hue} />
-          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">{p.name}</span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{p.name}</span>
           {/* Their own card, in their own colour. */}
           <span className="h-3.5 w-5 shrink-0 rounded-[3px]" style={{ background: p.accent }} />
-          <span className="w-20 shrink-0 text-end text-[12px] text-muted">{t(`teams:roles.${p.role}.name`)}</span>
+          <span className="w-20 shrink-0 text-end text-xs text-muted">{t(`teams:roles.${p.role}.name`)}</span>
         </li>
       ))}
     </ul>
@@ -284,10 +284,10 @@ function More() {
   const t = getT(serverLocale(), 'landing');
   return (
     <div className="mt-4 rounded-xl bg-elevated/60 p-6 ring-1 ring-inset ring-line">
-      <h3 className="text-[13px] font-medium text-muted">{t('product.more.title')}</h3>
+      <h3 className="text-sm font-medium text-muted">{t('product.more.title')}</h3>
       <ul className="mt-4 grid gap-x-6 gap-y-3.5 sm:grid-cols-2 lg:grid-cols-3">
         {MORE.map((m) => (
-          <li key={m.id} className="flex items-center gap-3 text-[14px] text-ink">
+          <li key={m.id} className="flex items-center gap-3 text-base text-ink">
             <span className="v-icon-tile !h-7 !w-7 bg-surface">
               <Icon name={m.icon} size={14} />
             </span>

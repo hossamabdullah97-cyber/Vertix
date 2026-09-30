@@ -28,7 +28,7 @@ export default function AppNav() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`text-sm px-3 py-1.5 rounded-md ${
+                className={`text-base px-3 py-1.5 rounded-md ${
                   pathname.startsWith(l.href)
                     ? 'bg-canvas text-ink font-medium'
                     : 'text-muted hover:text-ink'
@@ -44,7 +44,7 @@ export default function AppNav() {
             logout();
             router.push('/login');
           }}
-          className="text-sm text-muted hover:text-ink"
+          className="text-base text-muted hover:text-ink"
         >
           Sign out
         </button>

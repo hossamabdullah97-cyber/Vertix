@@ -125,8 +125,8 @@ export default function ChipRegistry({ orgs }: { orgs: AdminOrg[] }) {
       <dl className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-3 lg:grid-cols-5">
         {counts.map(([key, tone]) => (
           <div key={key} className="bg-surface px-5 py-4">
-            <dt className="text-[12.5px] text-muted">{t(`chips.stats.${key}`)}</dt>
-            <dd className={`tabular mt-1 text-[22px] font-semibold leading-none tracking-[-0.01em] ${tone && stats?.[key] ? tone : 'text-ink'}`}>{stats ? n(stats[key]) : '—'}</dd>
+            <dt className="text-xs text-muted">{t(`chips.stats.${key}`)}</dt>
+            <dd className={`tabular mt-1 text-3xl font-semibold leading-none tracking-[-0.01em] ${tone && stats?.[key] ? tone : 'text-ink'}`}>{stats ? n(stats[key]) : '—'}</dd>
           </div>
         ))}
       </dl>
@@ -158,7 +158,7 @@ export default function ChipRegistry({ orgs }: { orgs: AdminOrg[] }) {
       {!chips ? (
         <div className="v-skeleton h-72 rounded-xl" />
       ) : chips.length === 0 ? (
-        <p className="rounded-xl py-14 text-center text-[13.5px] text-muted ring-1 ring-inset ring-line">{search || status !== 'ALL' ? t('chips.noMatch') : t('chips.empty')}</p>
+        <p className="rounded-xl py-14 text-center text-sm text-muted ring-1 ring-inset ring-line">{search || status !== 'ALL' ? t('chips.noMatch') : t('chips.empty')}</p>
       ) : (
         <div className="v-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -180,29 +180,29 @@ export default function ChipRegistry({ orgs }: { orgs: AdminOrg[] }) {
                 {chips.map((c) => (
                   <tr key={c.id}>
                     <td className="w-full max-w-0">
-                      <span dir="ltr" className="block font-mono text-[12.5px] text-ink rtl:text-right">
+                      <span dir="ltr" className="block font-mono text-xs text-ink rtl:text-right">
                         <Serial uid={c.uid} />
                       </span>
-                      <span className="block text-[12px] text-faint">{t(`nfc:hardwareType.${c.hardwareType.toLowerCase()}`, { defaultValue: c.hardwareType })}</span>
+                      <span className="block text-xs text-faint">{t(`nfc:hardwareType.${c.hardwareType.toLowerCase()}`, { defaultValue: c.hardwareType })}</span>
                     </td>
                     <td className="whitespace-nowrap">
-                      <span className="flex items-center gap-2 text-[13px] text-ink">
+                      <span className="flex items-center gap-2 text-sm text-ink">
                         <span className={`h-2 w-2 rounded-full ${DOT[c.status]}`} />
                         {t(`chips.status.${c.status}`)}
                       </span>
                     </td>
                     <td className="hidden max-w-[200px] md:table-cell">
                       {c.allocatedToOrgName ? (
-                        <span className="block truncate text-[13px] text-muted">{c.allocatedToOrgName}</span>
+                        <span className="block truncate text-sm text-muted">{c.allocatedToOrgName}</span>
                       ) : (
-                        <span className="text-[13px] text-amber-700 dark:text-amber-400">{t('chips.openStock')}</span>
+                        <span className="text-sm text-amber-700 dark:text-amber-400">{t('chips.openStock')}</span>
                       )}
                     </td>
                     <td className="hidden max-w-[200px] lg:table-cell">
-                      <span className={`block truncate text-[13px] ${c.orgName ? 'text-muted' : 'text-faint'}`}>{c.orgName ?? t('chips.notInUse')}</span>
+                      <span className={`block truncate text-sm ${c.orgName ? 'text-muted' : 'text-faint'}`}>{c.orgName ?? t('chips.notInUse')}</span>
                     </td>
                     <td className="hidden xl:table-cell">
-                      <span dir="ltr" className="whitespace-nowrap font-mono text-[12.5px] text-muted">
+                      <span dir="ltr" className="whitespace-nowrap font-mono text-xs text-muted">
                         {c.batchId ?? '—'}
                       </span>
                     </td>
@@ -292,7 +292,7 @@ function StockFields({
         </select>
       </Field>
       <Field label={t('chips.batchLabel')} htmlFor="chip-batch">
-        <input id="chip-batch" dir="ltr" value={batch} onChange={(e) => setBatch(e.target.value)} placeholder={t('chips.batchPlaceholder')} className="v-field w-full font-mono text-[13px] rtl:text-right" />
+        <input id="chip-batch" dir="ltr" value={batch} onChange={(e) => setBatch(e.target.value)} placeholder={t('chips.batchPlaceholder')} className="v-field w-full font-mono text-sm rtl:text-right" />
       </Field>
       <div className="sm:col-span-2">
         <Field label={t('chips.soldTo')} htmlFor="chip-buyer" hint={t('chips.soldToHint')}>
@@ -392,7 +392,7 @@ function AddChips({ open, orgs, onClose, onAdded }: { open: boolean; orgs: Admin
               role="radio"
               aria-checked={how === h}
               onClick={() => setHow(h)}
-              className={`h-9 rounded-md text-[13px] font-medium sm:h-8 ${how === h ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
+              className={`h-9 rounded-md text-sm font-medium sm:h-8 ${how === h ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
             >
               {h === 'tap' ? t('chips.byTapping') : t('chips.byList')}
             </button>
@@ -407,14 +407,14 @@ function AddChips({ open, orgs, onClose, onAdded }: { open: boolean; orgs: Admin
 
         {how === 'tap' ? (
           <div className="space-y-4">
-            <p className="text-[13px] leading-relaxed text-muted">{t('chips.tapHint')}</p>
+            <p className="text-sm leading-relaxed text-muted">{t('chips.tapHint')}</p>
             {scanner.blocker !== 'none' ? (
-              <p className="rounded-lg bg-amber-500/[0.07] px-4 py-3 text-[13px] leading-relaxed text-amber-800 ring-1 ring-inset ring-amber-500/20 dark:text-amber-300">
+              <p className="rounded-lg bg-amber-500/[0.07] px-4 py-3 text-sm leading-relaxed text-amber-800 ring-1 ring-inset ring-amber-500/20 dark:text-amber-300">
                 {scanner.blocker === 'insecure' ? t('chips.insecure') : t('chips.unsupported')}
               </p>
             ) : scanner.scanning ? (
               <div className="flex items-center justify-between gap-3 rounded-lg px-4 py-3 ring-1 ring-inset ring-accent/40">
-                <span className="flex items-center gap-2 text-[13px] font-medium text-accent">
+                <span className="flex items-center gap-2 text-sm font-medium text-accent">
                   <Icon name="loader" size={15} className="animate-spin" /> {t('chips.holdChip')}
                 </span>
                 <button onClick={scanner.stop} className="v-btn v-btn-ghost">
@@ -429,7 +429,7 @@ function AddChips({ open, orgs, onClose, onAdded }: { open: boolean; orgs: Admin
             {results.length > 0 && (
               <ul className="max-h-64 divide-y divide-line overflow-y-auto rounded-lg ring-1 ring-inset ring-line">
                 {results.map((r, i) => (
-                  <li key={`${r.uid}-${i}`} className="flex items-center gap-2.5 px-3 py-2 text-[12.5px]">
+                  <li key={`${r.uid}-${i}`} className="flex items-center gap-2.5 px-3 py-2 text-xs">
                     <Icon
                       name={r.state === 'registered' ? 'check' : r.state === 'duplicate' ? 'tag' : 'x'}
                       size={14}
@@ -446,7 +446,7 @@ function AddChips({ open, orgs, onClose, onAdded }: { open: boolean; orgs: Admin
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-[13px] leading-relaxed text-muted">{t('chips.bulkHint')}</p>
+            <p className="text-sm leading-relaxed text-muted">{t('chips.bulkHint')}</p>
             <textarea
               value={list}
               onChange={(e) => setList(e.target.value)}
@@ -455,7 +455,7 @@ function AddChips({ open, orgs, onClose, onAdded }: { open: boolean; orgs: Admin
               spellCheck={false}
               placeholder={'04:DE:5F:AA:BB:CC:11\n04:DE:5F:AA:BB:CC:12'}
               aria-label={t('chips.byList')}
-              className="v-field w-full py-3 font-mono text-[12.5px]"
+              className="v-field w-full py-3 font-mono text-xs"
             />
             <button onClick={registerList} disabled={busy || !list.trim()} className="v-btn w-full disabled:opacity-50">
               {busy ? t('saving') : t('chips.bulkSubmit')}
@@ -504,7 +504,7 @@ function AssignBatch({ open, orgs, onClose, onDone }: { open: boolean; orgs: Adm
       title={t('chips.allocateTitle')}
       footer={
         <div className="flex items-center justify-end gap-2">
-          {err && <p className="me-auto text-[12.5px] text-red-600 dark:text-red-400">{err}</p>}
+          {err && <p className="me-auto text-xs text-red-600 dark:text-red-400">{err}</p>}
           <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
             {t('cancel')}
           </button>
@@ -515,9 +515,9 @@ function AssignBatch({ open, orgs, onClose, onDone }: { open: boolean; orgs: Adm
       }
     >
       <form id="assign-batch" onSubmit={save} className="space-y-5">
-        <p className="text-[13px] leading-relaxed text-muted">{t('chips.allocateHint')}</p>
+        <p className="text-sm leading-relaxed text-muted">{t('chips.allocateHint')}</p>
         <Field label={t('chips.batchLabel')} htmlFor="assign-batch-id">
-          <input id="assign-batch-id" dir="ltr" value={batch} onChange={(e) => setBatch(e.target.value)} placeholder={t('chips.batchPlaceholder')} className="v-field w-full font-mono text-[13px] rtl:text-right" />
+          <input id="assign-batch-id" dir="ltr" value={batch} onChange={(e) => setBatch(e.target.value)} placeholder={t('chips.batchPlaceholder')} className="v-field w-full font-mono text-sm rtl:text-right" />
         </Field>
         <Field label={t('chips.soldTo')} htmlFor="assign-buyer" hint={t('chips.soldToHint')}>
           <select id="assign-buyer" value={buyer} onChange={(e) => setBuyer(e.target.value)} className="v-field w-full">

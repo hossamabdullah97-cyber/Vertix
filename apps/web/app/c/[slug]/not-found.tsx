@@ -20,9 +20,9 @@ export default function CardNotFound() {
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f4f1] text-[#5e5d63]">
           <VMark size={20} strokeWidth={3} />
         </span>
-        <h1 className="mt-4 text-[20px] font-semibold">{t('notFound.title')}</h1>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-[#5e5d63]">{t('notFound.body')}</p>
-        <p className="mt-3 text-[13px] leading-relaxed text-[#6f6e75]">{t('notFound.hint')}</p>
+        <h1 className="mt-4 text-2xl font-semibold">{t('notFound.title')}</h1>
+        <p className="mt-1.5 text-base leading-relaxed text-[#5e5d63]">{t('notFound.body')}</p>
+        <p className="mt-3 text-sm leading-relaxed text-[#6f6e75]">{t('notFound.hint')}</p>
       </div>
     </main>
   );

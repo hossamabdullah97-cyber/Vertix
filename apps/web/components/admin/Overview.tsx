@@ -46,7 +46,7 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
   }, []);
 
   const n = (v: number) => formatNumber(v, locale);
-  if (error) return <p className="text-[13px] text-muted">{error}</p>;
+  if (error) return <p className="text-sm text-muted">{error}</p>;
   if (!k) {
     return (
       <div className="grid gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-2 lg:grid-cols-4">
@@ -95,18 +95,18 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
 
   return (
     <div className="max-w-[1180px] space-y-8">
-      <p className="text-[13.5px] text-muted">{t('overview.intro')}</p>
+      <p className="text-sm text-muted">{t('overview.intro')}</p>
 
       <dl className="grid gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.label} className="bg-surface p-5">
-            <dt className="text-[12.5px] text-muted" title={m.hint}>
+            <dt className="text-xs text-muted" title={m.hint}>
               {m.label}
             </dt>
-            <dd className="tabular mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.02em] text-ink">
+            <dd className="tabular mt-1.5 text-4xl font-semibold leading-none tracking-[-0.02em] text-ink">
               <bdi>{m.value}</bdi>
             </dd>
-            {m.sub && <dd className="mt-2 text-[12.5px] text-faint">{m.sub}</dd>}
+            {m.sub && <dd className="mt-2 text-xs text-faint">{m.sub}</dd>}
           </div>
         ))}
       </dl>
@@ -114,8 +114,8 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <section className="v-card p-5">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[14px] font-semibold text-ink">{t('overview.recent')}</h2>
-            <button onClick={() => onOpen('workspaces')} className="v-hit text-[12.5px] font-medium text-accent hover:underline">
+            <h2 className="text-base font-semibold text-ink">{t('overview.recent')}</h2>
+            <button onClick={() => onOpen('workspaces')} className="v-hit text-xs font-medium text-accent hover:underline">
               {t('overview.seeAll')}
             </button>
           </div>
@@ -124,11 +124,11 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
               <li key={o.id} className="flex items-center gap-3 px-5 py-3">
                 <OrgMark name={o.name} size={30} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13.5px] font-medium text-ink">{o.name}</span>
-                  <span className="block truncate text-[12.5px] text-faint">{o.owner ? o.owner.name || o.owner.email : t('workspaces.noOwner')}</span>
+                  <span className="block truncate text-sm font-medium text-ink">{o.name}</span>
+                  <span className="block truncate text-xs text-faint">{o.owner ? o.owner.name || o.owner.email : t('workspaces.noOwner')}</span>
                 </span>
                 <span className={`v-badge ${PLAN_BADGE[o.plan]}`}>{t(`plans.${o.plan}`)}</span>
-                <span className="hidden w-24 shrink-0 text-end text-[12.5px] text-faint sm:block">{formatDate(o.createdAt, locale, { month: 'short', day: 'numeric' })}</span>
+                <span className="hidden w-24 shrink-0 text-end text-xs text-faint sm:block">{formatDate(o.createdAt, locale, { month: 'short', day: 'numeric' })}</span>
               </li>
             ))}
           </ul>
@@ -136,13 +136,13 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
 
         <div className="space-y-6">
           <section className="v-card p-5">
-            <h2 className="text-[14px] font-semibold text-ink">{t('overview.plans')}</h2>
+            <h2 className="text-base font-semibold text-ink">{t('overview.plans')}</h2>
             <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-elevated" aria-hidden>
               {byPlan.map((p) => (p.count ? <span key={p.plan} className={PLAN_BAR[p.plan]} style={{ width: `${(p.count / total) * 100}%`, ...(p.plan === 'FREE' ? { background: 'hsl(var(--v-border-strong))' } : {}) }} /> : null))}
             </div>
             <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
               {byPlan.map((p) => (
-                <li key={p.plan} className="flex items-center justify-between text-[13px]">
+                <li key={p.plan} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 text-muted">
                     <span className={`h-2 w-2 rounded-full ${PLAN_BAR[p.plan]}`} style={p.plan === 'FREE' ? { background: 'hsl(var(--v-border-strong))' } : undefined} />
                     {t(`plans.${p.plan}`)}
@@ -154,8 +154,8 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
           </section>
 
           <section className="v-card p-5">
-            <h2 className="text-[14px] font-semibold text-ink">{t('overview.server')}</h2>
-            <dl className="mt-3 space-y-2.5 text-[13px]">
+            <h2 className="text-base font-semibold text-ink">{t('overview.server')}</h2>
+            <dl className="mt-3 space-y-2.5 text-sm">
               {[
                 [t('overview.uptime'), uptime],
                 [t('overview.memory'), `${n(k.system.memoryMb)} MB`],
@@ -170,7 +170,7 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
                 </div>
               ))}
             </dl>
-            <button onClick={() => onOpen('jobs')} className="v-hit mt-4 flex items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline">
+            <button onClick={() => onOpen('jobs')} className="v-hit mt-4 flex items-center gap-1.5 text-xs font-medium text-accent hover:underline">
               {t('overview.seeJobs')} <Icon name="arrow" size={13} className="rtl:-scale-x-100" />
             </button>
           </section>

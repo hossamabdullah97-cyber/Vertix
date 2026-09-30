@@ -18,15 +18,15 @@ export function HeroActions() {
   return (
     <div className="mt-8 flex flex-wrap gap-3">
       {signedIn ? (
-        <Link href="/dashboard" className="v-btn !h-11 px-5 text-[14px]">
+        <Link href="/dashboard" className="v-btn !h-11 px-5 text-base">
           {t('nav.dashboard')} <DirectionalIcon name="arrow" size={15} />
         </Link>
       ) : (
         <>
-          <Link href={REGISTER} className="v-btn !h-11 px-5 text-[14px]">
+          <Link href={REGISTER} className="v-btn !h-11 px-5 text-base">
             {t('hero.primary')} <DirectionalIcon name="arrow" size={15} />
           </Link>
-          <Link href="/login" className="v-btn v-btn-ghost !h-11 px-5 text-[14px]">
+          <Link href="/login" className="v-btn v-btn-ghost !h-11 px-5 text-base">
             {t('hero.secondary')}
           </Link>
         </>
@@ -40,10 +40,10 @@ export function ClosingActions() {
   const signedIn = useSignedIn();
   return (
     <div className="relative flex flex-wrap gap-3">
-      <Link href={signedIn ? '/dashboard' : REGISTER} className="v-btn !h-11 px-5 text-[14px]">
+      <Link href={signedIn ? '/dashboard' : REGISTER} className="v-btn !h-11 px-5 text-base">
         {signedIn ? t('nav.dashboard') : t('cta.primary')}
       </Link>
-      <a href={SALES_MAILTO} className="v-btn v-btn-ghost !h-11 px-5 text-[14px]">
+      <a href={SALES_MAILTO} className="v-btn v-btn-ghost !h-11 px-5 text-base">
         {t('cta.secondary')}
       </a>
     </div>

@@ -158,7 +158,7 @@ export function AppsView({
               role="tab"
               aria-selected={cat === c}
               onClick={() => setCat(c)}
-              className={`h-9 shrink-0 rounded-full px-3.5 text-[13px] font-medium transition-colors sm:h-8 ${
+              className={`h-9 shrink-0 rounded-full px-3.5 text-sm font-medium transition-colors sm:h-8 ${
                 cat === c ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'
               }`}
             >
@@ -175,7 +175,7 @@ export function AppsView({
           ))}
         </div>
       ) : shown.length === 0 ? (
-        <p className="py-16 text-center text-[13.5px] text-muted">{t('apps.noMatch', { q })}</p>
+        <p className="py-16 text-center text-sm text-muted">{t('apps.noMatch', { q })}</p>
       ) : (
         <div className="space-y-8">
           {connected.length > 0 && <Group title={t('apps.connected')} items={connected} onOpen={setOpenKey} />}
@@ -203,9 +203,9 @@ export function AppsView({
 function Group({ title, items, onOpen }: { title: string; items: Provider[]; onOpen: (key: string) => void }) {
   return (
     <section>
-      <h2 className="mb-3 flex items-baseline gap-2 text-[13px] font-semibold text-ink">
+      <h2 className="mb-3 flex items-baseline gap-2 text-sm font-semibold text-ink">
         {title}
-        <span className="tabular text-[12.5px] font-normal text-faint">{items.length}</span>
+        <span className="tabular text-xs font-normal text-faint">{items.length}</span>
       </h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((p) => (
@@ -227,13 +227,13 @@ function Tile({ p, onOpen }: { p: Provider; onOpen: () => void }) {
       <AppLogo p={p} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-2">
-          <span className="truncate text-[14px] font-medium text-ink">{p.name}</span>
+          <span className="truncate text-base font-medium text-ink">{p.name}</span>
         </span>
-        <span className={`mt-0.5 flex items-center gap-1.5 text-[12px] ${state === 'soon' || state === 'ownApp' ? 'text-faint' : state === 'attention' ? 'text-amber-700 dark:text-amber-400' : 'text-muted'}`}>
+        <span className={`mt-0.5 flex items-center gap-1.5 text-xs ${state === 'soon' || state === 'ownApp' ? 'text-faint' : state === 'attention' ? 'text-amber-700 dark:text-amber-400' : 'text-muted'}`}>
           <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[state]}`} style={state === 'soon' || state === 'ownApp' ? { background: 'hsl(var(--v-border-strong))' } : undefined} />
           {t(`apps.state.${state}`)}
         </span>
-        <span className="mt-2 line-clamp-2 block text-[12.5px] leading-snug text-muted">{describe(t, p)}</span>
+        <span className="mt-2 line-clamp-2 block text-xs leading-snug text-muted">{describe(t, p)}</span>
       </span>
     </button>
   );
@@ -338,12 +338,12 @@ function AppSheet({
         footer={footer}
       >
         <div className="space-y-6">
-          <p className="text-[13.5px] leading-relaxed text-ink">{describe(t, app)}</p>
+          <p className="text-sm leading-relaxed text-ink">{describe(t, app)}</p>
 
           {error && <Notice tone="danger" icon="x">{error}</Notice>}
 
           {(state === 'connected' || state === 'attention') && (
-            <div className="rounded-lg bg-elevated px-4 py-3 text-[13px] ring-1 ring-inset ring-line">
+            <div className="rounded-lg bg-elevated px-4 py-3 text-sm ring-1 ring-inset ring-line">
               <p className="flex items-center gap-2 font-medium text-ink">
                 <span className={`h-2 w-2 rounded-full ${DOT[state]}`} />
                 {conn?.account ? t('apps.account', { account: iso(conn.account) }) : t(`apps.state.${state}`)}
@@ -355,7 +355,7 @@ function AppSheet({
           )}
 
           {(state === 'soon' || state === 'ownApp') && (
-            <div className="rounded-lg bg-elevated px-4 py-3 text-[13px] leading-relaxed text-muted ring-1 ring-inset ring-line">
+            <div className="rounded-lg bg-elevated px-4 py-3 text-sm leading-relaxed text-muted ring-1 ring-inset ring-line">
               <p>{t('apps.soonBody', { name: app.name })}</p>
               {VIA_WEBHOOK.has(app.key) && (
                 <>
@@ -383,7 +383,7 @@ function AppSheet({
           <SheetSection title={t('apps.access')}>
             <ul className="space-y-2">
               {app.scopes.map((s) => (
-                <li key={s} className="flex items-center gap-2.5 text-[13px] text-ink">
+                <li key={s} className="flex items-center gap-2.5 text-sm text-ink">
                   <Icon name="check" size={14} className="shrink-0 text-accent" />
                   {t(`apps.scopes.${s}`, { defaultValue: s })}
                 </li>
@@ -479,15 +479,15 @@ function OwnApp({ app, onSaved, onRemove }: { app: Provider; onSaved: () => void
           </Field>
         )}
         <Field label={t('apps.ownApp.clientId')} htmlFor="own-client-id">
-          <input id="own-client-id" dir="ltr" value={clientId} onChange={(e) => setClientId(e.target.value)} autoComplete="off" className="v-field w-full font-mono text-[13px]" />
+          <input id="own-client-id" dir="ltr" value={clientId} onChange={(e) => setClientId(e.target.value)} autoComplete="off" className="v-field w-full font-mono text-sm" />
         </Field>
         <Field label={t('apps.ownApp.clientSecret')} htmlFor="own-client-secret" hint={info?.configured ? t('apps.ownApp.secretKept') : undefined}>
-          <input id="own-client-secret" dir="ltr" type="password" value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="new-password" className="v-field w-full font-mono text-[13px]" />
+          <input id="own-client-secret" dir="ltr" type="password" value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="new-password" className="v-field w-full font-mono text-sm" />
         </Field>
-        {msg && <p className={`text-[12.5px] ${msg.tone === 'success' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{msg.text}</p>}
+        {msg && <p className={`text-xs ${msg.tone === 'success' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{msg.text}</p>}
         <div className="flex flex-wrap items-center justify-between gap-2">
           {info?.configured ? (
-            <button type="button" onClick={onRemove} className="text-[13px] font-medium text-red-600 hover:underline dark:text-red-400">
+            <button type="button" onClick={onRemove} className="text-sm font-medium text-red-600 hover:underline dark:text-red-400">
               {t('apps.ownApp.remove')}
             </button>
           ) : (
@@ -532,18 +532,18 @@ function CrmSync({ app, canManage }: { app: Provider; canManage: boolean }) {
 
   return (
     <SheetSection title={t('apps.sync.title', { name: app.name })}>
-      <label className="flex items-center justify-between gap-3 text-[13px] text-ink">
+      <label className="flex items-center justify-between gap-3 text-sm text-ink">
         {t('apps.sync.auto')}
         <Toggle on={cfg.syncEnabled} disabled={!canManage} label={t('apps.sync.auto')} onChange={() => put({ syncEnabled: !cfg.syncEnabled })} />
       </label>
 
       <div className="mt-5">
-        <p className="text-[12.5px] font-medium text-ink">{t('apps.sync.mapping')}</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-faint">{t('apps.sync.mappingHint', { name: app.name })}</p>
+        <p className="text-xs font-medium text-ink">{t('apps.sync.mapping')}</p>
+        <p className="mt-1 text-xs leading-relaxed text-faint">{t('apps.sync.mappingHint', { name: app.name })}</p>
         <div className="mt-3 divide-y divide-line rounded-lg ring-1 ring-inset ring-line">
           {fields.map((f) => (
             <div key={f} className="flex items-center gap-3 px-3 py-2">
-              <span className="w-28 shrink-0 text-[13px] text-muted">{t(`apps.sync.fields.${f}`, { defaultValue: f })}</span>
+              <span className="w-28 shrink-0 text-sm text-muted">{t(`apps.sync.fields.${f}`, { defaultValue: f })}</span>
               <Icon name="arrow" size={13} className="shrink-0 text-faint rtl:-scale-x-100" />
               <input
                 key={`${f}:${cfg.fieldMapping[f] ?? ''}`}
@@ -560,7 +560,7 @@ function CrmSync({ app, canManage }: { app: Provider; canManage: boolean }) {
                   else delete fm[f];
                   put({ fieldMapping: fm });
                 }}
-                className="h-8 min-w-0 flex-1 rounded-md bg-transparent px-2 font-mono text-[12.5px] text-ink outline-none placeholder:font-sans placeholder:text-faint hover:bg-elevated focus:bg-elevated rtl:text-right"
+                className="h-8 min-w-0 flex-1 rounded-md bg-transparent px-2 font-mono text-xs text-ink outline-none placeholder:font-sans placeholder:text-faint hover:bg-elevated focus:bg-elevated rtl:text-right"
               />
             </div>
           ))}
@@ -584,17 +584,17 @@ function CrmSync({ app, canManage }: { app: Provider; canManage: boolean }) {
             <Icon name="refresh" size={14} />
             {busy === 'sync' ? t('apps.sync.running') : t('apps.sync.now')}
           </button>
-          {result && <span className="text-[12.5px] text-muted">{result}</span>}
+          {result && <span className="text-xs text-muted">{result}</span>}
         </div>
       )}
 
-      <p className="mt-5 text-[12.5px] font-medium text-ink">{t('apps.sync.recent')}</p>
+      <p className="mt-5 text-xs font-medium text-ink">{t('apps.sync.recent')}</p>
       {records.length === 0 ? (
-        <p className="mt-1.5 text-[12.5px] text-faint">{t('apps.sync.none')}</p>
+        <p className="mt-1.5 text-xs text-faint">{t('apps.sync.none')}</p>
       ) : (
         <ul className="mt-2 space-y-1.5">
           {records.slice(0, 8).map((r) => (
-            <li key={r.id} className="flex items-center gap-2 text-[12.5px]">
+            <li key={r.id} className="flex items-center gap-2 text-xs">
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${r.status === 'SYNCED' ? 'bg-emerald-500' : 'bg-red-500'}`} />
               <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-muted rtl:text-right">
                 {r.externalId ?? r.error ?? '—'}

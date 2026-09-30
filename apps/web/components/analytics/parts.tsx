@@ -8,8 +8,8 @@ import { formatNumber } from '@/lib/format';
 export function PanelHeader({ title, meta, action }: { title: string; meta?: string; action?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 px-4 pb-2 pt-3.5">
-      <h2 className="text-[14px] font-semibold text-ink">{title}</h2>
-      {meta && <span className="tabular text-[12.5px] text-faint">{meta}</span>}
+      <h2 className="text-base font-semibold text-ink">{title}</h2>
+      {meta && <span className="tabular text-xs text-faint">{meta}</span>}
       {action && <span className="ms-auto">{action}</span>}
     </div>
   );
@@ -48,10 +48,10 @@ export function BarList({ rows, max }: { rows: BarRow[]; max?: number }) {
             <span className="absolute inset-y-0 start-0 rounded-md bg-accent/[0.09] dark:bg-accent/[0.16]" style={{ width }} aria-hidden />
             <span className="relative min-w-0 flex-1 truncate text-ink">{r.label}</span>
             <span className="tabular relative shrink-0 text-ink">{formatNumber(r.value, locale)}</span>
-            {r.aside !== undefined && <span className="tabular relative min-w-12 shrink-0 text-end text-[12px] text-faint">{r.aside}</span>}
+            {r.aside !== undefined && <span className="tabular relative min-w-12 shrink-0 text-end text-xs text-faint">{r.aside}</span>}
           </>
         );
-        const cls = 'relative flex min-h-9 items-center gap-3 rounded-md px-2.5 text-[13px]';
+        const cls = 'relative flex min-h-9 items-center gap-3 rounded-md px-2.5 text-sm';
         return (
           <li key={r.key}>
             {r.href ? (
@@ -72,7 +72,7 @@ export function BarList({ rows, max }: { rows: BarRow[]; max?: number }) {
 export function PanelEmpty({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="px-4 pb-6 pt-2">
-      <p className="text-[13px] leading-relaxed text-muted">{children}</p>
+      <p className="text-sm leading-relaxed text-muted">{children}</p>
       {action && <div className="mt-3">{action}</div>}
     </div>
   );

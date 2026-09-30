@@ -86,12 +86,12 @@ export function PresenceBadge({ people }: { people: PresentPerson[] }) {
           </span>
         ))}
         {extra > 0 && (
-          <span className="tabular flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-elevated px-1 text-[10.5px] font-medium text-muted ring-2 ring-surface">
+          <span className="tabular flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-elevated px-1 text-3xs font-medium text-muted ring-2 ring-surface">
             +{extra}
           </span>
         )}
       </span>
-      <span role="status" className="hidden truncate text-[12.5px] text-muted lg:inline">
+      <span role="status" className="hidden truncate text-xs text-muted lg:inline">
         {sentence}
       </span>
       <span className="sr-only lg:hidden">{sentence}</span>

@@ -314,7 +314,7 @@ export default function HomePage() {
   }
 
   const errorBanner = error && (
-    <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-[13px] text-red-700 dark:text-red-300">
+    <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 dark:text-red-300">
       {error}
     </div>
   );
@@ -327,7 +327,7 @@ export default function HomePage() {
     <section className="v-card flex flex-col">
       <PanelHeader title={t('recent.title')} />
       {leads.length === 0 ? (
-        <p className="px-4 pb-6 pt-2 text-[13px] leading-relaxed text-muted">{t('recent.empty')}</p>
+        <p className="px-4 pb-6 pt-2 text-sm leading-relaxed text-muted">{t('recent.empty')}</p>
       ) : (
         <ul className="px-2 pb-1">
           {leads.slice(0, 6).map((l) => (
@@ -335,18 +335,18 @@ export default function HomePage() {
               <Link href="/leads" className="flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-elevated">
                 <Avatar user={{ id: l.id, name: l.name, email: l.email }} size={30} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13.5px] font-medium text-ink">{l.name || t('recent.unnamed')}</span>
-                  <span className="block truncate text-[12px] text-faint">
+                  <span className="block truncate text-sm font-medium text-ink">{l.name || t('recent.unnamed')}</span>
+                  <span className="block truncate text-xs text-faint">
                     {[l.company, t(`recent.sources.${sourceKey(l.source)}`)].filter(Boolean).join(' · ')}
                   </span>
                 </span>
-                <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(l.createdAt, locale)}</span>
+                <span className="shrink-0 text-xs text-faint">{formatRelativeTime(l.createdAt, locale)}</span>
               </Link>
             </li>
           ))}
         </ul>
       )}
-      <Link href="/leads" className="mt-auto border-t border-line px-4 py-3 text-[12.5px] font-medium text-accent hover:underline">
+      <Link href="/leads" className="mt-auto border-t border-line px-4 py-3 text-xs font-medium text-accent hover:underline">
         {t('recent.all')}
       </Link>
     </section>
@@ -369,19 +369,19 @@ export default function HomePage() {
     return (
       <AppShell title={t('titles.personal')} action={newCardAction} mobileTitle={false}>
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-[24px] font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
           {phoneNewCard}
         </div>
-        <p className="mt-1 text-[14px] text-muted">{t('personal.subtitle')}</p>
+        <p className="mt-1 text-base text-muted">{t('personal.subtitle')}</p>
         {errorBanner}
         {onboarding}
 
         <div className="v-card mt-5 grid grid-cols-2 overflow-hidden lg:grid-cols-4">
           {stats.map((s, i) => (
             <div key={s.label} className={`px-4 py-4 ${i % 2 ? 'border-s border-line' : ''} ${i >= 2 ? 'border-t border-line lg:border-t-0' : ''} ${i === 2 ? 'lg:border-s' : ''}`}>
-              <p className="text-[12.5px] font-medium text-muted">{s.label}</p>
-              <p className="tabular mt-2 text-[26px] font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(s.value)}</p>
-              <p className="mt-1.5 truncate text-[12px] text-faint">{s.sub}</p>
+              <p className="text-xs font-medium text-muted">{s.label}</p>
+              <p className="tabular mt-2 text-4xl font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(s.value)}</p>
+              <p className="mt-1.5 truncate text-xs text-faint">{s.sub}</p>
             </div>
           ))}
         </div>
@@ -390,7 +390,7 @@ export default function HomePage() {
           <section className="v-card">
             <PanelHeader title={t('personal.cards')} meta={cards.length ? fmt(cards.length) : undefined} />
             {cards.length === 0 ? (
-              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noCards')}</p>
+              <p className="px-4 pb-6 pt-2 text-sm text-muted">{t('personal.noCards')}</p>
             ) : (
               <ul className="px-2 pb-2">
                 {cards.map((c) => (
@@ -398,8 +398,8 @@ export default function HomePage() {
                     <Link href={`/cards/${c.id}`} className="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-elevated">
                       <CardThumb card={c} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13.5px] font-medium text-ink">{cardName(c)}</span>
-                        <span dir="ltr" className="block truncate text-start font-mono text-[11.5px] text-faint">/c/{c.slug}</span>
+                        <span className="block truncate text-sm font-medium text-ink">{cardName(c)}</span>
+                        <span dir="ltr" className="block truncate text-start font-mono text-2xs text-faint">/c/{c.slug}</span>
                       </span>
                       <span className={`v-badge ${c.isPublished ? 'v-badge-success' : 'v-badge-neutral'}`}>
                         {c.isPublished ? t('personal.live') : t('personal.draft')}
@@ -417,12 +417,12 @@ export default function HomePage() {
           <section className="v-card">
             <PanelHeader title={t('personal.tasks')} meta={openTasks.length ? fmt(openTasks.length) : undefined} />
             {openTasks.length === 0 ? (
-              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noTasks')}</p>
+              <p className="px-4 pb-6 pt-2 text-sm text-muted">{t('personal.noTasks')}</p>
             ) : (
               <ul className="px-2 pb-2">
                 {openTasks.map((task) => (
                   <li key={task.id}>
-                    <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-[13.5px] text-ink hover:bg-elevated">
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm text-ink hover:bg-elevated">
                       <input
                         type="checkbox"
                         checked={task.completed}
@@ -440,7 +440,7 @@ export default function HomePage() {
           <section className="v-card">
             <PanelHeader title={t('personal.meetings')} meta={meetingRequests.length ? fmt(meetingRequests.length) : undefined} />
             {meetingRequests.length === 0 ? (
-              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noMeetings')}</p>
+              <p className="px-4 pb-6 pt-2 text-sm text-muted">{t('personal.noMeetings')}</p>
             ) : (
               <ul className="px-2 pb-2">
                 {meetingRequests.slice(0, 5).map((m) => (
@@ -448,8 +448,8 @@ export default function HomePage() {
                     <span className="text-faint">
                       <Icon name="calendar" size={16} />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{m.name || t('recent.unnamed')}</span>
-                    <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(m.createdAt, locale)}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">{m.name || t('recent.unnamed')}</span>
+                    <span className="shrink-0 text-xs text-faint">{formatRelativeTime(m.createdAt, locale)}</span>
                   </li>
                 ))}
               </ul>
@@ -462,7 +462,7 @@ export default function HomePage() {
               meta={personalNotifications.filter((n) => !n.readAt).length ? fmt(personalNotifications.filter((n) => !n.readAt).length) : undefined}
             />
             {personalNotifications.length === 0 ? (
-              <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('personal.noNotifications')}</p>
+              <p className="px-4 pb-6 pt-2 text-sm text-muted">{t('personal.noNotifications')}</p>
             ) : (
               <ul className="px-2 pb-2">
                 {personalNotifications.slice(0, 5).map((n) => (
@@ -470,8 +470,8 @@ export default function HomePage() {
                     <Link href="/notifications" className="flex gap-3 rounded-lg px-2 py-2.5 hover:bg-elevated">
                       <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.readAt ? 'bg-transparent' : 'bg-accent'}`} />
                       <span className="min-w-0">
-                        <span className="block truncate text-[13.5px] font-medium text-ink">{n.title}</span>
-                        <span className="block truncate text-[12px] text-faint">{n.body || n.category}</span>
+                        <span className="block truncate text-sm font-medium text-ink">{n.title}</span>
+                        <span className="block truncate text-xs text-faint">{n.body || n.category}</span>
                       </span>
                     </Link>
                   </li>
@@ -545,10 +545,10 @@ export default function HomePage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-start justify-between gap-3">
-          <h2 className="text-[24px] font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.022em] text-ink rtl:tracking-normal">{greeting}</h2>
           {phoneNewCard}
         </div>
-          <p className="mt-1 text-[14px] text-muted">
+          <p className="mt-1 text-base text-muted">
             {today} ·{' '}
             {thisWeek.length > 0 ? (
               <>
@@ -573,7 +573,7 @@ export default function HomePage() {
               role="radio"
               aria-checked={period === p}
               onClick={() => setPeriod(p)}
-              className={`h-11 rounded-md px-3 text-[12.5px] font-medium transition-colors sm:h-7 ${
+              className={`h-11 rounded-md px-3 text-xs font-medium transition-colors sm:h-7 ${
                 period === p ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
@@ -607,16 +607,16 @@ export default function HomePage() {
                   } ${i % 2 ? 'border-s border-line' : ''} ${i >= 2 ? 'border-t border-line lg:border-t-0' : ''} ${i === 2 ? 'lg:border-s' : ''}`}
                 >
                   {active && <span className="absolute inset-x-0 top-0 h-0.5 bg-accent" />}
-                  <span className="block truncate text-[12.5px] font-medium text-muted">{tab.label}</span>
+                  <span className="block truncate text-xs font-medium text-muted">{tab.label}</span>
                   <span className="mt-2 flex items-baseline gap-2">
-                    <span className="tabular text-[26px] font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(tab.value)}</span>
+                    <span className="tabular text-4xl font-semibold leading-none tracking-[-0.025em] text-ink">{fmt(tab.value)}</span>
                     {pct !== null && (
                       <span dir="ltr" className={`v-badge ${pct >= 0 ? 'v-badge-success' : 'v-badge-danger'}`}>
                         {formatChange(pct)}
                       </span>
                     )}
                   </span>
-                  <span className="mt-1.5 block truncate text-[12px] text-faint">{tab.sub}</span>
+                  <span className="mt-1.5 block truncate text-xs text-faint">{tab.sub}</span>
                 </button>
               );
             })}
@@ -634,14 +634,14 @@ export default function HomePage() {
                 markers={markers}
               />
             ) : (
-              <div className="flex h-[232px] items-center justify-center px-6 text-center text-[13px] leading-relaxed text-muted">
+              <div className="flex h-[232px] items-center justify-center px-6 text-center text-sm leading-relaxed text-muted">
                 <p className="max-w-sm">{t('metrics.noActivity')}</p>
               </div>
             )}
           </div>
 
           {hasActivity && series.current[peak] > 0 && (
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-line bg-elevated px-4 py-3 text-[13px] text-muted sm:px-5">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-line bg-elevated px-4 py-3 text-sm text-muted sm:px-5">
               <span className="v-badge v-badge-neutral">{t('metrics.insight')}</span>
               <span className="min-w-0 flex-1">
                 {peakOccasion ? (
@@ -674,7 +674,7 @@ export default function HomePage() {
                   />
                 )}
               </span>
-              <Link href="/analytics" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/analytics" className="v-hit text-xs font-medium text-accent hover:underline">
                 {t('metrics.openAnalytics')}
               </Link>
             </div>
@@ -695,7 +695,7 @@ export default function HomePage() {
                 title={t('attention.newLeads', { count: waitingLeads.length })}
                 desc={t('attention.oldestWaiting', { time: formatRelativeTime(waitingLeads[0].createdAt, locale) })}
                 action={
-                  <Link href="/leads" className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8">
+                  <Link href="/leads" className="v-btn v-btn-ghost !h-11 !px-3 !text-xs sm:!h-8">
                     {t('attention.openLeads')}
                   </Link>
                 }
@@ -712,11 +712,11 @@ export default function HomePage() {
                   <span className="flex gap-1.5">
                     <button
                       onClick={() => handleResolveApproval(req.id, 'REJECTED')}
-                      className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8"
+                      className="v-btn v-btn-ghost !h-11 !px-3 !text-xs sm:!h-8"
                     >
                       {t('attention.reject')}
                     </button>
-                    <button onClick={() => handleResolveApproval(req.id, 'APPROVED')} className="v-btn !h-11 !px-3 !text-[12.5px] sm:!h-8">
+                    <button onClick={() => handleResolveApproval(req.id, 'APPROVED')} className="v-btn !h-11 !px-3 !text-xs sm:!h-8">
                       {t('attention.approve')}
                     </button>
                   </span>
@@ -737,7 +737,7 @@ export default function HomePage() {
                   </span>
                 }
                 action={
-                  <Link href="/tags" className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8">
+                  <Link href="/tags" className="v-btn v-btn-ghost !h-11 !px-3 !text-xs sm:!h-8">
                     {t('attention.link')}
                   </Link>
                 }
@@ -751,7 +751,7 @@ export default function HomePage() {
                 action={
                   <Link
                     href={draftCards.length === 1 ? `/cards/${draftCards[0].id}` : '/cards'}
-                    className="v-btn v-btn-ghost !h-11 !px-3 !text-[12.5px] sm:!h-8"
+                    className="v-btn v-btn-ghost !h-11 !px-3 !text-xs sm:!h-8"
                   >
                     {t('attention.review')}
                   </Link>
@@ -759,7 +759,7 @@ export default function HomePage() {
               />
             )}
             {!waitingLeads.length && !pendingApprovals.length && !unlinkedChips.length && !draftCards.length && (
-              <li className="flex items-center gap-3 px-2 py-5 text-[13px] text-muted">
+              <li className="flex items-center gap-3 px-2 py-5 text-sm text-muted">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
                   <Icon name="check" size={14} />
                 </span>
@@ -773,17 +773,17 @@ export default function HomePage() {
           <PanelHeader
             title={t('top.title')}
             action={
-              <Link href="/cards" className="v-hit text-[12.5px] font-medium text-accent hover:underline">
+              <Link href="/cards" className="v-hit text-xs font-medium text-accent hover:underline">
                 {t('top.all')}
               </Link>
             }
           />
           {topRows.length === 0 ? (
-            <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('top.empty')}</p>
+            <p className="px-4 pb-6 pt-2 text-sm text-muted">{t('top.empty')}</p>
           ) : (
-            <table className="w-full text-[13px]">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="text-[12px] text-faint">
+                <tr className="text-xs text-faint">
                   <th className="px-4 pb-2 pt-1 text-start font-medium">{t('top.card')}</th>
                   <th className="px-4 pb-2 pt-1 text-end font-medium">{t('top.interactions')}</th>
                   <th className="px-4 pb-2 pt-1 text-end font-medium">{t('top.leads')}</th>
@@ -799,7 +799,7 @@ export default function HomePage() {
                           {card ? <CardThumb card={card} /> : <span className="h-[25px] w-10 rounded bg-elevated" />}
                           <span className="min-w-0">
                             <span className={`block truncate font-medium ${row.slug ? 'text-ink' : 'text-faint'}`}>{card ? cardName(card) : row.slug ?? t('deletedCard')}</span>
-                            {row.slug && <span dir="ltr" className="block truncate text-start font-mono text-[11.5px] text-faint">/c/{row.slug}</span>}
+                            {row.slug && <span dir="ltr" className="block truncate text-start font-mono text-2xs text-faint">/c/{row.slug}</span>}
                           </span>
                         </Link>
                       </td>
@@ -829,7 +829,7 @@ export default function HomePage() {
         <section className="v-card">
           <PanelHeader title={t('activity.title')} />
           {auditLogs.length === 0 ? (
-            <p className="px-4 pb-6 pt-2 text-[13px] text-muted">{t('activity.empty')}</p>
+            <p className="px-4 pb-6 pt-2 text-sm text-muted">{t('activity.empty')}</p>
           ) : (
             <ul className="px-2 pb-2">
               {auditLogs.slice(0, 6).map((log) => (
@@ -838,7 +838,7 @@ export default function HomePage() {
                     <Icon name={auditIcon(log.action)} size={13} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] text-ink">
+                    <span className="block truncate text-sm text-ink">
                       <span className="font-medium">{log.actor ? log.actor.name || log.actor.email : t('teams:activity.system')}</span>{' '}
                       <span className="text-muted">{t(`teams:activity.actions.${log.action.replace('.', '_')}`, { defaultValue: humanizeAction(log.action) })}</span>
                       {typeof (log.metadata?.email ?? log.metadata?.name) === 'string' && (
@@ -849,7 +849,7 @@ export default function HomePage() {
                       )}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(log.createdAt, locale)}</span>
+                  <span className="shrink-0 text-xs text-faint">{formatRelativeTime(log.createdAt, locale)}</span>
                 </li>
               ))}
             </ul>
@@ -865,19 +865,19 @@ export default function HomePage() {
               [t('team.departments'), departments.length],
             ].map(([label, value], i) => (
               <div key={label as string} className={`px-4 py-3 ${i ? 'border-s border-line' : ''}`}>
-                <dt className="truncate text-[12px] text-faint">{label}</dt>
-                <dd className="tabular mt-1 text-[20px] font-semibold leading-none text-ink">{fmt(value as number)}</dd>
+                <dt className="truncate text-xs text-faint">{label}</dt>
+                <dd className="tabular mt-1 text-2xl font-semibold leading-none text-ink">{fmt(value as number)}</dd>
               </div>
             ))}
           </dl>
           <div className="px-4 py-3">
-            <p className="text-[12px] text-faint">{t('team.largest')}</p>
+            <p className="text-xs text-faint">{t('team.largest')}</p>
             {largestTeams.length === 0 ? (
-              <p className="mt-2 text-[13px] text-muted">{t('team.noTeams')}</p>
+              <p className="mt-2 text-sm text-muted">{t('team.noTeams')}</p>
             ) : (
               <ul className="mt-1">
                 {largestTeams.map((tm) => (
-                  <li key={tm.id} className="flex items-center justify-between gap-3 py-1.5 text-[13px]">
+                  <li key={tm.id} className="flex items-center justify-between gap-3 py-1.5 text-sm">
                     <Link href={`/team?team=${tm.id}`} className="truncate text-ink hover:underline">
                       {tm.name}
                     </Link>
@@ -887,7 +887,7 @@ export default function HomePage() {
               </ul>
             )}
           </div>
-          <Link href="/team" className="mt-auto border-t border-line px-4 py-3 text-[12.5px] font-medium text-accent hover:underline">
+          <Link href="/team" className="mt-auto border-t border-line px-4 py-3 text-xs font-medium text-accent hover:underline">
             {t('team.manage')}
           </Link>
         </section>
@@ -921,8 +921,8 @@ function auditIcon(action: string) {
 function PanelHeader({ title, meta, action }: { title: string; meta?: string; action?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 px-4 pb-2 pt-3.5">
-      <h3 className="text-[14px] font-semibold text-ink">{title}</h3>
-      {meta && <span className="tabular text-[12.5px] text-faint">{meta}</span>}
+      <h3 className="text-base font-semibold text-ink">{title}</h3>
+      {meta && <span className="tabular text-xs text-faint">{meta}</span>}
       {action && <span className="ms-auto">{action}</span>}
     </div>
   );
@@ -953,8 +953,8 @@ function AttentionRow({
         <Icon name={icon} size={15} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13.5px] font-medium text-ink">{title}</span>
-        <span className="block truncate text-[12px] text-faint">{desc}</span>
+        <span className="block truncate text-sm font-medium text-ink">{title}</span>
+        <span className="block truncate text-xs text-faint">{desc}</span>
       </span>
       <span className="shrink-0">{action}</span>
     </li>
@@ -979,7 +979,7 @@ function Onboarding({
 
   if (!visible) {
     return (
-      <button onClick={onToggle} className="mt-4 min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+      <button onClick={onToggle} className="mt-4 min-h-11 text-xs font-medium text-accent hover:underline sm:min-h-0">
         {t('onboarding.show', { done: done.length, total: steps.length })}
       </button>
     );
@@ -990,14 +990,14 @@ function Onboarding({
   return (
     <section className="v-card mt-5 overflow-hidden">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
-        <h3 className="text-[14px] font-semibold text-ink">{t('onboarding.title')}</h3>
-        <span className="text-[12.5px] text-faint">{t('onboarding.progress', { done: done.length, total: steps.length })}</span>
+        <h3 className="text-base font-semibold text-ink">{t('onboarding.title')}</h3>
+        <span className="text-xs text-faint">{t('onboarding.progress', { done: done.length, total: steps.length })}</span>
         <span className="hidden gap-1 sm:flex" aria-hidden>
           {steps.map((s) => (
             <span key={s.id} className={`h-1 w-6 rounded-full ${s.completed ? 'bg-accent' : 'bg-line'}`} />
           ))}
         </span>
-        <button onClick={onToggle} className="ms-auto min-h-11 text-[12.5px] text-muted hover:text-ink sm:min-h-0">
+        <button onClick={onToggle} className="ms-auto min-h-11 text-xs text-muted hover:text-ink sm:min-h-0">
           {t('onboarding.hide')}
         </button>
       </div>
@@ -1007,17 +1007,17 @@ function Onboarding({
           return (
             <li key={s.id} className="flex gap-3 bg-surface p-4">
               <span
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-2xs font-semibold ${
                   s.completed ? 'bg-accent text-white' : 'text-faint ring-1 ring-inset ring-faint/40'
                 }`}
               >
                 {s.completed ? <Icon name="check" size={12} /> : n}
               </span>
               <div className="min-w-0 flex-1">
-                <p className={`text-[13.5px] font-medium ${s.completed ? 'text-faint line-through' : 'text-ink'}`}>{s.label}</p>
-                {!s.completed && <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">{s.desc}</p>}
+                <p className={`text-sm font-medium ${s.completed ? 'text-faint line-through' : 'text-ink'}`}>{s.label}</p>
+                {!s.completed && <p className="mt-0.5 text-xs leading-relaxed text-muted">{s.desc}</p>}
                 {!s.completed && (
-                  <Link href={s.link} className="mt-2 inline-flex min-h-11 items-center gap-1 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+                  <Link href={s.link} className="mt-2 inline-flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:underline sm:min-h-0">
                     {s.linkText}
                     <DirectionalIcon name="arrow" size={13} />
                   </Link>
@@ -1032,7 +1032,7 @@ function Onboarding({
           type="button"
           onClick={() => setShowDone((v) => !v)}
           aria-expanded={showDone}
-          className="flex min-h-11 w-full items-center gap-2 border-t border-line px-4 text-start text-[12.5px] text-muted hover:bg-elevated"
+          className="flex min-h-11 w-full items-center gap-2 border-t border-line px-4 text-start text-xs text-muted hover:bg-elevated"
         >
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white">
             <Icon name="check" size={11} />

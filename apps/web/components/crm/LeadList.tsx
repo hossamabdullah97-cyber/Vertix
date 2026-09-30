@@ -47,19 +47,19 @@ export function LeadList({
               role="radio"
               aria-checked={on}
               onClick={() => onStage(c.id)}
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium ring-1 ring-inset transition-colors ${
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium ring-1 ring-inset transition-colors ${
                 on ? 'bg-ink text-surface ring-ink' : 'bg-surface text-muted ring-line'
               }`}
             >
               {c.label}
-              <span className={`tabular text-[12px] ${on ? 'opacity-70' : 'text-faint'}`}>{formatNumber(c.count, locale)}</span>
+              <span className={`tabular text-xs ${on ? 'opacity-70' : 'text-faint'}`}>{formatNumber(c.count, locale)}</span>
             </button>
           );
         })}
       </div>
 
       {leads.length === 0 ? (
-        <p className="rounded-xl px-4 py-12 text-center text-[13px] text-muted ring-1 ring-inset ring-line">{t('table.noMatch')}</p>
+        <p className="rounded-xl px-4 py-12 text-center text-sm text-muted ring-1 ring-inset ring-line">{t('table.noMatch')}</p>
       ) : (
         <ul className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
           {leads.map((l) => {
@@ -72,13 +72,13 @@ export function LeadList({
                   <Avatar user={{ id: l.id, name: l.name, email: l.email }} size={38} />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-[14.5px] font-medium text-ink">{l.name || t('table.unknownLead')}</span>
+                      <span className="truncate text-base font-medium text-ink">{l.name || t('table.unknownLead')}</span>
                       <Heat temp={l.temperature} />
                     </span>
-                    <span className="mt-0.5 block truncate text-[12.5px] text-muted">
+                    <span className="mt-0.5 block truncate text-xs text-muted">
                       {[l.company, s ? t(stageKey(s.name), s.name) : null].filter(Boolean).join(' · ')}
                     </span>
-                    <span className="mt-0.5 flex items-center gap-1.5 text-[12px] text-faint">
+                    <span className="mt-0.5 flex items-center gap-1.5 text-xs text-faint">
                       <Icon name={src.icon} size={12} />
                       {t(`sources.${l.source}`, src.label)} · {formatRelativeTime(l.createdAt, locale, 'narrow')}
                     </span>

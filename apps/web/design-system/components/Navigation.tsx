@@ -52,7 +52,7 @@ export const TopbarItem: React.FC<TopbarItemProps> = ({
 }) => {
   return (
     <button
-      className={`px-3 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent-soft)] ${
+      className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-150 select-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent-soft)] ${
         active
           ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-contrast)] shadow-sm'
           : 'text-[hsl(var(--ds-fg-muted))] hover:text-ink hover:bg-[hsl(var(--ds-fg)/0.04)]'
@@ -82,7 +82,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
   ...props
 }) => {
   return (
-    <nav className={`text-[12.5px] font-semibold text-[hsl(var(--ds-fg-muted))] flex items-center gap-2 select-none ${className}`} {...props}>
+    <nav className={`text-xs font-semibold text-[hsl(var(--ds-fg-muted))] flex items-center gap-2 select-none ${className}`} {...props}>
       {items.map((item, idx) => {
         const last = idx === items.length - 1;
         return (
@@ -132,7 +132,7 @@ export const Tabs: React.FC<TabsProps> = ({
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            className={`pb-2.5 px-0.5 text-[13.5px] font-bold flex items-center gap-1.5 border-b-2 transition-all relative outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent-soft)] ${
+            className={`pb-2.5 px-0.5 text-sm font-bold flex items-center gap-1.5 border-b-2 transition-all relative outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent-soft)] ${
               active
                 ? 'border-[var(--ds-accent)] text-ink'
                 : 'border-transparent text-[hsl(var(--ds-fg-muted))] hover:text-ink'
@@ -170,7 +170,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
           key={o}
           type="button"
           onClick={() => onChange(o)}
-          className="rounded-ds-sm px-3.5 py-1.5 text-[12.5px] font-bold capitalize transition-all duration-200"
+          className="rounded-ds-sm px-3.5 py-1.5 text-xs font-bold capitalize transition-all duration-200"
           style={{
             background: value === o ? 'var(--ds-accent)' : 'transparent',
             color: value === o ? 'var(--ds-accent-contrast)' : 'hsl(var(--ds-fg-muted))',
@@ -234,7 +234,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 item.onClick();
                 setOpen(false);
               }}
-              className={`w-full text-left px-4 py-2 text-[13px] font-bold flex items-center gap-2.5 transition-colors ${
+              className={`w-full text-left px-4 py-2 text-sm font-bold flex items-center gap-2.5 transition-colors ${
                 item.danger
                   ? 'text-[hsl(var(--ds-error-accent))] hover:bg-[hsl(var(--ds-error-bg))]'
                   : 'text-ink hover:bg-[hsl(var(--ds-fg)/0.04)]'

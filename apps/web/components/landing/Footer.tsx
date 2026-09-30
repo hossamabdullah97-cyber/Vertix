@@ -5,17 +5,17 @@ import { Brand, REGISTER, WRAP } from './shared';
 
 export function Footer() {
   const t = getT(serverLocale(), 'landing');
-  const link = 'inline-flex min-h-9 items-center text-[13.5px] text-muted transition-colors hover:text-ink';
+  const link = 'inline-flex min-h-9 items-center text-sm text-muted transition-colors hover:text-ink';
 
   return (
     <footer className="border-t border-line">
       <div className={`${WRAP} grid grid-cols-2 gap-10 py-12 sm:grid-cols-[2fr_1fr_1fr]`}>
         <div className="col-span-2 sm:col-span-1">
           <Brand />
-          <p className="mt-2 max-w-xs text-[13.5px] leading-relaxed text-muted">{t('footer.tagline')}</p>
+          <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>
         </div>
         <nav aria-label={t('footer.product')}>
-          <p className="text-[12.5px] font-medium text-faint">{t('footer.product')}</p>
+          <p className="text-xs font-medium text-faint">{t('footer.product')}</p>
           <ul className="mt-2">
             {(['product', 'how', 'pricing', 'faq'] as const).map((k) => (
               <li key={k}>
@@ -27,7 +27,7 @@ export function Footer() {
           </ul>
         </nav>
         <nav aria-label={t('footer.account')}>
-          <p className="text-[12.5px] font-medium text-faint">{t('footer.account')}</p>
+          <p className="text-xs font-medium text-faint">{t('footer.account')}</p>
           <ul className="mt-2">
             <li>
               <Link href="/login" className={link}>
@@ -43,7 +43,7 @@ export function Footer() {
         </nav>
       </div>
       <div className={`${WRAP} flex items-center justify-between gap-4 border-t border-line py-5`}>
-        <p className="text-[12.5px] text-faint">{t('footer.rights', { year: new Date().getFullYear() })}</p>
+        <p className="text-xs text-faint">{t('footer.rights', { year: new Date().getFullYear() })}</p>
         <LanguageSwitcher />
       </div>
     </footer>

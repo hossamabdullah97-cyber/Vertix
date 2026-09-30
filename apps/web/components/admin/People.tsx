@@ -62,7 +62,7 @@ export function People({ onChanged }: { onChanged: () => void }) {
       {!users ? (
         <div className="v-skeleton h-72 rounded-xl" />
       ) : shown.length === 0 ? (
-        <p className="rounded-xl py-14 text-center text-[13.5px] text-muted ring-1 ring-inset ring-line">{t('people.empty')}</p>
+        <p className="rounded-xl py-14 text-center text-sm text-muted ring-1 ring-inset ring-line">{t('people.empty')}</p>
       ) : (
         <div className="v-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -95,7 +95,7 @@ export function People({ onChanged }: { onChanged: () => void }) {
                             {isSuspended(u) && <span className="v-badge v-badge-warning shrink-0">{t('people.suspended')}</span>}
                           </span>
                           {u.name && (
-                            <span dir="ltr" className="block truncate text-[12.5px] text-faint rtl:text-right">
+                            <span dir="ltr" className="block truncate text-xs text-faint rtl:text-right">
                               {u.email}
                             </span>
                           )}
@@ -104,9 +104,9 @@ export function People({ onChanged }: { onChanged: () => void }) {
                     </td>
                     <td className="hidden max-w-[260px] md:table-cell">
                       {u.organizations.length === 0 ? (
-                        <span className="text-[13px] text-faint">{t('people.noWorkspace')}</span>
+                        <span className="text-sm text-faint">{t('people.noWorkspace')}</span>
                       ) : (
-                        <span className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted">
+                        <span className="flex min-w-0 items-center gap-1.5 text-sm text-muted">
                           <span className="truncate">
                             {u.organizations[0].name} · {t(`roles.${u.organizations[0].role}`, { defaultValue: u.organizations[0].role })}
                           </span>
@@ -116,7 +116,7 @@ export function People({ onChanged }: { onChanged: () => void }) {
                     </td>
                     <td className="tabular hidden !text-end sm:table-cell">{n(u.cardsCount)}</td>
                     <td className="tabular hidden !text-end lg:table-cell">{n(u.leadsCount)}</td>
-                    <td className="hidden whitespace-nowrap text-[13px] text-muted lg:table-cell">{formatDate(u.createdAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                    <td className="hidden whitespace-nowrap text-sm text-muted lg:table-cell">{formatDate(u.createdAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -182,22 +182,22 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
           <div className="flex flex-wrap gap-2">
             {u.isSuperAdmin && <span className="v-badge v-badge-accent">{t('people.admin')}</span>}
             {suspended && <span className="v-badge v-badge-warning">{t('people.suspended')}</span>}
-            <span className="text-[12.5px] text-faint">
+            <span className="text-xs text-faint">
               {t('people.cols.joined')} {formatDate(u.createdAt, locale)}
             </span>
           </div>
 
           <section>
-            <h3 className="mb-2 text-[13px] font-semibold text-ink">{t('people.memberships')}</h3>
+            <h3 className="mb-2 text-sm font-semibold text-ink">{t('people.memberships')}</h3>
             {u.organizations.length === 0 ? (
-              <p className="text-[13px] text-faint">{t('people.noWorkspace')}</p>
+              <p className="text-sm text-faint">{t('people.noWorkspace')}</p>
             ) : (
               <ul className="divide-y divide-line rounded-lg ring-1 ring-inset ring-line">
                 {u.organizations.map((o) => (
                   <li key={o.id} className="flex items-center gap-3 px-3 py-2.5">
                     <OrgMark name={o.name} size={26} />
-                    <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{o.name}</span>
-                    <span className="shrink-0 text-[12.5px] text-muted">{t(`roles.${o.role}`, { defaultValue: o.role })}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">{o.name}</span>
+                    <span className="shrink-0 text-xs text-muted">{t(`roles.${o.role}`, { defaultValue: o.role })}</span>
                     {o.status !== 'ACTIVE' && <span className="v-badge v-badge-warning shrink-0">{t('people.suspended')}</span>}
                   </li>
                 ))}
@@ -205,7 +205,7 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
             )}
           </section>
 
-          <p className="text-[13px] text-muted">
+          <p className="text-sm text-muted">
             {t('people.cols.cards')}: <span className="tabular text-ink">{formatNumber(u.cardsCount, locale)}</span> · {t('people.cols.leads')}:{' '}
             <span className="tabular text-ink">{formatNumber(u.leadsCount, locale)}</span>
           </p>
@@ -285,7 +285,7 @@ function NewPerson({ open, onClose, onCreated }: { open: boolean; onClose: () =>
       title={t('people.new')}
       footer={
         <div className="flex items-center justify-end gap-2">
-          {err && <p className="me-auto text-[12.5px] text-red-600 dark:text-red-400">{err}</p>}
+          {err && <p className="me-auto text-xs text-red-600 dark:text-red-400">{err}</p>}
           <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
             {t('cancel')}
           </button>
@@ -311,8 +311,8 @@ function NewPerson({ open, onClose, onCreated }: { open: boolean; onClose: () =>
         <label className="flex cursor-pointer items-start gap-3 rounded-lg p-3 ring-1 ring-inset ring-line">
           <input type="checkbox" checked={f.superAdmin} onChange={(e) => setF({ ...f, superAdmin: e.target.checked })} className="mt-0.5 h-4 w-4 shrink-0 accent-accent" />
           <span>
-            <span className="block text-[13px] font-medium text-ink">{t('people.form.superAdmin')}</span>
-            <span className="mt-0.5 block text-[12.5px] leading-relaxed text-faint">{t('people.form.superAdminHint')}</span>
+            <span className="block text-sm font-medium text-ink">{t('people.form.superAdmin')}</span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-faint">{t('people.form.superAdminHint')}</span>
           </span>
         </label>
       </form>

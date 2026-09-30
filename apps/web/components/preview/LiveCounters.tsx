@@ -44,11 +44,11 @@ export function LiveCounters({ cardId }: { cardId: string }) {
   return (
     <div className="v-card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[13px] font-semibold tracking-tight">{t('engagement.title')}</h3>
+        <h3 className="text-sm font-semibold tracking-tight">{t('engagement.title')}</h3>
         <span className="v-badge v-badge-neutral">{t('engagement.allTime')}</span>
       </div>
       {counts && total === 0 ? (
-        <p className="rounded-xl border border-dashed border-line bg-canvas/40 px-3 py-4 text-center text-[11.5px] text-muted">
+        <p className="rounded-xl border border-dashed border-line bg-canvas/40 px-3 py-4 text-center text-2xs text-muted">
           {t('engagement.empty')}
         </p>
       ) : (
@@ -65,11 +65,11 @@ export function LiveCounters({ cardId }: { cardId: string }) {
                 <span style={{ color: m.accentDot }}>
                   <Icon name={m.icon} size={13} />
                 </span>
-                <span className="truncate text-[10px] font-semibold">
+                <span className="truncate text-3xs font-semibold">
                   {t(`engagement.metrics.${m.key}`)}
                 </span>
               </div>
-              <p className="text-[19px] font-bold tabular-nums leading-none text-ink">
+              <p className="text-xl font-bold tabular-nums leading-none text-ink">
                 {counts ? (counts[m.key] ?? 0).toLocaleString() : '—'}
               </p>
             </motion.div>

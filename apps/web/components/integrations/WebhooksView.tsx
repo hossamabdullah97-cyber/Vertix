@@ -123,8 +123,8 @@ export function WebhooksView({ canManage, handoff, onHandled }: { canManage: boo
                 [t('webhooks.stats.failed'), n(summary.deliveries.failed), summary.deliveries.failed ? 'text-red-600 dark:text-red-400' : ''],
               ].map(([label, value, tone]) => (
                 <div key={label} className="px-4 py-3.5 sm:px-5">
-                  <dt className="text-[12px] text-muted">{label}</dt>
-                  <dd className={`tabular mt-1 text-[20px] font-semibold tracking-[-0.01em] ${tone || 'text-ink'}`}>{value}</dd>
+                  <dt className="text-xs text-muted">{label}</dt>
+                  <dd className={`tabular mt-1 text-2xl font-semibold tracking-[-0.01em] ${tone || 'text-ink'}`}>{value}</dd>
                 </div>
               ))}
             </dl>
@@ -142,15 +142,15 @@ export function WebhooksView({ canManage, handoff, onHandled }: { canManage: boo
                     style={status === 'idle' ? { background: 'hsl(var(--v-border-strong))' } : undefined}
                   />
                   <button onClick={() => setLogFor(e)} className="min-w-0 flex-1 text-start">
-                    <span dir="ltr" className={`block truncate font-mono text-[13px] rtl:text-right ${e.enabled ? 'text-ink' : 'text-muted'}`}>
+                    <span dir="ltr" className={`block truncate font-mono text-sm rtl:text-right ${e.enabled ? 'text-ink' : 'text-muted'}`}>
                       {e.url}
                     </span>
-                    <span className="mt-0.5 block truncate text-[12.5px] text-muted">
+                    <span className="mt-0.5 block truncate text-xs text-muted">
                       {[e.description, eventsText(e.events), t(`webhooks.health.${status}`)].filter((x): x is string => !!x).map(iso).join(' · ')}
                     </span>
                   </button>
                   {h && h.total > 0 && (
-                    <span className="tabular hidden shrink-0 text-[12.5px] text-muted sm:block">{formatPercent(h.successRate / 100, locale)}</span>
+                    <span className="tabular hidden shrink-0 text-xs text-muted sm:block">{formatPercent(h.successRate / 100, locale)}</span>
                   )}
                   <Toggle on={e.enabled} disabled={!canManage} label={t('webhooks.toggle', { url: e.url })} onChange={() => toggle(e)} />
                   <ActionMenu
@@ -174,14 +174,14 @@ export function WebhooksView({ canManage, handoff, onHandled }: { canManage: boo
       )}
 
       <details className="group mt-6 rounded-xl ring-1 ring-inset ring-line">
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-[13px] font-medium text-ink sm:px-5 [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-ink sm:px-5 [&::-webkit-details-marker]:hidden">
           <Icon name="shield" size={14} className="text-faint" />
           {t('webhooks.verify.title')}
           <Icon name="chevron-down" size={14} className="ms-auto text-faint transition-transform group-open:rotate-180" />
         </summary>
         <div className="border-t border-line px-4 py-4 sm:px-5">
-          <p className="max-w-[640px] text-[13px] leading-relaxed text-muted">{t('webhooks.verify.body')}</p>
-          <pre dir="ltr" className="mt-3 overflow-x-auto rounded-lg bg-elevated px-3.5 py-3 text-start font-mono text-[12px] leading-relaxed text-ink ring-1 ring-inset ring-line">
+          <p className="max-w-[640px] text-sm leading-relaxed text-muted">{t('webhooks.verify.body')}</p>
+          <pre dir="ltr" className="mt-3 overflow-x-auto rounded-lg bg-elevated px-3.5 py-3 text-start font-mono text-xs leading-relaxed text-ink ring-1 ring-inset ring-line">
             {`X-Vertex-Signature: t=1760000000,v1=5257a869e7…\n\nexpected = HMAC_SHA256(secret, t + "." + rawBody)`}
           </pre>
         </div>
@@ -278,7 +278,7 @@ function EndpointSheet({ form, onClose, onSaved }: { form: Form | null; onClose:
       title={f.id ? t('webhooks.edit') : t('webhooks.add')}
       footer={
         <div className="flex items-center justify-end gap-2">
-          {err && <p className="me-auto text-[12.5px] text-red-600 dark:text-red-400">{err}</p>}
+          {err && <p className="me-auto text-xs text-red-600 dark:text-red-400">{err}</p>}
           <button type="button" onClick={onClose} className="v-btn v-btn-ghost">
             {t('cancel')}
           </button>
@@ -290,18 +290,18 @@ function EndpointSheet({ form, onClose, onSaved }: { form: Form | null; onClose:
     >
       <form id="endpoint-form" onSubmit={save} className="space-y-5">
         <Field label={t('webhooks.form.url')} hint={t('webhooks.form.urlHint')} htmlFor="wh-url">
-          <input id="wh-url" dir="ltr" type="url" value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} placeholder="https://example.com/hooks/vertex" className="v-field w-full font-mono text-[13px] rtl:text-right" />
+          <input id="wh-url" dir="ltr" type="url" value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} placeholder="https://example.com/hooks/vertex" className="v-field w-full font-mono text-sm rtl:text-right" />
         </Field>
         <Field label={t('webhooks.form.description')} htmlFor="wh-desc">
           <input id="wh-desc" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder={t('webhooks.form.descriptionPlaceholder')} maxLength={200} className="v-field w-full" />
         </Field>
         <div>
-          <p className="mb-2 text-[12.5px] font-medium text-ink">{t('webhooks.form.events')}</p>
+          <p className="mb-2 text-xs font-medium text-ink">{t('webhooks.form.events')}</p>
           <div className="rounded-lg ring-1 ring-inset ring-line">
             <Check label={t('events.all')} checked={all} onChange={() => setF({ ...f, events: all ? [] : ['*'] })} strong />
             {EVENT_GROUPS.map((g) => (
               <div key={g.key} className="border-t border-line px-1 py-1.5">
-                <p className="px-2.5 pb-0.5 pt-1 text-[12px] text-faint">{t(`events.groups.${g.key}`)}</p>
+                <p className="px-2.5 pb-0.5 pt-1 text-xs text-faint">{t(`events.groups.${g.key}`)}</p>
                 {g.events.map((ev) => (
                   <Check key={ev} label={eventLabel(t, ev)} hint={ev} checked={all || f.events.includes(ev)} disabled={all} onChange={() => flip(ev)} />
                 ))}
@@ -318,9 +318,9 @@ function Check({ label, hint, checked, disabled, strong, onChange }: { label: st
   return (
     <label className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2.5 sm:min-h-9 ${strong ? 'px-3.5' : ''} ${disabled ? 'cursor-default opacity-60' : 'hover:bg-elevated'}`}>
       <input type="checkbox" checked={checked} disabled={disabled} onChange={onChange} className="h-4 w-4 shrink-0 accent-accent" />
-      <span className={`flex-1 text-[13px] ${strong ? 'font-medium' : ''} text-ink`}>{label}</span>
+      <span className={`flex-1 text-sm ${strong ? 'font-medium' : ''} text-ink`}>{label}</span>
       {hint && (
-        <span dir="ltr" className="hidden font-mono text-[11.5px] text-faint sm:inline">
+        <span dir="ltr" className="hidden font-mono text-2xs text-faint sm:inline">
           {hint}
         </span>
       )}
@@ -366,7 +366,7 @@ function DeliveriesSheet({ endpoint, canManage, onClose }: { endpoint: Endpoint 
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <p className="py-10 text-center text-[13px] text-muted">{t('webhooks.log.empty')}</p>
+        <p className="py-10 text-center text-sm text-muted">{t('webhooks.log.empty')}</p>
       ) : (
         <ul className="-mx-5 divide-y divide-line">
           {rows.map((d) => (
@@ -375,15 +375,15 @@ function DeliveriesSheet({ endpoint, canManage, onClose }: { endpoint: Endpoint 
                 <span className={`v-badge ${d.status === 'SUCCESS' ? 'v-badge-success' : d.status === 'FAILED' ? 'v-badge-danger' : 'v-badge-neutral'}`}>
                   {t(`webhooks.log.status.${d.status}`)}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{eventLabel(t, d.event)}</span>
-                <span className="shrink-0 text-[12px] text-faint">{formatRelativeTime(d.createdAt, locale)}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-ink">{eventLabel(t, d.event)}</span>
+                <span className="shrink-0 text-xs text-faint">{formatRelativeTime(d.createdAt, locale)}</span>
               </div>
-              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[12px] text-muted">
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs text-muted">
                 {d.responseStatus !== null && <span dir="ltr" className="font-mono">HTTP {d.responseStatus}</span>}
                 <span>{t('webhooks.log.attempts', { count: d.attempts })}</span>
                 {d.durationMs !== null && <span dir="ltr" className="tabular">{formatNumber(d.durationMs, locale)} ms</span>}
               </p>
-              {d.error && !(d.responseStatus !== null && d.error.trim() === `HTTP ${d.responseStatus}`) && <p dir="auto" className="mt-1 break-words text-[12px] text-red-600 dark:text-red-400">{d.error}</p>}
+              {d.error && !(d.responseStatus !== null && d.error.trim() === `HTTP ${d.responseStatus}`) && <p dir="auto" className="mt-1 break-words text-xs text-red-600 dark:text-red-400">{d.error}</p>}
               {d.status === 'FAILED' && canManage && (
                 <button
                   onClick={async () => {
@@ -395,7 +395,7 @@ function DeliveriesSheet({ endpoint, canManage, onClose }: { endpoint: Endpoint 
                     }, 1500);
                   }}
                   disabled={!!busy}
-                  className="mt-2 flex h-8 items-center gap-1.5 text-[12.5px] font-medium text-accent hover:underline disabled:opacity-60"
+                  className="mt-2 flex h-8 items-center gap-1.5 text-xs font-medium text-accent hover:underline disabled:opacity-60"
                 >
                   <Icon name="refresh" size={13} />
                   {busy === d.id ? t('webhooks.log.replaying') : t('webhooks.log.replay')}

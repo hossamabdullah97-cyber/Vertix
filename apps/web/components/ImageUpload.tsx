@@ -59,7 +59,7 @@ export function ImageUpload({
 
   return (
     <div className="space-y-2">
-      {label && <p className="text-[12.5px] text-muted">{label}</p>}
+      {label && <p className="text-xs text-muted">{label}</p>}
 
       <div
         onDragOver={(e) => {
@@ -91,7 +91,7 @@ export function ImageUpload({
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={busy}
-              className="v-btn v-btn-ghost !h-11 !px-2.5 !text-[12.5px] disabled:opacity-60 sm:!h-8"
+              className="v-btn v-btn-ghost !h-11 !px-2.5 !text-xs disabled:opacity-60 sm:!h-8"
             >
               {busy ? (
                 <>
@@ -111,13 +111,13 @@ export function ImageUpload({
                   setError('');
                 }}
                 disabled={busy}
-                className="v-btn v-btn-ghost !h-11 !px-2.5 !text-[12.5px] text-muted hover:!text-red-600 disabled:opacity-60 sm:!h-8"
+                className="v-btn v-btn-ghost !h-11 !px-2.5 !text-xs text-muted hover:!text-red-600 disabled:opacity-60 sm:!h-8"
               >
                 <Icon name="trash" size={13} /> {t('upload.remove')}
               </button>
             )}
           </div>
-          <p className="text-[11.5px] leading-snug text-faint">{t('upload.hint')}</p>
+          <p className="text-2xs leading-snug text-faint">{t('upload.hint')}</p>
         </div>
 
         <input
@@ -135,7 +135,7 @@ export function ImageUpload({
       {byLink ? (
         <input
           dir="ltr"
-          className="v-field !text-[12.5px] rtl:text-right"
+          className="v-field !text-xs rtl:text-right"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={t('upload.urlPlaceholder')}
@@ -143,12 +143,12 @@ export function ImageUpload({
           autoFocus
         />
       ) : (
-        <button type="button" onClick={() => setByLink(true)} className="min-h-11 text-[12.5px] font-medium text-accent hover:underline sm:min-h-0">
+        <button type="button" onClick={() => setByLink(true)} className="min-h-11 text-xs font-medium text-accent hover:underline sm:min-h-0">
           {t('upload.useLink')}
         </button>
       )}
 
-      {error && <p className="text-[12px] text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 }

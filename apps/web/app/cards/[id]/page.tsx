@@ -633,7 +633,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
           <span className="text-faint">
             <Icon name="loader" size={22} className="animate-spin" />
           </span>
-          <p className="text-[13px] text-muted">{error || t('shell.loading')}</p>
+          <p className="text-sm text-muted">{error || t('shell.loading')}</p>
         </div>
       </AppShell>
     );
@@ -693,7 +693,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   const headerActions = (
     <div className="flex items-center gap-1.5">
-      <span role="status" title={statusLabel} className="me-1 flex items-center gap-1.5 text-[12.5px] text-faint">
+      <span role="status" title={statusLabel} className="me-1 flex items-center gap-1.5 text-xs text-faint">
         <Icon
           name={autoSaveStatus === 'Saved' ? 'check' : saving ? 'loader' : 'x'}
           size={13}
@@ -780,10 +780,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   return (
     <AppShell title={title} action={headerActions} bleed>
       {error && (
-        <div role="alert" className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/[0.06] px-5 py-2.5 text-[13px] text-red-700 dark:text-red-300 md:px-8">
+        <div role="alert" className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/[0.06] px-5 py-2.5 text-sm text-red-700 dark:text-red-300 md:px-8">
           <Icon name="x" size={14} />
           <span className="min-w-0 flex-1">{error}</span>
-          <button onClick={() => setError('')} className="text-[12.5px] font-medium hover:underline">
+          <button onClick={() => setError('')} className="text-xs font-medium hover:underline">
             {t('settings.cancel')}
           </button>
         </div>
@@ -805,7 +805,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   role="tab"
                   aria-selected={active}
                   onClick={() => switchTab(tab.id)}
-                  className={`relative flex min-h-11 shrink-0 items-center gap-2 text-[13.5px] font-medium transition-colors ${
+                  className={`relative flex min-h-11 shrink-0 items-center gap-2 text-sm font-medium transition-colors ${
                     active ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
@@ -825,7 +825,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 {missingRecommendations.length > 0 ? (
                   <div className="flex items-center gap-3 rounded-[10px] bg-elevated px-3.5 py-3 ring-1 ring-inset ring-line">
                     <ScoreRing value={profileScore} />
-                    <p className="min-w-0 flex-1 text-[13px] text-muted">
+                    <p className="min-w-0 flex-1 text-sm text-muted">
                       <span className="font-medium text-ink">
                         {t('quality.title')} · <span className="tabular">{profileScore}%</span>
                       </span>
@@ -839,7 +839,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       onClick={() =>
                         document.getElementById(RECOMMENDATION_TARGET[missingRecommendations[0]] ?? 'studio-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                       }
-                      className="v-btn shrink-0 !h-11 px-3 text-[12.5px] sm:!h-8"
+                      className="v-btn shrink-0 !h-11 px-3 text-xs sm:!h-8"
                     >
                       {t('quality.go')}
                     </button>
@@ -959,8 +959,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 >
                   {actions.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-line-strong px-6 py-8 text-center">
-                      <p className="text-[14px] font-medium text-ink">{t('links.emptyTitle')}</p>
-                      <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{t('links.emptyDesc')}</p>
+                      <p className="text-base font-medium text-ink">{t('links.emptyTitle')}</p>
+                      <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted">{t('links.emptyDesc')}</p>
                       <div className="mt-4 flex flex-wrap justify-center gap-2">
                         {(
                           [
@@ -974,7 +974,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           <button
                             key={item.type}
                             onClick={() => addAction(item.type)}
-                            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated sm:min-h-8"
+                            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated sm:min-h-8"
                           >
                             <Icon name={item.icon} size={14} /> {t(`links.shortcuts.${item.key}`)}
                           </button>
@@ -998,8 +998,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         return (
                           <div key={key}>
                             <div className="mb-2 flex items-baseline justify-between gap-3">
-                              <h3 className="text-[13px] font-medium text-ink">{t(`links.group.${key}`)}</h3>
-                              <span className="text-[12px] text-faint">{t(`links.group.${key}Hint`)}</span>
+                              <h3 className="text-sm font-medium text-ink">{t(`links.group.${key}`)}</h3>
+                              <span className="text-xs text-faint">{t(`links.group.${key}Hint`)}</span>
                             </div>
                             {list.length > 0 ? (
                               <div className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
@@ -1052,7 +1052,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                 ))}
                               </div>
                             ) : (
-                              <p className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-[12.5px] text-faint">
+                              <p className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-xs text-faint">
                                 {t(`links.group.${key}Empty`)}
                               </p>
                             )}
@@ -1062,10 +1062,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                       <div>
                         <div className="mb-2 flex items-baseline justify-between gap-3">
-                          <h3 id="links-display" className="text-[13px] font-medium text-ink">
+                          <h3 id="links-display" className="text-sm font-medium text-ink">
                             {t('links.display.title')}
                           </h3>
-                          <span className="text-[12px] text-faint">{t('links.display.hint')}</span>
+                          <span className="text-xs text-faint">{t('links.display.hint')}</span>
                         </div>
                         <div role="radiogroup" aria-labelledby="links-display" className="grid grid-cols-3 gap-2.5">
                           {LINK_STYLES.map((s) => (
@@ -1080,15 +1080,15 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               }`}
                             >
                               <LinkStyleSketch style={s} />
-                              <span className="mt-2.5 block truncate text-[13px] font-medium text-ink">{t(`links.display.${s}.label`)}</span>
-                              <span className="block truncate text-[12px] text-faint">{t(`links.display.${s}.desc`)}</span>
+                              <span className="mt-2.5 block truncate text-sm font-medium text-ink">{t(`links.display.${s}.label`)}</span>
+                              <span className="block truncate text-xs text-faint">{t(`links.display.${s}.desc`)}</span>
                             </button>
                           ))}
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-4 rounded-xl px-3.5 py-3 ring-1 ring-inset ring-line">
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-ink">{t('links.openInApp.title')}</p>
-                            <p className="mt-0.5 text-[12px] leading-snug text-faint">{t('links.openInApp.hint')}</p>
+                            <p className="text-sm font-medium text-ink">{t('links.openInApp.title')}</p>
+                            <p className="mt-0.5 text-xs leading-snug text-faint">{t('links.openInApp.hint')}</p>
                           </div>
                           <Toggle on={openInApp} onChange={() => setOpenInApp((v) => !v)} label={t('links.openInApp.title')} />
                         </div>
@@ -1113,10 +1113,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               <Icon name={details?.icon ?? 'layers'} size={15} />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className={`truncate text-[13.5px] font-medium ${s.isVisible ? 'text-ink' : 'text-faint'}`}>
+                              <p className={`truncate text-sm font-medium ${s.isVisible ? 'text-ink' : 'text-faint'}`}>
                                 {details ? t(`sections.types.${s.type}.label`) : s.type}
                               </p>
-                              <p className="truncate text-[12px] text-faint">{details ? t(`sections.types.${s.type}.desc`) : ''}</p>
+                              <p className="truncate text-xs text-faint">{details ? t(`sections.types.${s.type}.desc`) : ''}</p>
                             </div>
                             <div className="flex shrink-0 items-center">
                               <RowButton
@@ -1157,7 +1157,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               </Field>
                             ) : s.type === 'VIDEO' ? (
                               <>
-                                <p className="text-[12.5px] text-muted">{t('sections.videoHelp')}</p>
+                                <p className="text-xs text-muted">{t('sections.videoHelp')}</p>
                                 <Field label={t('sections.videoUrl')}>
                                   <input
                                     dir="ltr"
@@ -1195,7 +1195,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                         />
                                       </div>
                                     ) : (
-                                      <p className="text-[12.5px] text-amber-700 dark:text-amber-400">{t('sections.videoInvalid')}</p>
+                                      <p className="text-xs text-amber-700 dark:text-amber-400">{t('sections.videoInvalid')}</p>
                                     );
                                   })()}
                               </>
@@ -1210,7 +1210,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                   />
                                 </Field>
                                 <div>
-                                  <p className="mb-2 text-[12.5px] text-muted">{t('sections.galleryImages')}</p>
+                                  <p className="mb-2 text-xs text-muted">{t('sections.galleryImages')}</p>
                                   {Array.isArray(s.content.images) && (s.content.images as string[]).length > 0 && (
                                     <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                                       {(s.content.images as string[]).map((imgUrl, imgIdx) => (
@@ -1277,7 +1277,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                     <button
                                       type="button"
                                       onClick={() => save([...items, { id: newId(), name: '', issuer: '', year: '' }])}
-                                      className="flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated sm:min-h-9"
+                                      className="flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated sm:min-h-9"
                                     >
                                       <Icon name="plus" size={14} /> {t('sections.credentials.add')}
                                     </button>
@@ -1290,7 +1290,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                   <input className="v-field" defaultValue={(s.content.title as string) ?? ''} onBlur={(e) => patchSection(s, 'title', e.target.value)} placeholder={t('sections.clients.titlePlaceholder')} />
                                 </Field>
                                 <div>
-                                  <p className="mb-2 text-[12.5px] text-muted">{t('sections.clients.help')}</p>
+                                  <p className="mb-2 text-xs text-muted">{t('sections.clients.help')}</p>
                                   {Array.isArray(s.content.logos) && (s.content.logos as string[]).length > 0 && (
                                     <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                                       {(s.content.logos as string[]).map((logo, li) => (
@@ -1321,7 +1321,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               </>
                             ) : s.type === 'BOOKING' ? (
                               <>
-                                <p className="text-[12.5px] text-muted">{t('sections.bookingHelp')}</p>
+                                <p className="text-xs text-muted">{t('sections.bookingHelp')}</p>
                                 <Field label={t('links.bookingUrl')}>
                                   <input
                                     dir="ltr"
@@ -1376,19 +1376,19 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     })}
 
                     {sections.length === 0 && (
-                      <p className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-[12.5px] text-faint">
+                      <p className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-xs text-faint">
                         {t('sections.empty')}
                       </p>
                     )}
                   </div>
 
-                  <h3 className="mb-2 mt-6 text-[13px] font-medium text-ink">{t('sections.available')}</h3>
+                  <h3 className="mb-2 mt-6 text-sm font-medium text-ink">{t('sections.available')}</h3>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {Object.entries(SECTION_DETAILS).map(([type, details]) => (
                       <button
                         key={type}
                         onClick={() => addSection(type)}
-                        className="flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-start text-[13px] font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated"
+                        className="flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated"
                       >
                         <span className="text-faint">
                           <Icon name={details.icon} size={15} />
@@ -1409,7 +1409,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               <StudioSection title={t('design.title')} description={t('design.subtitle')}>
                 <div className="space-y-8">
                   <div>
-                    <h3 id="design-layout" className="mb-3 text-[13px] font-medium text-ink">{t('design.layout')}</h3>
+                    <h3 id="design-layout" className="mb-3 text-sm font-medium text-ink">{t('design.layout')}</h3>
                     <div role="radiogroup" aria-labelledby="design-layout" className="grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
                       {LAYOUTS.map((l) => (
                         <button
@@ -1423,15 +1423,15 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           }`}
                         >
                           <LayoutSketch layout={l} accent={accent} />
-                          <span className="mt-2.5 block truncate text-[13px] font-medium text-ink">{t(`design.layouts.${l}.label`)}</span>
-                          <span className="block text-[12px] leading-snug text-faint">{t(`design.layouts.${l}.desc`)}</span>
+                          <span className="mt-2.5 block truncate text-sm font-medium text-ink">{t(`design.layouts.${l}.label`)}</span>
+                          <span className="block text-xs leading-snug text-faint">{t(`design.layouts.${l}.desc`)}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="mb-3 text-[13px] font-medium text-ink">{t('design.accent')}</h3>
+                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.accent')}</h3>
                     <div className="flex flex-wrap items-center gap-2.5">
                       {SWATCHES.map((c) => {
                         const selected = accent.toLowerCase() === c.toLowerCase();
@@ -1450,7 +1450,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         );
                       })}
                       <label
-                        className="relative flex h-8 items-center gap-2 rounded-full px-3 text-[12.5px] text-muted ring-1 ring-inset ring-line hover:bg-elevated"
+                        className="relative flex h-8 items-center gap-2 rounded-full px-3 text-xs text-muted ring-1 ring-inset ring-line hover:bg-elevated"
                         title={accent}
                       >
                         <span className="h-4 w-4 rounded-full ring-1 ring-inset ring-black/10" style={{ background: accent }} />
@@ -1466,7 +1466,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   </div>
 
                   <div>
-                    <h3 className="mb-3 text-[13px] font-medium text-ink">{t('design.themeMode')}</h3>
+                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.themeMode')}</h3>
                     <div className="grid max-w-lg grid-cols-3 gap-3">
                       {(['light', 'dark', 'auto'] as const).map((m) => (
                         <OptionCard key={m} selected={mode === m} onClick={() => setMode(m)} label={t(`design.${m}Mode`)}>
@@ -1483,11 +1483,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         </OptionCard>
                       ))}
                     </div>
-                    {mode === 'auto' && <p className="mt-2 text-[12.5px] text-faint">{t('design.autoHint')}</p>}
+                    {mode === 'auto' && <p className="mt-2 text-xs text-faint">{t('design.autoHint')}</p>}
                   </div>
 
                   <div>
-                    <h3 className="mb-3 text-[13px] font-medium text-ink">{t('design.cover')}</h3>
+                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.cover')}</h3>
                     <div className="grid max-w-2xl grid-cols-3 gap-3 sm:grid-cols-5">
                       {COVER_STYLES.map((type) => (
                         <OptionCard key={type} selected={cover === type} onClick={() => setCover(type)} label={t(`design.covers.${type}`)}>
@@ -1495,19 +1495,19 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         </OptionCard>
                       ))}
                     </div>
-                    {vcard.coverImage && <p className="mt-2 text-[12.5px] text-faint">{t('design.coverImageWins')}</p>}
+                    {vcard.coverImage && <p className="mt-2 text-xs text-faint">{t('design.coverImageWins')}</p>}
                   </div>
 
                   <div className="flex max-w-2xl items-center justify-between gap-4 rounded-xl px-3.5 py-3 ring-1 ring-inset ring-line">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-ink">{t('design.brand.title')}</p>
-                      <p className="mt-0.5 text-[12px] leading-snug text-faint">{t('design.brand.hint')}</p>
+                      <p className="text-sm font-medium text-ink">{t('design.brand.title')}</p>
+                      <p className="mt-0.5 text-xs leading-snug text-faint">{t('design.brand.hint')}</p>
                     </div>
                     <Toggle on={showBrand} onChange={() => setShowBrand((v) => !v)} label={t('design.brand.title')} />
                   </div>
 
                   <div>
-                    <h3 className="mb-3 text-[13px] font-medium text-ink">{t('design.cardLanguage')}</h3>
+                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.cardLanguage')}</h3>
                     <div className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
                       {(
                         [
@@ -1520,7 +1520,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           type="button"
                           onClick={() => setLang(code)}
                           aria-pressed={lang === code}
-                          className={`h-11 rounded-md px-4 text-[13px] font-medium transition-colors sm:h-8 ${
+                          className={`h-11 rounded-md px-4 text-sm font-medium transition-colors sm:h-8 ${
                             lang === code ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
                           }`}
                         >
@@ -1555,9 +1555,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     and the component says so itself everywhere else. */}
                 <NfcProgrammer cardId={id} onProgrammed={() => void load()} />
 
-                <h3 className="mb-2 mt-8 text-[13px] font-medium text-ink">{t('nfc.title')}</h3>
+                <h3 className="mb-2 mt-8 text-sm font-medium text-ink">{t('nfc.title')}</h3>
                 {linkedTags.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-[13px] text-muted">{t('nfc.empty')}</p>
+                  <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">{t('nfc.empty')}</p>
                 ) : (
                   <ul className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
                     {linkedTags.map((tag) => (
@@ -1566,10 +1566,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                           <Icon name="tag" size={15} />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p dir="ltr" className="truncate text-start font-mono text-[12.5px] text-ink rtl:text-right">
+                          <p dir="ltr" className="truncate text-start font-mono text-xs text-ink rtl:text-right">
                             {tag.uid}
                           </p>
-                          <p className="text-[12px] text-faint">
+                          <p className="text-xs text-faint">
                             {tag.hardwareType.toLowerCase()} · {t('nfc.scanCount')}{' '}
                             <span className="tabular">{tag.activationCount}</span>
                           </p>
@@ -1579,7 +1579,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     ))}
                   </ul>
                 )}
-                <p className="mt-3 text-[12.5px] text-faint">{t('nfc.explain')}</p>
+                <p className="mt-3 text-xs text-faint">{t('nfc.explain')}</p>
               </StudioSection>
             )}
 
@@ -1589,9 +1589,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   <div className="space-y-6">
                     <Field label={t('settings.title')} hint={t('settings.slugHint')}>
                       <div dir="ltr" className="flex max-w-md items-center rounded-lg ring-1 ring-inset ring-line-strong focus-within:ring-accent">
-                        <span className="ps-3 font-mono text-[13px] text-faint">/c/</span>
+                        <span className="ps-3 font-mono text-sm text-faint">/c/</span>
                         <input
-                          className="h-11 min-w-0 flex-1 bg-transparent pe-3 font-mono text-[13px] text-ink outline-none sm:h-9"
+                          className="h-11 min-w-0 flex-1 bg-transparent pe-3 font-mono text-sm text-ink outline-none sm:h-9"
                           value={slug}
                           onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
                         />
@@ -1599,7 +1599,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     </Field>
 
                     <div>
-                      <p className="mb-2 text-[12.5px] text-muted">{t('settings.visibility')}</p>
+                      <p className="mb-2 text-xs text-muted">{t('settings.visibility')}</p>
                       <div className="grid max-w-md gap-2 sm:grid-cols-2">
                         {([true, false] as const).map((published) => {
                           const selected = card.isPublished === published;
@@ -1615,11 +1615,11 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                                 selected ? 'shadow-[inset_0_0_0_1.5px_var(--v-accent),0_0_0_3px_rgba(var(--v-accent-rgb),0.15)]' : 'ring-1 ring-inset ring-line hover:bg-elevated'
                               }`}
                             >
-                              <span className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+                              <span className="flex items-center gap-2 text-sm font-medium text-ink">
                                 <span className={`h-2 w-2 rounded-full ${published ? 'bg-emerald-500' : 'bg-faint'}`} />
                                 {published ? t('settings.published') : t('settings.draft')}
                               </span>
-                              <span className="mt-1 block text-[12px] leading-relaxed text-faint">
+                              <span className="mt-1 block text-xs leading-relaxed text-faint">
                                 {published ? t('settings.publishedHint') : t('settings.draftHint')}
                               </span>
                             </button>
@@ -1632,8 +1632,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
                 <section className="rounded-xl ring-1 ring-inset ring-red-500/25">
                   <div className="px-4 py-4">
-                    <h2 className="text-[14px] font-semibold text-red-700 dark:text-red-400">{t('settings.danger')}</h2>
-                    <p className="mt-1 text-[13px] leading-relaxed text-muted">{t('settings.dangerZone')}</p>
+                    <h2 className="text-base font-semibold text-red-700 dark:text-red-400">{t('settings.danger')}</h2>
+                    <p className="mt-1 text-sm leading-relaxed text-muted">{t('settings.dangerZone')}</p>
                   </div>
                   <div className="border-t border-red-500/20 px-4 py-3">
                     {!showDeleteConfirm ? (
@@ -1642,9 +1642,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                       </button>
                     ) : (
                       <div className="space-y-3">
-                        <p className="text-[13px] text-ink">
+                        <p className="text-sm text-ink">
                           {t('settings.confirmPrompt')}
-                          <code dir="ltr" className="ms-1 rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-[12.5px] text-red-700 dark:text-red-300">
+                          <code dir="ltr" className="ms-1 rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-xs text-red-700 dark:text-red-300">
                             {card.slug}
                           </code>
                         </p>
@@ -1686,7 +1686,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
           className={`${previewOpen ? 'fixed inset-0 z-[95] overflow-y-auto' : 'hidden'} bg-elevated lg:static lg:block lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:border-s lg:border-line xl:w-[430px]`}
         >
           <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-surface/95 px-4 backdrop-blur-md lg:hidden">
-            <span className="text-[14px] font-semibold text-ink">{t('phonePreview.title')}</span>
+            <span className="text-base font-semibold text-ink">{t('phonePreview.title')}</span>
             <button type="button" onClick={() => setPreviewOpen(false)} className="v-btn v-btn-ghost">
               {t('phonePreview.backToEditing')}
             </button>
@@ -1717,7 +1717,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
         <button
           type="button"
           onClick={() => setPreviewOpen(true)}
-          className="fixed bottom-[calc(1rem+var(--v-dock,0px))] end-4 z-40 flex h-12 items-center gap-2 rounded-full bg-ink px-5 text-[14px] font-medium text-surface shadow-lg lg:hidden"
+          className="fixed bottom-[calc(1rem+var(--v-dock,0px))] end-4 z-40 flex h-12 items-center gap-2 rounded-full bg-ink px-5 text-base font-medium text-surface shadow-lg lg:hidden"
         >
           <Icon name="eye" size={17} />
           {t('phonePreview.open')}
@@ -1753,7 +1753,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                   type="text"
                   autoFocus
                   placeholder={t('platformPicker.searchPlaceholder')}
-                  className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-faint"
+                  className="h-14 min-w-0 flex-1 bg-transparent text-md text-ink outline-none placeholder:text-faint"
                   value={platformSearch}
                   onChange={(e) => setPlatformSearch(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -1764,10 +1764,10 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               </div>
 
               <div className="max-h-[min(460px,62vh)] overflow-y-auto p-1.5">
-                {pickerGroups.length === 0 && <p className="px-3 py-8 text-center text-[13px] text-muted">{t('platformPicker.empty')}</p>}
+                {pickerGroups.length === 0 && <p className="px-3 py-8 text-center text-sm text-muted">{t('platformPicker.empty')}</p>}
                 {pickerGroups.map((group) => (
                   <div key={group.key} className="pb-1">
-                    <p className="px-2.5 pb-1 pt-2 text-[11.5px] font-medium text-faint">{t(`platformPicker.categories.${group.key}`)}</p>
+                    <p className="px-2.5 pb-1 pt-2 text-2xs font-medium text-faint">{t(`platformPicker.categories.${group.key}`)}</p>
                     <div className="grid gap-0.5 sm:grid-cols-2">
                       {group.items.map((plat) => {
                         const current = visiblePlatforms[highlightedIndex];
@@ -1788,7 +1788,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-elevated text-ink ring-1 ring-inset ring-line">
                               <Icon name={plat.icon} size={14} />
                             </span>
-                            <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">{pickerLabel(plat)}</span>
+                            <span className="min-w-0 flex-1 truncate text-sm text-ink">{pickerLabel(plat)}</span>
                             <button
                               onClick={(e) => handleToggleFav(e, plat.key)}
                               aria-pressed={isFav}
@@ -1808,7 +1808,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                 ))}
               </div>
 
-              <div className="hidden border-t border-line bg-elevated px-4 py-2.5 text-[12px] text-faint sm:block">{t('platformPicker.hint')}</div>
+              <div className="hidden border-t border-line bg-elevated px-4 py-2.5 text-xs text-faint sm:block">{t('platformPicker.hint')}</div>
             </motion.div>
           </motion.div>
         )}
@@ -1834,8 +1834,8 @@ function StudioSection({
     <section id={id} className="scroll-mt-16">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-[16px] font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{title}</h2>
-          {description && <p className="mt-1 text-[13px] leading-relaxed text-muted">{description}</p>}
+          <h2 className="text-lg font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{title}</h2>
+          {description && <p className="mt-1 text-sm leading-relaxed text-muted">{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
@@ -1847,9 +1847,9 @@ function StudioSection({
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-baseline gap-1.5 text-[12.5px] text-muted">
+      <span className="mb-1.5 flex items-baseline gap-1.5 text-xs text-muted">
         {label}
-        {hint && <span className="text-[12px] text-faint">· {hint}</span>}
+        {hint && <span className="text-xs text-faint">· {hint}</span>}
       </span>
       {children}
     </label>
@@ -1986,7 +1986,7 @@ function OptionCard({
       }`}
     >
       {children}
-      <span className="mt-2 block px-0.5 text-[12.5px] font-medium text-ink">{label}</span>
+      <span className="mt-2 block px-0.5 text-xs font-medium text-ink">{label}</span>
     </button>
   );
 }

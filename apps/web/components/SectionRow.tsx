@@ -55,7 +55,7 @@ export default function SectionRow({
           f.area ? (
             <textarea
               key={f.key}
-              className="rounded-lg border border-line px-3 py-2 text-sm bg-white"
+              className="rounded-lg border border-line px-3 py-2 text-base bg-white"
               rows={2}
               placeholder={f.label}
               value={content[f.key]}
@@ -64,7 +64,7 @@ export default function SectionRow({
           ) : (
             <input
               key={f.key}
-              className="rounded-lg border border-line px-3 py-2 text-sm bg-white"
+              className="rounded-lg border border-line px-3 py-2 text-base bg-white"
               placeholder={f.label}
               value={content[f.key]}
               onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}

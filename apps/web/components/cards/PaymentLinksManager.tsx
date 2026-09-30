@@ -198,15 +198,15 @@ export default function PaymentLinksManager({
     <div id={compact ? undefined : 'studio-payments'} className={compact ? 'space-y-3' : 'scroll-mt-16 space-y-4'}>
       <div className="flex items-start justify-between gap-3">
         {compact ? (
-          <p className="text-[12.5px] font-medium text-ink">{t('titleCompact')}</p>
+          <p className="text-xs font-medium text-ink">{t('titleCompact')}</p>
         ) : (
           <div className="min-w-0">
-            <h2 className="text-[16px] font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{t('title')}</h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted">{t('subtitle')}</p>
+            <h2 className="text-lg font-semibold tracking-[-0.012em] text-ink rtl:tracking-normal">{t('title')}</h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted">{t('subtitle')}</p>
           </div>
         )}
         {links.length > 0 && (
-          <span className="tabular shrink-0 whitespace-nowrap pt-1 text-[12.5px] text-faint">
+          <span className="tabular shrink-0 whitespace-nowrap pt-1 text-xs text-faint">
             {t('activeCount', { active: activeCount, total: links.length })}
           </span>
         )}
@@ -240,8 +240,8 @@ export default function PaymentLinksManager({
                         onClick={() => setExpanded(open ? null : link.id)}
                         aria-expanded={open}
                       >
-                        <span className={`block truncate text-[13.5px] font-medium ${link.isActive ? 'text-ink' : 'text-faint'}`}>{link.displayName}</span>
-                        <span className="block truncate text-[12px] text-faint">{meta.label}</span>
+                        <span className={`block truncate text-sm font-medium ${link.isActive ? 'text-ink' : 'text-faint'}`}>{link.displayName}</span>
+                        <span className="block truncate text-xs text-faint">{meta.label}</span>
                       </button>
 
                       <button
@@ -311,7 +311,7 @@ export default function PaymentLinksManager({
                         <Field label={t('fields.url')}>
                           <input
                             dir="ltr"
-                            className="v-field font-mono !text-[12.5px] rtl:text-right"
+                            className="v-field font-mono !text-xs rtl:text-right"
                             defaultValue={link.url}
                             placeholder={t('placeholders.url')}
                             onBlur={(e) => {
@@ -352,7 +352,7 @@ export default function PaymentLinksManager({
             </div>
           )}
 
-          {error && !adding && <p className="text-[12.5px] text-red-600 dark:text-red-400">{error}</p>}
+          {error && !adding && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
 
           {adding ? (
             <div className="grid gap-3 rounded-xl p-4 ring-1 ring-inset ring-line sm:grid-cols-2">
@@ -387,7 +387,7 @@ export default function PaymentLinksManager({
               <Field label={t('fields.url')}>
                 <input
                   dir="ltr"
-                  className="v-field font-mono !text-[12.5px] rtl:text-right"
+                  className="v-field font-mono !text-xs rtl:text-right"
                   value={draft.url}
                   onChange={(e) => setDraft({ ...draft, url: e.target.value })}
                   placeholder={t('placeholders.url')}
@@ -402,7 +402,7 @@ export default function PaymentLinksManager({
                   placeholder={t('placeholders.description')}
                 />
               </Field>
-              {error && <p className="text-[12.5px] text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
+              {error && <p className="text-xs text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
               <div className="flex items-center gap-2 sm:col-span-2">
                 <button onClick={addLink} disabled={busy} className="v-btn disabled:opacity-60">
                   {busy ? t('saving') : t('addLink')}
@@ -421,7 +421,7 @@ export default function PaymentLinksManager({
             </div>
           ) : links.length === 0 ? (
             <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[13px] text-muted">{t('emptyState')}</p>
+              <p className="text-sm text-muted">{t('emptyState')}</p>
               <div className="shrink-0">{addButton}</div>
             </div>
           ) : (
@@ -436,7 +436,7 @@ export default function PaymentLinksManager({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[12.5px] text-muted">{label}</span>
+      <span className="mb-1.5 block text-xs text-muted">{label}</span>
       {children}
     </label>
   );

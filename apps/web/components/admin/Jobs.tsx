@@ -63,7 +63,7 @@ export function Jobs() {
 
   return (
     <div className="max-w-[1180px]">
-      <p className="mb-5 text-[13.5px] text-muted">{t('jobs.intro')}</p>
+      <p className="mb-5 text-sm text-muted">{t('jobs.intro')}</p>
       {error && (
         <Notice tone="danger" onDismiss={() => setError('')}>
           {error}
@@ -72,7 +72,7 @@ export function Jobs() {
       {!jobs ? (
         <div className="v-skeleton h-72 rounded-xl" />
       ) : jobs.length === 0 ? (
-        <p className="rounded-xl py-14 text-center text-[13.5px] text-muted ring-1 ring-inset ring-line">{t('jobs.empty')}</p>
+        <p className="rounded-xl py-14 text-center text-sm text-muted ring-1 ring-inset ring-line">{t('jobs.empty')}</p>
       ) : (
         <div className="v-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -93,7 +93,7 @@ export function Jobs() {
                     <td className="w-full max-w-0">
                       <span className="block truncate text-ink">{name(j)}</span>
                       {j.error && (
-                        <span dir="auto" className="block truncate text-[12px] text-red-600 dark:text-red-400" title={j.error}>
+                        <span dir="auto" className="block truncate text-xs text-red-600 dark:text-red-400" title={j.error}>
                           {j.error}
                         </span>
                       )}
@@ -102,17 +102,17 @@ export function Jobs() {
                       <span className={`v-badge ${BADGE[j.status] ?? 'v-badge-neutral'}`}>{t(`jobs.status.${j.status}`, { defaultValue: j.status })}</span>
                     </td>
                     <td className="hidden max-w-[220px] md:table-cell">
-                      <span dir="ltr" className="block truncate font-mono text-[12.5px] text-muted rtl:text-right">
+                      <span dir="ltr" className="block truncate font-mono text-xs text-muted rtl:text-right">
                         {j.worker}
                       </span>
                     </td>
                     <td className="tabular hidden !text-end sm:table-cell" dir="ltr">
                       {j.attempts}
                     </td>
-                    <td className="hidden whitespace-nowrap !text-end text-[13px] text-muted md:table-cell">{formatRelativeTime(j.startedAt, locale)}</td>
+                    <td className="hidden whitespace-nowrap !text-end text-sm text-muted md:table-cell">{formatRelativeTime(j.startedAt, locale)}</td>
                     <td className="!text-end">
                       {j.retryable && (
-                        <button onClick={() => retry(j)} disabled={!!busy} className="flex h-8 items-center gap-1.5 whitespace-nowrap text-[12.5px] font-medium text-accent hover:underline disabled:opacity-60">
+                        <button onClick={() => retry(j)} disabled={!!busy} className="flex h-8 items-center gap-1.5 whitespace-nowrap text-xs font-medium text-accent hover:underline disabled:opacity-60">
                           <Icon name="refresh" size={13} />
                           {busy === j.id ? t('jobs.retrying') : t('jobs.retry')}
                         </button>

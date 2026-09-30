@@ -92,15 +92,15 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 id="meeting-title" className="text-[13.5px] font-semibold text-ink">
+            <h3 id="meeting-title" className="text-sm font-semibold text-ink">
               {t('meeting.title')}
             </h3>
             <span className={`v-badge ${BADGE[status]}`}>{t(`meeting.status.${past && status === 'PENDING' ? 'PASSED' : status}`)}</span>
           </div>
-          <p className={`mt-0.5 text-[13px] ${status === 'DECLINED' ? 'text-faint line-through' : 'text-ink'}`}>{when}</p>
-          {typeof meta.note === 'string' && meta.note.trim() && <p className="mt-1.5 whitespace-pre-wrap text-[12.5px] leading-relaxed text-muted">{meta.note}</p>}
+          <p className={`mt-0.5 text-sm ${status === 'DECLINED' ? 'text-faint line-through' : 'text-ink'}`}>{when}</p>
+          {typeof meta.note === 'string' && meta.note.trim() && <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-muted">{meta.note}</p>}
           {typeof meta.reply === 'string' && meta.reply && (
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            <p className="mt-1.5 text-xs leading-relaxed text-muted">
               <span className="text-faint">{t('meeting.yourReply')} </span>
               {meta.reply}
             </p>
@@ -110,7 +110,7 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
 
       {composing ? (
         <div className="border-t border-line p-3.5">
-          <label htmlFor="meeting-message" className="block text-[12.5px] font-medium text-ink">
+          <label htmlFor="meeting-message" className="block text-xs font-medium text-ink">
             {t('meeting.messageLabel', { name: who })}
           </label>
           <textarea
@@ -122,7 +122,7 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
             placeholder={composing === 'ACCEPT' ? t('meeting.acceptPlaceholder') : t('meeting.declinePlaceholder')}
             autoFocus
           />
-          {!lead.email && <p className="mt-1.5 text-[12px] text-faint">{t('meeting.noEmailHint')}</p>}
+          {!lead.email && <p className="mt-1.5 text-xs text-faint">{t('meeting.noEmailHint')}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" className={`v-btn ${composing === 'ACCEPT' ? 'v-btn-primary' : ''}`} disabled={busy} onClick={() => send(composing)}>
               {busy ? t('meeting.sending') : composing === 'ACCEPT' ? t('meeting.confirmAccept') : t('meeting.confirmDecline')}
@@ -162,12 +162,12 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
             </a>
           )}
           {status === 'ACCEPTED' && !past && (
-            <button type="button" className="ms-auto text-[12.5px] font-medium text-muted hover:text-ink" onClick={() => setComposing('DECLINE')}>
+            <button type="button" className="ms-auto text-xs font-medium text-muted hover:text-ink" onClick={() => setComposing('DECLINE')}>
               {t('meeting.cancelMeeting')}
             </button>
           )}
           {status === 'DECLINED' && !past && (
-            <button type="button" className="ms-auto text-[12.5px] font-medium text-muted hover:text-ink" onClick={() => setComposing('ACCEPT')}>
+            <button type="button" className="ms-auto text-xs font-medium text-muted hover:text-ink" onClick={() => setComposing('ACCEPT')}>
               {t('meeting.acceptAfterAll')}
             </button>
           )}
@@ -175,7 +175,7 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
       )}
 
       {result && (
-        <p role="status" className={`border-t border-line px-3.5 py-2.5 text-[12.5px] ${result.kind === 'error' ? 'text-red-600 dark:text-red-400' : 'text-muted'}`}>
+        <p role="status" className={`border-t border-line px-3.5 py-2.5 text-xs ${result.kind === 'error' ? 'text-red-600 dark:text-red-400' : 'text-muted'}`}>
           {result.text}
         </p>
       )}

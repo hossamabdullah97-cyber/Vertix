@@ -102,14 +102,14 @@ export function OccasionsSheet({
     <Sheet open={open} onClose={onClose} closeLabel={t('occasions.close')} title={t('occasions.title')} subtitle={t('occasions.subtitle')}>
       {canManage && (
         <form onSubmit={submit} className="space-y-3 rounded-xl bg-elevated p-4 ring-1 ring-inset ring-line">
-          <p className="text-[13px] font-medium text-ink">{editing ? t('occasions.editTitle') : t('occasions.addTitle')}</p>
+          <p className="text-sm font-medium text-ink">{editing ? t('occasions.editTitle') : t('occasions.addTitle')}</p>
           <label className="block">
-            <span className="mb-1 block text-[12.5px] text-muted">{t('occasions.name')}</span>
+            <span className="mb-1 block text-xs text-muted">{t('occasions.name')}</span>
             <input className="v-field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('occasions.namePlaceholder')} maxLength={80} required />
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-[12.5px] text-muted">{t('occasions.from')}</span>
+              <span className="mb-1 block text-xs text-muted">{t('occasions.from')}</span>
               <input
                 type="date"
                 className="v-field"
@@ -122,12 +122,12 @@ export function OccasionsSheet({
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-[12.5px] text-muted">{t('occasions.to')}</span>
+              <span className="mb-1 block text-xs text-muted">{t('occasions.to')}</span>
               <input type="date" className="v-field" value={to} min={from} onChange={(e) => setTo(e.target.value)} required />
             </label>
           </div>
           {error && (
-            <p role="alert" className="text-[12.5px] text-red-600 dark:text-red-400">
+            <p role="alert" className="text-xs text-red-600 dark:text-red-400">
               {error}
             </p>
           )}
@@ -145,25 +145,25 @@ export function OccasionsSheet({
       )}
 
       {groups.length === 0 ? (
-        <p className={`${canManage ? 'mt-6' : ''} rounded-xl py-10 text-center text-[13px] text-muted ring-1 ring-inset ring-line`}>
+        <p className={`${canManage ? 'mt-6' : ''} rounded-xl py-10 text-center text-sm text-muted ring-1 ring-inset ring-line`}>
           {canManage ? t('occasions.empty') : t('occasions.emptyViewer')}
         </p>
       ) : (
         groups.map((g) => (
           <section key={g.key} className="mt-6">
-            <h3 className="mb-2 text-[12.5px] font-medium text-faint">{t(`occasions.groups.${g.key}`)}</h3>
+            <h3 className="mb-2 text-xs font-medium text-faint">{t(`occasions.groups.${g.key}`)}</h3>
             <ul className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
               {g.items.map((o) => (
                 <li key={o.id} className={`flex items-center gap-3 px-3.5 py-3 ${editing?.id === o.id ? 'bg-accent/[0.05]' : ''}`}>
                   <span className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-surface ring-1 ring-inset ring-line">
-                    <span className="text-[10px] leading-none text-faint">{formatDate(`${o.startsOn}T12:00:00Z`, locale, { month: 'short' })}</span>
-                    <span className="tabular mt-0.5 text-[14px] font-semibold leading-none text-ink">
+                    <span className="text-3xs leading-none text-faint">{formatDate(`${o.startsOn}T12:00:00Z`, locale, { month: 'short' })}</span>
+                    <span className="tabular mt-0.5 text-base font-semibold leading-none text-ink">
                       {formatDate(`${o.startsOn}T12:00:00Z`, locale, { day: 'numeric' })}
                     </span>
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] font-medium text-ink">{o.name}</span>
-                    <span className="block truncate text-[12px] text-muted">{range(o)}</span>
+                    <span className="block truncate text-sm font-medium text-ink">{o.name}</span>
+                    <span className="block truncate text-xs text-muted">{range(o)}</span>
                   </span>
                   {canManage && (
                     <ActionMenu
@@ -182,7 +182,7 @@ export function OccasionsSheet({
       )}
 
       {!canManage && (
-        <p className="mt-4 flex items-center gap-1.5 text-[12px] text-faint">
+        <p className="mt-4 flex items-center gap-1.5 text-xs text-faint">
           <Icon name="lock" size={12} /> {t('occasions.viewerHint')}
         </p>
       )}
