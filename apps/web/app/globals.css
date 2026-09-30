@@ -332,11 +332,19 @@ textarea.v-field {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-.v-skeleton {
-  border-radius: var(--v-radius);
-  background: linear-gradient(90deg, hsl(var(--v-border)) 25%, hsl(var(--v-elevated)) 50%, hsl(var(--v-border)) 75%);
-  background-size: 200% 100%;
-  animation: v-shimmer 1.6s ease-in-out infinite;
+/* In the components layer so a rounded-* utility on a placeholder wins over the default radius. */
+@layer components {
+  .v-skeleton {
+    border-radius: var(--v-radius);
+    background: linear-gradient(90deg, hsl(var(--v-border)) 25%, hsl(var(--v-elevated)) 50%, hsl(var(--v-border)) 75%);
+    background-size: 200% 100%;
+    animation: v-shimmer 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .v-skeleton {
+      animation: none;
+    }
+  }
 }
 
 @keyframes v-draw {

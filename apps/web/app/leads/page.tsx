@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getToken } from '@/lib/client';
+import { authFetch, getToken, peek } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import AppShell, { OPEN_LEAD_EVENT } from '@/components/AppShell';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -37,10 +37,11 @@ export default function LeadsPage() {
   const router = useRouter();
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [stages, setStages] = useState<Stage[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Opened again, the page starts from what it showed last time and refreshes behind it.
+  const [leads, setLeads] = useState<Lead[]>(() => peek<Lead[]>('/leads') ?? []);
+  const [stages, setStages] = useState<Stage[]>(() => peek<Stage[]>('/leads/stages') ?? []);
+  const [tasks, setTasks] = useState<Task[]>(() => peek<Task[]>('/tasks') ?? []);
+  const [loading, setLoading] = useState(() => !(peek('/leads') && peek('/leads/stages') && peek('/tasks')));
   const [error, setError] = useState('');
 
   const [view, setView] = useState<View>('pipeline');
@@ -199,7 +200,7 @@ export default function LeadsPage() {
   const selectedLead = leads.find((l) => l.id === selected) ?? null;
 
   const tabs: { id: View; label: string; count?: number }[] = [
-    { id: 'pipeline', label: t('tabs.pipeline'), count: summary.open },
+    { id: 'pipeline', label: t('tabs.pipeline'), count: loading ? undefined : summary.open },
     { id: 'contacts', label: t('tabs.contacts') },
     { id: 'companies', label: t('tabs.companies') },
     { id: 'tasks', label: t('tabs.tasks'), count: openTasks || undefined },
@@ -253,13 +254,22 @@ export default function LeadsPage() {
         </div>
       }
     >
-      <p className="text-base text-muted">
-        <span className="font-medium text-ink">{t('summary.open', { count: summary.open })}</span>
-        <span className="mx-2 text-faint" aria-hidden>·</span>
-        {t('summary.pipeline', { value: formatMoney(summary.pipeline, locale) })}
-        <span className="mx-2 text-faint" aria-hidden>·</span>
-        {t('summary.won', { pct: summary.wonPct })}
-      </p>
+      {loading ? (
+        // Not "no open leads" before they are in: a placeholder of the same height.
+        <p aria-hidden className="flex h-6 items-center gap-3">
+          <span className="v-skeleton block h-3.5 w-24 rounded" />
+          <span className="v-skeleton block h-3.5 w-32 rounded" />
+          <span className="v-skeleton block h-3.5 w-20 rounded" />
+        </p>
+      ) : (
+        <p className="text-base text-muted">
+          <span className="font-medium text-ink">{t('summary.open', { count: summary.open })}</span>
+          <span className="mx-2 text-faint" aria-hidden>·</span>
+          {t('summary.pipeline', { value: formatMoney(summary.pipeline, locale) })}
+          <span className="mx-2 text-faint" aria-hidden>·</span>
+          {t('summary.won', { pct: summary.wonPct })}
+        </p>
+      )}
 
       <nav role="tablist" className="no-scrollbar -mx-5 mt-4 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
         {tabs.map((tab) => {

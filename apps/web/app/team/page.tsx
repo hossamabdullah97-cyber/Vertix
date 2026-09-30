@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
-import { authFetch, getActiveOrgId, getToken, inviteMember, PlanLimitError, type Card, type Me, type Member, type NfcTag, type Role, type Team, apiMessageOf, type ApiError } from '@/lib/client';
+import { authFetch, getActiveOrgId, getToken, inviteMember, PlanLimitError, type Card, type Me, type Member, type NfcTag, type Role, type Team, apiMessageOf, type ApiError, peek } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import AppShell from '@/components/AppShell';
@@ -38,12 +38,13 @@ export default function TeamPage() {
   const fmt = (n: number) => formatNumber(n, locale);
 
   const [orgId, setOrgId] = useState<string | null | undefined>(undefined);
-  const [me, setMe] = useState<Me | null>(null);
-  const [members, setMembers] = useState<MemberRow[] | null>(null);
-  const [teams, setTeams] = useState<TeamRow[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [cards, setCards] = useState<Card[]>([]);
-  const [tags, setTags] = useState<NfcTag[]>([]);
+  // Opened again, the page starts from what it showed last time and refreshes behind it.
+  const [me, setMe] = useState<Me | null>(() => peek<Me>('/auth/me') ?? null);
+  const [members, setMembers] = useState<MemberRow[] | null>(() => peek<MemberRow[]>('/orgs/members') ?? null);
+  const [teams, setTeams] = useState<TeamRow[]>(() => peek<TeamRow[]>('/orgs/teams') ?? []);
+  const [departments, setDepartments] = useState<Department[]>(() => peek<Department[]>('/orgs/departments') ?? []);
+  const [cards, setCards] = useState<Card[]>(() => peek<Card[]>('/cards') ?? []);
+  const [tags, setTags] = useState<NfcTag[]>(() => peek<NfcTag[]>('/nfc/tags') ?? []);
   const [forbidden, setForbidden] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
@@ -127,8 +128,8 @@ export default function TeamPage() {
       setError('');
       try {
         await fn();
-        await load();
         flash(done);
+        await load();
       } catch (e) {
         setError((e as Error).message);
         throw e;
@@ -173,8 +174,22 @@ export default function TeamPage() {
   const [importing, setImporting] = useState(false);
   const closeRemove = useCallback(() => setRemoving(null), []);
 
-  const patchMember = (m: MemberRow, body: Record<string, unknown>, done: string) =>
-    act(() => authFetch(`/orgs/members/${m.id}`, { method: 'PATCH', body: JSON.stringify(body) }), done).catch(() => {});
+  // Shown at once; the reload after it confirms, and a refusal puts it back.
+  const patchMember = (m: MemberRow, body: { role?: Member['role']; status?: string; teamId?: string | null }, done: string) => {
+    const before = members;
+    setMembers((list) =>
+      list?.map((x) => {
+        if (x.id !== m.id) return x;
+        const next = { ...x, ...body };
+        if ('teamId' in body) {
+          const team = teams.find((tm) => tm.id === body.teamId);
+          next.team = team ? { id: team.id, name: team.name } : null;
+        }
+        return next;
+      }) ?? list,
+    );
+    act(() => authFetch(`/orgs/members/${m.id}`, { method: 'PATCH', body: JSON.stringify(body) }), done).catch(() => setMembers(before));
+  };
 
   const menuFor = (m: MemberRow): ActionItem[] => {
     const self = m.user.id === me?.id;
@@ -468,10 +483,13 @@ export default function TeamPage() {
         onConfirm={async () => {
           if (!removing) return;
           await authFetch(`/orgs/members/${removing.id}`, { method: 'DELETE' });
-          if (selectedId === removing.id) setSelectedId(null);
+          const gone = removing.id;
+          setMembers((list) => list?.filter((m) => m.id !== gone) ?? list);
+          if (selectedId === gone) setSelectedId(null);
           setRemoving(null);
-          await load();
           flash(t('toasts.removed'));
+          // Counts elsewhere on the page (teams, cards) catch up behind it.
+          load().catch(() => {});
         }}
         onCancel={closeRemove}
       />

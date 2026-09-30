@@ -626,19 +626,56 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     toggleFavorite(key);
   };
 
+  if (!card && !error) {
+    // The studio's own outline while the card loads: tabs, the form, the phone.
+    return (
+      <AppShell title={t('shell.loadingTitle')} bleed>
+        <div role="status" aria-label={t('shell.loading')} className="flex flex-col lg:h-[calc(100vh-72px)] lg:flex-row">
+          <div className="min-w-0 flex-1 lg:overflow-hidden">
+            <div className="flex h-11 items-center gap-6 border-b border-line px-5 md:px-8">
+              {[16, 14, 14, 12, 16, 14].map((w, i) => (
+                <span key={i} className="v-skeleton block h-3 rounded" style={{ width: `${w * 4}px` }} />
+              ))}
+            </div>
+            <div className="space-y-6 px-5 py-6 md:px-8">
+              <span className="v-skeleton block h-14 w-full rounded-xl" />
+              <div className="space-y-2">
+                <span className="v-skeleton block h-4 w-32 rounded" />
+                <span className="v-skeleton block h-3 w-56 rounded" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <span className="v-skeleton block h-24 rounded-xl" />
+                <span className="v-skeleton block h-24 rounded-xl" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <span className="v-skeleton block h-3 w-20 rounded" />
+                    <span className="v-skeleton block h-10 w-full rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="hidden bg-elevated lg:flex lg:w-[380px] lg:shrink-0 lg:justify-center lg:border-s lg:border-line lg:pt-[116px] xl:w-[430px]">
+            <span className="v-skeleton block h-[600px] w-[300px] rounded-[44px]" />
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!card) {
     return (
       <AppShell title={t('shell.loadingTitle')}>
         <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
           <span className="text-faint">
-            <Icon name={error ? 'x' : 'loader'} size={22} className={error ? '' : 'animate-spin'} />
+            <Icon name="x" size={22} />
           </span>
-          <p className="text-sm text-muted">{error || t('shell.loading')}</p>
-          {error && (
-            <Link href="/cards" className="v-btn v-btn-ghost mt-1 text-sm">
-              {t('common:actions.back')}
-            </Link>
-          )}
+          <p className="text-sm text-muted">{error}</p>
+          <Link href="/cards" className="v-btn v-btn-ghost mt-1 text-sm">
+            {t('common:actions.back')}
+          </Link>
         </div>
       </AppShell>
     );
@@ -1155,6 +1192,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                               <Field label={t('sections.bioTitle')}>
                                 <textarea
                                   className="v-field min-h-24"
+                                  aria-label={t('sections.bioTitle')}
                                   defaultValue={(s.content.body as string) ?? ''}
                                   onBlur={(e) => patchSection(s, 'body', e.target.value)}
                                   placeholder={t('sections.bioPlaceholder')}

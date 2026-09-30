@@ -308,3 +308,34 @@ describe('reads in flight at once share one request', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('a page opened again starts from its last answer', () => {
+  it('keeps the last read per workspace, and forgets it when that resource changes', async () => {
+    const { authFetch, peek, setActiveOrgId } = await import('./client');
+    let body = '[{"id":"c1"}]';
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => ({ ok: true, text: async () => body }) as Response));
+
+    expect(peek('/cards')).toBeUndefined();
+    await authFetch('/cards');
+    await authFetch('/leads');
+    expect(peek('/cards')).toEqual([{ id: 'c1' }]);
+
+    // Another workspace has its own answers.
+    setActiveOrgId('org_b');
+    expect(peek('/cards')).toBeUndefined();
+    setActiveOrgId(null);
+
+    body = '{}';
+    await authFetch('/cards/c1', { method: 'DELETE' });
+    expect(peek('/cards')).toBeUndefined();
+    expect(peek('/leads')).toEqual([{ id: 'c1' }]);
+  });
+
+  it('forgets it even when the change is refused, since the server may have taken part of it', async () => {
+    const { authFetch, peek } = await import('./client');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({ ok: true, text: async () => '[1]' } as Response).mockResolvedValueOnce({ ok: false, status: 400, text: async () => '{"message":"Invalid input"}' } as Response));
+    await authFetch('/tags');
+    await expect(authFetch('/tags/1', { method: 'PATCH', body: '{}' })).rejects.toThrow('Invalid input');
+    expect(peek('/tags')).toBeUndefined();
+  });
+});

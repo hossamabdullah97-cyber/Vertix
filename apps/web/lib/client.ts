@@ -191,13 +191,46 @@ function refused(data: { message?: unknown; error?: unknown; errors?: unknown } 
  */
 const inflight = new Map<string, Promise<unknown>>();
 
+/**
+ * The last answer to each read, so a page opened again can show what it
+ * showed before (see `peek`) while it asks again. A change to a resource
+ * forgets every read under the same first path segment (a PATCH to
+ * /cards/1 forgets /cards and /cards/1), so a page never starts from a list
+ * that no longer matches. Sign-out and a workspace switch reload the page,
+ * which clears it; answers are kept per workspace besides.
+ */
+const lastSeen = new Map<string, unknown>();
+const seenKey = (path: string) => `${getActiveOrgId() ?? ''} ${path}`;
+const rootOf = (path: string) => path.split(/[/?]/)[1] ?? '';
+
+/** The last answer to GET `path` in this workspace, if the app has one; nothing is fetched. */
+export function peek<T>(path: string): T | undefined {
+  return lastSeen.get(seenKey(path)) as T | undefined;
+}
+
+function forget(path: string) {
+  const org = `${getActiveOrgId() ?? ''} `;
+  const root = rootOf(path);
+  for (const key of lastSeen.keys()) if (key.startsWith(org) && rootOf(key.slice(org.length)) === root) lastSeen.delete(key);
+}
+
 export function authFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase();
-  if (method !== 'GET' || init.body != null || init.signal) return request<T>(path, init);
+  if (method !== 'GET') {
+    // Forgotten on the way out too, so a read made while it is in flight is not kept.
+    forget(path);
+    return request<T>(path, init).finally(() => forget(path));
+  }
+  if (init.body != null || init.signal) return request<T>(path, init);
   const key = `${getActiveOrgId() ?? ''} ${path} ${JSON.stringify(init.headers ?? null)}`;
   const shared = inflight.get(key);
   if (shared) return shared as Promise<T>;
-  const p = request<T>(path, init).finally(() => inflight.delete(key));
+  const p = request<T>(path, init)
+    .then((data) => {
+      if (!init.headers) lastSeen.set(seenKey(path), data);
+      return data;
+    })
+    .finally(() => inflight.delete(key));
   inflight.set(key, p);
   return p;
 }

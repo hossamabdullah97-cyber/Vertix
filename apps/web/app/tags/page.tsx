@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getToken, type Card, type Me, type Member, type NfcTag } from '@/lib/client';
+import { authFetch, getToken, type Card, type Me, type Member, type NfcTag, peek } from '@/lib/client';
 import { API_URL } from '@/lib/api';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate, formatNumber, formatRelativeTime } from '@/lib/format';
@@ -30,9 +30,10 @@ export default function TagsPage() {
   const { locale } = useLocale();
   const fmt = (n: number) => formatNumber(n, locale);
 
-  const [tags, setTags] = useState<NfcTag[] | null>(null);
-  const [cards, setCards] = useState<Card[]>([]);
-  const [me, setMe] = useState<Me | null>(null);
+  // Opened again, the page starts from what it showed last time and refreshes behind it.
+  const [tags, setTags] = useState<NfcTag[] | null>(() => peek<NfcTag[]>('/nfc/tags') ?? null);
+  const [cards, setCards] = useState<Card[]>(() => peek<Card[]>('/cards') ?? []);
+  const [me, setMe] = useState<Me | null>(() => peek<Me>('/auth/me') ?? null);
   const [members, setMembers] = useState<Member[]>([]);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
@@ -80,8 +81,8 @@ export default function TagsPage() {
       setError('');
       try {
         await fn();
-        await load();
         flash(done);
+        await load();
       } catch (e) {
         setError((e as Error).message);
         throw e;

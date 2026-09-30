@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, createBlankCard, getToken, type Card, type Member, type NfcTag } from '@/lib/client';
+import { authFetch, createBlankCard, getToken, type Card, type Member, type NfcTag, peek } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { readableOn, shade } from '@/lib/color';
@@ -35,7 +35,8 @@ export default function CardsPage() {
   const { t } = useTranslation('cards');
   const { locale } = useLocale();
 
-  const [cards, setCards] = useState<ListCard[] | null>(null);
+  // Opened again, the page starts from the list it showed last time and refreshes behind it.
+  const [cards, setCards] = useState<ListCard[] | null>(() => peek<ListCard[]>('/cards') ?? null);
   const [stats, setStats] = useState<Record<string, CardStats | null>>({});
   const [leadsBySlug, setLeadsBySlug] = useState<Record<string, number> | null>(null);
   const [chipsByCard, setChipsByCard] = useState<Record<string, number> | null>(null);
