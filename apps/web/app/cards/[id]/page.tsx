@@ -7,6 +7,8 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 import { motion, AnimatePresence } from 'framer-motion';
 import { offerUndo } from '@/lib/undo';
+import { problemOf, useChecks } from '@/lib/validate';
+import { FieldError } from '@/components/ui/FieldError';
 import { authFetch, getToken, peek, remember, type Card as CardType, type Section, type CardAction, type NfcTag } from '@/lib/client';
 
 import type { Template } from '@/lib/templates';
@@ -410,7 +412,16 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     if (!latestRef.current) return; // nor before its values are on screen (a re-run of this effect can see the blank first render)
     if (suppressSaveRef.current) { suppressSaveRef.current = false; return; } // ignore server echoes
     const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand }));
-    if (body === lastSavedRef.current) return; // nothing actually changed
+    if (body === lastSavedRef.current) {
+      // Nothing to save: back to what the card already holds (e.g. the link put right again).
+      setAutoSaveStatus((st) => (st === 'Offline' ? 'Saved' : st));
+      return;
+    }
+    if (problemOf(slug, { required: true, min: 3 })) {
+      // The link field says what to fix; saving now would only be refused.
+      setAutoSaveStatus('Offline');
+      return;
+    }
     touchedRef.current = true;
     pendingRef.current = body;
     setAutoSaveStatus('Saving...');
@@ -563,6 +574,19 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
 
   // Completion analyzer scoring computation
   // A number or address counts whether it is in the profile or on a button (the quick start adds buttons).
+  // Checked as they are typed; a bad link waits here rather than being refused by the API.
+  const phoneDigits = (vcard.phone ?? '').replace(/\D/g, '').length;
+  const checks = useChecks({
+    phone: vcard.phone?.trim() && (phoneDigits < 7 || !/^[+\d\s().-]+$/.test(vcard.phone.trim())) ? 'phone' : null,
+    email: problemOf(vcard.email ?? '', { kind: 'email' }),
+    slug: problemOf(slug, { required: true, min: 3 }),
+  });
+  const say = (k: 'phone' | 'email' | 'slug') => {
+    // The link shows its problem at once: while it has one, nothing on the card saves.
+    const p = k === 'slug' ? (loadedRef.current ? problemOf(slug, { required: true, min: 3 }) : null) : checks.shown(k);
+    return p ? t(`common:validation.${p}`, { min: 3 }) : null;
+  };
+
   const hasPhone = !!vcard.phone || actions.some((a) => (a.type === 'CALL' || a.type === 'WHATSAPP') && !!a.config?.phone);
   const hasEmail = !!vcard.email || actions.some((a) => a.type === 'EMAIL' && !!a.config?.email);
   const profileScore = useMemo(() => {
@@ -1014,18 +1038,21 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                         autoComplete="organization"
                       />
                     </Field>
-                    <Field label={t('profile.phone')}>
+                    <Field label={t('profile.phone')} error={say('phone')} errorId="studio-phone-err">
                       <input
                         dir="ltr"
+                        {...checks.bind('phone', 'studio-phone-err')}
                         className="v-field tabular rtl:text-right"
                         value={vcard.phone ?? ''}
                         onChange={(e) => setVcard({ ...vcard, phone: e.target.value })}
                         placeholder={t('profile.phonePlaceholder')}
                       />
                     </Field>
-                    <Field label={t('profile.email')}>
+                    <Field label={t('profile.email')} error={say('email')} errorId="studio-email-err">
                       <input
                         dir="ltr"
+                        inputMode="email"
+                        {...checks.bind('email', 'studio-email-err')}
                         className="v-field rtl:text-right"
                         value={vcard.email ?? ''}
                         onChange={(e) => setVcard({ ...vcard, email: e.target.value })}
@@ -1714,12 +1741,15 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               <div className="space-y-10">
                 <StudioSection title={t('settings.general')} description={t('settings.subtitle')}>
                   <div className="space-y-6">
-                    <Field label={t('settings.title')} hint={t('settings.slugHint')}>
-                      <div dir="ltr" className="flex max-w-md items-center rounded-lg ring-1 ring-inset ring-line-strong focus-within:ring-accent">
+                    <Field label={t('settings.title')} hint={t('settings.slugHint')} error={say('slug')} errorId="studio-slug-err">
+                      <div dir="ltr" className={`flex max-w-md items-center rounded-lg ring-1 ring-inset focus-within:ring-accent ${say('slug') ? 'ring-red-600/70' : 'ring-line-strong'}`}>
                         <span className="ps-3 font-mono text-sm text-faint">/c/</span>
                         <input
                           className="h-11 min-w-0 flex-1 bg-transparent pe-3 font-mono text-sm text-ink outline-none sm:h-9"
                           value={slug}
+                          {...checks.bind('slug', 'studio-slug-err')}
+                          aria-invalid={!!say('slug') || undefined}
+                          aria-describedby={say('slug') ? 'studio-slug-err' : undefined}
                           onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
                         />
                       </div>
@@ -1971,7 +2001,7 @@ function StudioSection({
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, error, errorId, children }: { label: string; hint?: string; error?: string | null; errorId?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1.5 flex items-baseline gap-1.5 text-xs text-muted">
@@ -1979,6 +2009,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
         {hint && <span className="text-xs text-faint">· {hint}</span>}
       </span>
       {children}
+      {errorId && <FieldError id={errorId}>{error}</FieldError>}
     </label>
   );
 }

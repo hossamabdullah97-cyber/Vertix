@@ -188,6 +188,15 @@ body {
   box-shadow: var(--v-ring);
 }
 
+/* A field with a problem (see lib/validate.ts); the line under it says what. */
+.v-field[aria-invalid='true'] {
+  border-color: rgb(220 38 38 / 0.7);
+}
+.v-field[aria-invalid='true']:focus {
+  border-color: rgb(220 38 38);
+  box-shadow: 0 0 0 3px rgb(220 38 38 / 0.15);
+}
+
 textarea.v-field {
   height: auto;
   padding-block: 0.6rem;

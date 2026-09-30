@@ -64,5 +64,13 @@
   "undo": {
     "action": "Undo",
     "failed": "Could not undo that. Try again."
+  },
+  "validation": {
+    "required": "Fill this in",
+    "email": "Check the email address, like name@company.com",
+    "phone": "Enter the number with its country code, like +20 100 123 4567",
+    "url": "Enter a full link, starting with https://",
+    "short": "Use at least {{min}} characters",
+    "oneOf": "Add an email or a phone number"
   }
 }
