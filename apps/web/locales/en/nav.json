@@ -14,7 +14,8 @@
     "team": "Team",
     "integrations": "Integrations",
     "adminConsole": "Admin Console",
-    "settings": "Settings"
+    "settings": "Settings",
+    "notifications": "Notifications"
   },
   "searchWorkspace": "Search workspace…",
   "darkMode": "Dark mode",
@@ -79,5 +80,20 @@
     "label": "Main sections",
     "more": "More",
     "short": {}
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "intro": "Single keys, when you are not typing in a field.",
+    "general": "Anywhere",
+    "goTo": "Go to",
+    "thisPage": "On this page",
+    "search": "Search",
+    "help": "Show these shortcuts",
+    "then": "then",
+    "close": "Close",
+    "newLead": "Add a lead",
+    "newCard": "New card",
+    "invite": "Invite people",
+    "addChips": "Add chips"
   }
 }

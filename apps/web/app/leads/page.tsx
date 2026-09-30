@@ -20,6 +20,7 @@ import { SmartFilters } from '@/components/crm/SmartFilters';
 import nextDynamic from 'next/dynamic';
 import { type Lead, type Stage, type Temp, type Task, type TaskPriority, sourceMeta, wonStage, lostStage, formatMoney, stageKey } from '@/lib/crm';
 import type { CreateTaskInput } from '@vertex/shared';
+import { useShortcut } from '@/lib/shortcuts';
 
 // Only the active view mounts — the secondary views load on demand so opening
 // /leads doesn't ship all of them up front.
@@ -60,6 +61,7 @@ export default function LeadsPage() {
   const [patchBusy, setPatchBusy] = useState(false);
   const [toast, setToast] = useState('');
   const [adding, setAdding] = useState(false);
+  useShortcut('n', t('nav:shortcuts.newLead'), () => setAdding(true));
   // On a phone the pipeline is a list filtered by stage, not side-scrolling columns.
   const [isPhone, setIsPhone] = useState(false);
   const [phoneStage, setPhoneStage] = useState<string | null>(null);
@@ -251,7 +253,7 @@ export default function LeadsPage() {
               <Icon name="download" size={14} /> <span className="hidden sm:inline">{t('export.button')}</span>
             </button>
           )}
-          <button type="button" onClick={() => setAdding(true)} className="v-btn">
+          <button type="button" onClick={() => setAdding(true)} aria-keyshortcuts="n" title={`${t('add.button')} (N)`} className="v-btn">
             <Icon name="plus" size={14} /> {t('add.button')}
           </button>
         </div>

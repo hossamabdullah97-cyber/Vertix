@@ -17,6 +17,7 @@ import AppShell from '@/components/AppShell';
 import { setupSteps } from '@/lib/onboarding';
 import { CardThumb } from '@/components/cards/CardThumb';
 import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
+import { useShortcut } from '@/lib/shortcuts';
 
 
 interface Lead {
@@ -109,6 +110,7 @@ let homeCache: { orgId: string | null; state: HomeState } | null = null;
 export default function HomePage() {
   const router = useRouter();
   const { t } = useTranslation('dashboard');
+  useShortcut('n', t('nav:shortcuts.newCard'), () => router.push('/cards?new=1'));
   const { locale } = useLocale();
   // Coming back to Home in the same workspace starts from what it showed last time.
   const [home] = useState(() => (homeCache && homeCache.orgId === getActiveOrgId() ? homeCache.state : null));
@@ -322,7 +324,7 @@ export default function HomePage() {
     formatNumber(whole ? part / whole : 0, locale, { style: 'percent', maximumFractionDigits: digits, minimumFractionDigits: digits });
 
   const newCardAction = (
-    <Link href="/cards?new=1" className="v-btn">
+    <Link href="/cards?new=1" aria-keyshortcuts="n" className="v-btn">
       <Icon name="plus" size={15} />
       {t('newCard')}
     </Link>

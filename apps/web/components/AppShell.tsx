@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
+import { Shortcuts, SHOW_SHORTCUTS } from '@/components/ui/Shortcuts';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
@@ -152,6 +153,7 @@ export default function AppShell({
 
   // Command menu (⌘K / Ctrl+K)
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const openSearch = useCallback(() => setPaletteOpen(true), []);
   const [searchQuery, setSearchQuery] = useState('');
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [searchData, setSearchData] = useState<SearchIndex>(EMPTY_INDEX);
@@ -605,6 +607,18 @@ export default function AppShell({
         </div>
       </div>
       <div className="border-t border-line pt-1">
+        <button
+          role="menuitem"
+          onClick={() => {
+            setMenuOpen(false);
+            window.dispatchEvent(new Event(SHOW_SHORTCUTS));
+          }}
+          className="hidden h-8 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted transition-colors hover:bg-elevated hover:text-ink md:flex"
+        >
+          <Icon name="keyboard" size={15} />
+          <span className="flex-1 text-start">{t('shortcuts.title')}</span>
+          <kbd className="v-kbd">?</kbd>
+        </button>
         <button
           role="menuitem"
           onClick={signOut}
@@ -1152,6 +1166,7 @@ export default function AppShell({
         </div>
       )}
       <UndoToast />
+      <Shortcuts onSearch={openSearch} />
     </div>
   );
 }
