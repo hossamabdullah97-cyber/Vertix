@@ -1,25 +1,27 @@
-'use client';
-
-import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
-import { SALES_MAILTO } from '@/lib/contact';
-import { useStoredTheme } from '@/lib/useStoredTheme';
+import { Suspense } from 'react';
+import { getT, serverLocale } from '@/lib/i18n/server';
 import { Icon } from '@/components/Icon';
-import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
-import { Header, useSignedIn } from './Header';
+import { Header } from './Header';
+import { ClosingActions, HeroActions } from './LandingActions';
 import { HeroVisual } from './HeroVisual';
 import { Product } from './Product';
 import { Pricing } from './Pricing';
 import { Faq } from './Faq';
 import { Footer } from './Footer';
-import { Contactless, REGISTER, SectionHead, WRAP } from './shared';
+import { Contactless, SectionHead, WRAP } from './shared';
 
+/**
+ * The home page. It renders on the server: only the header, the hero's card
+ * and the sign-in-dependent buttons are client components, so a first visit
+ * hydrates a small part of the page. The theme is on <html> (see
+ * lib/themeScript.ts).
+ */
 export function Landing({ prices }: { prices: Record<'PRO' | 'BUSINESS', number | null> }) {
-  const theme = useStoredTheme();
-
   return (
-    <div data-theme={theme} className="min-h-screen bg-canvas text-ink antialiased">
-      <Header />
+    <div className="min-h-screen bg-canvas text-ink antialiased">
+      <Suspense fallback={null}>
+        <Header />
+      </Suspense>
       <main>
         <Hero />
         <Product />
@@ -34,8 +36,7 @@ export function Landing({ prices }: { prices: Record<'PRO' | 'BUSINESS', number 
 }
 
 function Hero() {
-  const { t } = useTranslation('landing');
-  const signedIn = useSignedIn();
+  const t = getT(serverLocale(), 'landing');
   return (
     <section aria-labelledby="hero-title">
       <div className={`${WRAP} grid items-center gap-8 pb-16 pt-10 sm:pt-16 lg:grid-cols-2 lg:gap-6 lg:pb-20 lg:pt-16`}>
@@ -48,22 +49,7 @@ function Hero() {
             {t('hero.title')}
           </h1>
           <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-muted sm:text-[17px]">{t('hero.subtitle')}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            {signedIn ? (
-              <Link href="/dashboard" className="v-btn !h-11 px-5 text-[14px]">
-                {t('nav.dashboard')} <DirectionalIcon name="arrow" size={15} />
-              </Link>
-            ) : (
-              <>
-                <Link href={REGISTER} className="v-btn !h-11 px-5 text-[14px]">
-                  {t('hero.primary')} <DirectionalIcon name="arrow" size={15} />
-                </Link>
-                <Link href="/login" className="v-btn v-btn-ghost !h-11 px-5 text-[14px]">
-                  {t('hero.secondary')}
-                </Link>
-              </>
-            )}
-          </div>
+          <HeroActions />
           <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-muted">
             {(['free', 'phones', 'languages'] as const).map((k) => (
               <li key={k} className="flex items-center gap-1.5">
@@ -73,7 +59,13 @@ function Hero() {
             ))}
           </ul>
         </div>
-        <HeroVisual />
+        {/* Its own boundary, so React hydrates the card in the phone in a task of its
+            own and lets the browser in between, rather than in one long block with
+            the rest of the page. Nothing in it waits, so the server still renders it
+            straight into the HTML. */}
+        <Suspense fallback={null}>
+          <HeroVisual />
+        </Suspense>
       </div>
     </section>
   );
@@ -82,7 +74,7 @@ function Hero() {
 const STEPS = ['create', 'share', 'follow'] as const;
 
 function How() {
-  const { t } = useTranslation('landing');
+  const t = getT(serverLocale(), 'landing');
   return (
     <section id="how" aria-labelledby="how-title" className="scroll-mt-16 border-y border-line bg-surface py-20 sm:py-28">
       <div className={WRAP}>
@@ -105,8 +97,7 @@ function How() {
 }
 
 function Closing() {
-  const { t } = useTranslation('landing');
-  const signedIn = useSignedIn();
+  const t = getT(serverLocale(), 'landing');
   return (
     <section aria-labelledby="cta-title" className="pb-20 sm:pb-28">
       <div className={WRAP}>
@@ -121,14 +112,7 @@ function Closing() {
             </h2>
             <p className="mt-2 text-[15px] leading-relaxed text-muted">{t('cta.body')}</p>
           </div>
-          <div className="relative flex flex-wrap gap-3">
-            <Link href={signedIn ? '/dashboard' : REGISTER} className="v-btn !h-11 px-5 text-[14px]">
-              {signedIn ? t('nav.dashboard') : t('cta.primary')}
-            </Link>
-            <a href={SALES_MAILTO} className="v-btn v-btn-ghost !h-11 px-5 text-[14px]">
-              {t('cta.secondary')}
-            </a>
-          </div>
+          <ClosingActions />
         </div>
       </div>
     </section>

@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { CARD_SURFACE_HEADER } from './lib/surface';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('vertex_token')?.value;
   const { pathname } = request.nextUrl;
+
+  // A public card (/c/<slug>, nothing deeper, so any other path still gets the
+  // app's not-found page with its translations): tell the root layout, which
+  // keeps the app's i18n off it.
+  if (/^\/c\/[^/]+\/?$/.test(pathname)) {
+    const headers = new Headers(request.headers);
+    headers.set(CARD_SURFACE_HEADER, '1');
+    return NextResponse.next({ request: { headers } });
+  }
 
   // Define protected and public auth routes
   const isProtectedRoute =
@@ -55,5 +65,6 @@ export const config = {
     '/workspace/:path*',
     '/login',
     '/register',
+    '/c/:path*',
   ],
 };

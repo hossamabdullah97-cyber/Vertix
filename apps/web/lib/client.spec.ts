@@ -284,3 +284,27 @@ describe('a sign-in lockout', () => {
     expect(err.retryAfter).toBeUndefined();
   });
 });
+
+describe('reads in flight at once share one request', () => {
+  it('asks the server once for the same page read, and again once the answer is in', async () => {
+    const { authFetch } = await import('./client');
+    const fetchMock = vi.fn().mockImplementation(async () => ({ ok: true, text: async () => '{"id":"u1"}' }) as Response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const [a, b] = await Promise.all([authFetch('/auth/me'), authFetch('/auth/me')]);
+    expect(a).toEqual({ id: 'u1' });
+    expect(b).toEqual({ id: 'u1' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await authFetch('/auth/me');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('never shares a write', async () => {
+    const { authFetch } = await import('./client');
+    const fetchMock = vi.fn().mockImplementation(async () => ({ ok: true, text: async () => '{}' }) as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await Promise.all([authFetch('/x', { method: 'POST', body: '{}' }), authFetch('/x', { method: 'POST', body: '{}' })]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});

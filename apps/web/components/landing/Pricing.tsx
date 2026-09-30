@@ -1,11 +1,8 @@
-'use client';
-
 import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
+import { getT, serverLocale } from '@/lib/i18n/server';
 import { PLAN_LIMITS, type Plan } from '@vertex/shared';
 import { formatCurrency } from '@/lib/format';
 import { SALES_MAILTO } from '@/lib/contact';
-import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Icon } from '@/components/Icon';
 import { REGISTER, SectionHead, WRAP } from './shared';
 
@@ -16,8 +13,8 @@ const PLANS: Plan[] = ['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE'];
  * words. Prices are the server's settings, in Egyptian pounds.
  */
 export function Pricing({ prices }: { prices: Record<'PRO' | 'BUSINESS', number | null> }) {
-  const { t } = useTranslation(['landing', 'billing']);
-  const { locale } = useLocale();
+  const t = getT(serverLocale(), ['landing', 'billing']);
+  const locale = serverLocale();
 
   return (
     <section id="pricing" aria-labelledby="pricing-title" className="scroll-mt-20 py-20 sm:py-28">

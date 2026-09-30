@@ -1,12 +1,10 @@
-'use client';
-
 import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
+import { getT, serverLocale } from '@/lib/i18n/server';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
 import { Brand, REGISTER, WRAP } from './shared';
 
 export function Footer() {
-  const { t } = useTranslation('landing');
+  const t = getT(serverLocale(), 'landing');
   const link = 'inline-flex min-h-9 items-center text-[13.5px] text-muted transition-colors hover:text-ink';
 
   return (

@@ -1,7 +1,4 @@
-'use client';
-
-import { useTranslation } from 'react-i18next';
-import { useLocale } from '@/components/i18n/LanguageProvider';
+import { getT, serverLocale } from '@/lib/i18n/server';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { TEMPLATES } from '@/lib/templates';
 import { Icon } from '@/components/Icon';
@@ -13,7 +10,7 @@ import { Initials, SectionHead, WRAP } from './shared';
  * the team. The numbers and names in them are samples.
  */
 export function Product() {
-  const { t } = useTranslation('landing');
+  const t = getT(serverLocale(), 'landing');
   return (
     <section id="product" aria-labelledby="product-title" className="scroll-mt-20 py-20 sm:py-28">
       <div className={WRAP}>
@@ -102,7 +99,7 @@ function MiniCard({ accent, dark, active }: { accent: string; dark: boolean; act
 /* --- Chips --------------------------------------------------------------- */
 
 function Chips() {
-  const { t } = useTranslation('landing');
+  const t = getT(serverLocale(), 'landing');
   const rows = [
     { uid: '04:A1:9C:3E:52:80', who: t('sample.name'), on: true },
     { uid: '04:7F:12:B8:6D:41', who: t('sample.people.karim'), on: true },
@@ -129,8 +126,8 @@ function Chips() {
 /* --- Leads --------------------------------------------------------------- */
 
 function Leads() {
-  const { t } = useTranslation('landing');
-  const { locale } = useLocale();
+  const t = getT(serverLocale(), 'landing');
+  const locale = serverLocale();
   const now = Date.now();
   const rows = [
     { name: t('sample.people.omar'), kind: 'MEETING', icon: 'calendar', ago: 2 * 60e3, hue: 215 },
@@ -159,7 +156,7 @@ function Leads() {
 /* --- Pipeline ------------------------------------------------------------ */
 
 function Board() {
-  const { t } = useTranslation(['landing', 'crm']);
+  const t = getT(serverLocale(), ['landing', 'crm']);
   const columns: { stage: string; cards: { name: string; card: string; hot?: boolean }[]; className?: string }[] = [
     { stage: 'new', cards: [{ name: t('sample.people.omar'), card: t('sample.name'), hot: true }, { name: t('sample.people.youssef'), card: t('sample.people.karim') }] },
     { stage: 'contacted', cards: [{ name: t('sample.people.salma'), card: t('sample.name') }] },
@@ -208,8 +205,8 @@ function path(values: number[], w: number, h: number, max: number) {
 }
 
 function Chart() {
-  const { t } = useTranslation('landing');
-  const { locale } = useLocale();
+  const t = getT(serverLocale(), 'landing');
+  const locale = serverLocale();
   const W = 400;
   const H = 110;
   const max = 64;
@@ -250,7 +247,7 @@ function Chart() {
 /* --- Team ---------------------------------------------------------------- */
 
 function Team() {
-  const { t } = useTranslation(['landing', 'teams']);
+  const t = getT(serverLocale(), ['landing', 'teams']);
   const people = [
     { name: t('sample.name'), role: 'OWNER', hue: 215, accent: '#2563eb' },
     { name: t('sample.people.karim'), role: 'ADMIN', hue: 25, accent: '#d85a30' },
@@ -284,7 +281,7 @@ const MORE = [
 ] as const;
 
 function More() {
-  const { t } = useTranslation('landing');
+  const t = getT(serverLocale(), 'landing');
   return (
     <div className="mt-4 rounded-xl bg-elevated/60 p-6 ring-1 ring-inset ring-line">
       <h3 className="text-[13px] font-medium text-muted">{t('product.more.title')}</h3>
