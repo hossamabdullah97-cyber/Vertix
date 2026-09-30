@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { initials, hueFor } from '@/lib/crm';
+import { initials, avatarColor } from '@/lib/crm';
 
 /**
  * The verified mark: a scalloped disc with a check, in the accent colour. Sized
@@ -100,7 +100,7 @@ export function Avatar({
       title={verified ? undefined : label || undefined}
       style={{
         ...box,
-        background: `hsl(${hueFor(seed)} 62% 48%)`,
+        background: avatarColor(seed),
         fontSize: Math.max(9, Math.round(size * 0.38)),
       }}
       className={`inline-flex shrink-0 select-none items-center justify-center rounded-full font-bold leading-none text-white ${className}`}

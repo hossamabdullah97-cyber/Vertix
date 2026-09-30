@@ -163,6 +163,35 @@ export function hueFor(seed: string): number {
   return h;
 }
 
+/**
+ * The fill behind someone's initials. The hue comes from the name; the
+ * lightness is the brightest that still keeps the white letters at 4.5:1, so
+ * a yellow or green name is as readable as a blue one, in either theme.
+ */
+export function avatarColor(seed: string): string {
+  const h = hueFor(seed);
+  return `hsl(${h} 58% ${readableLightness(h)}%)`;
+}
+
+const lightnessByHue = new Map<number, number>();
+function readableLightness(h: number): number {
+  const cached = lightnessByHue.get(h);
+  if (cached !== undefined) return cached;
+  const channel = (n: number, l: number) => {
+    const a = 0.58 * Math.min(l, 1 - l);
+    const k = (n + h / 30) % 12;
+    const v = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  let l = 46;
+  for (; l > 20; l--) {
+    const lum = 0.2126 * channel(0, l / 100) + 0.7152 * channel(8, l / 100) + 0.0722 * channel(4, l / 100);
+    if (1.05 / (lum + 0.05) >= 4.6) break;
+  }
+  lightnessByHue.set(h, l);
+  return l;
+}
+
 export function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;

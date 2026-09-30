@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, type Stage, type LeadActivity, type ActivityType, ACTIVITY_META, sourceMeta, initials, hueFor, formatMoney } from '@/lib/crm';
+import { type Lead, type Stage, type LeadActivity, type ActivityType, ACTIVITY_META, sourceMeta, initials, avatarColor, formatMoney } from '@/lib/crm';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatRelativeTime } from '@/lib/format';
 
@@ -106,7 +106,6 @@ export function ActivitiesTimeline({
             {filtered.map((a, index) => {
               const meta = ACTIVITY_META[a.type] || { label: t('activity.fallback'), icon: 'sparkle', color: 'var(--v-accent)' };
               const typeLabel = t(`activity.types.${a.type}`, t('activity.fallback'));
-              const hue = hueFor(a.leadName);
               const noteText = (a.metadata?.note as string) || '';
 
               return (
@@ -132,7 +131,7 @@ export function ActivitiesTimeline({
                         <button
                           onClick={() => onOpenLead(a.leadId)}
                           className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold text-white transition-opacity hover:opacity-90"
-                          style={{ background: `hsl(${hue} 62% 48%)` }}
+                          style={{ background: avatarColor(a.leadName) }}
                         >
                           {initials(a.leadName)}
                         </button>

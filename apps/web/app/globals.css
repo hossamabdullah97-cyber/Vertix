@@ -19,8 +19,9 @@
   --v-surface: 0 0% 100%; /* sheets, panels, inputs */
   --v-elevated: 45 14% 97%; /* quiet fills: table headers, inactive tabs, hover */
   --v-fg: 240 6% 10%;
-  --v-muted: 250 3% 38%;
-  --v-faint: 249 3% 59%;
+  --v-muted: 250 3% 34%;
+  /* Tertiary text still has to read: 4.5:1 on the canvas, the darkest ground it sits on. */
+  --v-faint: 249 3% 44%;
   --v-border: 43 14% 90%;
   --v-border-strong: 42 12% 84%;
   /* Aliases a few components read directly. */
@@ -34,6 +35,10 @@
   --v-accent-ch: 37 99 235; /* same colour as channels, for Tailwind opacity */
   --v-accent-soft: rgba(37, 99, 235, 0.08);
   --v-accent-contrast: #ffffff;
+  /* The accent as text (links, active labels). Same blue in light; lifted in
+     dark, where the fill blue is too deep to read as small text. */
+  --v-accent-text-ch: 37 99 235;
+  --v-accent-text: rgb(var(--v-accent-text-ch));
   /* Kept for callers that still paint with these names; both are the flat accent. */
   --v-gradient-brand: var(--v-accent);
   --v-gradient-hero: var(--v-accent);
@@ -65,22 +70,26 @@
   --v-elevated: 240 5% 11%;
   --v-fg: 240 5% 93%;
   --v-muted: 240 4% 64%;
-  --v-faint: 240 4% 45%;
+  /* Tertiary text still has to read: 4.5:1 on the surface. */
+  --v-faint: 240 4% 54%;
   --v-border: 240 5% 16%;
   --v-border-strong: 240 6% 21%;
 
-  --v-accent: #3572f0;
-  --v-accent-hover: #4a82f3;
-  --v-accent-rgb: 53, 114, 240;
-  --v-accent-ch: 53 114 240;
-  --v-accent-soft: rgba(53, 114, 240, 0.16);
+  /* The fill keeps the light theme's blue so white text on a button stays at
+     5:1; text in the accent uses the lighter blue below. */
+  --v-accent: #2563eb;
+  --v-accent-hover: #2d6aee; /* a touch lighter, still 4.5:1 under white */
+  --v-accent-rgb: 37, 99, 235;
+  --v-accent-ch: 37 99 235;
+  --v-accent-soft: rgba(53, 114, 240, 0.18);
+  --v-accent-text-ch: 108 155 247;
 
   --v-shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.05);
   --v-shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
   --v-shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 16px 40px -12px rgba(0, 0, 0, 0.6);
   --v-shadow-xl: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 24px 48px -12px rgba(0, 0, 0, 0.7);
   --v-shadow-accent: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --v-ring: 0 0 0 3px rgba(53, 114, 240, 0.3);
+  --v-ring: 0 0 0 3px rgba(53, 114, 240, 0.35);
   color-scheme: dark;
 }
 
@@ -420,7 +429,7 @@ textarea.v-field {
   border: 1px solid transparent;
 }
 .v-badge-accent {
-  color: var(--v-accent);
+  color: var(--v-accent-text);
   background: var(--v-accent-soft);
 }
 .v-badge-success {
@@ -516,7 +525,7 @@ textarea.v-field {
     --p-elevated: #1c1c1f !important;
     --p-fg: #ededee !important;
     --p-muted: #a1a1a8 !important;
-    --p-faint: #6f6f76 !important;
+    --p-faint: #8b8b93 !important;
     --p-line: #232327 !important;
     --p-line-strong: #2f2f34 !important;
     color-scheme: dark;

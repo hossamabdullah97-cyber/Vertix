@@ -7,6 +7,7 @@ import { CardCompanion } from '@/components/profile/CardCompanion';
 import { PasscodeGate } from '@/components/profile/PasscodeGate';
 import { PublicProfile } from '@/components/profile/PublicProfile';
 import TrackView from '@/components/TrackView';
+import { ClearAppTheme } from '@/components/profile/ClearAppTheme';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,12 @@ export default async function CardPage({ params, searchParams }: { params: { slu
   if (!result) notFound();
 
   if ('locked' in result && result.locked) {
-    return <PasscodeGate slug={params.slug} p={searchParams.p ?? ''} profileName={result.profileName} look={result.look} wrongCode={Boolean(searchParams.code)} />;
+    return (
+      <>
+        <ClearAppTheme />
+        <PasscodeGate slug={params.slug} p={searchParams.p ?? ''} profileName={result.profileName} look={result.look} wrongCode={Boolean(searchParams.code)} />
+      </>
+    );
   }
 
   const card = result as PublicCard;
@@ -128,6 +134,7 @@ export default async function CardPage({ params, searchParams }: { params: { slu
       className="min-h-[100dvh] bg-[var(--p-surface)] sm:bg-[var(--p-bg)] sm:px-4 sm:py-10"
     >
       <TrackView slug={card.slug} />
+      <ClearAppTheme />
       <script
         type="application/ld+json"
         // "<" is escaped so nothing typed into the card can end the script.

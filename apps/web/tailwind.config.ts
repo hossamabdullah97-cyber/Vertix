@@ -27,6 +27,13 @@ const config: Config = {
           fg: 'var(--v-accent-contrast)',
         },
       },
+      // Text in the accent reads from its own token, lifted in dark mode.
+      textColor: {
+        accent: {
+          DEFAULT: 'rgb(var(--v-accent-text-ch) / <alpha-value>)',
+          fg: 'var(--v-accent-contrast)',
+        },
+      },
       fontFamily: {
         sans: ['Geist', '"IBM Plex Sans Arabic"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, type Stage, type Temp, TEMP_META, initials, hueFor, formatMoney, wonStage } from '@/lib/crm';
+import { type Lead, type Stage, type Temp, TEMP_META, initials, avatarColor, formatMoney, wonStage } from '@/lib/crm';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatRelativeTime } from '@/lib/format';
 
@@ -47,7 +47,6 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {companies.map((c, i) => {
-        const hue = hueFor(c.name);
         const total = c.contacts.length;
         return (
           <motion.button
@@ -61,7 +60,7 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
             className="group flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 text-left shadow-sm transition-shadow hover:shadow-md hover:border-line-strong"
           >
             <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[14px] font-semibold text-white" style={{ background: `hsl(${hue} 45% 42%)` }}>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[14px] font-semibold text-white" style={{ background: avatarColor(c.name) }}>
                 {companyInitials(c.name)}
               </span>
               <div className="min-w-0 flex-1">
@@ -77,12 +76,11 @@ export function CompaniesView({ leads, stages, onOpenCompany }: { leads: Lead[];
             <div className="flex items-center justify-between gap-2 pt-1 border-t border-line/50">
               <div className="flex -space-x-1.5 overflow-hidden">
                 {c.contacts.slice(0, 4).map((contact) => {
-                  const contactHue = hueFor(contact.name || contact.id);
                   return (
                     <span
                       key={contact.id}
                       className="inline-block h-6.5 w-6.5 rounded-full ring-2 ring-surface text-[8.5px] font-semibold text-white text-center flex items-center justify-center"
-                      style={{ background: `hsl(${contactHue} 62% 48%)` }}
+                      style={{ background: avatarColor(contact.name || contact.id) }}
                       title={contact.name || ''}
                     >
                       {initials(contact.name)}

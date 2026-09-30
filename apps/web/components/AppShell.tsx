@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
 import { authFetch, logout, getActiveOrgId, setActiveOrgId, type Me } from '@/lib/client';
 import { Icon } from '@/components/Icon';
+import { useTheme } from '@/lib/useStoredTheme';
 import { Avatar } from '@/components/Avatar';
 import { PROFILE_UPDATED } from '@/components/ProfilePhotoCard';
 import { OrgMark, ORG_UPDATED } from '@/components/OrgMark';
@@ -53,7 +54,6 @@ const GROUPS: { labelKey: string; showLabel: boolean; items: { href: string; lab
 /** The phone's bottom bar: the four places people go most. Everything else is under More. */
 const DOCK = ['/dashboard', '/cards', '/leads', '/analytics'];
 
-type Theme = 'light' | 'dark';
 
 /** Fired when the command menu picks a lead; the leads page opens its panel. */
 export { OPEN_LEAD_EVENT };
@@ -116,7 +116,7 @@ export default function AppShell({
   const router = useRouter();
   const { t } = useTranslation('nav');
   const { locale, setLocale } = useLocale();
-  const [theme, setTheme] = useState<Theme>('light');
+  const { theme, pref: themePref, setPref: chooseTheme } = useTheme();
   const [me, setMe] = useState<Me | null>(null);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
@@ -150,8 +150,6 @@ export default function AppShell({
 
   useEffect(() => {
     if (/Mac|iPhone|iPad/.test(navigator.platform)) setShortcut('⌘K');
-    const savedTheme = (localStorage.getItem('vertex_theme') as Theme) || 'light';
-    setTheme(savedTheme);
 
     // Load favorites and recents from localStorage
     const savedFavs = JSON.parse(localStorage.getItem('vertex_favorites') || '[]');
@@ -510,11 +508,6 @@ export default function AppShell({
 
   const totalWorkspacesCount = allWorkspaceItems.length;
 
-  function chooseTheme(next: Theme) {
-    setTheme(next);
-    localStorage.setItem('vertex_theme', next);
-  }
-
   function signOut() {
     logout();
     window.location.href = '/login';
@@ -567,18 +560,18 @@ export default function AppShell({
           ))}
         </div>
         <p className="mb-1.5 mt-3 text-[12px] text-faint">{t('account.theme')}</p>
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
-          {(['light', 'dark'] as const).map((mode) => (
+        <div className="grid grid-cols-3 gap-1 rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+          {(['light', 'dark', 'system'] as const).map((mode) => (
             <button
               key={mode}
               role="menuitemradio"
-              aria-checked={theme === mode}
+              aria-checked={themePref === mode}
               onClick={() => chooseTheme(mode)}
               className={`flex h-9 items-center justify-center gap-1.5 rounded-md text-[12.5px] font-medium transition-colors md:h-7 ${
-                theme === mode ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
+                themePref === mode ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
               }`}
             >
-              <Icon name={mode === 'light' ? 'sun' : 'moon'} size={13} />
+              <Icon name={mode === 'light' ? 'sun' : mode === 'dark' ? 'moon' : 'monitor'} size={13} />
               {t(`account.${mode}`)}
             </button>
           ))}
