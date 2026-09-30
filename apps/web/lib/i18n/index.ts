@@ -1,6 +1,6 @@
 import i18next, { type i18n as I18nInstance, type InitOptions } from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { resources } from './resources';
+import type { Resource, ResourceLanguage } from 'i18next';
 import {
   DEFAULT_NAMESPACE,
   FALLBACK_LOCALE,
@@ -19,10 +19,11 @@ import {
  * isolated. `initImmediate: false` makes init synchronous so `t()` returns real
  * values during SSR — no flash of keys, no Suspense.
  */
-export function createI18n(locale: Locale): I18nInstance {
+export function createI18n(locale: Locale, messages: ResourceLanguage): I18nInstance {
   const instance = i18next.createInstance();
   const options: InitOptions = {
-    resources,
+    // Only the language the page is shown in; another is added when someone switches.
+    resources: { [locale]: messages } as Resource,
     lng: locale,
     fallbackLng: FALLBACK_LOCALE,
     defaultNS: DEFAULT_NAMESPACE,

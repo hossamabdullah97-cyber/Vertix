@@ -162,7 +162,26 @@ export class PlanLimitError extends Error {
   }
 }
 
-export async function authFetch<T>(
+/**
+ * Identical reads in flight at the same moment share one request: a page and
+ * its shell both ask for /auth/me as they mount, and on a slow phone network
+ * each extra round trip queues behind the others. Nothing is kept once the
+ * answer is in, so no one ever reads a stale copy.
+ */
+const inflight = new Map<string, Promise<unknown>>();
+
+export function authFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const method = (init.method ?? 'GET').toUpperCase();
+  if (method !== 'GET' || init.body != null || init.signal) return request<T>(path, init);
+  const key = `${getActiveOrgId() ?? ''} ${path} ${JSON.stringify(init.headers ?? null)}`;
+  const shared = inflight.get(key);
+  if (shared) return shared as Promise<T>;
+  const p = request<T>(path, init).finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
+}
+
+async function request<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {

@@ -1,9 +1,13 @@
 import { THEME_SCRIPT } from '@/lib/themeScript';
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import './globals.css';
 import { LanguageProvider } from '@/components/i18n/LanguageProvider';
 import { LOCALE_COOKIE, dirOf, resolveLocale } from '@/lib/i18n/config';
+import Script from 'next/script';
+import { resources } from '@/lib/i18n/resources';
+import { messagesUrl } from '@/lib/i18n/bundle';
+import { CARD_SURFACE_HEADER } from '@/lib/surface';
 
 export const metadata: Metadata = {
   title: 'Vertex Connect',
@@ -21,6 +25,13 @@ export default function RootLayout({
   // Resolve the initial locale from the cookie so SSR markup (lang/dir) matches
   // the client and there's no flash of the wrong language/direction.
   const locale = resolveLocale(cookies().get(LOCALE_COOKIE)?.value);
+  // A public card carries its own few strings (lib/profileI18n), so it skips
+  // the app's translations and i18next: a visitor's phone downloads neither.
+  const publicCard = headers().get(CARD_SURFACE_HEADER) === '1';
+  // The server renders with every language at hand; the browser gets its one
+  // from /i18n/<locale> (see lib/i18n/bundle.ts).
+  globalThis.__VX_MESSAGES ??= resources;
+  const urls = { en: messagesUrl('en'), ar: messagesUrl('ar') };
 
   return (
     // lang/dir are locale-driven and may be reconciled client-side (stored
@@ -34,7 +45,17 @@ export default function RootLayout({
         {locale === 'ar' && <link rel="preload" href="/fonts/plex-arabic-arabic-400.woff2" as="font" type="font/woff2" crossOrigin="" />}
       </head>
       <body suppressHydrationWarning>
-        <LanguageProvider initialLocale={locale}>{children}</LanguageProvider>
+        {publicCard ? (
+          children
+        ) : (
+          <>
+            {/* The page's language only, cached, and in place before hydration; the other is fetched on a switch. */}
+            <Script src={urls[locale]} strategy="beforeInteractive" />
+            <LanguageProvider initialLocale={locale} urls={urls}>
+              {children}
+            </LanguageProvider>
+          </>
+        )}
       </body>
     </html>
   );
