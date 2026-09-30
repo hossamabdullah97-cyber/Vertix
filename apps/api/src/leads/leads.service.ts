@@ -27,6 +27,9 @@ export const CAPTURE_LIMITS = { visitorCard: 5, visitor: 20, card: 200 } as cons
 export const SCAN_LIMIT = 60;
 const SCAN_WINDOW_MS = 60 * 60_000;
 
+/** How long the same details sent to the same card count as one lead (see capture). */
+export const RESEND_WINDOW_MS = 10 * 60_000;
+
 @Injectable()
 export class LeadsService {
   private readonly logger = new Logger(LeadsService.name);
@@ -128,6 +131,25 @@ export class LeadsService {
       select: { id: true, orgId: true, ownerId: true, theme: true, vcardData: true },
     });
     if (!card) throw new NotFoundException('Card not found');
+
+    // The same details sent to the same card again within a few minutes are the
+    // lead already made: a double tap, or a phone that kept the form while it
+    // had no signal and sends it again when it may have arrived the first time.
+    // Checked before the meeting time, which the first send has since taken.
+    const email = input.email?.trim() || null;
+    const phone = input.phone?.trim() || null;
+    if (email || phone) {
+      const again = await this.db.lead.findFirst({
+        where: {
+          orgId: card.orgId,
+          cardId: card.id,
+          createdAt: { gte: new Date(Date.now() - RESEND_WINDOW_MS) },
+          OR: [...(email ? [{ email: { equals: email, mode: 'insensitive' as const } }] : []), ...(phone ? [{ phone }] : [])],
+        },
+        select: { id: true },
+      });
+      if (again) return { ok: true as const, leadId: again.id };
+    }
 
     // A meeting must be at one of the times the card offers and nobody took.
     let meetingAt: string | undefined;

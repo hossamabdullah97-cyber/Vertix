@@ -349,3 +349,80 @@ describe('a studio being open does not forget the cards', () => {
     expect(peek('/cards')).toEqual([]);
   });
 });
+
+describe('changes made without a connection wait and go out later', () => {
+  function goOffline(offline: boolean) {
+    vi.stubGlobal('navigator', { onLine: !offline });
+    // Lets client.ts start the real outbox, as it does in a browser.
+    (globalThis as unknown as { addEventListener: unknown }).addEventListener = vi.fn();
+  }
+  const ok = { ok: true, status: 200, text: async () => '{"ok":true}' } as Response;
+
+  it('keeps a change made offline, in order, for the workspace it was made in', async () => {
+    goOffline(true);
+    const { authFetch, setActiveOrgId } = await import('./client');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    setActiveOrgId('org_a');
+    void authFetch('/leads/1', { method: 'PATCH', body: '{"stageId":"s2"}' });
+    void authFetch('/tasks', { method: 'POST', body: '{"title":"Call"}' });
+    expect(fetchMock).not.toHaveBeenCalled();
+    const kept = JSON.parse(localStorage.getItem('vertex_outbox') || '[]');
+    expect(kept.map((k: { method: string; path: string; orgId: string }) => [k.method, k.path, k.orgId])).toEqual([
+      ['PATCH', '/leads/1', 'org_a'],
+      ['POST', '/tasks', 'org_a'],
+    ]);
+  });
+
+  it('sends them oldest first when the connection is back, to the workspace they were made in', async () => {
+    goOffline(true);
+    const { authFetch, setActiveOrgId } = await import('./client');
+    const { flush } = await import('./outbox');
+    const sent: string[] = [];
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: string, init: RequestInit) => {
+      sent.push(`${init.method} ${url.replace(/^.*?(\/leads)/, '$1')} ${(init.headers as Record<string, string>)['x-organization-id'] ?? ''}`);
+      return ok;
+    }));
+    setActiveOrgId('org_a');
+    const answer = authFetch('/leads/1', { method: 'PATCH', body: '{}' });
+    void authFetch('/leads/2', { method: 'DELETE' });
+    setActiveOrgId('org_b');
+    goOffline(false);
+    await flush();
+    expect(sent).toEqual(['PATCH /leads/1 org_a', 'DELETE /leads/2 org_a']);
+    await expect(answer).resolves.toEqual({ ok: true });
+    expect(localStorage.getItem('vertex_outbox')).toBeNull();
+  });
+
+  it('retries a change whose connection failed, but not a new record that may have arrived', async () => {
+    goOffline(false);
+    const { authFetch } = await import('./client');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    void authFetch('/leads/1', { method: 'PATCH', body: '{}' });
+    await expect(authFetch('/tasks', { method: 'POST', body: '{}' })).rejects.toThrow();
+    await new Promise((r) => setTimeout(r, 0));
+    const kept = JSON.parse(localStorage.getItem('vertex_outbox') || '[]');
+    expect(kept.map((k: { method: string }) => k.method)).toEqual(['PATCH']);
+  });
+
+  it('drops a change the API refuses when it finally arrives, and counts it', async () => {
+    goOffline(true);
+    const { authFetch } = await import('./client');
+    const { flush } = await import('./outbox');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404, text: async () => '{"message":"Lead not found"}' } as Response));
+    const answer = authFetch('/leads/gone', { method: 'PATCH', body: '{}' });
+    goOffline(false);
+    await flush();
+    await expect(answer).rejects.toThrow();
+    expect(localStorage.getItem('vertex_outbox')).toBeNull();
+  });
+
+  it('forgets what was waiting when the person signs out', async () => {
+    goOffline(true);
+    const { authFetch, logout } = await import('./client');
+    vi.stubGlobal('fetch', vi.fn());
+    authFetch('/leads/1', { method: 'PATCH', body: '{}' }).catch(() => {});
+    logout();
+    expect(localStorage.getItem('vertex_outbox')).toBeNull();
+  });
+});

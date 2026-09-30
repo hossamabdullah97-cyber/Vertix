@@ -13,6 +13,7 @@ import { Icon, actionIcon } from '@/components/Icon';
 import AppShell from '@/components/AppShell';
 import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
 import { offerUndo } from '@/lib/undo';
+import { useShortcut } from '@/lib/shortcuts';
 
 /** The list endpoint returns a little more than the shared Card type declares. */
 type ListCard = Card & { updatedAt?: string; _count?: { variants: number } };
@@ -98,6 +99,8 @@ export default function CardsPage() {
       setCreating(false);
     }
   };
+
+  useShortcut('n', t('nav:shortcuts.newCard'), () => void startNewCard());
 
   // `?new=1` starts a card straight away. The Home checklist links here so
   // "Create your card" creates one; `replace` means Back never makes a second.

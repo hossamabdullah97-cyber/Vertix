@@ -6,7 +6,7 @@ import { LeadsService, CAPTURE_LIMITS } from './leads.service';
  * The public form's guards: how often it may be sent, what a bot gets, and
  * which meeting times are taken.
  */
-function setup(opts: { counts?: Record<string, number>; theme?: unknown; booked?: string[] } = {}) {
+function setup(opts: { counts?: Record<string, number>; theme?: unknown; booked?: string[]; recent?: { id: string } | null } = {}) {
   const counts = new Map(Object.entries(opts.counts ?? {}));
   const throttle = {
     blockedFor: jest.fn(async (key: string, limit: number) => ((counts.get(key) ?? 0) >= limit ? 1800 : 0)),
@@ -18,7 +18,7 @@ function setup(opts: { counts?: Record<string, number>; theme?: unknown; booked?
   const db = {
     card: { findFirst: jest.fn(async () => ({ id: 'card1', orgId: 'org1', ownerId: 'u1', theme: opts.theme ?? null })) },
     pipelineStage: { findFirst: jest.fn(async () => null) },
-    lead: { create: jest.fn(async () => ({ id: 'lead1' })) },
+    lead: { create: jest.fn(async () => ({ id: 'lead1' })), findFirst: jest.fn(async () => opts.recent ?? null) },
     leadActivity: {
       create: jest.fn(async () => ({})),
       findMany: jest.fn(async () => (opts.booked ?? []).map((meetingAt) => ({ metadata: { meetingAt } }))),
@@ -48,6 +48,16 @@ describe('LeadsService.capture guards', () => {
     const { service, db } = setup();
     await expect(service.capture(form, '1.2.3.4')).resolves.toEqual({ ok: true, leadId: 'lead1' });
     expect(db.lead.create).toHaveBeenCalled();
+  });
+
+  it('takes the same details sent again within minutes as the lead already made', async () => {
+    const { service, db, alerts } = setup({ recent: { id: 'lead0' } });
+    await expect(service.capture(form, '1.2.3.4')).resolves.toEqual({ ok: true, leadId: 'lead0' });
+    expect(db.lead.create).not.toHaveBeenCalled();
+    expect(alerts.leadCaptured).not.toHaveBeenCalled();
+    const where = (db.lead.findFirst.mock.calls[0] as unknown as [{ where: { cardId: string; OR: unknown[] } }])[0].where;
+    expect(where.cardId).toBe('card1');
+    expect(where.OR).toEqual([{ email: { equals: 'omar@example.com', mode: 'insensitive' } }]);
   });
 
   it('tells a bot all went well, and keeps nothing', async () => {

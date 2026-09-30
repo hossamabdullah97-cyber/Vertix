@@ -5,6 +5,7 @@ import { API_URL } from './api';
 import enCommon from '@/locales/en/common.json';
 import arCommon from '@/locales/ar/common.json';
 import { ApiError } from './apiErrors';
+import { clearOutbox, hold, isOffline, isUnreachable, startOutbox } from './outbox';
 
 export { ApiError, apiMessageOf } from './apiErrors';
 
@@ -32,6 +33,8 @@ export function getToken(): string | null {
 const ACTIVE_ORG_KEY = 'vertex_org_id';
 
 export function logout() {
+  // Changes still waiting for a connection belong to this account, not the next one.
+  clearOutbox();
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
   // Otherwise the next account to sign in on this browser inherits a
@@ -221,13 +224,36 @@ function forget(path: string) {
   for (const key of lastSeen.keys()) if (key.startsWith(org) && rootOf(key.slice(org.length)) === root) lastSeen.delete(key);
 }
 
+/**
+ * A change, or a wait in the outbox (lib/outbox.ts) when there is no
+ * connection: anything while the browser is offline, since it never left;
+ * a PATCH, PUT or DELETE whose connection failed, since sending it twice is
+ * harmless. A POST whose connection failed may have arrived, so it fails.
+ */
+function write<T>(path: string, init: RequestInit, method: string): Promise<T> {
+  const orgId = getActiveOrgId();
+  const body = typeof init.body === 'string' ? init.body : null;
+  const holdable = init.body == null || body !== null; // FormData and the like are not kept
+  const later = () => hold({ path, method, body, orgId }) as Promise<T>;
+  if (holdable && isOffline()) return later();
+  return request<T>(path, init, orgId).catch((err) => {
+    if (holdable && isUnreachable(err) && method !== 'POST') return later();
+    throw err;
+  });
+}
+
+// What waited in the outbox goes out the same way, to the workspace it was made in.
+if (typeof window !== 'undefined') {
+  startOutbox((p) => request(p.path, { method: p.method, ...(p.body !== null ? { body: p.body } : {}) }, p.orgId).finally(() => forget(p.path)));
+}
+
 export function authFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase();
   if (method !== 'GET') {
     if (KEEPS_READS.some((re) => re.test(path))) return request<T>(path, init);
     // Forgotten on the way out too, so a read made while it is in flight is not kept.
     forget(path);
-    return request<T>(path, init).finally(() => forget(path));
+    return write<T>(path, init, method).finally(() => forget(path));
   }
   if (init.body != null || init.signal) return request<T>(path, init);
   const key = `${getActiveOrgId() ?? ''} ${path} ${JSON.stringify(init.headers ?? null)}`;
@@ -246,8 +272,8 @@ export function authFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 async function request<T>(
   path: string,
   init: RequestInit = {},
+  orgId: string | null = getActiveOrgId(),
 ): Promise<T> {
-  const orgId = getActiveOrgId();
   const res = await withSession((token) =>
     fetch(`${API_URL}${path}`, {
       ...init,

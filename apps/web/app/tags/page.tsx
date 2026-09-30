@@ -15,6 +15,7 @@ import { CardThumb } from '@/components/cards/CardThumb';
 import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Sheet } from '@/components/ui/Sheet';
+import { useShortcut } from '@/lib/shortcuts';
 
 const HARDWARE = ['CARD', 'STICKER', 'KEYCHAIN', 'WRISTBAND', 'OTHER'] as const;
 type Hardware = (typeof HARDWARE)[number];
@@ -44,6 +45,7 @@ export default function TagsPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  useShortcut('n', t('nav:shortcuts.addChips'), () => setAdding(true));
   const [deleting, setDeleting] = useState<NfcTag | null>(null);
 
   // An employee handles only their own chip: no holders, no stock decisions.
@@ -163,7 +165,7 @@ export default function TagsPage() {
       title={t('title')}
       fluid
       action={
-        <button onClick={() => setAdding(true)} className="v-btn">
+        <button onClick={() => setAdding(true)} aria-keyshortcuts="n" className="v-btn">
           <Icon name="plus" size={14} /> {t('add')}
         </button>
       }

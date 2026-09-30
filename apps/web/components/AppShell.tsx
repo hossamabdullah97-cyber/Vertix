@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +19,8 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
+import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
+import { Shortcuts, SHOW_SHORTCUTS } from '@/components/ui/Shortcuts';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
@@ -151,6 +153,7 @@ export default function AppShell({
 
   // Command menu (⌘K / Ctrl+K)
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const openSearch = useCallback(() => setPaletteOpen(true), []);
   const [searchQuery, setSearchQuery] = useState('');
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [searchData, setSearchData] = useState<SearchIndex>(EMPTY_INDEX);
@@ -606,6 +609,18 @@ export default function AppShell({
       <div className="border-t border-line pt-1">
         <button
           role="menuitem"
+          onClick={() => {
+            setMenuOpen(false);
+            window.dispatchEvent(new Event(SHOW_SHORTCUTS));
+          }}
+          className="hidden h-8 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted transition-colors hover:bg-elevated hover:text-ink md:flex"
+        >
+          <Icon name="keyboard" size={15} />
+          <span className="flex-1 text-start">{t('shortcuts.title')}</span>
+          <kbd className="v-kbd">?</kbd>
+        </button>
+        <button
+          role="menuitem"
           onClick={signOut}
           className="flex h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted transition-colors hover:bg-elevated hover:text-ink md:h-8"
         >
@@ -921,18 +936,23 @@ export default function AppShell({
             </div>
           </div>
         </div>
+        <ConnectionBanner className="flex md:hidden" />
       </div>
 
       {/* Content sheet: its own scroll area beside a still sidebar on desktop */}
       <div className="min-w-0 flex-1 md:py-2 md:pe-2">
         <div className="bg-surface md:h-full md:overflow-y-auto md:rounded-[14px] md:shadow-[0_0_0_1px_hsl(var(--v-border)),0_1px_2px_rgba(23,23,26,0.04)]">
-          <header className="sticky top-0 z-20 hidden h-14 items-center gap-3 border-b border-line bg-surface/90 px-7 backdrop-blur-md md:flex">
+          {/* The connection line and the title bar stay on top together while the page scrolls. */}
+          <div className="sticky top-0 z-20">
+          <ConnectionBanner className="hidden md:flex" />
+          <header className="hidden h-14 items-center gap-3 border-b border-line bg-surface/90 px-7 backdrop-blur-md md:flex">
             <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold text-ink">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <NotificationBell />
               {action}
             </div>
           </header>
+          </div>
 
           {mobileTitle && (title || action) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">
@@ -1146,6 +1166,7 @@ export default function AppShell({
         </div>
       )}
       <UndoToast />
+      <Shortcuts onSearch={openSearch} />
     </div>
   );
 }

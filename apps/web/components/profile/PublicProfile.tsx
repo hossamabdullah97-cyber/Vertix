@@ -65,6 +65,7 @@ export function PublicProfile({
   const [sheet, setSheet] = useState<'share' | 'exchange' | null>(null);
   const [saved, setSaved] = useState(false);
   const [gallery, setGallery] = useState<{ images: string[]; index: number } | null>(null);
+  useSendKept(!preview);
 
   const links = useMemo<Resolved[]>(
     () =>
@@ -989,6 +990,69 @@ function zoneLabel(tz: string, at: Date): string {
   return offset ? `${city} (${offset})` : city;
 }
 
+/**
+ * A visitor at a fair often has no signal. What they send then is kept on
+ * their phone and sent once it is back (on the next card page, or the moment
+ * the connection returns). The API takes the same details twice as one lead,
+ * so a send that did arrive the first time is not doubled. A meeting time
+ * someone else took meanwhile goes as a contact request naming that time, so
+ * the details still reach the owner.
+ */
+const KEPT = 'vx_card_outbox';
+
+function keepForLater(body: string) {
+  try {
+    const list = JSON.parse(localStorage.getItem(KEPT) || '[]') as string[];
+    localStorage.setItem(KEPT, JSON.stringify([...list, body]));
+  } catch {
+    /* no storage: nothing can be kept */
+  }
+}
+
+let sendingKept = false;
+async function sendKept() {
+  if (sendingKept || typeof navigator === 'undefined' || navigator.onLine === false) return;
+  let list: string[];
+  try {
+    list = JSON.parse(localStorage.getItem(KEPT) || '[]') as string[];
+  } catch {
+    return;
+  }
+  if (!list.length) return;
+  sendingKept = true;
+  const post = (body: string) => fetch(`${API_URL}/leads/capture`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+  try {
+    while (list.length) {
+      let res = await post(list[0]);
+      if (res.status === 409) {
+        const d = JSON.parse(list[0]) as { meetingAt?: string; note?: string };
+        const asked = d.meetingAt ? `Asked for a meeting at ${d.meetingAt}.` : '';
+        res = await post(JSON.stringify({ ...d, intent: 'CONTACT', meetingAt: undefined, note: [d.note, asked].filter(Boolean).join(' ') }));
+      }
+      // Try again later when the API is busy or limiting; anything else is settled.
+      if (res.status === 429 || res.status >= 500) break;
+      list = list.slice(1);
+      localStorage.setItem(KEPT, JSON.stringify(list));
+    }
+  } catch {
+    /* still no connection: stays kept */
+  } finally {
+    if (!list.length) localStorage.removeItem(KEPT);
+    sendingKept = false;
+  }
+}
+
+/** Sends whatever this phone kept from an earlier card visit, now and when the connection returns. */
+function useSendKept(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+    void sendKept();
+    const onOnline = () => void sendKept();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [enabled]);
+}
+
 /** The line under a card-form field that says what is wrong, in the card's own colours. */
 function FormProblem({ id, text }: { id: string; text: string }) {
   if (!text) return null;
@@ -1008,6 +1072,8 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState<Intent | null>(null);
+  // Sent while there was no signal: kept on this phone until it goes out.
+  const [kept, setKept] = useState(false);
   // null while loading; a failed load reads as "no times".
   const [times, setTimes] = useState<Availability | null>(null);
   const [visitorZone, setVisitorZone] = useState('');
@@ -1055,25 +1121,27 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
       return;
     }
     setBusy(true);
+    const body = JSON.stringify({
+      slug: profile.slug,
+      intent,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || undefined,
+      company: form.company.trim() || undefined,
+      note: form.note.trim() || undefined,
+      meetingAt: intent === 'MEETING' && slot ? slot : undefined,
+      visitorId: visitorId(),
+      // The chip this visitor tapped, so the lead is credited to it.
+      tagUid,
+      // The hidden field: empty from a person, filled by a bot.
+      website: form.website || undefined,
+    });
     try {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new TypeError('offline');
       const res = await fetch(`${API_URL}/leads/capture`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug: profile.slug,
-          intent,
-          name: form.name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim() || undefined,
-          company: form.company.trim() || undefined,
-          note: form.note.trim() || undefined,
-          meetingAt: intent === 'MEETING' && slot ? slot : undefined,
-          visitorId: visitorId(),
-          // The chip this visitor tapped, so the lead is credited to it.
-          tagUid,
-          // The hidden field: empty from a person, filled by a bot.
-          website: form.website || undefined,
-        }),
+        body,
       });
       if (res.status === 429) throw new Error(t.tooMany);
       if (res.status === 409) {
@@ -1092,7 +1160,12 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
       }
       setDone(intent);
     } catch (err) {
-      setError(err instanceof TypeError ? t.failed : (err as Error).message);
+      // No signal (common at a fair): keep the details on this phone and send them once it is back.
+      if (err instanceof TypeError) {
+        keepForLater(body);
+        setKept(true);
+        setDone(intent);
+      } else setError(err instanceof TypeError ? t.failed : (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -1104,8 +1177,8 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--p-accent)] text-[var(--p-on-accent)]">
           <Icon name="check" size={22} />
         </span>
-        <p className="mt-4 text-lg font-semibold">{t.done[done]}</p>
-        <p className="mt-1 text-base text-[var(--p-muted)]">{fill(t.doneHint, { name: profile.name })}</p>
+        <p className="mt-4 text-lg font-semibold">{kept ? t.keptTitle : t.done[done]}</p>
+        <p className="mt-1 text-base text-[var(--p-muted)]">{fill(kept ? t.keptOffline : t.doneHint, { name: profile.name })}</p>
         {/* The exchange goes both ways: now keep their number too. */}
         <a
           href={vcardUrl}

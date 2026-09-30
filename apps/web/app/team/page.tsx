@@ -23,6 +23,7 @@ import { TeamsView, type Department, type TeamRow } from '@/components/team/Team
 import { ImportPeople } from '@/components/team/ImportPeople';
 import { RolesView } from '@/components/team/RolesView';
 import { ActivityView } from '@/components/team/ActivityView';
+import { useShortcut } from '@/lib/shortcuts';
 
 type View = 'members' | 'teams' | 'roles' | 'activity';
 const VIEWS: View[] = ['members', 'teams', 'roles', 'activity'];
@@ -62,6 +63,7 @@ export default function TeamPage() {
   const [focusDepartment, setFocusDepartment] = useState<string | null>(null);
 
   const canManage = me?.role === 'OWNER' || me?.role === 'ADMIN';
+  useShortcut('n', t('nav:shortcuts.invite'), () => setInviting(true), canManage);
 
   function flash(msg: string) {
     setToast(msg);
