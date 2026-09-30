@@ -30,6 +30,20 @@ const roleOf = (c: Card) =>
   [(c.vcardData?.title as string) || '', (c.vcardData?.org as string) || ''].filter(Boolean).join(' · ');
 const editedAt = (c: ListCard) => c.updatedAt ?? c.createdAt;
 
+function leadsPerSlug(leads: { card: { slug: string } | null }[]) {
+  const by: Record<string, number> = {};
+  for (const l of leads) if (l.card?.slug) by[l.card.slug] = (by[l.card.slug] ?? 0) + 1;
+  return by;
+}
+
+function chipsPerCard(tags: NfcTag[]) {
+  const by: Record<string, number> = {};
+  for (const tag of tags) if (tag.cardId && tag.status !== 'DISABLED') by[tag.cardId] = (by[tag.cardId] ?? 0) + 1;
+  return by;
+}
+
+const ownersOf = (members: Member[]) => Object.fromEntries(members.map((m) => [m.user.id, m.user]));
+
 export default function CardsPage() {
   const router = useRouter();
   const { t } = useTranslation('cards');
@@ -37,10 +51,25 @@ export default function CardsPage() {
 
   // Opened again, the page starts from the list it showed last time and refreshes behind it.
   const [cards, setCards] = useState<ListCard[] | null>(() => peek<ListCard[]>('/cards') ?? null);
-  const [stats, setStats] = useState<Record<string, CardStats | null>>({});
-  const [leadsBySlug, setLeadsBySlug] = useState<Record<string, number> | null>(null);
-  const [chipsByCard, setChipsByCard] = useState<Record<string, number> | null>(null);
-  const [owners, setOwners] = useState<Record<string, Member['user']>>({});
+  // The numbers too start from their last answers, so a card's views do not blank out on each visit.
+  const [stats, setStats] = useState<Record<string, CardStats | null>>(() => {
+    const known: Record<string, CardStats | null> = {};
+    for (const c of peek<ListCard[]>('/cards') ?? []) {
+      const s = peek<CardStats>(`/analytics/cards/${c.id}`);
+      if (s) known[c.id] = s;
+    }
+    return known;
+  });
+  const [leadsBySlug, setLeadsBySlug] = useState<Record<string, number> | null>(() => {
+    const leads = peek<{ card: { slug: string } | null }[]>('/leads');
+    return leads ? leadsPerSlug(leads) : null;
+  });
+  const [chipsByCard, setChipsByCard] = useState<Record<string, number> | null>(() => {
+    const tags = peek<NfcTag[]>('/nfc/tags');
+    return tags ? chipsPerCard(tags) : null;
+  });
+  const [owners, setOwners] = useState<Record<string, Member['user']>>(() => ownersOf(peek<Member[]>('/orgs/members') ?? []));
+  const asked = useRef(new Set<string>());
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [creating, setCreating] = useState(false);
@@ -113,21 +142,13 @@ export default function CardsPage() {
     // Counts that live elsewhere. Each is optional: a role that cannot read
     // leads or members simply does not see that column.
     authFetch<{ card: { slug: string } | null }[]>('/leads')
-      .then((leads) => {
-        const by: Record<string, number> = {};
-        for (const l of leads) if (l.card?.slug) by[l.card.slug] = (by[l.card.slug] ?? 0) + 1;
-        setLeadsBySlug(by);
-      })
+      .then((leads) => setLeadsBySlug(leadsPerSlug(leads)))
       .catch(() => setLeadsBySlug(null));
     authFetch<NfcTag[]>('/nfc/tags')
-      .then((tags) => {
-        const by: Record<string, number> = {};
-        for (const tag of tags) if (tag.cardId && tag.status !== 'DISABLED') by[tag.cardId] = (by[tag.cardId] ?? 0) + 1;
-        setChipsByCard(by);
-      })
+      .then((tags) => setChipsByCard(chipsPerCard(tags)))
       .catch(() => setChipsByCard(null));
     authFetch<Member[]>('/orgs/members')
-      .then((members) => setOwners(Object.fromEntries(members.map((m) => [m.user.id, m.user]))))
+      .then((members) => setOwners(ownersOf(members)))
       .catch(() => setOwners({}));
   }, [router]);
 
@@ -136,20 +157,21 @@ export default function CardsPage() {
   useEffect(() => {
     if (!cards?.length) return;
     let cancelled = false;
-    const queue = cards.map((c) => c.id).filter((id) => !(id in stats));
+    // Each card is asked once per visit; a number from last time stays up until its answer is in.
+    const queue = cards.map((c) => c.id).filter((id) => !asked.current.has(id));
     const worker = async () => {
       while (!cancelled && queue.length) {
         const id = queue.shift()!;
+        asked.current.add(id);
         const s = await authFetch<CardStats>(`/analytics/cards/${id}`).catch(() => null);
-        if (!cancelled) setStats((prev) => ({ ...prev, [id]: s }));
+        // Kept even if the list changed meanwhile: the card was marked asked.
+        setStats((prev) => ({ ...prev, [id]: s ?? prev[id] ?? null }));
       }
     };
     Array.from({ length: STATS_CONCURRENCY }, worker);
     return () => {
       cancelled = true;
     };
-    // Only a new set of cards needs fetching; `stats` is read to skip known ones.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 
   const counts = useMemo(
