@@ -84,5 +84,21 @@
     "retry": "Send now",
     "failed_one": "{{n}} change could not be saved: it no longer applied when the connection came back.",
     "failed_other": "{{n}} changes could not be saved: they no longer applied when the connection came back."
+  },
+  "tap": {
+    "home": "Go to Vertex Connect",
+    "link": "Link this chip to a card",
+    "unassigned": {
+      "title": "This chip isn't linked yet",
+      "body": "It's a genuine Vertex Connect chip, but no card is linked to it yet, or its card isn't published. If it's yours, sign in and link it, and the next tap will open your card."
+    },
+    "disabled": {
+      "title": "This chip is turned off",
+      "body": "Its owner has switched this chip off, so it doesn't open a card any more. If you were handed it, ask them for their card another way."
+    },
+    "unknown": {
+      "title": "This chip isn't active",
+      "body": "It isn't a chip issued by Vertex Connect, or it has been removed from its workspace."
+    }
   }
 }

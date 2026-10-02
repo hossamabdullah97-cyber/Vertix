@@ -9,6 +9,8 @@ RUN pnpm install --frozen-lockfile
 # NEXT_PUBLIC_* must be present at build time (inlined into the client bundle).
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TAP_URL=
+ENV NEXT_PUBLIC_TAP_URL=$NEXT_PUBLIC_TAP_URL
 ENV BUILD_STANDALONE=1
 RUN pnpm --filter @vertex/shared build && pnpm --filter @vertex/web build
 

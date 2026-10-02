@@ -3,6 +3,27 @@ import * as SecureStore from 'expo-secure-store';
 export const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
+/**
+ * The base of the address written on a chip: the web app (or a short tap
+ * domain pointing at it) that the web's chip programmer writes too, so a chip
+ * reads the same whichever programmed it. Without one set, the API's own
+ * gateway, which works but ties the chip to the API's address.
+ */
+export const TAP_BASE = process.env.EXPO_PUBLIC_TAP_URL ?? API_BASE;
+
+/** Same rule as normalizeUid in @vertex/shared: hex serials as "04:A1:B2…". */
+export function normalizeUid(raw: string): string {
+  const value = raw.trim();
+  const hex = value.replace(/[\s:-]/g, '');
+  if (/^[0-9a-f]+$/i.test(hex) && hex.length >= 8 && hex.length % 2 === 0) {
+    return hex.toUpperCase().match(/../g)!.join(':');
+  }
+  return value;
+}
+
+/** What a chip with this serial carries. */
+export const tapUrl = (uid: string) => `${TAP_BASE.replace(/\/+$/, '')}/t/${normalizeUid(uid).replace(/:/g, '')}`;
+
 const TOKEN_KEY = 'vertex_token';
 
 export async function saveToken(token: string) {
@@ -87,7 +108,8 @@ export async function registerAndAssign(uid: string, cardId: string) {
     // tag may already exist for this org — fall through to assignment
   }
   const tags = await listTags();
-  const tag = tags.find((t) => t.uid === uid);
+  // The API stores the serial in its normal form, whatever spelling it got.
+  const tag = tags.find((t) => normalizeUid(t.uid) === normalizeUid(uid));
   if (!tag) throw new Error('Could not locate the registered tag');
   await authFetch(`/nfc/tags/${tag.id}/assign`, {
     method: 'POST',

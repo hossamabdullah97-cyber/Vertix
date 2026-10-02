@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { authFetch, getToken, type Card, type Me, type Member, type NfcTag, peek } from '@/lib/client';
-import { API_URL } from '@/lib/api';
+import { tapUrl } from '@/lib/tap';
+import { normalizeUid } from '@vertex/shared';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate, formatNumber, formatRelativeTime } from '@/lib/format';
 import { useNfcScanner } from '@/components/nfc/useNfcScanner';
@@ -22,7 +23,6 @@ type Hardware = (typeof HARDWARE)[number];
 type StatusFilter = 'all' | NfcTag['status'];
 const STATUSES: StatusFilter[] = ['all', 'ACTIVE', 'UNASSIGNED', 'DISABLED'];
 
-const tapUrl = (uid: string) => `${API_URL}/t/${uid}`;
 const cardName = (c: Card) => ((c.vcardData?.fullName as string) || '').trim() || `/c/${c.slug}`;
 
 export default function TagsPage() {
@@ -121,6 +121,23 @@ export default function TagsPage() {
     setBatch('');
     setStatus('all');
   };
+  // Arriving from a chip's "link this chip" page (/tap): find that chip and
+  // open it, ready to be given a card.
+  const wanted = useRef<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) {
+      wanted.current = normalizeUid(q);
+      setQuery(wanted.current);
+    }
+  }, []);
+  useEffect(() => {
+    if (!wanted.current || !tags) return;
+    const hit = tags.find((tg) => normalizeUid(tg.uid) === wanted.current);
+    wanted.current = null;
+    if (hit) setSelectedId(hit.id);
+  }, [tags]);
+
   const closeDetails = useCallback(() => setSelectedId(null), []);
   const closeAdd = useCallback(() => setAdding(false), []);
   const closeDelete = useCallback(() => setDeleting(null), []);

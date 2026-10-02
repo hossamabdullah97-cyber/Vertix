@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException, ConflictExc
 import { runWithTenant } from '@vertex/db';
 import { planPrices } from '../billing/prices';
 import { PrismaService } from '../prisma/prisma.service';
-import { PLAN_LIMITS, defaultStageRows, type Plan, type Role } from '@vertex/shared';
+import { PLAN_LIMITS, defaultStageRows, normalizeUid, type Plan, type Role } from '@vertex/shared';
 
 /**
  * Runs tenant-scoped writes under the 'admin' bypass context so the Prisma
@@ -728,7 +728,7 @@ export class AdminService {
     },
     actorId: string,
   ) {
-    const uid = input.uid.trim();
+    const uid = normalizeUid(input.uid ?? '');
     if (!uid) throw new ConflictException('A chip UID is required.');
 
     const existing = await this.prisma.client.nfcChip.findUnique({ where: { uid } });
@@ -768,7 +768,7 @@ export class AdminService {
     actorId: string,
   ) {
     const uids = Array.from(
-      new Set(input.uids.map((u) => u.trim()).filter(Boolean)),
+      new Set(input.uids.map(normalizeUid).filter(Boolean)),
     );
     if (uids.length === 0) throw new ConflictException('No chip UIDs were supplied.');
 
@@ -820,7 +820,7 @@ export class AdminService {
 
     const target: Record<string, unknown> = input.batchId
       ? { batchId: input.batchId }
-      : { uid: { in: input.uids } };
+      : { uid: { in: input.uids!.map(normalizeUid) } };
 
     const conflicting = await this.prisma.client.nfcChip.count({
       where: {

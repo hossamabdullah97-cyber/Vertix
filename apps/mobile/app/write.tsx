@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { Platform, StyleSheet, Text, View } from 'react-native';
-import { API_BASE, registerAndAssign } from '@/lib/api';
+import { registerAndAssign, tapUrl } from '@/lib/api';
 import { programTag } from '@/lib/nfc';
 import { Button } from '@/components/Button';
 import { colors } from '@/lib/theme';
@@ -22,7 +22,7 @@ export default function WriteScreen() {
     );
     try {
       // One tap: read the UID and write the gateway URL to the tag.
-      const uid = await programTag((u) => `${API_BASE}/t/${u}`);
+      const uid = await programTag(tapUrl);
       // Register the tag for the org and link it to this card.
       await registerAndAssign(uid, cardId);
       setStatus('done');

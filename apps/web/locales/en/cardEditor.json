@@ -401,13 +401,23 @@
     "waiting": "Waiting for a tag.",
     "writing": "Writing the link to the tag…",
     "linking": "Linking the tag to this card…",
-    "done": "Done. Tapping this tag now opens this card.",
+    "verifying": "Written and linked. Now lift the tag away and tap it once more, so the link on it can be checked.",
+    "locking": "Locking the tag…",
+    "tapAgain": "Tap the tag again…",
+    "skipCheck": "Skip check",
+    "lock": "Lock the tag after writing.",
+    "lockHint": "Nobody can then change or wipe the link on it, you included. This can't be undone.",
+    "done_verified": "Done and checked. Tapping this tag now opens this card.",
+    "done_locked": "Done, checked and locked. Tapping this tag now opens this card, and its link can't be changed.",
+    "done_unchecked": "Done. The tag is linked to this card, but it wasn't checked; tap it once to be sure it opens.",
     "unsupported": "Your browser cannot write NFC tags. This works in Chrome on Android; iPhone does not give NFC to any browser, so use the mobile app or a pre-encoded tag.",
     "insecure": "NFC writing needs a secure (HTTPS) connection. Open this page over HTTPS and try again.",
     "errors": {
       "read": "Could not read the tag. Move it away and try again.",
       "register": "The tag was written but could not be registered.",
-      "cancelled": "Cancelled."
+      "cancelled": "Cancelled.",
+      "otherTag": "That was a different tag. Program this one from the start, or tap the tag you just wrote.",
+      "verify": "The tag didn't keep the link. Hold it still and program it again, or try another tag."
     }
   },
   "templates": {

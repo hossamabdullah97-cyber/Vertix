@@ -3,6 +3,9 @@ import {
   checkoutSchema,
   registerSchema,
   createCardSchema,
+  createTagSchema,
+  createTagsBatchSchema,
+  normalizeUid,
   PLAN_LIMITS,
   Plan,
   isPaidPlan,
@@ -106,5 +109,24 @@ describe('checkoutSchema', () => {
     expect(checkoutSchema.safeParse({ plan: 'PRO' }).success).toBe(false);
     expect(checkoutSchema.safeParse({ plan: 'PRO', phone: 'call me' }).success).toBe(false);
     expect(checkoutSchema.safeParse({ plan: 'ENTERPRISE', phone: '+201001234567' }).success).toBe(false);
+  });
+});
+
+describe('normalizeUid', () => {
+  it('gives one spelling to a hex serial however it arrives', () => {
+    for (const raw of ['04:a1:b2:c3:d4:e5:f6', '04A1B2C3D4E5F6', '04-a1-b2-c3-d4-e5-f6', ' 04 A1 B2 C3 D4 E5 F6 ']) {
+      expect(normalizeUid(raw)).toBe('04:A1:B2:C3:D4:E5:F6');
+    }
+  });
+
+  it('only trims what is not a hex serial', () => {
+    expect(normalizeUid('  demo-tag-1 ')).toBe('demo-tag-1');
+    expect(normalizeUid('ABC')).toBe('ABC');
+    expect(normalizeUid('04A1B2C3D')).toBe('04A1B2C3D');
+  });
+
+  it('is applied by the tag schemas', () => {
+    expect(createTagSchema.parse({ uid: '04a1b2c3' }).uid).toBe('04:A1:B2:C3');
+    expect(createTagsBatchSchema.parse({ uids: ['04a1b2c3'] }).uids).toEqual(['04:A1:B2:C3']);
   });
 });
