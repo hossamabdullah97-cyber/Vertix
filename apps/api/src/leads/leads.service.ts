@@ -15,6 +15,7 @@ import { WebhookService } from '../integrations/webhook.service';
 import { availabilityOf, isOpen } from '../cards/availability';
 import { bookedMeetings } from '../cards/booked-meetings';
 import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
+import { LIVE_ORG } from '../common/live-org';
 
 /**
  * How many times an hour the public form may be sent: by one visitor to one
@@ -128,7 +129,7 @@ export class LeadsService {
     }
 
     const card = await this.db.card.findFirst({
-      where: { slug: input.slug, isPublished: true },
+      where: { slug: input.slug, isPublished: true, ...LIVE_ORG },
       select: { id: true, orgId: true, ownerId: true, theme: true, vcardData: true },
     });
     if (!card) throw new NotFoundException('Card not found');

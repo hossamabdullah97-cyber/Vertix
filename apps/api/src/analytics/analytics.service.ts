@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Prisma, type TenantContext } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { WebhookService } from '../integrations/webhook.service';
+import { LIVE_ORG } from '../common/live-org';
 
 const EVENT_TYPES = ['VIEW', 'CLICK', 'SAVE', 'SHARE', 'NFC_SCAN'] as const;
 
@@ -30,7 +31,7 @@ export class AnalyticsService {
   ): Promise<{ visitorId: string }> {
     const anonymousId = visitorId || randomUUID();
     const card = await this.db.card.findFirst({
-      where: { slug, isPublished: true },
+      where: { slug, isPublished: true, ...LIVE_ORG },
       select: { id: true, orgId: true },
     });
     if (!card) return { visitorId: anonymousId };

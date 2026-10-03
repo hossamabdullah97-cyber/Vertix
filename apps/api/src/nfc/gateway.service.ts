@@ -5,6 +5,7 @@ import { normalizeUid, type ActionType, type NfcResolution } from '@vertex/share
 import { PrismaService } from '../prisma/prisma.service';
 import { resolveActionTarget } from './action-resolver';
 import { WebhookService } from '../integrations/webhook.service';
+import { LIVE_ORG } from '../common/live-org';
 
 export interface ScanContext {
   visitorId?: string;
@@ -57,7 +58,7 @@ export class GatewayService {
     // --- Stage 1: Verification ---
     // A chip that is not ours, or that its owner turned off, gets a page
     // saying so rather than an error the visitor's browser shows as raw JSON.
-    const tag = await this.db.nfcTag.findFirst({ where: { uid } });
+    const tag = await this.db.nfcTag.findFirst({ where: { uid, ...LIVE_ORG } });
     if (!tag || tag.status === 'DISABLED') {
       const state = tag ? 'disabled' : 'unknown';
       return { tagUid: uid, cardSlug: '', action: null, redirectUrl: tapPage(state), visitorId: ctx.visitorId ?? '', state };
@@ -66,7 +67,7 @@ export class GatewayService {
     // --- Stage 2: Profile resolution ---
     const card = tag.cardId
       ? await this.db.card.findFirst({
-          where: { id: tag.cardId, isPublished: true },
+          where: { id: tag.cardId, isPublished: true, ...LIVE_ORG },
           select: {
             id: true,
             slug: true,

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 /** Where uploads live when no bucket is set up (development). Served at /uploads. */
@@ -20,6 +20,11 @@ const SIGNATURES: { type: string; ext: string; test: (b: Buffer) => boolean }[] 
 export function sniffImage(bytes: Buffer): { type: string; ext: string } | null {
   const hit = SIGNATURES.find((s) => bytes.length >= 12 && s.test(bytes));
   return hit ? { type: hit.type, ext: hit.ext } : null;
+}
+
+/** The stored file names ("<random>.<ext>") an upload address, or any text holding some, refers to. */
+export function uploadNamesIn(text: string): string[] {
+  return Array.from(new Set(Array.from(text.matchAll(/\/uploads\/([A-Za-z0-9-]+\.[a-z]+)/gi), (m) => m[1]!)));
 }
 
 export interface StoredFile {
@@ -126,5 +131,18 @@ export class StorageService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Removes a stored file by its name (see uploadNamesIn): from the bucket, and
+   * from the local folder, where files from before the bucket may still be.
+   * A file already gone counts as removed.
+   */
+  async deleteUpload(name: string): Promise<void> {
+    if (!/^[A-Za-z0-9-]+\.[a-z]+$/i.test(name)) return;
+    if (this.bucket) {
+      await this.bucket.client.send(new DeleteObjectCommand({ Bucket: this.bucket.bucket, Key: `uploads/${name}` }));
+    }
+    rmSync(join(UPLOAD_DIR, name), { force: true });
   }
 }
