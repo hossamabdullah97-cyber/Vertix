@@ -78,10 +78,11 @@ function makeService(d: Deps = {}) {
     create: jest.fn().mockResolvedValue('raw_token'),
     verify: jest.fn(),
     consume: jest.fn(),
+    revokePending: jest.fn(),
     ...d.tokens,
   } as unknown as TokensService;
 
-  const mail = { sendPasswordReset: jest.fn() } as unknown as MailService;
+  const mail = { sendPasswordReset: jest.fn(), sendEmailVerification: jest.fn().mockResolvedValue(true) } as unknown as MailService;
 
   const throttle = {
     blockedFor: jest.fn().mockResolvedValue(0),
@@ -753,6 +754,32 @@ describe('AuthService.google', () => {
     });
   });
 
+  it('drops a password set by someone who never proved the inbox', async () => {
+    const squatted = { id: 'u5', email: 'mona@example.com', googleId: null, emailVerified: null, passwordHash: 'h', avatarUrl: null, name: 'x', deletedAt: null };
+    const { service, prisma } = google({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? null : { isSuperAdmin: false })),
+        findFirst: jest.fn().mockResolvedValue(squatted),
+        update: jest.fn().mockResolvedValue({ ...squatted, googleId: 'g-1' }),
+      },
+    });
+    await service.google('cred'.repeat(10));
+    expect((prisma.client.user.update as jest.Mock).mock.calls[0][0].data).toMatchObject({ passwordHash: null, googleId: 'g-1' });
+  });
+
+  it('keeps the password of an account that had already confirmed its email', async () => {
+    const owned = { id: 'u6', email: 'mona@example.com', googleId: null, emailVerified: new Date(), passwordHash: 'h', avatarUrl: null, name: 'x', deletedAt: null };
+    const { service, prisma } = google({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.googleId ? null : { isSuperAdmin: false })),
+        findFirst: jest.fn().mockResolvedValue(owned),
+        update: jest.fn().mockResolvedValue({ ...owned, googleId: 'g-1' }),
+      },
+    });
+    await service.google('cred'.repeat(10));
+    expect((prisma.client.user.update as jest.Mock).mock.calls[0][0].data).not.toHaveProperty('passwordHash');
+  });
+
   it('creates an account and a workspace for someone new', async () => {
     const { service, prisma, signed } = google({
       user: {
@@ -811,5 +838,73 @@ describe('AuthService.google', () => {
       },
     });
     await expect(service.google('cred'.repeat(10))).rejects.toThrow(SUSPENDED_MESSAGE);
+  });
+});
+
+describe('AuthService email confirmation', () => {
+  it('mails a confirmation link on sign-up, without making the sign-up wait on it', async () => {
+    const create = jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co' });
+    const { service, tokens, mail } = makeService({ user: { create } });
+    await service.register({ email: 'a@b.co', password: PASSWORD, organizationName: 'Acme' });
+    expect(tokens.create).toHaveBeenCalledWith(expect.objectContaining({ type: 'EMAIL_VERIFY', userId: 'u1', email: 'a@b.co' }));
+    expect(mail.sendEmailVerification).toHaveBeenCalledWith('a@b.co', expect.stringContaining('/verify-email?token=raw_token'));
+  });
+
+  it('still signs up when the mail cannot be sent', async () => {
+    const create = jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co' });
+    const { service, mail } = makeService({ user: { create } });
+    (mail.sendEmailVerification as unknown as jest.Mock).mockRejectedValue(new Error('down'));
+    await expect(service.register({ email: 'a@b.co', password: PASSWORD, organizationName: 'Acme' })).resolves.toHaveProperty('accessToken');
+  });
+
+  it('confirms the address the link was sent to and burns the link', async () => {
+    const update = jest.fn().mockResolvedValue({});
+    const { service, tokens } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1', email: 'A@b.co', emailVerified: null }), update },
+    });
+    (tokens.verify as unknown as jest.Mock).mockResolvedValue({ id: 't1', userId: 'u1', email: 'a@b.co' });
+    await expect(service.verifyEmail('t')).resolves.toEqual({ ok: true, email: 'A@b.co' });
+    expect(tokens.verify).toHaveBeenCalledWith('EMAIL_VERIFY', 't');
+    expect(update).toHaveBeenCalledWith({ where: { id: 'u1' }, data: { emailVerified: expect.any(Date) } });
+    expect(tokens.consume).toHaveBeenCalledWith('t1');
+  });
+
+  it('refuses a link sent to an address the account no longer has', async () => {
+    const update = jest.fn();
+    const { service, tokens } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1', email: 'new@b.co', emailVerified: null }), update },
+    });
+    (tokens.verify as unknown as jest.Mock).mockResolvedValue({ id: 't1', userId: 'u1', email: 'old@b.co' });
+    await expect(service.verifyEmail('t')).rejects.toThrow('Invalid or expired link');
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('sends a new link on request, retiring the old one, within a limit', async () => {
+    const { service, tokens, mail, throttle } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue({ email: 'a@b.co', emailVerified: null }) },
+    });
+    await expect(service.resendVerification('u1')).resolves.toEqual({ ok: true, emailSent: true });
+    expect(tokens.revokePending).toHaveBeenCalledWith('EMAIL_VERIFY', 'u1');
+    expect(mail.sendEmailVerification).toHaveBeenCalled();
+    expect(throttle.hit).toHaveBeenCalledWith('verify:u1', expect.any(Number));
+
+    (throttle.blockedFor as jest.Mock).mockResolvedValue(60_000);
+    await expect(service.resendVerification('u1')).rejects.toThrow();
+  });
+
+  it('sends nothing to an account that is already confirmed', async () => {
+    const { service, mail } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue({ email: 'a@b.co', emailVerified: new Date() }) },
+    });
+    await expect(service.resendVerification('u1')).resolves.toEqual({ ok: true, alreadyVerified: true });
+    expect(mail.sendEmailVerification).not.toHaveBeenCalled();
+  });
+
+  it('counts a password reset as confirming the address', async () => {
+    const update = jest.fn().mockResolvedValue({});
+    const { service, tokens } = makeService({ user: { update, findUnique: jest.fn().mockResolvedValue({ emailVerified: null }) } });
+    (tokens.verify as unknown as jest.Mock).mockResolvedValue({ id: 't1', userId: 'u1' });
+    await service.resetPassword('t', 'BrandNewPass1!');
+    expect(update.mock.calls[0][0].data.emailVerified).toEqual(expect.any(Date));
   });
 });

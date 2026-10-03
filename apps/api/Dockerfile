@@ -19,5 +19,8 @@ WORKDIR /app
 # Copy the built workspace (includes the generated Prisma client + engine).
 COPY --from=build /app /app
 EXPOSE 4000
-# Apply pending migrations on boot, then start the server.
-CMD ["sh", "-c", "pnpm --filter @vertex/db migrate:deploy || true; node apps/api/dist/main.js"]
+# Apply pending migrations on boot, then start the server. A failed migration
+# stops the container instead of starting the API on a schema its code does
+# not match, where the failure would only show later as errors far from their
+# cause; compose restarts it, and the log says why.
+CMD ["sh", "-c", "pnpm --filter @vertex/db migrate:deploy && exec node apps/api/dist/main.js"]

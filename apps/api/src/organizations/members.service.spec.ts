@@ -33,6 +33,8 @@ function makeService(d: Deps = {}) {
   const prisma = {
     client: {
       user: {
+        // The inviter, confirmed (see verified-email.ts).
+        findUnique: jest.fn().mockResolvedValue({ emailVerified: new Date() }),
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({ id: 'u_new' }),
         update: jest.fn().mockResolvedValue({ id: 'u_pending' }),
@@ -132,6 +134,12 @@ describe('MembersService.invite — a brand-new address', () => {
 
 describe('MembersService.invite — an account that was never activated', () => {
   /** A placeholder left by an earlier invitation: a row, but no password. */
+  it('refuses to invite until the inviter has confirmed their email', async () => {
+    const { service, mail } = makeService({ user: { findUnique: jest.fn().mockResolvedValue({ emailVerified: null }) } });
+    await expect(service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' })).rejects.toThrow(/Confirm your email/);
+    expect(mail.sendInvite).not.toHaveBeenCalled();
+  });
+
   const pendingUser = { user: { findFirst: jest.fn().mockResolvedValue({ id: 'u_pending', passwordHash: null }) } };
 
   it('resends the invitation instead of reporting the member as already added', async () => {

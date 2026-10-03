@@ -161,6 +161,13 @@
     "product": "في هذه الصفحة",
     "account": "الحساب",
     "createAccount": "إنشاء حساب",
-    "rights": "© {{year}} Vertex Connect"
+    "rights": "© {{year}} Vertex Connect",
+    "legal": "قانوني",
+    "legalLinks": {
+      "privacy": "الخصوصية",
+      "terms": "الشروط",
+      "refunds": "الاسترداد",
+      "contact": "تواصل معنا"
+    }
   }
 }

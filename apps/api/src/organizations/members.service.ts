@@ -15,6 +15,7 @@ import { MailService } from '../mail/mail.service';
 import { AuditService } from './audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WebhookService } from '../integrations/webhook.service';
+import { assertEmailVerified } from '../auth/verified-email';
 
 @Injectable()
 export class MembersService {
@@ -58,6 +59,7 @@ export class MembersService {
    * chooses their own password. Re-inviting resends that link.
    */
   async invite(tenant: TenantContext, input: InviteMemberInput) {
+    await assertEmailVerified(this.prisma.client, tenant.userId);
     // Ownership can only be handed out by an owner — otherwise an ADMIN could
     // mint a second OWNER by invitation and escalate through it.
     if (input.role === 'OWNER' && tenant.role !== 'OWNER') {

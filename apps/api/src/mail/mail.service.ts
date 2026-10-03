@@ -134,6 +134,18 @@ export class MailService {
     });
   }
 
+  sendEmailVerification(to: string, link: string) {
+    return this.send({
+      to,
+      subject: 'Confirm your email for Vertex Connect',
+      html: this.layout(
+        'Confirm this is your email address to finish setting up your account. You can then invite your team and choose a plan. This link expires in 3 days.',
+        'Confirm email',
+        link,
+      ),
+    });
+  }
+
   sendAddedNotice(to: string, orgName: string) {
     return this.send({
       to,

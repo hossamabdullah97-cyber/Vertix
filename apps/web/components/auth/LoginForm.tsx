@@ -138,6 +138,20 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
           label={isLogin ? t('login.submit') : t('register.submit')}
           busyLabel={isLogin ? t('login.submitting') : t('register.submitting')}
         />
+        {!isLogin && (
+          <p className="text-xs leading-relaxed text-muted">
+            {t('register.agreePrefix')}{' '}
+            <Link href="/legal/terms" target="_blank" className="underline underline-offset-2 hover:text-ink">
+              {t('register.terms')}
+            </Link>{' '}
+            {/* "and the " in English, a joined "و" in Arabic: the space lives in the string. */}
+            {t('register.and')}
+            <Link href="/legal/privacy" target="_blank" className="underline underline-offset-2 hover:text-ink">
+              {t('register.privacy')}
+            </Link>
+            {t('register.agreeSuffix')}
+          </p>
+        )}
       </form>
 
       <p className="mt-8 border-t border-line pt-6 text-center text-sm text-muted">

@@ -465,6 +465,16 @@ export async function resetPassword(token: string, password: string) {
   await authPost('reset-password', { token, password });
 }
 
+/** Opens an email-confirmation link; the address it confirmed comes back. */
+export async function verifyEmail(token: string) {
+  return authPost<{ ok: true; email: string }>('verify-email', { token });
+}
+
+/** Mails the signed-in account a fresh confirmation link. */
+export async function resendVerification() {
+  return authFetch<{ ok: true; alreadyVerified?: true; emailSent?: boolean }>('/auth/verify-email/resend', { method: 'POST' });
+}
+
 export async function acceptInvite(token: string, password: string, name?: string) {
   const data = await authPost<AuthTokens>('accept-invite', { token, password, name: name?.trim() || undefined });
   saveTokens(data);
@@ -557,6 +567,8 @@ export interface Me {
   plan?: Plan;
   /** Earned by a paid plan — computed server-side, never self-declared. */
   verified?: boolean;
+  /** Whether the account has confirmed its email address (needed to invite or pay). */
+  emailVerified?: boolean;
 }
 
 export interface NfcTag {

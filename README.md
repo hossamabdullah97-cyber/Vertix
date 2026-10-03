@@ -91,11 +91,20 @@ pnpm dev                 # API: http://localhost:4000/api · Web: http://localho
 
 ## النشر الإنتاجي (Docker)
 ```bash
-# املأ الأسرار في البيئة أو .env (JWT_SECRET، JWT_REFRESH_SECRET على الأقل)
+cp .env.example .env   # واملأ القيم: قسم "Production" في آخر الملف + JWT_* + RESEND_API_KEY + Paymob + S3
 docker compose -f docker-compose.prod.yml up --build -d
-# postgres + redis + api(:4000) + web(:3000) — الـ migrations تُطبَّق تلقائياً عند الإقلاع
 ```
-> الـ Dockerfiles مكتوبة بنمط multi-stage للـ monorepo، ولم تُبنَ في بيئة التطوير هذه (Docker غير مثبّت) — تُبنى على خادم فيه Docker.
+- **Caddy** أمام البرنامج: HTTPS تلقائي للدومينات `APP_DOMAIN` و`API_DOMAIN` (و`TAP_DOMAIN` لو موجود). هو الوحيد المفتوح للخارج (80/443).
+- **الـ migrations** تُطبَّق عند تشغيل الـ API، ولو فشلت الـ API لا تبدأ (السبب في `docker compose logs api`).
+- **كل متغيرات `.env`** توصل للـ API (`env_file`).
+- **النسخ الاحتياطي**: خدمة `backup` تعمل نسخة عند التشغيل ثم كل 24 ساعة في volume `backups`، وتنسخها لـ `BACKUP_S3_BUCKET` لو مضبوط. للاسترجاع:
+  ```bash
+  docker compose -f docker-compose.prod.yml stop api
+  docker compose -f docker-compose.prod.yml exec backup ls /backups
+  docker compose -f docker-compose.prod.yml exec backup sh /scripts/restore.sh /backups/vertex-….dump
+  docker compose -f docker-compose.prod.yml start api
+  ```
+  جرّب الاسترجاع مرة على سيرفر تجريبي قبل الإطلاق: نسخة لم تُجرَّب لا يُعتمد عليها.
 
 ## الأوامر
 | الأمر | الوظيفة |

@@ -644,6 +644,7 @@ model Token {
 enum TokenType {
   INVITE
   PASSWORD_RESET
+  EMAIL_VERIFY
 }
 
 enum Plan {

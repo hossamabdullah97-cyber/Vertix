@@ -9,7 +9,7 @@ export function Footer() {
 
   return (
     <footer className="border-t border-line">
-      <div className={`${WRAP} grid grid-cols-2 gap-10 py-12 sm:grid-cols-[2fr_1fr_1fr]`}>
+      <div className={`${WRAP} grid grid-cols-2 gap-10 py-12 sm:grid-cols-[2fr_1fr_1fr_1fr]`}>
         <div className="col-span-2 sm:col-span-1">
           <Brand />
           <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>
@@ -39,6 +39,18 @@ export function Footer() {
                 {t('footer.createAccount')}
               </Link>
             </li>
+          </ul>
+        </nav>
+        <nav aria-label={t('footer.legal')}>
+          <p className="text-xs font-medium text-faint">{t('footer.legal')}</p>
+          <ul className="mt-2">
+            {(['privacy', 'terms', 'refunds', 'contact'] as const).map((k) => (
+              <li key={k}>
+                <Link href={`/legal/${k}`} className={link}>
+                  {t(`footer.legalLinks.${k}`)}
+                </Link>
+              </li>
+            ))}
           </ul>
         </nav>
       </div>
