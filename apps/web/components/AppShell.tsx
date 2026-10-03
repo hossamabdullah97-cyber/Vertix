@@ -20,6 +20,7 @@ import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
+import { VerifyEmailBanner } from '@/components/ui/VerifyEmailBanner';
 import { Shortcuts, SHOW_SHORTCUTS } from '@/components/ui/Shortcuts';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
@@ -953,6 +954,8 @@ export default function AppShell({
             </div>
           </header>
           </div>
+
+          <VerifyEmailBanner me={me} />
 
           {mobileTitle && (title || action) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">

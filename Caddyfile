@@ -1,0 +1,19 @@
+# HTTPS for the platform (docker-compose.prod.yml). Caddy obtains and renews
+# the certificates itself; the domains come from the environment.
+{
+	email {$ACME_EMAIL}
+}
+
+# The web app. TAP_DOMAIN, when set, is the short domain written on NFC chips
+# (NEXT_PUBLIC_TAP_URL); it is served by the same app, which answers /t/<serial>.
+{$APP_DOMAIN} {$TAP_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy web:3000
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	reverse_proxy api:4000
+}

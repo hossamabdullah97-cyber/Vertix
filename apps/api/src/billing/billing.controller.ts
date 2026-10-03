@@ -12,6 +12,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { OrgId } from '../auth/decorators/tenant.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertEmailVerified } from '../auth/verified-email';
 
 @Controller('billing')
 export class BillingController {
@@ -52,6 +53,7 @@ export class BillingController {
     @Body(new ZodValidationPipe(checkoutSchema)) body: CheckoutInput,
     @Req() req: Request,
   ) {
+    await assertEmailVerified(this.prisma.client, user.sub);
     const me = await this.prisma.client.user.findUnique({ where: { id: user.sub }, select: { name: true, email: true } });
     return this.billing.createCheckout(
       orgId,

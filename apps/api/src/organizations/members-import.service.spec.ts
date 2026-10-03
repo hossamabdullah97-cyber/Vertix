@@ -3,12 +3,13 @@ import { MembersImportService, slugOf } from './members-import.service';
 
 const tenant = { orgId: 'org1', userId: 'admin1', role: 'ADMIN' } as never;
 
-function setup(opts: { teams?: { id: string; name: string }[]; invite?: jest.Mock; cardOwners?: string[]; seats?: number; held?: string[] } = {}) {
+function setup(opts: { teams?: { id: string; name: string }[]; invite?: jest.Mock; cardOwners?: string[]; seats?: number; held?: string[]; unverified?: boolean } = {}) {
   const users = new Map<string, string>();
   const db = {
     organization: { findUnique: jest.fn(async () => ({ name: 'Vertex Build' })) },
     team: { findMany: jest.fn(async () => opts.teams ?? []) },
     user: {
+      findUnique: jest.fn(async () => ({ emailVerified: opts.unverified ? null : new Date() })),
       findFirst: jest.fn(async ({ where }: { where: { email: { equals: string } } }) => {
         const e = where.email.equals;
         if (!users.has(e)) users.set(e, `u-${users.size + 1}`);
@@ -54,6 +55,12 @@ describe('MembersImportService', () => {
     const teamIds = (members.invite.mock.calls as unknown as [unknown, { teamId?: string }][]).map((c) => c[1].teamId);
     expect(teamIds).toEqual(['t-sales', 't-sales', 't-new-1', 't-new-1']);
     expect(teams.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses the whole sheet until the importer has confirmed their email', async () => {
+    const { service, cards } = setup({ unverified: true });
+    await expect(service.importMany(tenant, { rows: [row()], createCards: true, lang: 'en' })).rejects.toThrow(/Confirm your email/);
+    expect(cards.create).not.toHaveBeenCalled();
   });
 
   it('gives each person a card filled in from the row, with ways to reach them', async () => {

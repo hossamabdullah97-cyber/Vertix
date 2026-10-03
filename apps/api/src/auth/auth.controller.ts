@@ -8,6 +8,8 @@ import {
   type GoogleSignInInput,
   forgotPasswordSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
+  type VerifyEmailInput,
   acceptInviteSchema,
   updateProfileSchema,
   type UpdateProfileInput,
@@ -96,6 +98,21 @@ export class AuthController {
     @Body(new ZodValidationPipe(resetPasswordSchema)) body: ResetPasswordInput,
   ) {
     return this.auth.resetPassword(body.token, body.password);
+  }
+
+  /** Opens an email-confirmation link (signed in or not: the link is the proof). */
+  @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
+  @Post('verify-email')
+  verifyEmail(@Body(new ZodValidationPipe(verifyEmailSchema)) body: VerifyEmailInput) {
+    return this.auth.verifyEmail(body.token);
+  }
+
+  /** Sends the signed-in account a new confirmation link. */
+  @Throttle(AUTH_PAGE_LIMIT)
+  @Post('verify-email/resend')
+  resendVerification(@CurrentUser() user: JwtPayload) {
+    return this.auth.resendVerification(user.sub);
   }
 
   /**

@@ -1328,14 +1328,10 @@ function ExchangeBody({ profile, t, preview, tagUid, vcardUrl }: { profile: Prof
         <Icon name="lock" size={13} className="mt-0.5 shrink-0" />
         <span>
           {fill(t.privacy, { name: profile.name })}
-          {profile.privacyUrl && (
-            <>
-              {' '}
-              <a href={profile.privacyUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" onClick={(e) => preview && e.preventDefault()}>
-                {t.privacyLink}
-              </a>
-            </>
-          )}
+          {/* The workspace's own policy when it has one, the platform's otherwise. */}{' '}
+          <a href={profile.privacyUrl || '/legal/privacy'} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2" onClick={(e) => preview && e.preventDefault()}>
+            {t.privacyLink}
+          </a>
         </span>
       </p>
 

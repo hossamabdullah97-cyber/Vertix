@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   ConflictException,
   Logger,
@@ -32,6 +33,10 @@ import {
   tooManyAttempts,
 } from './auth-throttle.service';
 import { GoogleIdTokenVerifier, GoogleTokenError } from './google-id-token';
+
+const VERIFY_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+const VERIFY_RESEND_LIMIT = 5;
+const VERIFY_RESEND_WINDOW_MS = 60 * 60 * 1000;
 
 function slugify(input: string): string {
   const base = input
@@ -86,6 +91,10 @@ export class AuthService {
       { email, name: input.name, passwordHash },
       input.organizationName,
     );
+    // The account is usable straight away; the link only has to be opened
+    // before inviting anyone or paying (see verified-email.ts). A mail
+    // failure must not fail the sign-up: the link can be sent again.
+    await this.sendVerification(user.id, user.email).catch(() => undefined);
 
     return this.issueTokens({
       sub: user.id,
@@ -200,6 +209,57 @@ export class AuthService {
     });
   }
 
+  /** Emails a fresh confirmation link; any earlier one stops working. */
+  private async sendVerification(userId: string, email: string): Promise<boolean> {
+    await this.tokens.revokePending('EMAIL_VERIFY', userId);
+    const token = await this.tokens.create({
+      type: 'EMAIL_VERIFY',
+      email,
+      userId,
+      ttlMs: VERIFY_TTL_MS,
+    });
+    const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
+    return this.mail.sendEmailVerification(email, `${appUrl}/verify-email?token=${token}`);
+  }
+
+  /** "Send the link again", from the notice in the app. A few times an hour. */
+  async resendVerification(userId: string): Promise<{ ok: true; alreadyVerified?: true; emailSent?: boolean }> {
+    const user = await this.prisma.client.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { email: true, emailVerified: true },
+    });
+    if (!user) throw new UnauthorizedException('Account not found');
+    if (user.emailVerified) return { ok: true, alreadyVerified: true };
+
+    const key = `verify:${userId}`;
+    const wait = await this.throttle.blockedFor(key, VERIFY_RESEND_LIMIT, VERIFY_RESEND_WINDOW_MS);
+    if (wait > 0) throw tooManyAttempts(wait);
+    await this.throttle.hit(key, VERIFY_RESEND_WINDOW_MS);
+
+    const emailSent = await this.sendVerification(userId, user.email);
+    return { ok: true, emailSent };
+  }
+
+  /**
+   * Opens a confirmation link. Works signed out too (the link may be opened
+   * on another device), since holding the link is the proof.
+   */
+  async verifyEmail(token: string): Promise<{ ok: true; email: string }> {
+    const rec = await this.tokens.verify('EMAIL_VERIFY', token);
+    const user = rec.userId
+      ? await this.prisma.client.user.findFirst({ where: { id: rec.userId, deletedAt: null }, select: { id: true, email: true, emailVerified: true } })
+      : null;
+    // The link proves the address it was sent to, nothing else.
+    if (!user || normalizeEmail(user.email) !== normalizeEmail(rec.email)) {
+      throw new BadRequestException('Invalid or expired link');
+    }
+    if (!user.emailVerified) {
+      await this.prisma.client.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } });
+    }
+    await this.tokens.consume(rec.id);
+    return { ok: true, email: user.email };
+  }
+
   /** Sends a password-reset link. Always succeeds (does not reveal account existence). */
   async forgotPassword(email: string): Promise<{ ok: true }> {
     // Counted per address asked for, whether or not it has an account.
@@ -229,9 +289,11 @@ export class AuthService {
     const rec = await this.tokens.verify('PASSWORD_RESET', token);
     if (!rec.userId) throw new UnauthorizedException('Invalid token');
     const passwordHash = await bcrypt.hash(password, 10);
+    // The link came to the inbox, so following it confirms the address too.
+    const user = await this.prisma.client.user.findUnique({ where: { id: rec.userId }, select: { emailVerified: true } });
     await this.prisma.client.user.update({
       where: { id: rec.userId },
-      data: { passwordHash },
+      data: { passwordHash, ...(user && !user.emailVerified ? { emailVerified: new Date() } : {}) },
     });
     await this.tokens.consume(rec.id);
     return { ok: true };
@@ -248,10 +310,12 @@ export class AuthService {
         avatarUrl: true,
         isSuperAdmin: true,
         createdAt: true,
+        emailVerified: true,
       },
     });
     if (!user) throw new UnauthorizedException('Account not found');
-    return user;
+    const { emailVerified, ...rest } = user;
+    return { ...rest, emailVerified: !!emailVerified };
   }
 
   /**
@@ -330,6 +394,11 @@ export class AuthService {
         user = await this.prisma.client.user.update({
           where: { id: user.id },
           data: {
+            // A password set by someone who never proved they own this inbox
+            // is dropped now that its real owner has: otherwise a person could
+            // sign up with another's address, wait for them to arrive through
+            // Google, and keep a way into the account they then fill.
+            ...(!user.emailVerified && user.passwordHash ? { passwordHash: null } : {}),
             googleId: who.sub,
             emailVerified: user.emailVerified ?? new Date(),
             avatarUrl: user.avatarUrl ?? who.picture,

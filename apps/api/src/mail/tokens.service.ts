@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
-type TokenType = 'INVITE' | 'PASSWORD_RESET';
+type TokenType = 'INVITE' | 'PASSWORD_RESET' | 'EMAIL_VERIFY';
 
 interface CreateArgs {
   type: TokenType;
@@ -19,7 +19,7 @@ function hash(raw: string): string {
 }
 
 /**
- * One-time tokens for invitations and password resets.
+ * One-time tokens for invitations, password resets and email confirmation.
  * The raw token is returned (to email); only its hash is stored.
  */
 @Injectable()

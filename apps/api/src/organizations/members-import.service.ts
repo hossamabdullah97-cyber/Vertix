@@ -7,6 +7,7 @@ import { TeamsService } from './teams.service';
 import { CardsService } from '../cards/cards.service';
 import { AuditService } from './audit.service';
 import { LimitsService } from '../billing/limits.service';
+import { assertEmailVerified } from '../auth/verified-email';
 
 export type ImportOutcome = 'invited' | 'added' | 'member' | 'duplicate' | 'failed';
 export type CardOutcome = 'created' | 'exists' | 'failed' | 'skipped';
@@ -57,6 +58,8 @@ export class MembersImportService {
   }
 
   async importMany(tenant: TenantContext, input: ImportMembersInput): Promise<{ results: ImportResult[] }> {
+    // Every row would be refused one by one otherwise (see MembersService.invite).
+    await assertEmailVerified(this.prisma.client, tenant.userId);
     const org = await this.db.organization.findUnique({ where: { id: tenant.orgId }, select: { name: true } });
 
     // Teams by name, ignoring case; the ones the sheet names but the org does
