@@ -45,10 +45,16 @@ interface NDEFScanOptions {
   signal?: AbortSignal;
 }
 
+interface NDEFMakeReadOnlyOptions {
+  signal?: AbortSignal;
+}
+
 declare class NDEFReader extends EventTarget {
   constructor();
   scan(options?: NDEFScanOptions): Promise<void>;
   write(message: string | BufferSource | NDEFMessageSource, options?: NDEFWriteOptions): Promise<void>;
+  /** Locks the tag for good (Chrome 100+); feature-detect before calling. */
+  makeReadOnly?(options?: NDEFMakeReadOnlyOptions): Promise<void>;
   onreading: ((this: NDEFReader, ev: NDEFReadingEvent) => unknown) | null;
   onreadingerror: ((this: NDEFReader, ev: Event) => unknown) | null;
   addEventListener(

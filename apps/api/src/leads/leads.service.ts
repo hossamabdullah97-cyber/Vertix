@@ -4,6 +4,7 @@ import { buildIcs, googleCalendarLink, type CalendarEvent } from './ics';
 import { meetingReplyEmail } from './meeting-mail';
 import { ConfigService } from '@nestjs/config';
 import type { AddLeadActivityInput, CreateLeadInput, LeadCaptureInput, MeetingResponseInput } from '@vertex/shared';
+import { normalizeUid } from '@vertex/shared';
 import type { Prisma, TenantContext } from '@vertex/db';
 import { CardScanError, CardScanner } from './card-scan';
 import { leadsVisibleTo } from './lead-visibility';
@@ -70,7 +71,7 @@ export class LeadsService {
         // Scoped to the card's own org, so a UID from elsewhere cannot be used
         // to credit another workspace's hardware.
         const byUid = await this.db.nfcTag.findFirst({
-          where: { uid: input.tagUid, orgId },
+          where: { uid: normalizeUid(input.tagUid), orgId },
           select: { id: true },
         });
         if (byUid) return byUid;

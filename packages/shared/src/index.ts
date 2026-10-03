@@ -305,8 +305,25 @@ export type UpdatePaymentLinkInput = z.infer<typeof updatePaymentLinkSchema>;
 //  NFC DTOs
 // ===========================================================================
 
+/**
+ * One spelling per chip. The same hardware serial arrives as "04:a1:b2…" from
+ * Web NFC, "04A1B2…" from the mobile app and in whatever case or separators an
+ * admin typed, and a chip registered one way would not be found the other.
+ * A hex serial becomes upper-case byte pairs joined by colons, as printed on
+ * the registry's chips; anything else (a supplier's own code) is only trimmed.
+ */
+export function normalizeUid(raw: string): string {
+  const value = raw.trim();
+  const hex = value.replace(/[\s:-]/g, '');
+  if (/^[0-9a-f]+$/i.test(hex) && hex.length >= 8 && hex.length % 2 === 0) {
+    return hex.toUpperCase().match(/../g)!.join(':');
+  }
+  return value;
+}
+const uidField = z.string().min(1).max(120).transform(normalizeUid);
+
 export const createTagSchema = z.object({
-  uid: z.string().min(1).max(120), // physical UID from the manufacturer
+  uid: uidField, // physical UID from the manufacturer
   hardwareType: HardwareType.optional(),
   batchId: z.string().max(120).optional(),
   /// The member the chip belongs to. Ignored for an employee, who is always
@@ -317,7 +334,7 @@ export type CreateTagInput = z.infer<typeof createTagSchema>;
 
 // Factory batch registration — the manufacturer provides the list of UIDs.
 export const createTagsBatchSchema = z.object({
-  uids: z.array(z.string().min(1).max(120)).min(1).max(1000),
+  uids: z.array(uidField).min(1).max(1000),
   hardwareType: HardwareType.optional(),
   batchId: z.string().max(120).optional(),
   assignedUserId: z.string().optional(),
@@ -572,6 +589,8 @@ export interface NfcResolution {
   action: { type: ActionType; target: string } | null;
   redirectUrl: string;
   visitorId: string;
+  /** ok: a card to open · unassigned: no card yet · disabled / unknown: not a working chip. */
+  state: 'ok' | 'unassigned' | 'disabled' | 'unknown';
 }
 
 // Departments

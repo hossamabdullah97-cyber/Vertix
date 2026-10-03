@@ -1,10 +1,13 @@
-import { Controller, Get, Param, Req, Res } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Req, Res } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { GatewayService, type ScanContext } from './gateway.service';
 import { Public } from '../auth/decorators/public.decorator';
 
-/** Public NFC gateway. The physical tag URL points here: /api/t/:uid */
+/**
+ * Public NFC gateway: /api/t/:uid. A chip carries either this URL or the web
+ * app's /t/:uid, which forwards here with the visitor's id (apps/web/app/t).
+ */
 @SkipThrottle()
 @Controller('t')
 export class GatewayController {
@@ -29,13 +32,22 @@ export class GatewayController {
     @Res() res: Response,
   ) {
     const result = await this.gateway.resolve(uid, this.buildContext(req));
+    // Every tap has to reach the gateway to be counted and to follow the
+    // chip if it is moved to another card, so no cache may keep the answer.
+    res.set('Cache-Control', 'no-store');
     res.redirect(302, result.redirectUrl);
   }
 
   /** JSON resolution — for native apps that render the result instead of redirecting. */
   @Public()
   @Get(':uid/resolve')
-  resolve(@Param('uid') uid: string, @Req() req: Request) {
-    return this.gateway.resolve(uid, this.buildContext(req));
+  async resolve(@Param('uid') uid: string, @Req() req: Request) {
+    const result = await this.gateway.resolve(uid, this.buildContext(req));
+    // An app renders its own message for these; the redirect sends a browser
+    // to the web's page instead.
+    if (result.state === 'unknown' || result.state === 'disabled') {
+      throw new NotFoundException('Unknown or disabled tag');
+    }
+    return result;
   }
 }
