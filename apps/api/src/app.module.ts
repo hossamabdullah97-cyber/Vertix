@@ -6,6 +6,7 @@ import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { AccountModule } from './account/account.module';
+import { GoalsModule } from './goals/goals.module';
 import { HealthModule } from './health/health.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { CardsModule } from './cards/cards.module';
@@ -44,6 +45,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter';
     MailModule,
     AuthModule,
     AccountModule,
+    GoalsModule,
     HealthModule,
     OrganizationsModule,
     CardsModule,

@@ -14,6 +14,7 @@ import { TrendChart } from '@/components/charts/TrendChart';
 import { OccasionsSheet } from '@/components/occasions/OccasionsSheet';
 import { countDuring, markersFor, occasionOn, type Occasion } from '@/lib/occasions';
 import AppShell from '@/components/AppShell';
+import { GoalsPanel } from '@/components/goals/GoalsPanel';
 import { setupSteps } from '@/lib/onboarding';
 import { CardThumb } from '@/components/cards/CardThumb';
 import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
@@ -785,6 +786,8 @@ export default function HomePage() {
 
         {recentLeadsPanel}
       </div>
+
+      <GoalsPanel />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <section className="v-card">

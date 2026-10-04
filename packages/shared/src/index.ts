@@ -829,3 +829,26 @@ export function duplicateGroups<T extends DuplicateCandidate>(leads: T[]): { lea
 // Merging duplicates into the lead that is kept.
 export const mergeLeadsSchema = z.object({ duplicateIds: z.array(z.string().min(1)).min(1).max(20) });
 export type MergeLeadsInput = z.infer<typeof mergeLeadsSchema>;
+
+// ===========================================================================
+//  Team goals
+// ===========================================================================
+
+export const GOAL_METRICS = ['LEADS', 'TAPS', 'MEETINGS', 'WON_DEALS', 'WON_VALUE'] as const;
+export type GoalMetric = (typeof GOAL_METRICS)[number];
+export const GOAL_PERIODS = ['WEEK', 'MONTH'] as const;
+export type GoalPeriod = (typeof GOAL_PERIODS)[number];
+export const GOAL_SCOPES = ['TEAM', 'EACH', 'MEMBER'] as const;
+export type GoalScope = (typeof GOAL_SCOPES)[number];
+
+// A target for the team's total, for each member alike, or for one member.
+export const setGoalSchema = z
+  .object({
+    metric: z.enum(GOAL_METRICS),
+    period: z.enum(GOAL_PERIODS),
+    scope: z.enum(GOAL_SCOPES),
+    userId: z.string().min(1).optional(),
+    target: z.number().int().min(1).max(1_000_000_000),
+  })
+  .refine((g) => (g.scope === 'MEMBER') === !!g.userId, { message: 'Choose the member this goal is for', path: ['userId'] });
+export type SetGoalInput = z.infer<typeof setGoalSchema>;
