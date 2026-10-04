@@ -14,6 +14,7 @@
     { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
+    { "name": "Met someone", "short_name": "Met someone", "url": "/meet?source=app", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Leads", "short_name": "Leads", "url": "/leads?source=app", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Cards", "short_name": "Cards", "url": "/cards?source=app", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]

@@ -26,7 +26,27 @@ const EMPTY: Fields = { name: '', title: '', company: '', email: '', phone: '', 
  * text, by Claude when the server has it turned on, else on the phone
  * itself. Nothing is saved until you press Save, and the photo never is.
  */
-export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: () => void; onAdded: (lead: Lead) => void }) {
+export function AddLead({
+  open,
+  onClose,
+  onAdded,
+  initialFile,
+  note,
+  inPerson,
+  quick,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAdded: (lead: Lead) => void;
+  /** A photo taken before the sheet opened (the "Met someone" screen's camera), read at once. */
+  initialFile?: File | null;
+  /** Starts the notes, as in "Met at Cairo ICT". */
+  note?: string;
+  /** Taken down face to face: typed details count as met in person, not added later by hand. */
+  inPerson?: boolean;
+  /** Just the few fields worth typing standing up, without the card scanner. */
+  quick?: boolean;
+}) {
   const { t } = useTranslation('crm');
   const camera = useRef<HTMLInputElement>(null);
   // Only the latest photo's answer counts; a slower one for an older photo is dropped.
@@ -42,12 +62,27 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [aiChecked, setAiChecked] = useState(false);
   useEffect(() => {
     if (!open) return;
     authFetch<{ available: boolean }>('/leads/scan')
       .then((r) => setAiReady(r.available))
-      .catch(() => setAiReady(false));
+      .catch(() => setAiReady(false))
+      .finally(() => setAiChecked(true));
   }, [open]);
+
+  // A photo handed in is read once whether the server can read cards is known.
+  const handled = useRef<File | null>(null);
+  useEffect(() => {
+    if (open && aiChecked && initialFile && handled.current !== initialFile) {
+      handled.current = initialFile;
+      void scan(initialFile);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, aiChecked, initialFile]);
+  useEffect(() => {
+    if (open && note && !initialFile) setFields((f) => (f.note ? f : { ...f, note }));
+  }, [open, note, initialFile]);
 
   function reset() {
     setPhoto((p) => {
@@ -55,7 +90,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
       return null;
     });
     setScanned(null);
-    setFields(EMPTY);
+    setFields(note ? { ...EMPTY, note } : EMPTY);
     setFromScan(false);
     setError(null);
     setReading(false);
@@ -82,7 +117,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
       website: c.website ?? '',
       address: c.address ?? '',
       // What had no field of its own is kept, so nothing on the card is lost.
-      note: [c.nameAlt, ...c.emails.slice(1), ...c.phones.slice(1)].filter(Boolean).join('\n'),
+      note: [note, c.nameAlt, ...c.emails.slice(1), ...c.phones.slice(1)].filter(Boolean).join('\n'),
     });
   }
 
@@ -153,7 +188,7 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
     setSaving(true);
     setError(null);
     try {
-      const body: Record<string, string> = { source: fromScan ? 'card_scan' : 'manual' };
+      const body: Record<string, string> = { source: fromScan ? 'card_scan' : inPerson ? 'in_person' : 'manual' };
       for (const [k, v] of Object.entries(fields)) if (v.trim()) body[k] = v.trim();
       const lead = await authFetch<Lead>('/leads', { method: 'POST', body: JSON.stringify(body) });
       onAdded(lead);
@@ -192,8 +227,8 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
   );
 
   return (
-    <Sheet open={open} onClose={close} closeLabel={t('drawer.close')} title={t('add.title')} subtitle={t('add.subtitleScan')} footer={footer}>
-      <div className="mb-5">
+    <Sheet open={open} onClose={close} closeLabel={t('drawer.close')} title={quick ? t('add.quickTitle') : t('add.title')} subtitle={quick ? undefined : t('add.subtitleScan')} footer={footer}>
+      <div className={quick ? 'hidden' : 'mb-5'}>
         <input ref={camera} type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { void scan(e.target.files?.[0]); e.target.value = ''; }} />
         {photo ? (
           <div className="relative overflow-hidden rounded-xl ring-1 ring-inset ring-line">
@@ -242,12 +277,22 @@ export function AddLead({ open, onClose, onAdded }: { open: boolean; onClose: ()
 
       <div className="grid gap-4 sm:grid-cols-2">
         {field('name', { wide: true })}
-        {field('title')}
-        {field('company')}
-        {field('email', { type: 'email', dir: 'ltr' })}
-        {field('phone', { type: 'tel', dir: 'ltr' })}
-        {field('website', { dir: 'ltr' })}
-        {field('address')}
+        {quick ? (
+          <>
+            {field('phone', { type: 'tel', dir: 'ltr' })}
+            {field('email', { type: 'email', dir: 'ltr' })}
+            {field('company', { wide: true })}
+          </>
+        ) : (
+          <>
+            {field('title')}
+            {field('company')}
+            {field('email', { type: 'email', dir: 'ltr' })}
+            {field('phone', { type: 'tel', dir: 'ltr' })}
+            {field('website', { dir: 'ltr' })}
+            {field('address')}
+          </>
+        )}
         <label className="block sm:col-span-2">
           <span className="mb-1.5 block text-xs font-medium text-ink">{t('add.fields.note')}</span>
           <textarea className="v-field min-h-20" value={fields.note} onChange={(e) => setFields((f) => ({ ...f, note: e.target.value }))} />
