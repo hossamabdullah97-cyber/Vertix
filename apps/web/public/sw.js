@@ -45,8 +45,17 @@ const forCard = (request) => {
   }
 };
 
+/**
+ * Keeps a response. The body is read in full first: a card page streams, and
+ * handing the cache a stream that is cut off (the signal drops mid-page) fails
+ * the write and can take the copy already kept with it.
+ */
 async function keep(request, response) {
   if (!response || !(response.ok || response.type === 'opaque')) return;
+  if (response.type !== 'opaque') {
+    const body = await response.blob();
+    response = new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+  }
   const cache = await caches.open(CARDS);
   await cache.put(request, response);
   const keys = await cache.keys();
@@ -62,7 +71,7 @@ async function fromKept(request) {
 async function networkFirst(event, fallback) {
   try {
     const response = await fetch(event.request);
-    event.waitUntil(keep(event.request, response.clone()));
+    event.waitUntil(keep(event.request, response.clone()).catch(() => undefined));
     return response;
   } catch (err) {
     const kept = await fromKept(event.request);
@@ -98,20 +107,27 @@ self.addEventListener('fetch', (event) => {
  * first visit the page arrived before this worker was running, so nothing
  * of it went through the fetch handler above.
  */
+/** Addresses being kept right now, so two pages asking at once fetch each once. */
+const keeping = new Set();
 self.addEventListener('message', (event) => {
   const data = event.data || {};
   if (data.type !== 'keep-card' || !Array.isArray(data.urls)) return;
   event.waitUntil(
     Promise.all(
       data.urls.slice(0, 80).map(async (u) => {
+        let mine;
         try {
           const url = new URL(u, self.location.origin);
           if (url.origin === self.location.origin && !(isCardPage(url) || isContactFile(url) || isBuildFile(url))) return;
-          if (await caches.match(url.href)) return;
-          const response = await fetch(url.href, url.origin === self.location.origin ? {} : { mode: 'no-cors' });
-          await keep(new Request(url.href), response);
+          const href = url.href;
+          if (keeping.has(href) || (await caches.match(href))) return;
+          keeping.add((mine = href));
+          const response = await fetch(href, url.origin === self.location.origin ? {} : { mode: 'no-cors' });
+          await keep(new Request(href), response);
         } catch {
           /* kept next time */
+        } finally {
+          if (mine) keeping.delete(mine);
         }
       }),
     ),
