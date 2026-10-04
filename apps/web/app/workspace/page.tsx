@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getActiveOrgId, getToken, uploadImage, type Me } from '@/lib/client';
+import { authFetch, getActiveOrgId, getToken, orgSecurity, uploadImage, type Me, type OrgSecurity } from '@/lib/client';
+import { Toggle } from '@/components/ui/Toggle';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate, formatNumber } from '@/lib/format';
 import { readableOn, shade } from '@/lib/color';
@@ -16,8 +17,8 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { ActionMenu } from '@/components/ui/ActionMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
-type Section = 'general' | 'brand' | 'files';
-const SECTIONS: Section[] = ['general', 'brand', 'files'];
+type Section = 'general' | 'brand' | 'files' | 'security';
+const SECTIONS: Section[] = ['general', 'brand', 'files', 'security'];
 const SWATCHES = ['#2563eb', '#1d4ed8', '#0ea5e9', '#0d9488', '#16a34a', '#ca8a04', '#ea580c', '#dc2626', '#db2777', '#7c3aed', '#475569', '#0a0a0a'];
 
 interface Org {
@@ -124,7 +125,7 @@ export default function WorkspaceSettingsPage() {
   return (
     <AppShell title={t('title')}>
       <nav role="tablist" aria-label={t('title')} className="no-scrollbar -mx-5 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
-        {SECTIONS.map((s) => {
+        {SECTIONS.filter((s) => s !== 'security' || canEdit).map((s) => {
           const active = section === s;
           return (
             <button
@@ -141,7 +142,7 @@ export default function WorkspaceSettingsPage() {
         })}
       </nav>
 
-      {!canEdit && me && section !== 'files' && <p className="mt-4 rounded-lg bg-elevated px-4 py-3 text-sm text-muted ring-1 ring-inset ring-line">{t('readOnly')}</p>}
+      {!canEdit && me && section !== 'files' && section !== 'security' && <p className="mt-4 rounded-lg bg-elevated px-4 py-3 text-sm text-muted ring-1 ring-inset ring-line">{t('readOnly')}</p>}
 
       {error && (
         <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
@@ -162,6 +163,8 @@ export default function WorkspaceSettingsPage() {
           <General org={org} canEdit={canEdit} onSave={save} />
         ) : section === 'brand' ? (
           <Brand org={org} canEdit={canEdit} onSave={save} />
+        ) : section === 'security' ? (
+          canEdit ? <Security me={me} onDone={flash} onError={setError} /> : null
         ) : (
           <Files canManage={canManageFiles} onDone={flash} onError={setError} />
         )}
@@ -290,6 +293,66 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
 }
 
 /** The privacy policy cards link to under their contact form. */
+/** Whether everyone here must sign in with two-step verification, and who still has not set it up. */
+function Security({ me, onDone, onError }: { me: Me | null; onDone: (m: string) => void; onError: (m: string) => void }) {
+  const { t } = useTranslation('organizations');
+  const [data, setData] = useState<OrgSecurity | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    orgSecurity.get().then(setData, (e) => onError((e as Error).message));
+  }, [onError]);
+
+  async function flip() {
+    if (!data) return;
+    setBusy(true);
+    try {
+      const next = await orgSecurity.set(!data.require2fa);
+      setData(next);
+      onDone(next.require2fa ? t('security.requiredOn') : t('security.requiredOff'));
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!data) return <div className="v-skeleton h-32 w-full rounded-xl" />;
+  const mineOff = !me?.twoFactorEnabled;
+  return (
+    <div>
+      <Row title={t('security.require')} hint={t('security.requireHint')}>
+        <div className="flex items-start gap-3">
+          <Toggle on={data.require2fa} onChange={flip} label={t('security.require')} disabled={busy || (!data.require2fa && mineOff)} />
+          <p className="text-sm leading-relaxed text-muted">{data.require2fa ? t('security.isOn') : t('security.isOff')}</p>
+        </div>
+        {!data.require2fa && mineOff && (
+          <p className="mt-3 text-sm text-muted">
+            {t('security.yoursFirst')}{' '}
+            <Link href="/account" className="font-medium text-accent hover:underline">
+              {t('security.yoursLink')}
+            </Link>
+          </p>
+        )}
+      </Row>
+      <Row title={t('security.without', { count: data.membersWithout.length })} hint={data.require2fa ? t('security.withoutHintOn') : t('security.withoutHintOff')}>
+        {data.membersWithout.length === 0 ? (
+          <p className="text-sm text-muted">{t('security.everyone')}</p>
+        ) : (
+          <ul className="divide-y divide-line rounded-lg ring-1 ring-inset ring-line">
+            {data.membersWithout.slice(0, 50).map((m) => (
+              <li key={m.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <span className="min-w-0 truncate text-ink">{m.name || m.email}</span>
+                {m.name && <span className="hidden min-w-0 truncate text-xs text-faint sm:block">{m.email}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Row>
+    </div>
+  );
+}
+
 function PrivacyLink({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave: SaveFn }) {
   const { t } = useTranslation('organizations');
   const stored = typeof org.settings?.privacyUrl === 'string' ? (org.settings.privacyUrl as string) : '';

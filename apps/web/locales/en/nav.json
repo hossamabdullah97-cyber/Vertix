@@ -68,7 +68,8 @@
     "theme": "Appearance",
     "light": "Light",
     "dark": "Dark",
-    "system": "Auto"
+    "system": "Auto",
+    "security": "Account & security"
   },
   "roles": {
     "OWNER": "Owner",
@@ -95,5 +96,9 @@
     "newCard": "New card",
     "invite": "Invite people",
     "addChips": "Add chips"
+  },
+  "twoStepGate": {
+    "title": "{{org}} requires two-step verification",
+    "body": "Your workspace asks everyone to sign in with a code from their phone as well as a password. Turn it on below to carry on; it takes a minute."
   }
 }

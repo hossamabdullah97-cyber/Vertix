@@ -5,6 +5,8 @@ import {
   loginSchema,
   refreshSchema,
   googleSignInSchema,
+  mfaLoginSchema,
+  type MfaLoginInput,
   type GoogleSignInInput,
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -25,6 +27,7 @@ import { AuthService } from './auth.service';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { TwoStepExempt } from './decorators/two-step-exempt.decorator';
 import { OrgId } from './decorators/tenant.decorator';
 
 /**
@@ -33,6 +36,7 @@ import { OrgId } from './decorators/tenant.decorator';
  */
 const AUTH_PAGE_LIMIT = { default: { limit: 20, ttl: 60_000 } };
 
+@TwoStepExempt()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
@@ -50,6 +54,14 @@ export class AuthController {
   @Post('login')
   login(@Body(new ZodValidationPipe(loginSchema)) body: LoginInput, @Ip() ip: string) {
     return this.auth.login(body, ip);
+  }
+
+  /** The code screen of a sign-in with two-step verification. */
+  @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
+  @Post('login/2fa')
+  loginTwoStep(@Body(new ZodValidationPipe(mfaLoginSchema)) body: MfaLoginInput) {
+    return this.auth.completeTwoStep(body.mfaToken, body.code);
   }
 
   /** Which sign-in methods the page should offer. */
@@ -123,11 +135,12 @@ export class AuthController {
    */
   @Get('me')
   async me(@CurrentUser() user: JwtPayload, @OrgId() activeOrgId?: string) {
-    const [profile, badge] = await Promise.all([
+    const [profile, badge, twoFactorRequired] = await Promise.all([
       this.auth.getProfile(user.sub),
       this.auth.getPlanBadge(activeOrgId),
+      this.auth.workspaceRequiresTwoStep(activeOrgId),
     ]);
-    return { ...user, ...profile, ...badge, sub: user.sub };
+    return { ...user, ...profile, ...badge, twoFactorRequired, sub: user.sub };
   }
 
   /** Returns the same shape as GET /me so callers can swap their copy wholesale. */

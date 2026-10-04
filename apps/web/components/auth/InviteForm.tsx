@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { acceptInvite } from '@/lib/client';
+import { acceptInvite, type TwoStepChallenge } from '@/lib/client';
+import { TwoStepForm } from './TwoStepForm';
 import { AuthShell } from './AuthShell';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText } from './fields';
 import { problemOf, useChecks } from '@/lib/validate';
@@ -15,6 +16,7 @@ export function InviteForm({ token }: { token: string }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<{ text: string; link: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [challenge, setChallenge] = useState<TwoStepChallenge | null>(null);
   const checks = useChecks({ password: problemOf(password, { required: true, min: 8 }) });
   const pwError = checks.shown('password') ? t(`common:validation.${checks.shown('password')}`, { min: 8 }) : null;
 
@@ -24,13 +26,23 @@ export function InviteForm({ token }: { token: string }) {
     if (!checks.check()) return;
     setBusy(true);
     try {
-      await acceptInvite(token, password, name);
+      const pending = await acceptInvite(token, password, name);
+      if (pending) {
+        setChallenge(pending);
+        setBusy(false);
+        return;
+      }
       window.location.href = '/dashboard';
     } catch (err) {
       const text = authErrorText(err, t, 'link', locale);
       setError({ text, link: text === t('errors.linkInvalid') });
       setBusy(false);
     }
+  }
+
+  // The password is already set; a cancelled code screen leads to the sign-in page.
+  if (challenge) {
+    return <TwoStepForm mfaToken={challenge.mfaToken} onDone={() => (window.location.href = '/dashboard')} onCancel={() => (window.location.href = '/login')} />;
   }
 
   if (!token) {

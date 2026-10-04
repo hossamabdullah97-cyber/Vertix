@@ -5,7 +5,8 @@
   "sections": {
     "general": "General",
     "brand": "Brand",
-    "files": "Files"
+    "files": "Files",
+    "security": "Security"
   },
   "save": "Save",
   "saving": "Saving…",
@@ -67,5 +68,20 @@
     "uploaded": "File uploaded.",
     "linkCopied": "Link copied.",
     "deleted": "File deleted."
+  },
+  "security": {
+    "require": "Require two-step verification",
+    "requireHint": "Everyone in this workspace signs in with a code from their phone as well as a password.",
+    "isOn": "Required. Members without it are asked to set it up before they can use this workspace.",
+    "isOff": "Optional. Each person decides for their own account.",
+    "yoursFirst": "Turn it on for your own account first, so you can't lock yourself out.",
+    "yoursLink": "Set it up",
+    "requiredOn": "Two-step verification is now required",
+    "requiredOff": "Two-step verification is now optional",
+    "without_one": "{{count}} member without it",
+    "without_other": "{{count}} members without it",
+    "withoutHintOn": "They'll be asked to set it up the next time they open the workspace.",
+    "withoutHintOff": "If you require it, these people will be asked to set it up.",
+    "everyone": "Everyone here uses two-step verification."
   }
 }

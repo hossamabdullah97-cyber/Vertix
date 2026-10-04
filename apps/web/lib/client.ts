@@ -412,13 +412,30 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export async function login(email: string, password: string) {
-  const data = await authPost<AuthTokens>('login', { email: email.trim(), password });
+/** A right password on an account with two-step verification: the code screen comes next. */
+export interface TwoStepChallenge {
+  mfaRequired: true;
+  mfaToken: string;
+}
+
+/** The session, or the challenge the code screen answers (completeTwoStep). */
+function startSession(data: AuthTokens | TwoStepChallenge): TwoStepChallenge | null {
+  if ('mfaRequired' in data) return data;
   saveTokens(data);
   // A stale x-organization-id from whoever was signed in before this account
   // would otherwise override the org this JWT actually belongs to.
   setActiveOrgId(null);
-  return data;
+  return null;
+}
+
+/** Signs in; returns the two-step challenge when a code is still needed. */
+export async function login(email: string, password: string) {
+  return startSession(await authPost<AuthTokens | TwoStepChallenge>('login', { email: email.trim(), password }));
+}
+
+/** The second step of a sign-in: the code from the authenticator app, or a recovery code. */
+export async function completeTwoStep(mfaToken: string, code: string) {
+  startSession(await authPost<AuthTokens>('login/2fa', { mfaToken, code: code.trim() }));
 }
 
 export async function register(input: {
@@ -440,10 +457,7 @@ export async function register(input: {
 
 /** Signs in (or up) with the ID token "Sign in with Google" gave the page. */
 export async function googleSignIn(credential: string) {
-  const data = await authPost<AuthTokens>('google', { credential });
-  saveTokens(data);
-  setActiveOrgId(null);
-  return data;
+  return startSession(await authPost<AuthTokens | TwoStepChallenge>('google', { credential }));
 }
 
 /** The sign-in methods the server offers besides email and password. */
@@ -476,11 +490,31 @@ export async function resendVerification() {
 }
 
 export async function acceptInvite(token: string, password: string, name?: string) {
-  const data = await authPost<AuthTokens>('accept-invite', { token, password, name: name?.trim() || undefined });
-  saveTokens(data);
-  setActiveOrgId(null);
-  return data;
+  return startSession(await authPost<AuthTokens | TwoStepChallenge>('accept-invite', { token, password, name: name?.trim() || undefined }));
 }
+
+// --- Two-step verification (the signed-in person's own) ---
+export interface TwoStepStatus {
+  enabled: boolean;
+  enabledAt: string | null;
+  recoveryCodesLeft: number;
+}
+export const twoStep = {
+  status: () => authFetch<TwoStepStatus>('/auth/2fa'),
+  setup: () => authFetch<{ secret: string; otpauthUrl: string }>('/auth/2fa/setup', { method: 'POST' }),
+  enable: (code: string) => authFetch<{ recoveryCodes: string[] }>('/auth/2fa/enable', { method: 'POST', body: JSON.stringify({ code: code.trim() }) }),
+  disable: (code: string) => authFetch<{ ok: true }>('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ code: code.trim() }) }),
+  recoveryCodes: (code: string) => authFetch<{ recoveryCodes: string[] }>('/auth/2fa/recovery-codes', { method: 'POST', body: JSON.stringify({ code: code.trim() }) }),
+};
+
+export interface OrgSecurity {
+  require2fa: boolean;
+  membersWithout: { id: string; name: string | null; email: string; role: Role }[];
+}
+export const orgSecurity = {
+  get: () => authFetch<OrgSecurity>('/orgs/security'),
+  set: (require2fa: boolean) => authFetch<OrgSecurity>('/orgs/security', { method: 'PATCH', body: JSON.stringify({ require2fa }) }),
+};
 
 // --- Resource types ---
 export interface Card {
@@ -569,6 +603,10 @@ export interface Me {
   verified?: boolean;
   /** Whether the account has confirmed its email address (needed to invite or pay). */
   emailVerified?: boolean;
+  /** Whether the account signs in with a code from an authenticator app too. */
+  twoFactorEnabled?: boolean;
+  /** Whether the active workspace requires that of its members. */
+  twoFactorRequired?: boolean;
 }
 
 export interface NfcTag {

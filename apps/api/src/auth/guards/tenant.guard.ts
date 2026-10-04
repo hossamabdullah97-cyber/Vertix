@@ -9,6 +9,14 @@ import type { JwtPayload } from '@vertex/shared';
 import { ADMIN_ORG } from '@vertex/db';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PLATFORM_SCOPE_KEY } from '../decorators/platform-scope.decorator';
+import { TWO_STEP_EXEMPT_KEY } from '../decorators/two-step-exempt.decorator';
+
+export const TWO_STEP_REQUIRED_MESSAGE = 'Two-step verification is required in this workspace';
+
+/** Whether a workspace's settings require its members to use two-step verification. */
+export function requiresTwoStep(settings: unknown): boolean {
+  return !!settings && typeof settings === 'object' && (settings as Record<string, unknown>).require2fa === true;
+}
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -97,8 +105,10 @@ export class TenantGuard implements CanActivate {
           select: {
             isActive: true,
             deletedAt: true,
+            settings: true,
           },
         },
+        user: { select: { totpEnabledAt: true } },
       },
     });
     if (!membership) {
@@ -106,6 +116,13 @@ export class TenantGuard implements CanActivate {
     }
     if (!membership.org.isActive || membership.org.deletedAt) {
       throw new ForbiddenException('This organization is currently suspended or deleted');
+    }
+    // A workspace that requires two-step verification is closed to a member
+    // signed in without it, except for setting it up. Keys and personal
+    // tokens are not sign-ins and are not held to it.
+    if (!apiAuth && !membership.user.totpEnabledAt && requiresTwoStep(membership.org.settings)) {
+      const exempt = this.reflector.getAllAndOverride<boolean>(TWO_STEP_EXEMPT_KEY, [context.getHandler(), context.getClass()]);
+      if (!exempt) throw new ForbiddenException({ statusCode: 403, message: TWO_STEP_REQUIRED_MESSAGE, code: 'TWO_STEP_REQUIRED' });
     }
 
     req.tenant = { orgId, userId: user.sub, role: membership.role };

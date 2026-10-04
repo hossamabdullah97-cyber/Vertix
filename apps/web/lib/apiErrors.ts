@@ -35,6 +35,13 @@ export const AR_MESSAGES: Record<string, string> = {
   'Confirm your email address first: open the link we sent you, or send a new one from the notice at the top of the app.':
     'أكّد بريدك الإلكتروني أولاً: افتح الرابط الذي أرسلناه إليك، أو أرسل رابطاً جديداً من التنبيه أعلى التطبيق.',
   'Password must be at least 8 characters': 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل',
+  'That code is not right': 'الكود غير صحيح',
+  'This sign-in has expired. Start again.': 'انتهت مهلة تسجيل الدخول. ابدأ من جديد.',
+  'Two-step verification is not on for this account': 'التحقق بخطوتين غير مُفعّل لهذا الحساب',
+  'Two-step verification is already on': 'التحقق بخطوتين مُفعّل بالفعل',
+  'Start the setup again': 'ابدأ الإعداد من جديد',
+  'Two-step verification is required in this workspace': 'مساحة العمل هذه تتطلب التحقق بخطوتين',
+  'Turn on two-step verification for your own account first': 'فعّل التحقق بخطوتين لحسابك أولاً',
 
   // Workspaces, members and permissions
   'An active organization is required': 'اختر مساحة عمل أولاً',
@@ -178,6 +185,7 @@ export const AR_PATTERNS: [RegExp, (...m: string[]) => string][] = [
   [/^(\S+) is not a supported CRM connector\.$/, (p) => `${p} ليس من أنظمة CRM المدعومة.`],
   [/^(\d+) of these chips are already claimed by a workspace and cannot be reallocated\.$/, (n) => `${n} من هذه الشرائح مسجلة بالفعل لمساحة عمل ولا يمكن إعادة تخصيصها.`],
   [/^Cannot delete this tag: it has (\d+) recorded scan\(s\)\./, (n) => `لا يمكن حذف هذه الشريحة: لها ${n} عملية مسح مسجلة. عطّلها بدلاً من ذلك — يوقفها ذلك مع الاحتفاظ بسجلها.`],
+  [/^(.+) requires two-step verification, so it cannot be turned off$/, (o) => `مساحة العمل ${o} تتطلب التحقق بخطوتين، لذلك لا يمكن إيقافه`],
   [/^Feature flag (.+) not found$/, (f) => `الخاصية ${f} غير موجودة`],
   [/^Status must be one of: (.+)$/, (s) => `يجب أن تكون الحالة إحدى القيم: ${s}`],
   [/^The (\S+) plan is not on sale$/, (p) => `باقة ${p} غير متاحة للشراء`],

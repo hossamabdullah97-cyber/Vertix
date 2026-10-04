@@ -38,6 +38,15 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // Soft delete
   isSuperAdmin  Boolean   @default(false)
+  /// Two-step verification (TOTP, as in Google Authenticator). The secret is
+  /// stored encrypted (auth/secret-box.ts); the pending one waits for its
+  /// first code. The last time step used stops a code being replayed, and
+  /// the recovery codes are kept only as hashes, each good once.
+  totpSecret        String?
+  totpPendingSecret String?
+  totpEnabledAt     DateTime?
+  totpLastStep      Int?
+  totpRecoveryCodes String[]  @default([])
 
   memberships   Membership[]
   ownedCards    Card[]       @relation("CardOwner")

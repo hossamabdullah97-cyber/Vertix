@@ -1,7 +1,33 @@
 {
-  "title": "Account & Workspace Settings",
-  "subtitle": "Manage profile details, security preferences, language, and organization settings.",
-  "saveChanges": "Save Changes",
-  "language": "Language",
-  "theme": "Color Theme"
+  "title": "Account",
+  "subtitle": "How you sign in. These settings are yours and follow you into every workspace you belong to.",
+  "twoStep": {
+    "title": "Two-step verification",
+    "body": "After your password, sign-in also asks for a code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator, 1Password…). Someone who learns your password still can't get in.",
+    "on": "On",
+    "off": "Off",
+    "since": "On since {{date}}",
+    "codesLeft_one": "{{count}} recovery code left",
+    "codesLeft_other": "{{count}} recovery codes left",
+    "enable": "Turn on",
+    "disable": "Turn off",
+    "regenerate": "New recovery codes",
+    "scan1": "Open your authenticator app and add an account.",
+    "scan2": "Scan this QR code with it.",
+    "scan3": "Type the 6-digit code the app shows.",
+    "manual": "Can't scan? Enter this key in the app instead:",
+    "codeLabel": "Code",
+    "confirm": "Confirm",
+    "checking": "Checking…",
+    "cancel": "Cancel",
+    "codesTitle": "Save your recovery codes",
+    "codesBody": "If you lose your phone, each of these lets you sign in once. Keep them somewhere safe, like a password manager. They won't be shown again.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "download": "Download",
+    "saved": "I've saved them",
+    "fileHeading": "Vertex Connect recovery codes. Each works once.",
+    "confirmDisable": "Enter a code from your app, or a recovery code, to turn two-step verification off.",
+    "confirmRegenerate": "Enter a code from your app to get new recovery codes. The old ones stop working."
+  }
 }

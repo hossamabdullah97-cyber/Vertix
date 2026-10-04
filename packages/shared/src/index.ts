@@ -113,6 +113,15 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+// Two-step verification: the 6-digit code from the authenticator app, or a
+// recovery code ("k7f2-9xqa").
+export const twoFactorCodeSchema = z.object({ code: z.string().trim().min(6).max(20) });
+export type TwoFactorCodeInput = z.infer<typeof twoFactorCodeSchema>;
+
+// The second step of a sign-in: the challenge the first step gave, and a code.
+export const mfaLoginSchema = twoFactorCodeSchema.extend({ mfaToken: z.string().min(20).max(2048) });
+export type MfaLoginInput = z.infer<typeof mfaLoginSchema>;
+
 // The ID token "Sign in with Google" gives the page.
 export const googleSignInSchema = z.object({ credential: z.string().min(20).max(4096) });
 export type GoogleSignInInput = z.infer<typeof googleSignInSchema>;
@@ -168,6 +177,14 @@ export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
+
+/** A right password (or Google) on an account with two-step verification: a code is still needed. */
+export interface MfaChallenge {
+  mfaRequired: true;
+  mfaToken: string;
+}
+
+export type SignInResult = AuthTokens | MfaChallenge;
 
 // ===========================================================================
 //  Cards DTOs
@@ -439,6 +456,10 @@ export const updateOrgSchema = z.object({
   settings: z.record(z.unknown()).nullable().optional(),
 });
 export type UpdateOrgInput = z.infer<typeof updateOrgSchema>;
+
+// Whether the workspace requires its members to use two-step verification.
+export const orgSecuritySchema = z.object({ require2fa: z.boolean() });
+export type OrgSecurityInput = z.infer<typeof orgSecuritySchema>;
 
 // Shared media asset (metadata for a file uploaded via /uploads).
 export const createAssetSchema = z.object({

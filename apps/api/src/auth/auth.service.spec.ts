@@ -4,6 +4,7 @@ import { AuthService, SUSPENDED_MESSAGE } from './auth.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { TokensService } from '../mail/tokens.service';
 import type { MailService } from '../mail/mail.service';
+import type { AuthTokens } from '@vertex/shared';
 
 /**
  * The credential boundary. These assert the deny paths as hard as the allow
@@ -23,6 +24,7 @@ type Deps = {
   membership?: Partial<Record<string, jest.Mock>>;
   organization?: Partial<Record<string, jest.Mock>>;
   tokens?: Partial<Record<string, jest.Mock>>;
+  twoFactor?: Partial<Record<string, jest.Mock>>;
   signed?: Record<string, unknown>[];
 };
 
@@ -91,6 +93,8 @@ function makeService(d: Deps = {}) {
     ...d.throttle,
   };
 
+  const twoFactor = { challenge: jest.fn(async (sub: string) => ({ mfaRequired: true, mfaToken: `mfa_${sub}` })), ...d.twoFactor };
+
   const service = new AuthService(
     prisma,
     jwt as never,
@@ -98,6 +102,7 @@ function makeService(d: Deps = {}) {
     tokens,
     mail,
     throttle as never,
+    twoFactor as never,
   );
   return { service, prisma, jwt, tokens, mail, signed, throttle };
 }
@@ -107,6 +112,16 @@ const access = (signed: Record<string, unknown>[]) => signed[0];
 const refreshClaims = (signed: Record<string, unknown>[]) => signed[1];
 
 describe('AuthService.login', () => {
+  it('asks for a code, and issues no session, when the account has two-step verification', async () => {
+    const { service, signed } = makeService({
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co', passwordHash: HASH, totpEnabledAt: new Date() }) },
+      membership: { findFirst: jest.fn().mockResolvedValue({ orgId: 'org_acme', role: 'MANAGER' }) },
+    });
+    const out = await service.login({ email: 'a@b.co', password: PASSWORD });
+    expect(out).toEqual({ mfaRequired: true, mfaToken: 'mfa_u1' });
+    expect(signed).toHaveLength(0);
+  });
+
   it('issues tokens for correct credentials', async () => {
     const { service, signed } = makeService({
       user: {
@@ -120,7 +135,7 @@ describe('AuthService.login', () => {
         findFirst: jest.fn().mockResolvedValue({ orgId: 'org_acme', role: 'MANAGER' }),
       },
     });
-    const out = await service.login({ email: 'a@b.co', password: PASSWORD });
+    const out = (await service.login({ email: 'a@b.co', password: PASSWORD })) as AuthTokens;
     expect(out.accessToken).toBeTruthy();
     expect(out.refreshToken).toBeTruthy();
     expect(access(signed)).toMatchObject({
