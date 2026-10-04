@@ -38,7 +38,7 @@ export function ActivitiesTimeline({
       list.push({
         id: `create-${l.id}`,
         type: 'SCAN',
-        metadata: { note: `${t('activity.capturedVia', { source: sourceMeta(l.source).label })}${valuePart}` },
+        metadata: { note: `${t('activity.capturedVia', { source: t(`sources.${l.source}`, sourceMeta(l.source).label) })}${valuePart}` },
         createdAt: l.createdAt,
         leadId: l.id,
         leadName: l.name || t('table.unknownLead'),
