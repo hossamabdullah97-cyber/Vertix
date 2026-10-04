@@ -42,3 +42,7 @@ apps/api/uploads/
 
 # Card-reading files, copied from node_modules by scripts/copy-ocr.mjs
 apps/web/public/ocr/
+
+# browser tests
+apps/e2e/playwright-report/
+apps/e2e/test-results/

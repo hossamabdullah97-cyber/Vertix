@@ -91,10 +91,22 @@ export class CardsService {
       }
     }
 
-    // Auto slug: derive from the name (or "card") and retry with a suffix on collision.
+    // Auto slug: derive from the name (or "card"), skipping the links already
+    // taken (in any workspace, deleted cards too, hence the raw read), and
+    // retry with a suffix only if someone takes it in the meantime. Picking a
+    // free one first keeps a common name from logging a failed insert.
     const base = slugFromName(input.fullName ?? '') || 'card';
+    const taken = new Set(
+      (await this.db.$queryRaw<{ slug: string }[]>`SELECT slug FROM cards WHERE slug = ${base} OR slug LIKE ${`${base}-%`}`).map((r) => r.slug),
+    );
+    const fresh = () => {
+      for (;;) {
+        const s = `${base}-${this.randomToken(4)}`;
+        if (!taken.has(s)) return s;
+      }
+    };
     for (let attempt = 0; attempt < 8; attempt++) {
-      const candidate = attempt === 0 ? base : `${base}-${this.randomToken(4)}`;
+      const candidate = attempt === 0 && !taken.has(base) ? base : fresh();
       try {
         return await createGuarded(candidate);
       } catch (err) {

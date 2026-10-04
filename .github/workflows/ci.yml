@@ -39,3 +39,74 @@ jobs:
           DATABASE_URL: postgresql://vertex:vertex@localhost:5432/vertex_connect?schema=public
           JWT_SECRET: ci-access-secret-placeholder
           JWT_REFRESH_SECRET: ci-refresh-secret-placeholder
+
+  # The whole product in a browser: a real Postgres, the API and the web app
+  # from their production builds, driven by Playwright (apps/e2e). A failing
+  # run keeps its report, screenshots and traces as an artifact.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vertex
+          POSTGRES_PASSWORD: vertex
+          POSTGRES_DB: vertex_connect
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vertex"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://vertex:vertex@localhost:5432/vertex_connect?schema=public
+      JWT_SECRET: ci-e2e-access-secret-placeholder
+      JWT_REFRESH_SECRET: ci-e2e-refresh-secret-placeholder
+      APP_PUBLIC_URL: http://localhost:3000
+      API_PUBLIC_URL: http://localhost:4000
+      CORS_ORIGINS: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Apply migrations
+        run: pnpm --filter @vertex/db migrate:deploy
+
+      - name: Build
+        run: pnpm build
+
+      - name: Cache the browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install the browser
+        run: pnpm --filter @vertex/e2e exec playwright install --with-deps chromium
+
+      - name: Run the browser tests
+        run: pnpm --filter @vertex/e2e e2e
+
+      - name: Keep the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            apps/e2e/playwright-report
+            apps/e2e/test-results
+          retention-days: 14
