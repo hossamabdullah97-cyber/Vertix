@@ -96,5 +96,24 @@
     "workspaceUpdatedBy": "{{actor}} updated the workspace settings",
     "approved": "Your request was approved",
     "rejected": "Your request was declined"
+  },
+  "push": {
+    "title": "On this device",
+    "intro": "Notifications on this phone or computer's lock screen, even with the app closed. They follow the categories above.",
+    "label": "Notifications on this device",
+    "hint": "A new lead or meeting request reaches you the moment it arrives.",
+    "test": "Send a test notification",
+    "testSent": "Sent. It should appear in a moment.",
+    "failed": "That didn't work. Try again in a moment.",
+    "blocked": "Notifications are blocked for this site. Allow them in your browser's site settings, then come back here.",
+    "unsupported": "This browser can't show notifications. Use Chrome, Edge or Firefox, or the installed app.",
+    "iosInstall": "On iPhone, add Vertex to your Home Screen first: tap Share, then \"Add to Home Screen\". Open it from there and turn notifications on.",
+    "install": "Install the app",
+    "installHint": "Vertex on your home screen, opening in its own window.",
+    "installButton": "Install",
+    "promptTitle": "Know the moment a lead arrives",
+    "promptBody": "Turn on notifications on this device, and new leads and meeting requests reach you even with the app closed.",
+    "promptYes": "Turn on",
+    "promptNo": "Not now"
   }
 }

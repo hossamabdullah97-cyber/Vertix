@@ -25,7 +25,7 @@ export function normalizePhone(input: string): string | null {
   return /^[1-9]\d{7,14}$/.test(d) ? d : null;
 }
 
-function Switch({ on, disabled, label, onClick }: { on: boolean; disabled?: boolean; label: string; onClick: () => void }) {
+export function Switch({ on, disabled, label, onClick }: { on: boolean; disabled?: boolean; label: string; onClick: () => void }) {
   return (
     <button
       type="button"

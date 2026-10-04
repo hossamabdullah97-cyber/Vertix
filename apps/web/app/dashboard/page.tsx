@@ -18,6 +18,7 @@ import { setupSteps } from '@/lib/onboarding';
 import { CardThumb } from '@/components/cards/CardThumb';
 import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
 import { useShortcut } from '@/lib/shortcuts';
+import { PushPrompt } from '@/components/notifications/PushPrompt';
 
 
 interface Lead {
@@ -448,6 +449,7 @@ export default function HomePage() {
         </div>
         <p className="mt-1 text-base text-muted">{t('personal.subtitle')}</p>
         {errorBanner}
+        <PushPrompt />
         {onboarding}
 
         <div className="v-card mt-5 grid grid-cols-2 overflow-hidden lg:grid-cols-4">
@@ -660,6 +662,7 @@ export default function HomePage() {
       </div>
 
       {errorBanner}
+      <PushPrompt />
       {onboarding}
 
       {!fresh && (

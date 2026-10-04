@@ -1,7 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { leadAlertSettingsSchema, type JwtPayload, type LeadAlertSettingsInput } from '@vertex/shared';
+import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query, ServiceUnavailableException } from '@nestjs/common';
+import { leadAlertSettingsSchema, pushSubscribeSchema, type JwtPayload, type LeadAlertSettingsInput, type PushSubscribeInput } from '@vertex/shared';
 import { NotificationsService } from './notifications.service';
 import { LeadAlertsService } from './lead-alerts.service';
+import { PushService } from './push.service';
+import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
+
+/** Test pushes one person may send an hour. */
+const PUSH_TEST_LIMIT = 5;
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -11,7 +16,44 @@ export class NotificationsController {
   constructor(
     private readonly notifications: NotificationsService,
     private readonly alerts: LeadAlertsService,
+    private readonly push: PushService,
+    private readonly throttle: AuthThrottleService,
   ) {}
+
+  /** Push on this server: its public key (null when off) and how many devices the user has on. */
+  @Get('push')
+  async pushStatus(@CurrentUser() user: JwtPayload) {
+    return { publicKey: this.push.publicKey, devices: this.push.publicKey ? await this.push.deviceCount(user.sub) : 0 };
+  }
+
+  /** Turns push on for the calling device. */
+  @Post('push/subscriptions')
+  subscribePush(
+    @CurrentUser() user: JwtPayload,
+    @Body(new ZodValidationPipe(pushSubscribeSchema)) body: PushSubscribeInput,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    if (!this.push.publicKey) throw new ServiceUnavailableException('Push notifications are not set up on this server');
+    return this.push.subscribe(user.sub, body, userAgent);
+  }
+
+  /** Turns push off for the calling device. */
+  @Delete('push/subscriptions')
+  unsubscribePush(@CurrentUser() user: JwtPayload, @Body() body: { endpoint?: string } = {}) {
+    return this.push.unsubscribe(user.sub, typeof body?.endpoint === 'string' ? body.endpoint : '');
+  }
+
+  /** Sends the user's devices a test notification, so they can see it works. */
+  @Post('push/test')
+  async testPush(@CurrentUser() user: JwtPayload) {
+    if (!this.push.publicKey) throw new ServiceUnavailableException('Push notifications are not set up on this server');
+    const key = `push-test:${user.sub}`;
+    const wait = await this.throttle.blockedFor(key, PUSH_TEST_LIMIT, 60 * 60_000);
+    if (wait > 0) throw tooManyAttempts(wait);
+    await this.throttle.hit(key, 60 * 60_000);
+    const sent = await this.push.send(user.sub, { type: 'push.test', title: 'Notifications are on', priority: 'HIGH' });
+    return { sent };
+  }
 
   @Get()
   list(

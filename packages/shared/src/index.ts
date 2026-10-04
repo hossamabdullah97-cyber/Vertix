@@ -508,6 +508,15 @@ export const leadAlertSettingsSchema = z
   .partial();
 export type LeadAlertSettingsInput = z.infer<typeof leadAlertSettingsSchema>;
 
+/// A browser's Web Push subscription (PushSubscription.toJSON()), and the
+/// language its notifications should be written in.
+export const pushSubscribeSchema = z.object({
+  endpoint: z.string().url().max(1000),
+  keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
+  lang: z.enum(['en', 'ar']).default('en'),
+});
+export type PushSubscribeInput = z.infer<typeof pushSubscribeSchema>;
+
 // The card owner's answer to a visitor's meeting request.
 export const meetingResponseSchema = z.object({
   decision: z.enum(['ACCEPT', 'DECLINE']),

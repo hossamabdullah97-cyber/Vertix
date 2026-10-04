@@ -21,6 +21,7 @@ import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
 import { VerifyEmailBanner } from '@/components/ui/VerifyEmailBanner';
+import { registerServiceWorker, syncPush } from '@/lib/pwa';
 import { Shortcuts, SHOW_SHORTCUTS } from '@/components/ui/Shortcuts';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
@@ -171,6 +172,11 @@ export default function AppShell({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Notifications on this device come in the app's language; a switch is passed on.
+  useEffect(() => {
+    void syncPush(locale === 'ar' ? 'ar' : 'en');
+  }, [locale]);
+
   useEffect(() => {
     if (/Mac|iPhone|iPad/.test(navigator.platform)) setShortcut('⌘K');
 
@@ -187,6 +193,9 @@ export default function AppShell({
     authFetch<Me>('/auth/me')
       .then(setMe)
       .catch(() => {});
+
+    // The installable app's service worker: its offline page and notifications.
+    void registerServiceWorker();
 
     authFetch<any[]>('/orgs')
       .then((list) => {

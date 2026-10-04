@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from './push.service';
 
 export interface NotifyInput {
   userId: string; // recipient
@@ -22,7 +23,10 @@ export interface NotifyInput {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly push?: PushService,
+  ) {}
 
   private get db() {
     return this.prisma.client;
@@ -34,7 +38,7 @@ export class NotificationsService {
     // Respect the recipient's per-category in-app preference (default: on).
     if (!(await this.isInAppAllowed(input.userId, input.category))) return;
     try {
-      await this.db.notification.create({
+      const created = await this.db.notification.create({
         data: {
           userId: input.userId,
           orgId: input.orgId ?? null,
@@ -46,7 +50,11 @@ export class NotificationsService {
           body: input.body,
           metadata: input.metadata as never,
         },
+        select: { id: true },
       });
+      // And on the lock screen of each device the user turned it on for.
+      // Not awaited: the action that caused this must not wait on push services.
+      void this.push?.send(input.userId, input, created.id).catch(() => undefined);
     } catch (err) {
       this.logger.warn(`notify failed (${input.type}): ${(err as Error).message}`);
     }
