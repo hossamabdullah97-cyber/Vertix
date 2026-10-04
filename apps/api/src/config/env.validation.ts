@@ -82,6 +82,10 @@ export const envSchema = z.object({
   // need stored credentials are disabled and shown as unavailable, never faked).
   // Must be 32 bytes, base64-encoded (openssl rand -base64 32).
   INTEGRATION_ENCRYPTION_KEY: z.string().optional(),
+  // Web Push (notifications on a device's lock screen); off when unset.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().optional(),
 
   // Apple Wallet (optional — the card offers "Add to Apple Wallet" only when
   // all five are set). From a Pass Type ID in an Apple Developer account; the

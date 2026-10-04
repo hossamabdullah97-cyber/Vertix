@@ -30,6 +30,7 @@ export const AR_MESSAGES: Record<string, string> = {
   'This account is linked to a different Google account': 'هذا الحساب مرتبط بحساب Google آخر',
   'The email could not be sent. Try again in a moment.': 'تعذّر إرسال البريد. حاول مرة أخرى بعد لحظات.',
   'User not found': 'المستخدم غير موجود',
+  'Push notifications are not set up on this server': 'إشعارات الأجهزة غير مُفعّلة على هذا الخادم',
   'Confirm your email address first: open the link we sent you, or send a new one from the notice at the top of the app.':
     'أكّد بريدك الإلكتروني أولاً: افتح الرابط الذي أرسلناه إليك، أو أرسل رابطاً جديداً من التنبيه أعلى التطبيق.',
   'Password must be at least 8 characters': 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل',

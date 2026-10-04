@@ -43,6 +43,22 @@ export default function RootLayout({
         {/* The text font every page needs first, fetched with the page. */}
         <link rel="preload" href="/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossOrigin="" />
         {locale === 'ar' && <link rel="preload" href="/fonts/plex-arabic-arabic-400.woff2" as="font" type="font/woff2" crossOrigin="" />}
+        {/* The installable app (public/manifest.webmanifest, sw.js). Not on a
+            public card: a visitor adding a card to their home screen should
+            get the card, not the Vertex app. */}
+        {!publicCard && (
+          <>
+            <link rel="manifest" href="/manifest.webmanifest" />
+            {/* The installed app's status bar takes the colour of its sheets. */}
+            <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+            <meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)" />
+            <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="mobile-web-app-capable" content="yes" />
+            <meta name="apple-mobile-web-app-title" content="Vertex" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+          </>
+        )}
       </head>
       <body suppressHydrationWarning>
         {publicCard ? (

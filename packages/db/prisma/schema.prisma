@@ -59,6 +59,7 @@ model User {
   createdWebhooks    WebhookEndpoint[]     @relation("WebhookCreator")
   userIntegrations   IntegrationConnection[] @relation("IntegrationConnector")
   heldTags           NfcTag[]                @relation("TagHolder")
+  pushSubscriptions  PushSubscription[]      @relation("PushSubscriptions")
 
   @@index([deletedAt])
   @@map("users")
@@ -501,6 +502,27 @@ model NotificationPreference {
 
 /// How a card owner hears about new leads outside the app. A missing row
 /// means the defaults: email on, WhatsApp off.
+/// A browser or installed app on one device that receives push notifications
+/// for a user (Web Push). One row per device; the push service's endpoint
+/// identifies it, and a device that signs in as someone else moves over.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  /// The language the notifications on this device are written in: en | ar.
+  lang       String    @default("en")
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  user User @relation("PushSubscriptions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
 model LeadAlertSettings {
   userId    String   @id
   email     Boolean  @default(true)
