@@ -107,9 +107,9 @@
       "klaviyo": "Push profiles and events to Klaviyo.",
       "activecampaign": "Sync contacts into ActiveCampaign automations.",
       "slack": "Send lead and event notifications to a Slack channel.",
-      "ms_teams": "Post workspace events to a Teams channel.",
+      "ms_teams": "Post new leads and workspace events to a Microsoft Teams channel.",
       "whatsapp_business": "Notify and message contacts via WhatsApp Business.",
-      "telegram": "Send event notifications via a Telegram bot.",
+      "telegram": "Post new leads and workspace events to a Telegram group or channel through your own bot.",
       "google_calendar": "Turn meeting requests into calendar events.",
       "outlook_calendar": "Create events in Microsoft Outlook Calendar.",
       "calendly": "Link Calendly bookings to leads.",
@@ -156,6 +156,49 @@
       "Receive events": "Receive events",
       "Measurement": "Measurement",
       "Containers": "Containers"
+    },
+    "channel": {
+      "setUp": "Connect {{name}}",
+      "events": "What to post",
+      "lang": "Messages in",
+      "langs": {
+        "ar": "العربية",
+        "en": "English"
+      },
+      "connect": "Send a test message and connect",
+      "connecting": "Sending a test message…",
+      "settings": "What it posts",
+      "test": "Send a test message",
+      "testing": "Sending…",
+      "testSent": "A test message was sent. Check the chat.",
+      "telegram": {
+        "step1": "In Telegram, open @BotFather, send /newbot and follow its questions to make a bot for your team.",
+        "step2": "Copy the token it gives you (it looks like 123456789:AA…) and paste it here.",
+        "openBotFather": "Open @BotFather",
+        "token": "Bot token",
+        "tokenHint": "It is kept encrypted, and only used to post your messages.",
+        "check": "Check the token",
+        "checking": "Checking…",
+        "refresh": "Look for chats again",
+        "addBot": "Add {{bot}} to the group (or make it an admin of the channel), send any message there, then look for chats again.",
+        "chat": "Post to",
+        "noChats": "The bot has not seen any chat yet. Add it to your group, send a message there, then look for chats again.",
+        "types": {
+          "private": "Private chat",
+          "group": "Group",
+          "supergroup": "Group",
+          "channel": "Channel"
+        }
+      },
+      "teams": {
+        "step1": "In Teams, open the channel, choose ••• then Workflows.",
+        "step2": "Pick “Post to a channel when a webhook request is received” and follow its steps.",
+        "step3": "Copy the link it shows at the end and paste it here.",
+        "url": "Workflow link",
+        "urlHint": "It is kept encrypted, and only used to post your messages."
+      },
+      "postsTo": "Posts to {{account}}",
+      "lastSent": "Last message {{time}}"
     }
   },
   "events": {
