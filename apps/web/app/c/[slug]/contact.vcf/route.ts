@@ -1,4 +1,4 @@
-import { API_URL } from '@/lib/api';
+import { SERVER_API_URL, forwardedFor } from '@/lib/api';
 
 /**
  * The card's contact file, from this site rather than the API's, so the
@@ -8,12 +8,11 @@ import { API_URL } from '@/lib/api';
  */
 export async function GET(req: Request, { params }: { params: { slug: string } }) {
   const url = new URL(req.url);
-  const forwarded = req.headers.get('x-forwarded-for');
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/c/${encodeURIComponent(params.slug)}/vcard${url.search}`, {
+    res = await fetch(`${SERVER_API_URL}/c/${encodeURIComponent(params.slug)}/vcard${url.search}`, {
       cache: 'no-store',
-      headers: forwarded ? { 'x-forwarded-for': forwarded } : {},
+      headers: forwardedFor(req.headers),
     });
   } catch {
     return new Response('The contact could not be fetched right now.', { status: 502 });

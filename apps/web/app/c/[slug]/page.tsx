@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { apiGet, type PublicCard, type PublicCardLocked } from '@/lib/api';
+import { apiGet, forwardedFor, type PublicCard, type PublicCardLocked } from '@/lib/api';
 import { altOf, buildProfile, pickViewLang, profileAttrs, profileStyle } from '@/lib/profile';
 import { CardCompanion } from '@/components/profile/CardCompanion';
 import { PasscodeGate } from '@/components/profile/PasscodeGate';
@@ -51,7 +51,7 @@ function siteBase(): URL | undefined {
  * drawn by opengraph-image.tsx next to this page.
  */
 export async function generateMetadata({ params, searchParams }: { params: { slug: string }; searchParams: Search }): Promise<Metadata> {
-  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`);
+  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`, forwardedFor(headers()));
   if (!result || ('locked' in result && result.locked)) return { title: 'Vertex Connect', robots: { index: false } };
   const card = result as PublicCard;
   const p = buildProfile({ ...card, brand: card.brand ?? null, viewLang: viewLangOf(card, searchParams) });
@@ -99,7 +99,7 @@ function personData(profile: ReturnType<typeof buildProfile>, card: PublicCard) 
 export default async function CardPage({ params, searchParams }: { params: { slug: string }; searchParams: Search }) {
   // ?p targets a profile variant, optionally with ?code for a passcode; ?t is
   // the chip a visitor tapped, carried into anything they send.
-  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`);
+  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`, forwardedFor(headers()));
   if (!result) notFound();
 
   if ('locked' in result && result.locked) {

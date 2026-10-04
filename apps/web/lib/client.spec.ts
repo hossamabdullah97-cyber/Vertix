@@ -417,6 +417,23 @@ describe('changes made without a connection wait and go out later', () => {
     expect(localStorage.getItem('vertex_outbox')).toBeNull();
   });
 
+  it('keeps a change waiting while the API asks to slow down or is not there, and sends it after', async () => {
+    goOffline(true);
+    const { authFetch } = await import('./client');
+    const { flush } = await import('./outbox');
+    const answer = authFetch('/leads', { method: 'POST', body: '{"name":"Laila"}' });
+    goOffline(false);
+    for (const status of [429, 503]) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status, text: async () => '{"message":"Try again later"}' } as Response));
+      await flush();
+      expect(JSON.parse(localStorage.getItem('vertex_outbox') || '[]')).toHaveLength(1);
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok));
+    await flush();
+    await expect(answer).resolves.toEqual({ ok: true });
+    expect(localStorage.getItem('vertex_outbox')).toBeNull();
+  });
+
   it('forgets what was waiting when the person signs out', async () => {
     goOffline(true);
     const { authFetch, logout } = await import('./client');

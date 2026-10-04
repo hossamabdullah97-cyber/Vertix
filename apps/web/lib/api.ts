@@ -1,10 +1,25 @@
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
+/**
+ * Where this app's server reaches the API. In production the two run side by
+ * side (docker-compose.prod.yml) and the server calls the API directly: going
+ * through the public domain, the proxy there would put this server's own
+ * address on every call, and the API's per-address limits would count every
+ * visitor opening a card as one caller. The browser always uses API_URL.
+ */
+export const SERVER_API_URL = process.env.API_INTERNAL_URL || API_URL;
+
+/** The visitor's address, for a call this server makes for them: the API's limits then count them, not this server. */
+export function forwardedFor(h: Pick<Headers, 'get'>): Record<string, string> {
+  const forwarded = h.get('x-forwarded-for');
+  return forwarded ? { 'x-forwarded-for': forwarded } : {};
+}
+
 /** Server-side GET against the Vertex API. Returns null on non-2xx. */
-export async function apiGet<T>(path: string): Promise<T | null> {
+export async function apiGet<T>(path: string, headers: Record<string, string> = {}): Promise<T | null> {
   try {
-    const res = await fetch(`${API_URL}${path}`, { cache: 'no-store' });
+    const res = await fetch(`${SERVER_API_URL}${path}`, { cache: 'no-store', headers });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {

@@ -21,9 +21,15 @@ import { LIVE_ORG } from '../common/live-org';
  * How many times an hour the public form may be sent: by one visitor to one
  * card (a person rarely needs more than a couple), by one visitor across all
  * cards, and to one card from everywhere (a flood spread over many addresses).
+ *
+ * A visitor is their phone (the id the card keeps on it). One address is
+ * allowed far more: at an event the whole hall can reach the internet
+ * through the venue's Wi-Fi as one address, and every visitor at the booth
+ * shares it. Its limits only stop a script that makes up a new phone for
+ * every send.
  */
 export const CAPTURE_WINDOW_MS = 60 * 60_000;
-export const CAPTURE_LIMITS = { visitorCard: 5, visitor: 20, card: 200 } as const;
+export const CAPTURE_LIMITS = { visitorCard: 5, visitor: 20, addressCard: 60, address: 300, card: 200 } as const;
 
 /** Paper cards one person may have read in an hour: a busy event day, not a script. */
 export const SCAN_LIMIT = 60;
@@ -113,9 +119,18 @@ export class LeadsService {
    */
   async capture(input: LeadCaptureInput, ip = 'unknown') {
     // Limits first, so a flood costs one small query per request.
+    // Without the phone's id (storage turned off), the address stands in for it.
+    const device = input.visitorId?.trim().slice(0, 64);
+    const visitor = device ? `phone:${device}` : `address:${ip}`;
     const keys: [string, number][] = [
-      [`capture:${ip}:${input.slug}`, CAPTURE_LIMITS.visitorCard],
-      [`capture:${ip}`, CAPTURE_LIMITS.visitor],
+      [`capture:${visitor}:${input.slug}`, CAPTURE_LIMITS.visitorCard],
+      [`capture:${visitor}`, CAPTURE_LIMITS.visitor],
+      ...(device
+        ? ([
+            [`capture:address:${ip}:${input.slug}`, CAPTURE_LIMITS.addressCard],
+            [`capture:address:${ip}`, CAPTURE_LIMITS.address],
+          ] as [string, number][])
+        : []),
       [`capture-card:${input.slug}`, CAPTURE_LIMITS.card],
     ];
     for (const [key, limit] of keys) {
