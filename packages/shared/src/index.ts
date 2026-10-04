@@ -755,3 +755,77 @@ const SUN_THU_ZONES = new Set([
 export function defaultWorkDays(timezone?: string | null, lang?: unknown): number[] {
   return lang === 'ar' || (timezone && SUN_THU_ZONES.has(timezone)) ? [0, 1, 2, 3, 4] : [1, 2, 3, 4, 5];
 }
+
+// ===========================================================================
+//  Duplicate leads
+// ===========================================================================
+
+/** An email as compared for duplicates: trimmed, lower case. */
+export function emailKey(email: string | null | undefined): string | null {
+  const e = email?.trim().toLowerCase();
+  return e && e.includes('@') ? e : null;
+}
+
+/**
+ * A phone number as compared for duplicates: its digits, without the
+ * international prefix or trunk zero, so "+20 100 123 4567", "0020100…" and
+ * "0100 123 4567" are one number (an Egyptian number without a country code
+ * is taken to be Egyptian). Too short to identify anyone: null.
+ */
+export function phoneKey(phone: string | null | undefined): string | null {
+  // Arabic-Indic digits typed on an Arabic keyboard count too.
+  let d = (phone ?? '')
+    .replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (c) => String(c.charCodeAt(0) - 0x06f0))
+    .replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('20') && d.length === 12) d = d.slice(2);
+  else if (d.startsWith('0')) d = d.replace(/^0+/, '');
+  return d.length >= 7 ? d : null;
+}
+
+export interface DuplicateCandidate {
+  id: string;
+  email: string | null;
+  phone: string | null;
+}
+
+/**
+ * Leads that are the same person by a shared email or phone, gathered into
+ * groups (a shares a phone with b, b an email with c: one group of three).
+ * Groups keep the input's order, and each has the reason it was found.
+ */
+export function duplicateGroups<T extends DuplicateCandidate>(leads: T[]): { leads: T[]; by: ('email' | 'phone')[] }[] {
+  const parent = leads.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
+  const reasons = new Map<number, Set<'email' | 'phone'>>();
+  const firstWith = new Map<string, number>();
+  leads.forEach((l, i) => {
+    for (const [kind, key] of [['email', emailKey(l.email)], ['phone', phoneKey(l.phone)]] as const) {
+      if (!key) continue;
+      const seen = firstWith.get(`${kind}:${key}`);
+      if (seen === undefined) {
+        firstWith.set(`${kind}:${key}`, i);
+        continue;
+      }
+      const a = find(seen);
+      const b = find(i);
+      const root = Math.min(a, b);
+      const merged = new Set([...(reasons.get(a) ?? []), ...(reasons.get(b) ?? []), kind]);
+      parent[Math.max(a, b)] = root;
+      reasons.set(root, merged);
+    }
+  });
+  const groups = new Map<number, T[]>();
+  leads.forEach((l, i) => {
+    const r = find(i);
+    groups.set(r, [...(groups.get(r) ?? []), l]);
+  });
+  return [...groups.entries()]
+    .filter(([, g]) => g.length > 1)
+    .map(([root, g]) => ({ leads: g, by: [...(reasons.get(root) ?? [])].sort() }));
+}
+
+// Merging duplicates into the lead that is kept.
+export const mergeLeadsSchema = z.object({ duplicateIds: z.array(z.string().min(1)).min(1).max(20) });
+export type MergeLeadsInput = z.infer<typeof mergeLeadsSchema>;

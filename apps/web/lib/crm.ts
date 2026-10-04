@@ -90,7 +90,7 @@ export function stageKey(name: string): string {
   return `stages.${name.trim().toLowerCase()}`;
 }
 
-export type ActivityType = 'NOTE' | 'CALL' | 'EMAIL' | 'WHATSAPP' | 'MEETING' | 'STAGE_CHANGE' | 'SCORE_CHANGE' | 'SCAN';
+export type ActivityType = 'NOTE' | 'CALL' | 'EMAIL' | 'WHATSAPP' | 'MEETING' | 'STAGE_CHANGE' | 'SCORE_CHANGE' | 'SCAN' | 'MERGE';
 
 export interface LeadActivity {
   id: string;
@@ -113,6 +113,7 @@ export const ACTIVITY_META: Record<ActivityType, { label: string; icon: string; 
   STAGE_CHANGE: { label: 'Stage changed', icon: 'chart-bar', color: '#6366f1' },
   SCORE_CHANGE: { label: 'Score changed', icon: 'sparkle', color: '#f59e0b' },
   SCAN: { label: 'Scan', icon: 'sparkle', color: '#14b8a6' },
+  MERGE: { label: 'Merged', icon: 'users', color: '#64748b' },
 };
 
 /** The composer offers only these manual activity types. */

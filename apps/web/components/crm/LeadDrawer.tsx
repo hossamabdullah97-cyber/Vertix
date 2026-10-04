@@ -59,6 +59,8 @@ export function LeadDrawer({
   onAddTask,
   onToggleTask,
   onContacted,
+  duplicates = [],
+  onReviewDuplicates,
 }: {
   lead: Lead | null;
   stages: Stage[];
@@ -70,6 +72,9 @@ export function LeadDrawer({
   onToggleTask: (id: string, completed: boolean) => void;
   /** Someone reached out from the panel; the list updates its "waiting" flag. */
   onContacted?: (id: string, times: { firstContactedAt: string | null; lastContactedAt: string | null }) => void;
+  /** Other leads that look like the same person. */
+  duplicates?: Lead[];
+  onReviewDuplicates?: () => void;
 }) {
   const { t } = useTranslation('crm');
 
@@ -115,6 +120,8 @@ export function LeadDrawer({
               onAddTask={onAddTask}
               onToggleTask={onToggleTask}
               onContacted={onContacted}
+              duplicates={duplicates}
+              onReviewDuplicates={onReviewDuplicates}
             />
           </motion.aside>
         </>
@@ -133,6 +140,8 @@ function DrawerBody({
   onAddTask,
   onToggleTask,
   onContacted,
+  duplicates,
+  onReviewDuplicates,
 }: {
   lead: Lead;
   stages: Stage[];
@@ -143,6 +152,8 @@ function DrawerBody({
   onAddTask: (input: CreateTaskInput) => Promise<void> | void;
   onToggleTask: (id: string, completed: boolean) => void;
   onContacted?: (id: string, times: { firstContactedAt: string | null; lastContactedAt: string | null }) => void;
+  duplicates: Lead[];
+  onReviewDuplicates?: () => void;
 }) {
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
@@ -228,6 +239,15 @@ function DrawerBody({
   function activityText(a: LeadActivity): string {
     const meta = (a.metadata ?? {}) as Record<string, unknown>;
     if (a.type === 'STAGE_CHANGE') return `${stageName(meta.from as string)} → ${stageName(meta.to as string)}`;
+    if (a.type === 'MERGE') {
+      const merged = (meta.merged as { name?: string | null; email?: string | null; phone?: string | null }[] | undefined) ?? [];
+      const differing = (meta.differing as Record<string, string[]> | undefined) ?? {};
+      const kept = Object.values(differing).flat();
+      return [
+        t('duplicates.mergedWith', { count: merged.length, names: merged.map((m) => m.name || m.email || m.phone).filter(Boolean).join(', ') }),
+        kept.length ? t('duplicates.alsoKnown', { values: kept.join(', ') }) : '',
+      ].filter(Boolean).join('\n');
+    }
     return (meta.note as string) || '';
   }
 
@@ -282,6 +302,19 @@ function DrawerBody({
       </div>
 
       <div className="no-scrollbar flex-1 overflow-y-auto">
+        {duplicates.length > 0 && (
+          <div className="mx-5 mt-4 flex items-start gap-2.5 rounded-lg bg-amber-500/[0.08] px-3 py-2.5 text-xs leading-relaxed text-amber-900 ring-1 ring-inset ring-amber-500/25 dark:text-amber-200">
+            <Icon name="users" size={14} className="mt-0.5 shrink-0" />
+            <span className="min-w-0 flex-1">
+              {t('duplicates.hint', { names: duplicates.map((d) => d.name || d.email || d.phone).join(locale === 'ar' ? '، ' : ', ') })}
+            </span>
+            {onReviewDuplicates && (
+              <button type="button" onClick={onReviewDuplicates} className="shrink-0 font-medium underline underline-offset-2">
+                {t('duplicates.review')}
+              </button>
+            )}
+          </div>
+        )}
         <div className="px-5 pb-4 pt-5">
           <div className="flex items-center gap-3.5">
             <Avatar user={{ id: lead.id, name: lead.name, email: lead.email }} size={44} />

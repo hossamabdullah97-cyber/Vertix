@@ -27,7 +27,10 @@ import {
   type JwtPayload,
   type LeadCaptureInput,
   type MeetingResponseInput,
+  mergeLeadsSchema,
+  type MergeLeadsInput,
 } from '@vertex/shared';
+import { LeadMergeService } from './lead-merge.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import type { TenantContext } from '@vertex/db';
@@ -39,7 +42,10 @@ import { RequireScopes } from '../access/scopes.decorator';
 
 @Controller('leads')
 export class LeadsController {
-  constructor(private readonly leads: LeadsService) {}
+  constructor(
+    private readonly leads: LeadsService,
+    private readonly merges: LeadMergeService,
+  ) {}
 
   /** Public: capture a lead from a card's engagement workflow. */
   @Public()
@@ -63,6 +69,22 @@ export class LeadsController {
   @Get('stages')
   stages() {
     return this.leads.listStages();
+  }
+
+  /** Leads that look like one person: the same email or phone number. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get('duplicates')
+  duplicates(@Tenant() tenant: TenantContext) {
+    return this.merges.duplicates(tenant);
+  }
+
+  /** Makes the given duplicates part of this lead. */
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Post(':id/merge')
+  merge(@Tenant() tenant: TenantContext, @Param('id') id: string, @Body(new ZodValidationPipe(mergeLeadsSchema)) body: MergeLeadsInput) {
+    return this.merges.merge(tenant, id, body.duplicateIds);
   }
 
   /** Whether paper cards can be read here. */
