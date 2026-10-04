@@ -42,9 +42,12 @@ test.describe('without a signal', () => {
     await expect(page.getByText('Omar Offline').first()).toBeVisible();
     await kept(page, `/c/${card.slug}`, `/c/${card.slug}/contact.vcf`);
 
+    const list = () => page.evaluate(async () => { const out: string[] = []; for (const n of await caches.keys()) { const c = await caches.open(n); for (const r of await c.keys()) { if (r.url.includes('/_next/static/')) continue; const res = await c.match(r); out.push(`${n} ${r.url} ${res?.status} vary=${res?.headers.get('vary')}`); } } return out.join(' | '); });
+    const atKept = await list();
     await goOffline(visitor);
+    const beforeReload = await list();
     await page.reload();
-    await expect(page.getByText('Omar Offline').first()).toBeVisible();
+    await expect(page.getByText('Omar Offline').first(), `DIAG kept: ${atKept} || before reload: ${beforeReload}`).toBeVisible();
     await expect(page.getByText(/You're offline: this is the card as you last opened it/)).toBeVisible();
 
     // The contact still saves.
