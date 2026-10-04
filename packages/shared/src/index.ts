@@ -122,6 +122,15 @@ export type TwoFactorCodeInput = z.infer<typeof twoFactorCodeSchema>;
 export const mfaLoginSchema = twoFactorCodeSchema.extend({ mfaToken: z.string().min(20).max(2048) });
 export type MfaLoginInput = z.infer<typeof mfaLoginSchema>;
 
+// Deleting one's own account: the password (when the account has one), a
+// two-step code (when it is on), and the address typed out as confirmation.
+export const deleteAccountSchema = z.object({
+  password: z.string().max(200).optional(),
+  code: z.string().trim().max(20).optional(),
+  confirmEmail: z.string().trim().min(3).max(320),
+});
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
+
 // The ID token "Sign in with Google" gives the page.
 export const googleSignInSchema = z.object({ credential: z.string().min(20).max(4096) });
 export type GoogleSignInInput = z.infer<typeof googleSignInSchema>;

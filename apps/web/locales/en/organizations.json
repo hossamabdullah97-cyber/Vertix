@@ -83,5 +83,11 @@
     "withoutHintOn": "They'll be asked to set it up the next time they open the workspace.",
     "withoutHintOff": "If you require it, these people will be asked to set it up.",
     "everyone": "Everyone here uses two-step verification."
+  },
+  "export": {
+    "title": "Export workspace data",
+    "hint": "Everything in this workspace as one JSON file: members, cards, leads with their history, pipeline, chips, occasions and ready messages. Only owners can do this.",
+    "download": "Download export",
+    "preparing": "Preparing…"
   }
 }
