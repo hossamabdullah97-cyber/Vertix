@@ -219,7 +219,8 @@
       "MEETING": "Meeting",
       "STAGE_CHANGE": "Stage change",
       "SCAN": "Scan",
-      "WHATSAPP": "WhatsApp"
+      "WHATSAPP": "WhatsApp",
+      "MERGE": "Merged"
     }
   },
   "reports": {
@@ -434,5 +435,30 @@
     "sendEmail": "Send my card by email",
     "openLead": "Open the lead",
     "next": "Next person"
+  },
+  "duplicates": {
+    "title": "Possible duplicates",
+    "subtitle": "Leads with the same email or phone number are usually one person entered twice.",
+    "none": "No duplicates left to review.",
+    "by": {
+      "email": "Same email",
+      "phone": "Same phone"
+    },
+    "pickKeep": "Choose the lead to keep",
+    "kept": "Keep",
+    "how": "The kept lead's empty details are filled from the others, and their history and tasks move to it. Other emails and numbers are noted on it. The rest are deleted.",
+    "merge_one": "Merge into one",
+    "merge_other": "Merge {{count}} into one",
+    "merging": "Merging…",
+    "different": "Not the same person",
+    "banner_one": "{{count}} lead looks like a duplicate",
+    "banner_other": "{{count}} leads look like duplicates",
+    "review": "Review",
+    "hint": "Looks like the same person as {{names}}.",
+    "done_one": "Merged",
+    "done_other": "{{count}} leads merged into one",
+    "mergedWith_one": "Merged with {{count}} other lead: {{names}}",
+    "mergedWith_other": "Merged with {{count}} other leads: {{names}}",
+    "alsoKnown": "Also had: {{values}}"
   }
 }

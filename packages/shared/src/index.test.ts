@@ -142,3 +142,27 @@ describe('renderTemplate', () => {
     expect(renderTemplate('Hi {{frist_name}}', { first_name: 'Mona' })).toBe('Hi {{frist_name}}');
   });
 });
+
+import { duplicateGroups, emailKey, phoneKey } from './index';
+
+describe('duplicate leads', () => {
+  it('reads one Egyptian number however it was written', () => {
+    for (const p of ['+20 100 123 4567', '00201001234567', '0100-123-4567', '٠١٠٠١٢٣٤٥٦٧']) expect(phoneKey(p)).toBe('1001234567');
+    expect(phoneKey('123')).toBeNull();
+    expect(emailKey('  Mona@X.com ')).toBe('mona@x.com');
+    expect(emailKey('nope')).toBeNull();
+  });
+
+  it('groups through shared emails and phones, and leaves the rest alone', () => {
+    const leads = [
+      { id: 'a', email: 'mona@x.com', phone: null },
+      { id: 'b', email: 'other@y.com', phone: '01001234567' },
+      { id: 'c', email: 'MONA@x.com', phone: '+201001234567' },
+      { id: 'd', email: 'solo@z.com', phone: '01112223334' },
+    ];
+    const groups = duplicateGroups(leads);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.leads.map((l) => l.id)).toEqual(['a', 'b', 'c']);
+    expect(groups[0]!.by).toEqual(['email', 'phone']);
+  });
+});

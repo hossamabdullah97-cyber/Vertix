@@ -13,6 +13,7 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { LeadCard, Heat } from '@/components/crm/LeadCard';
 import { LeadDrawer } from '@/components/crm/LeadDrawer';
+import { MergeDuplicates, useDuplicates } from '@/components/crm/MergeDuplicates';
 import { LeadList } from '@/components/crm/LeadList';
 import { AddLead } from '@/components/crm/AddLead';
 import { downloadText, leadsCsv } from '@/lib/export-leads';
@@ -61,6 +62,7 @@ export default function LeadsPage() {
   const [patchBusy, setPatchBusy] = useState(false);
   const [toast, setToast] = useState('');
   const [adding, setAdding] = useState(false);
+  const [reviewing, setReviewing] = useState<{ focus: string | null } | null>(null);
   useShortcut('n', t('nav:shortcuts.newLead'), () => setAdding(true));
   // On a phone the pipeline is a list filtered by stage, not side-scrolling columns.
   const [isPhone, setIsPhone] = useState(false);
@@ -203,6 +205,8 @@ export default function LeadsPage() {
   };
 
   const selectedLead = leads.find((l) => l.id === selected) ?? null;
+  const dupes = useDuplicates(leads);
+  const dupeCount = dupes.groups.reduce((n, g) => n + g.leads.length, 0);
 
   const tabs: { id: View; label: string; count?: number }[] = [
     { id: 'pipeline', label: t('tabs.pipeline'), count: loading ? undefined : summary.open },
@@ -277,6 +281,16 @@ export default function LeadsPage() {
           <span className="mx-2 text-faint" aria-hidden>·</span>
           {t('summary.won', { pct: summary.wonPct })}
         </p>
+      )}
+
+      {dupes.groups.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-amber-500/[0.07] px-3 py-2 text-sm ring-1 ring-inset ring-amber-500/20">
+          <Icon name="users" size={14} className="text-amber-700 dark:text-amber-300" />
+          <span className="text-ink">{t('duplicates.banner', { count: dupeCount })}</span>
+          <button type="button" onClick={() => setReviewing({ focus: null })} className="font-medium text-accent hover:underline">
+            {t('duplicates.review')}
+          </button>
+        </div>
       )}
 
       <nav role="tablist" className="no-scrollbar -mx-5 mt-4 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
@@ -488,6 +502,22 @@ export default function LeadsPage() {
         onAddTask={(input) => createTask(input)}
         onToggleTask={toggleTask}
         onContacted={(id, times) => setLeads((list) => list.map((l) => (l.id === id ? { ...l, ...times } : l)))}
+        duplicates={selectedLead ? dupes.of(selectedLead.id) : []}
+        onReviewDuplicates={() => selectedLead && setReviewing({ focus: selectedLead.id })}
+      />
+
+      <MergeDuplicates
+        open={!!reviewing}
+        focus={reviewing?.focus}
+        onClose={() => setReviewing(null)}
+        groups={dupes.groups}
+        stages={stages}
+        onDismiss={dupes.dismiss}
+        onMerged={(keepId, mergedIds) => {
+          if (selected && mergedIds.includes(selected)) setSelected(keepId);
+          flash(t('duplicates.done', { count: mergedIds.length + 1 }));
+          void load();
+        }}
       />
 
       <AnimatePresence>

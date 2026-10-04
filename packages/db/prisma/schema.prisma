@@ -806,6 +806,7 @@ enum ActivityType {
   STAGE_CHANGE
   SCORE_CHANGE
   SCAN
+  MERGE
 }
 
 enum EventType {
