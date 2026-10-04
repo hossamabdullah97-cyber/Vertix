@@ -114,6 +114,7 @@ model Organization {
   crmSyncRecords    CrmSyncRecord[]
   occasions         Occasion[]
   goals             Goal[]
+  duplicateDismissals DuplicateDismissal[]
   cardPresence      CardPresence[]
   messageTemplates  MessageTemplate[]
 
@@ -1239,9 +1240,43 @@ model Goal {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user User?        @relation("GoalMember", fields: [userId], references: [id], onDelete: Cascade)
+  org          Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User?             @relation("GoalMember", fields: [userId], references: [id], onDelete: Cascade)
+  achievements GoalAchievement[]
 
   @@index([orgId])
   @@map("goals")
+}
+
+/// A goal reached in one week or month (by the team, or by one member when
+/// the goal is for each member), recorded once so it is celebrated once.
+/// "who" is the member's id, or "team".
+model GoalAchievement {
+  id          String   @id @default(cuid())
+  goalId      String
+  periodStart DateTime
+  who         String
+  value       Int
+  createdAt   DateTime @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, periodStart, who])
+  @@map("goal_achievements")
+}
+
+/// Leads someone looked at and said are different people, so they stop
+/// showing as duplicates for the whole team. "key" is their ids, sorted and
+/// joined; a new lead joining the group makes a new key, and it shows again.
+model DuplicateDismissal {
+  id          String   @id @default(cuid())
+  orgId       String
+  key         String
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, key])
+  @@map("duplicate_dismissals")
 }

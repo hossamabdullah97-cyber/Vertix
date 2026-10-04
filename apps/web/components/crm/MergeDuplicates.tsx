@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { duplicateGroups } from '@vertex/shared';
+import { duplicateGroups, duplicateKey } from '@vertex/shared';
 import { authFetch } from '@/lib/client';
 import { formatDate } from '@/lib/format';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -10,30 +10,53 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Icon } from '@/components/Icon';
 import { stageKey, type Lead, type Stage } from '@/lib/crm';
 
-const DISMISSED_KEY = 'vertex_not_duplicates';
-const groupKey = (leads: { id: string }[]) => leads.map((l) => l.id).sort().join(',');
+/** Where this browser kept "not the same person" before it was saved for the team. */
+const OLD_DISMISSED_KEY = 'vertex_not_duplicates';
+const groupKey = duplicateKey;
 
-function readDismissed(): Set<string> {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]') as string[]);
-  } catch {
-    return new Set();
-  }
-}
-
-/** The leads that look like one person, less the groups someone said are not. */
+/**
+ * The leads that look like one person, less the groups someone in the
+ * workspace said are not (saved for the whole team, so a colleague does not
+ * review them again).
+ */
 export function useDuplicates(leads: Lead[]) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  useEffect(() => setDismissed(readDismissed()), []);
+  useEffect(() => {
+    let live = true;
+    // What this browser kept on its own before goes to the team's list once.
+    let old: string[] = [];
+    try {
+      old = JSON.parse(localStorage.getItem(OLD_DISMISSED_KEY) || '[]') as string[];
+    } catch {
+      /* nothing kept */
+    }
+    Promise.all(old.map((key) => authFetch('/leads/duplicates/dismiss', { method: 'POST', body: JSON.stringify({ leadIds: key.split(',') }) }).catch(() => undefined)))
+      .then(() => {
+        try {
+          localStorage.removeItem(OLD_DISMISSED_KEY);
+        } catch {
+          /* private mode */
+        }
+        return authFetch<string[]>('/leads/duplicates/dismissed');
+      })
+      .then((keys) => live && setDismissed(new Set(keys)))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
   const groups = useMemo(() => duplicateGroups(leads).filter((g) => !dismissed.has(groupKey(g.leads))), [leads, dismissed]);
   const dismiss = (g: { leads: Lead[] }) => {
-    const next = new Set(dismissed).add(groupKey(g.leads));
-    setDismissed(next);
-    try {
-      localStorage.setItem(DISMISSED_KEY, JSON.stringify([...next]));
-    } catch {
-      /* private mode: for this visit only */
-    }
+    const key = groupKey(g.leads);
+    setDismissed((d) => new Set(d).add(key));
+    authFetch('/leads/duplicates/dismiss', { method: 'POST', body: JSON.stringify({ leadIds: g.leads.map((l) => l.id) }) }).catch(() =>
+      // Not saved: it shows again, rather than looking settled when it is not.
+      setDismissed((d) => {
+        const next = new Set(d);
+        next.delete(key);
+        return next;
+      }),
+    );
   };
   /** The other leads that look like the same person as `id`. */
   const of = (id: string) => groups.find((g) => g.leads.some((l) => l.id === id))?.leads.filter((l) => l.id !== id) ?? [];

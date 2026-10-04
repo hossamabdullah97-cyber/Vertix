@@ -112,7 +112,11 @@
     "followUpBody_two": "بلا رد منذ يومين",
     "followUpBody_few": "بلا رد منذ {{count}} أيام",
     "followUpBody_many": "بلا رد منذ {{count}} يوماً",
-    "followUpBody_other": "بلا رد منذ {{count}} يوم"
+    "followUpBody_other": "بلا رد منذ {{count}} يوم",
+    "goalTeam": "حقق الفريق هدفه",
+    "goalYou": "حققت هدفك",
+    "goalMember": "حقق {{name}} هدفه",
+    "goalBody": "{{metric}} {{period}}: {{value}} من {{target}}"
   },
   "push": {
     "title": "على هذا الجهاز",

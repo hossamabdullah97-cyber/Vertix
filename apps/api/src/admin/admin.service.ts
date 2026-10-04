@@ -4,6 +4,7 @@ import { purgeDate, PURGE_AFTER_DAYS } from './org-purge.service';
 import { runWithTenant } from '@vertex/db';
 import { planPrices } from '../billing/prices';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { PLAN_LIMITS, defaultStageRows, normalizeUid, type Plan, type Role } from '@vertex/shared';
 
 /**
@@ -54,6 +55,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly billing?: BillingService,
+    @Optional() private readonly mail?: MailService,
   ) {}
 
   /**
@@ -273,6 +275,7 @@ export class AdminService {
       name: u.name,
       createdAt: u.createdAt,
       isSuperAdmin: u.isSuperAdmin,
+      twoFactorEnabled: !!u.totpEnabledAt,
       organizations: u.memberships.map((m) => ({
         id: m.org.id,
         name: m.org.name,
@@ -296,6 +299,33 @@ export class AdminService {
     }
 
     await this.logAdminAction(actorId, `UPDATE_USER_STATUS_${status}`, 'User', userId, { previous: 'ACTIVE' });
+    return { success: true };
+  }
+
+  /**
+   * Turns off two-step verification for someone who lost both their phone
+   * and their recovery codes, once support has confirmed who they are. They
+   * sign in with their password alone and can set it up again; a workspace
+   * that requires it asks them to. They are told by email, so a reset they
+   * did not ask for does not go unnoticed.
+   */
+  async resetTwoStep(userId: string, actorId: string) {
+    const user = await this.prisma.client.user.findFirst({ where: { id: userId, deletedAt: null }, select: { email: true, name: true, totpEnabledAt: true } });
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.totpEnabledAt) throw new BadRequestException('Two-step verification is not on for this account');
+    await this.prisma.client.user.update({
+      where: { id: userId },
+      data: { totpSecret: null, totpPendingSecret: null, totpEnabledAt: null, totpLastStep: null, totpRecoveryCodes: [] },
+    });
+    await this.logAdminAction(actorId, 'RESET_TWO_STEP', 'User', userId, { email: user.email });
+    const appUrl = (process.env.APP_PUBLIC_URL || 'http://localhost:3000').replace(/\/$/, '');
+    await this.mail
+      ?.send({
+        to: user.email,
+        subject: 'Two-step verification was turned off on your account',
+        html: `<p>Hi ${escapeHtml(user.name ?? '')},</p><p>As you asked, Vertex Connect support turned off two-step verification on your account (${escapeHtml(user.email)}). You can now sign in with your password, and turn it back on from <a href="${appUrl}/account">your account page</a>.</p><p>If you didn't ask for this, reset your password straight away and reply to this email.</p>`,
+      })
+      .catch(() => false);
     return { success: true };
   }
 
@@ -1021,4 +1051,8 @@ export class AdminService {
       metadata: l.metadata,
     }));
   }
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }

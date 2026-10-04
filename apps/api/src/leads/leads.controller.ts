@@ -29,6 +29,8 @@ import {
   type MeetingResponseInput,
   mergeLeadsSchema,
   type MergeLeadsInput,
+  dismissDuplicatesSchema,
+  type DismissDuplicatesInput,
 } from '@vertex/shared';
 import { LeadMergeService } from './lead-merge.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -77,6 +79,22 @@ export class LeadsController {
   @Get('duplicates')
   duplicates(@Tenant() tenant: TenantContext) {
     return this.merges.duplicates(tenant);
+  }
+
+  /** The groups marked as different people, for everyone in the workspace. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get('duplicates/dismissed')
+  dismissedDuplicates() {
+    return this.merges.dismissed();
+  }
+
+  /** "Not the same person". */
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Post('duplicates/dismiss')
+  dismissDuplicates(@Tenant() tenant: TenantContext, @Body(new ZodValidationPipe(dismissDuplicatesSchema)) body: DismissDuplicatesInput) {
+    return this.merges.dismiss(tenant, body.leadIds);
   }
 
   /** Makes the given duplicates part of this lead. */

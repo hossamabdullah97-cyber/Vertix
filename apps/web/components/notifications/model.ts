@@ -49,6 +49,7 @@ export const CATEGORY_ICON: Record<string, string> = {
 export function toneOf(n: Notif): 'accent' | 'danger' | 'warning' | 'neutral' {
   if (n.type.endsWith('.failed')) return 'danger';
   if (n.type === 'member.suspended') return 'warning';
+  if (n.type.startsWith('goal.')) return 'accent';
   if (n.category === 'CRM') return 'accent';
   return 'neutral';
 }
@@ -107,6 +108,27 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
       return { title: by('teamDeleted', { name: iso(str(m.name)) }), body: '' };
     case 'org.branding_updated':
       return { title: by('workspaceUpdated'), body: '' };
+    case 'goal.team_reached':
+    case 'goal.you_reached':
+    case 'goal.member_reached': {
+      const metric = str(m.metric);
+      const num = (v: unknown) => (typeof v === 'number' ? new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-US').format(v) : '');
+      const body = metric
+        ? t('notifications:types.goalBody', {
+            metric: t(`dashboard:goals.metric.${metric}`, { defaultValue: metric }),
+            period: t(`dashboard:goals.period.${str(m.period) || 'WEEK'}`),
+            value: num(m.value),
+            target: num(m.target),
+          })
+        : n.body ?? '';
+      const title =
+        n.type === 'goal.team_reached'
+          ? t('notifications:types.goalTeam')
+          : n.type === 'goal.you_reached'
+            ? t('notifications:types.goalYou')
+            : t('notifications:types.goalMember', { name: iso(str(m.memberName)) });
+      return { title, body };
+    }
     case 'approval.approved':
       return { title: t('notifications:types.approved'), body: n.body ?? '' };
     case 'approval.rejected':
@@ -136,6 +158,10 @@ export function linkOf(n: Notif): string | null {
       return '/team?view=teams';
     case 'org.branding_updated':
       return '/workspace';
+    case 'goal.team_reached':
+    case 'goal.you_reached':
+    case 'goal.member_reached':
+      return '/dashboard';
     default:
       return n.type.startsWith('member.') ? '/team' : null;
   }

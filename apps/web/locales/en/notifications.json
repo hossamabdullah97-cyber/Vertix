@@ -104,7 +104,11 @@
     "followUp": "{{name}} is waiting for a reply",
     "followUpNoName": "A lead is waiting for a reply",
     "followUpBody_one": "No reply for a day",
-    "followUpBody_other": "No reply for {{count}} days"
+    "followUpBody_other": "No reply for {{count}} days",
+    "goalTeam": "The team reached its goal",
+    "goalYou": "You reached your goal",
+    "goalMember": "{{name}} reached their goal",
+    "goalBody": "{{metric}} {{period}}: {{value}} of {{target}}"
   },
   "push": {
     "title": "On this device",

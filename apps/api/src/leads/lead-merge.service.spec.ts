@@ -69,3 +69,36 @@ describe('LeadMergeService.merge', () => {
     await expect(make([row('k')]).service.merge(viewer, 'k', ['k'])).rejects.toThrow(BadRequestException);
   });
 });
+
+describe('LeadMergeService dismissals', () => {
+  const viewer = { orgId: 'org', userId: 'u1', role: 'MANAGER' as const };
+  function make(visible: number) {
+    const prisma = {
+      client: {
+        lead: { count: jest.fn().mockResolvedValue(visible), findMany: jest.fn().mockResolvedValue([
+          { id: 'b', email: null, phone: '0100 123 4567' },
+          { id: 'a', email: null, phone: '+20 100 123 4567' },
+          { id: 'c', email: 'x@y.com', phone: null },
+          { id: 'd', email: 'X@y.com', phone: null },
+        ]) },
+        duplicateDismissal: { upsert: jest.fn(), findMany: jest.fn().mockResolvedValue([{ key: 'a,b' }]) },
+      },
+    };
+    return { service: new LeadMergeService(prisma as never, { emit: jest.fn() } as never), prisma };
+  }
+
+  it('saves the group for the whole workspace, under one key however it is ordered', async () => {
+    const { service, prisma } = make(2);
+    await expect(service.dismiss(viewer, ['b', 'a'])).resolves.toEqual({ key: 'a,b' });
+    expect(prisma.client.duplicateDismissal.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { orgId_key: { orgId: 'org', key: 'a,b' } } }));
+  });
+
+  it('refuses leads the person cannot see', async () => {
+    await expect(make(1).service.dismiss(viewer, ['a', 'b'])).rejects.toThrow(NotFoundException);
+  });
+
+  it('leaves dismissed groups out of the duplicates', async () => {
+    const groups = await make(0).service.duplicates(viewer);
+    expect(groups.map((g) => g.leads.map((l) => l.id).sort().join(','))).toEqual(['c,d']);
+  });
+});
