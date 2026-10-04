@@ -17,6 +17,12 @@ export const envSchema = z.object({
 
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
 
+  // Local-dev TLS (optional). Set both to serve the API over https — needed
+  // when the web app runs over https, since a page cannot call an http API.
+  // Production terminates TLS at the proxy and leaves these unset.
+  HTTPS_KEY_FILE: z.string().optional(),
+  HTTPS_CERT_FILE: z.string().optional(),
+
   // Proxies in front of the API: a count ("1") or their addresses. Unset when
   // the API is reached directly. See config/trust-proxy.ts.
   TRUST_PROXY: z
