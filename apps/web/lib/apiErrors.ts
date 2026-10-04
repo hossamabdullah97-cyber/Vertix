@@ -31,6 +31,8 @@ export const AR_MESSAGES: Record<string, string> = {
   'The email could not be sent. Try again in a moment.': 'تعذّر إرسال البريد. حاول مرة أخرى بعد لحظات.',
   'User not found': 'المستخدم غير موجود',
   'Template not found': 'الرسالة الجاهزة غير موجودة',
+  'Goal not found': 'الهدف غير موجود',
+  'Choose the member this goal is for': 'اختر العضو الذي يخصه هذا الهدف',
   'Choose at least one other lead to merge': 'اختر عميلاً محتملاً آخر واحداً على الأقل للدمج',
   'Push notifications are not set up on this server': 'إشعارات الأجهزة غير مُفعّلة على هذا الخادم',
   'Confirm your email address first: open the link we sent you, or send a new one from the notice at the top of the app.':

@@ -256,5 +256,66 @@
     "liveBanner": "is on now · day {{day}} of {{days}}",
     "openLive": "Live report"
   },
-  "meet": "Met someone"
+  "meet": "Met someone",
+  "goals": {
+    "title": "Goals",
+    "edit": "Edit goals",
+    "set": "Set a goal",
+    "close": "Close",
+    "empty": "Give the team something to aim for: new leads, taps, meetings or deals won this week or month. Progress is counted for you.",
+    "metric": {
+      "LEADS": "New leads",
+      "TAPS": "Card taps",
+      "MEETINGS": "Meetings booked",
+      "WON_DEALS": "Deals won",
+      "WON_VALUE": "Won value"
+    },
+    "period": {
+      "WEEK": "this week",
+      "MONTH": "this month"
+    },
+    "periodLong": {
+      "WEEK": "Each week (from Sunday)",
+      "MONTH": "Each month"
+    },
+    "scope": {
+      "TEAM": "Team total",
+      "EACH": "Each member",
+      "MEMBER": "One member"
+    },
+    "scopeLong": {
+      "TEAM": "The team's total",
+      "EACH": "Each member, the same target",
+      "MEMBER": "One member"
+    },
+    "eachDone_one": "{{done}} of {{count}} reached {{target}}",
+    "eachDone_other": "{{done}} of {{count}} reached {{target}}",
+    "more_one": "and {{count}} more",
+    "more_other": "and {{count}} more",
+    "reached": "Reached. Well done!",
+    "onPace_one": "On pace · {{togo}} to go, {{count}} day left",
+    "onPace_other": "On pace · {{togo}} to go, {{count}} days left",
+    "behind_one": "Behind pace · {{togo}} to go, {{count}} day left",
+    "behind_other": "Behind pace · {{togo}} to go, {{count}} days left",
+    "editTitle": "Team goals",
+    "editSubtitle": "Targets for each week or month. Setting the same goal again changes its target.",
+    "add": "Add a goal",
+    "fields": {
+      "metric": "What",
+      "period": "When",
+      "scope": "For",
+      "member": "Member",
+      "target": "Target",
+      "targetMoney": "Target (EGP)"
+    },
+    "counts": {
+      "LEADS": "Leads that came in during the period. For a member: from their cards and NFC chips.",
+      "TAPS": "Taps on the workspace's NFC chips. For a member: on the chips they hold.",
+      "MEETINGS": "Meetings visitors booked from the cards. For a member: on leads they handle.",
+      "WON_DEALS": "Leads moved to a won stage during the period. For a member: leads they handle.",
+      "WON_VALUE": "The deal value of leads moved to a won stage during the period."
+    },
+    "save": "Save",
+    "remove": "Remove goal"
+  }
 }
