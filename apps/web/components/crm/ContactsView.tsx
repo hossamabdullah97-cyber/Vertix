@@ -50,14 +50,18 @@ export function ContactsView({ leads, onOpen }: { leads: Lead[]; onOpen: (id: st
                   </td>
                   <td className="px-4 py-2.5">
                     <p className="font-semibold text-ink">{l.company || '—'}</p>
-                    {l.card && <p className="text-2xs text-muted">via /c/{l.card.slug}</p>}
+                    {l.card && (
+                      <p className="text-2xs text-muted">
+                        {t('contacts.viaCard')} <bdi dir="ltr">/c/{l.card.slug}</bdi>
+                      </p>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2.5 font-semibold">
                     <p className="text-xs text-ink">{l.phone || '—'}</p>
                     <p className="text-2xs text-muted font-mono">{l.email || '—'}</p>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="inline-flex items-center gap-1 text-xs text-muted"><Icon name={src.icon} size={12} /> {src.label}</span>
+                    <span className="inline-flex items-center gap-1 text-xs text-muted"><Icon name={src.icon} size={12} /> {t(`sources.${l.source}`, src.label)}</span>
                   </td>
                   <td className="px-4 py-2.5">
                     <span className="v-chip !px-2 !py-0.5 !text-3xs font-semibold" style={{ background: tm.bg, color: tm.fg, borderColor: tm.border }}>

@@ -60,17 +60,22 @@
     "unknownContact": "جهة اتصال غير معروفة",
     "card": "البطاقة:",
     "emptyTitle": "لا جهات اتصال مطابقة",
-    "emptyDesc": "تُنشأ جهات الاتصال من كل عميل يُلتقَط عبر بطاقاتك ولمسات NFC ورموز QR والنماذج."
+    "emptyDesc": "تُنشأ جهات الاتصال من كل عميل يُلتقَط عبر بطاقاتك ولمسات NFC ورموز QR والنماذج.",
+    "viaCard": "عبر"
   },
   "companies": {
     "pipelineValue": "قيمة المسار",
     "noCompany": "بدون شركة",
     "individualLeads": "عملاء أفراد",
     "wonSummary": "{{won}} رابحة · {{contacts}}",
-    "contact_one": "جهة اتصال {{count}}",
-    "contact_other": "{{count}} جهات اتصال",
     "emptyTitle": "لا شركات بعد",
-    "emptyDesc": "تظهر الشركات تلقائياً بمجرد أن يتضمّن العملاء الملتقَطون اسم شركة."
+    "emptyDesc": "تظهر الشركات تلقائياً بمجرد أن يتضمّن العملاء الملتقَطون اسم شركة.",
+    "contact_zero": "لا جهات اتصال",
+    "contact_one": "جهة اتصال واحدة",
+    "contact_two": "جهتا اتصال",
+    "contact_few": "{{count}} جهات اتصال",
+    "contact_many": "{{count}} جهة اتصال",
+    "contact_other": "{{count}} جهة اتصال"
   },
   "leadCard": {
     "estimatedValue": "القيمة التقديرية للصفقة",

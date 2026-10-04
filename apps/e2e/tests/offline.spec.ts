@@ -30,6 +30,22 @@ async function kept(page: Page, ...paths: string[]) {
   );
 }
 
+/** What the service worker has kept (the build's files left out), for a failure to show. */
+function whatIsKept(page: Page): Promise<string> {
+  return page.evaluate(async () => {
+    const out: string[] = [];
+    for (const name of await caches.keys()) {
+      const cache = await caches.open(name);
+      for (const request of await cache.keys()) {
+        if (request.url.includes('/_next/static/')) continue;
+        const response = await cache.match(request);
+        out.push(`${new URL(request.url).pathname} ${response?.status} (vary: ${response?.headers.get('vary')})`);
+      }
+    }
+    return out.join(', ') || 'nothing';
+  });
+}
+
 test.describe('without a signal', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
@@ -42,9 +58,11 @@ test.describe('without a signal', () => {
     await expect(page.getByText('Omar Offline').first()).toBeVisible();
     await kept(page, `/c/${card.slug}`, `/c/${card.slug}/contact.vcf`);
 
+    const atKept = await whatIsKept(page);
     await goOffline(visitor);
+    const beforeReload = await whatIsKept(page);
     await page.reload();
-    await expect(page.getByText('Omar Offline').first()).toBeVisible();
+    await expect(page.getByText('Omar Offline').first(), `the card did not open offline. Kept once ready: ${atKept}. Kept when offline: ${beforeReload}`).toBeVisible();
     await expect(page.getByText(/You're offline: this is the card as you last opened it/)).toBeVisible();
 
     // The contact still saves.

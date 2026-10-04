@@ -60,7 +60,8 @@
     "unknownContact": "Unknown contact",
     "card": "Card:",
     "emptyTitle": "No contacts match",
-    "emptyDesc": "Contacts are created from every lead captured through your cards, NFC taps, QR codes, and forms."
+    "emptyDesc": "Contacts are created from every lead captured through your cards, NFC taps, QR codes, and forms.",
+    "viaCard": "via"
   },
   "companies": {
     "pipelineValue": "Pipeline value",

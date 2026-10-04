@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate } from '@/lib/format';
-import { type Lead, type Stage, wonStage, lostStage, formatMoney } from '@/lib/crm';
+import { type Lead, type Stage, wonStage, lostStage, formatMoney, stageKey } from '@/lib/crm';
 
 export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] }) {
   const { t } = useTranslation('crm');
@@ -103,7 +103,7 @@ export function ReportsView({ leads, stages }: { leads: Lead[]; stages: Stage[] 
             {a.funnel.map((f, i) => (
               <div key={i} className="space-y-1">
                 <div className="flex items-center justify-between text-2xs font-semibold">
-                  <span className="text-ink">{f.stage}</span>
+                  <span className="text-ink">{t(stageKey(f.stage), f.stage)}</span>
                   <span className="text-muted">{f.count} · {formatMoney(f.value, locale)}</span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-canvas">
