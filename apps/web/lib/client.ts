@@ -507,6 +507,31 @@ export const twoStep = {
   recoveryCodes: (code: string) => authFetch<{ recoveryCodes: string[] }>('/auth/2fa/recovery-codes', { method: 'POST', body: JSON.stringify({ code: code.trim() }) }),
 };
 
+/** Saves data the API returned as a .json file on the person's device. */
+export function saveJson(data: unknown, filename: string) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+export interface DeletionPreview {
+  deletedWithIt: { id: string; name: string }[];
+  blockers: { id: string; name: string; members: number }[];
+  leaving: { id: string; name: string; role: Role }[];
+  hasPassword: boolean;
+  twoFactor: boolean;
+}
+export const account = {
+  export: () => authFetch<unknown>('/account/export'),
+  deletion: () => authFetch<DeletionPreview>('/account/deletion'),
+  remove: (body: { confirmEmail: string; password?: string; code?: string }) =>
+    authFetch<{ ok: true; workspacesDeleted: number }>('/account/delete', { method: 'POST', body: JSON.stringify(body) }),
+};
+
 export interface OrgSecurity {
   require2fa: boolean;
   membersWithout: { id: string; name: string | null; email: string; role: Role }[];

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getActiveOrgId, getToken, orgSecurity, uploadImage, type Me, type OrgSecurity } from '@/lib/client';
+import { authFetch, getActiveOrgId, getToken, orgSecurity, saveJson, uploadImage, type Me, type OrgSecurity } from '@/lib/client';
 import { Toggle } from '@/components/ui/Toggle';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate, formatNumber } from '@/lib/format';
@@ -160,7 +160,10 @@ export default function WorkspaceSettingsPage() {
             <div className="v-skeleton h-32 w-full rounded-xl" />
           </div>
         ) : section === 'general' ? (
-          <General org={org} canEdit={canEdit} onSave={save} />
+          <>
+            <General org={org} canEdit={canEdit} onSave={save} />
+            {me?.role === 'OWNER' && <ExportWorkspace org={org} onError={setError} />}
+          </>
         ) : section === 'brand' ? (
           <Brand org={org} canEdit={canEdit} onSave={save} />
         ) : section === 'security' ? (
@@ -293,6 +296,29 @@ function General({ org, canEdit, onSave }: { org: Org; canEdit: boolean; onSave:
 }
 
 /** The privacy policy cards link to under their contact form. */
+/** The whole workspace as a file, for its owner to keep or take elsewhere. */
+function ExportWorkspace({ org, onError }: { org: Org; onError: (m: string) => void }) {
+  const { t } = useTranslation('organizations');
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    setBusy(true);
+    try {
+      saveJson(await authFetch('/orgs/current/export'), `${org.slug}-export-${new Date().toISOString().slice(0, 10)}.json`);
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Row title={t('export.title')} hint={t('export.hint')}>
+      <button type="button" onClick={run} disabled={busy} className="v-btn v-btn-ghost disabled:opacity-50">
+        <Icon name="download" size={14} /> {busy ? t('export.preparing') : t('export.download')}
+      </button>
+    </Row>
+  );
+}
+
 /** Whether everyone here must sign in with two-step verification, and who still has not set it up. */
 function Security({ me, onDone, onError }: { me: Me | null; onDone: (m: string) => void; onError: (m: string) => void }) {
   const { t } = useTranslation('organizations');

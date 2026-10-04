@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Header, Patch } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { orgSecuritySchema, updateOrgSchema, type JwtPayload, type OrgSecurityInput, type UpdateOrgInput } from '@vertex/shared';
 import type { TenantContext } from '@vertex/db';
 import { OrganizationsService } from './organizations.service';
@@ -75,5 +76,16 @@ export class OrganizationsController {
     const out = await this.orgs.updateSecurity(orgId, tenant.userId, body.require2fa);
     await this.audit.log(tenant, body.require2fa ? 'org.two_step_required' : 'org.two_step_optional', { targetType: 'organization', targetId: orgId });
     return out;
+  }
+
+  /** Everything in the workspace, as a JSON download (owners only). */
+  @Roles('OWNER')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Get('current/export')
+  @Header('Content-Disposition', 'attachment; filename="vertex-connect-workspace.json"')
+  async export(@OrgId() orgId: string, @Tenant() tenant: TenantContext) {
+    const data = await this.orgs.export(orgId);
+    await this.audit.log(tenant, 'org.exported', { targetType: 'organization', targetId: orgId, metadata: { leads: data.leads.length, cards: data.cards.length } });
+    return data;
   }
 }

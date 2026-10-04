@@ -1,6 +1,6 @@
 {
   "title": "Account",
-  "subtitle": "How you sign in. These settings are yours and follow you into every workspace you belong to.",
+  "subtitle": "How you sign in, your data, and closing your account. These settings follow you into every workspace you belong to.",
   "twoStep": {
     "title": "Two-step verification",
     "body": "After your password, sign-in also asks for a code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator, 1Password…). Someone who learns your password still can't get in.",
@@ -29,5 +29,28 @@
     "fileHeading": "Vertex Connect recovery codes. Each works once.",
     "confirmDisable": "Enter a code from your app, or a recovery code, to turn two-step verification off.",
     "confirmRegenerate": "Enter a code from your app to get new recovery codes. The old ones stop working."
+  },
+  "data": {
+    "title": "Your data",
+    "body": "Download a copy of everything your account holds: your profile, the workspaces you're in, your cards, the leads from your cards or assigned to you with their history, and your notifications.",
+    "download": "Download my data",
+    "preparing": "Preparing…"
+  },
+  "delete": {
+    "title": "Delete account",
+    "body": "Closes your account for good. This can't be undone.",
+    "start": "Delete my account…",
+    "blockedTitle": "First, hand over the workspaces you own",
+    "blocker_one": "{{name}}: you're its only owner and {{count}} other person uses it",
+    "blocker_other": "{{name}}: you're its only owner and {{count}} other people use it",
+    "blockedHow": "On the Team page, make someone else an owner, or remove the other members. Then come back here.",
+    "withIt": "Deleted with your account, as no one else uses them: {{names}}. They're kept for 30 days in case it was a mistake, then erased.",
+    "leaving": "You leave {{names}}. Your cards there go offline, and your leads and chips stay with the team, unassigned.",
+    "erased": "Your name, email, photo and sign-in methods are erased now, and you're signed out everywhere.",
+    "typeEmail": "Type {{email}} to confirm",
+    "password": "Your password",
+    "code": "Code from your authenticator app (or a recovery code)",
+    "confirm": "Delete my account",
+    "deleting": "Deleting…"
   }
 }

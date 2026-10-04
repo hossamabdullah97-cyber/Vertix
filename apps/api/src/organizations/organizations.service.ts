@@ -87,4 +87,54 @@ export class OrganizationsService {
       WHERE id = ${orgId}`;
     return this.security(orgId);
   }
+
+  /**
+   * The whole workspace as one JSON document, for its owner to keep or to
+   * take elsewhere: people, cards, leads with their history, pipeline, chips,
+   * occasions and ready messages. Reads go through the tenant scope.
+   */
+  async export(orgId: string) {
+    const db = this.prisma.client;
+    const [org, members, cards, leads, stages, tags, occasions, templates] = await Promise.all([
+      db.organization.findUnique({ where: { id: orgId }, select: { id: true, name: true, slug: true, plan: true, branding: true, settings: true, createdAt: true } }),
+      db.membership.findMany({ select: { role: true, status: true, createdAt: true, user: { select: { name: true, email: true } } } }),
+      db.card.findMany({
+        select: {
+          id: true, slug: true, templateId: true, theme: true, vcardData: true, isPublished: true, createdAt: true, updatedAt: true,
+          owner: { select: { name: true, email: true } },
+          sections: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
+          actions: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
+        },
+      }),
+      db.lead.findMany({
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true, name: true, email: true, phone: true, company: true, source: true, score: true, value: true, createdAt: true,
+          firstContactedAt: true, lastContactedAt: true, cardId: true,
+          stage: { select: { name: true } },
+          assignee: { select: { name: true, email: true } },
+          activities: { orderBy: { createdAt: 'asc' }, select: { type: true, metadata: true, createdAt: true } },
+        },
+      }),
+      db.pipelineStage.findMany({ orderBy: { order: 'asc' }, select: { name: true, order: true, color: true, isWon: true } }),
+      db.nfcTag.findMany({ select: { uid: true, status: true, hardwareType: true, cardId: true, activationCount: true, lastScanAt: true, assignedUser: { select: { email: true } } } }),
+      db.occasion.findMany({ orderBy: { startsOn: 'asc' }, select: { name: true, startsOn: true, endsOn: true } }),
+      db.messageTemplate.findMany({ orderBy: { order: 'asc' }, select: { name: true, channel: true, subject: true, body: true } }),
+    ]);
+    if (!org) throw new BadRequestException('Organization not found');
+    const { settings, ...rest } = org;
+    // Bookkeeping the sweeps keep in settings is not the workspace's data.
+    const { weeklyReportWeek: _w, ...ownSettings } = (settings ?? {}) as Record<string, unknown>;
+    return {
+      exportedAt: new Date().toISOString(),
+      workspace: { ...rest, settings: ownSettings },
+      members: members.map((m) => ({ name: m.user.name, email: m.user.email, role: m.role, status: m.status, joinedAt: m.createdAt })),
+      cards,
+      leads: leads.map(({ stage, assignee, ...l }) => ({ ...l, stage: stage?.name ?? null, assignedTo: assignee?.email ?? null })),
+      pipeline: stages,
+      chips: tags.map(({ assignedUser, ...t }) => ({ ...t, holder: assignedUser?.email ?? null })),
+      occasions,
+      messageTemplates: templates,
+    };
+  }
 }
