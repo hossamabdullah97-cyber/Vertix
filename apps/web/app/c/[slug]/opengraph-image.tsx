@@ -1,5 +1,6 @@
+import { headers } from 'next/headers';
 import { ImageResponse } from 'next/og';
-import { apiGet, type PublicCard, type PublicCardLocked } from '@/lib/api';
+import { apiGet, forwardedFor, type PublicCard, type PublicCardLocked } from '@/lib/api';
 import { buildProfile, initials } from '@/lib/profile';
 import { readableOn, shade } from '@/lib/color';
 
@@ -63,7 +64,7 @@ export default async function OpenGraphImage({ params }: { params: { slug: strin
     { name: 'Plex', data: regular, weight: 400 as const },
     { name: 'Plex', data: semibold, weight: 600 as const },
   ];
-  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}`);
+  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}`, forwardedFor(headers()));
 
   // A missing or private card still gets a tidy picture, with nothing about it.
   if (!result || ('locked' in result && result.locked)) {

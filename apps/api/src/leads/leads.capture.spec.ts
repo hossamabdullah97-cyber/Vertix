@@ -84,12 +84,36 @@ describe('LeadsService.capture guards', () => {
 
   it('stops one visitor sending to one card over and over', async () => {
     const { service, db } = setup();
-    for (let i = 0; i < CAPTURE_LIMITS.visitorCard; i++) await service.capture(form, '1.2.3.4');
-    const err = await service.capture(form, '1.2.3.4').catch((e: unknown) => e);
+    const omar = { ...form, visitorId: 'phone-omar' };
+    for (let i = 0; i < CAPTURE_LIMITS.visitorCard; i++) await service.capture(omar, '1.2.3.4');
+    const err = await service.capture(omar, '1.2.3.4').catch((e: unknown) => e);
     expect(err).toBeInstanceOf(HttpException);
     expect((err as HttpException).getStatus()).toBe(429);
     expect(db.lead.create).toHaveBeenCalledTimes(CAPTURE_LIMITS.visitorCard);
-    // Someone else can still reach the card.
+    // Moving to another network does not start them over…
+    await expect(service.capture(omar, '5.6.7.8')).rejects.toMatchObject({ status: 429 });
+    // …and someone else can still reach the card.
+    await expect(service.capture({ ...form, visitorId: 'phone-laila' }, '5.6.7.8')).resolves.toMatchObject({ ok: true });
+  });
+
+  it('lets a whole hall on the venue’s Wi-Fi (one address) reach the card', async () => {
+    const { service, db } = setup();
+    const crowd = CAPTURE_LIMITS.visitorCard * 4;
+    for (let i = 0; i < crowd; i++) await service.capture({ ...form, visitorId: `phone-${i}` }, '41.33.0.1');
+    expect(db.lead.create).toHaveBeenCalledTimes(crowd);
+  });
+
+  it('stops a script that makes up a new phone for every send from one address', async () => {
+    const { service, db } = setup();
+    for (let i = 0; i < CAPTURE_LIMITS.addressCard; i++) await service.capture({ ...form, visitorId: `fake-${i}` }, '6.6.6.6');
+    await expect(service.capture({ ...form, visitorId: 'fake-next' }, '6.6.6.6')).rejects.toMatchObject({ status: 429 });
+    expect(db.lead.create).toHaveBeenCalledTimes(CAPTURE_LIMITS.addressCard);
+  });
+
+  it('counts by address when the phone keeps no id', async () => {
+    const { service } = setup();
+    for (let i = 0; i < CAPTURE_LIMITS.visitorCard; i++) await service.capture(form, '1.2.3.4');
+    await expect(service.capture(form, '1.2.3.4')).rejects.toMatchObject({ status: 429 });
     await expect(service.capture(form, '5.6.7.8')).resolves.toMatchObject({ ok: true });
   });
 

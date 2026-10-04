@@ -70,6 +70,13 @@ export function hold(p: Omit<Pending, 'id' | 'at'>): Promise<unknown> {
 /** Whether a failure means "no connection" rather than "the API said no". */
 export const isUnreachable = (err: unknown) => (err as { status?: number })?.status === 0;
 
+/**
+ * Whether a waiting change should wait longer rather than be given up: no
+ * connection, the API asking to slow down, or the server not there right now
+ * (restarting, overloaded). None of these says the change itself was wrong.
+ */
+export const isTemporary = (err: unknown) => [0, 429, 502, 503, 504].includes((err as { status?: number })?.status ?? -1);
+
 /** Sends what is waiting, oldest first; stops at the first one that still cannot get through. */
 export async function flush(): Promise<void> {
   if (flushing || !send) return;
@@ -83,7 +90,7 @@ export async function flush(): Promise<void> {
         const result = await send(next);
         waiters.get(next.id)?.resolve(result);
       } catch (err) {
-        if (isUnreachable(err)) break;
+        if (isTemporary(err)) break;
         waiters.get(next.id)?.reject(err);
         set({ failed: state.failed + 1 });
       }
@@ -117,7 +124,8 @@ export function startOutbox(sender: Send) {
     void flush();
   });
   window.addEventListener('offline', () => set({ online: false }));
-  // navigator.onLine can say "online" on a network that goes nowhere: keep trying now and then.
+  // navigator.onLine can say "online" on a network that goes nowhere, and a
+  // busy server asks to come back later: keep trying now and then.
   setInterval(() => {
     if (state.pending && navigator.onLine) void flush();
   }, 20_000);

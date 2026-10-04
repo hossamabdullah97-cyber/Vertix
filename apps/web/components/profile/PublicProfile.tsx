@@ -1022,6 +1022,13 @@ function keepForLater(body: string) {
 }
 
 let sendingKept = false;
+let retryKept: ReturnType<typeof setTimeout> | undefined;
+/** Tries again in a while: the API asked to slow down, was not there, or the signal goes nowhere. */
+function sendKeptIn(seconds: number) {
+  clearTimeout(retryKept);
+  retryKept = setTimeout(() => void sendKept(), Math.min(Math.max(seconds, 15), 3600) * 1000);
+}
+
 async function sendKept() {
   if (sendingKept || typeof navigator === 'undefined' || navigator.onLine === false) return;
   let list: string[];
@@ -1042,12 +1049,22 @@ async function sendKept() {
         res = await post(JSON.stringify({ ...d, intent: 'CONTACT', meetingAt: undefined, note: [d.note, asked].filter(Boolean).join(' ') }));
       }
       // Try again later when the API is busy or limiting; anything else is settled.
-      if (res.status === 429 || res.status >= 500) break;
+      if (res.status === 429) {
+        const wait = ((await res.json().catch(() => null)) as { retryAfter?: number } | null)?.retryAfter;
+        sendKeptIn(typeof wait === 'number' ? wait : 60);
+        break;
+      }
+      if (res.status >= 500) {
+        sendKeptIn(60);
+        break;
+      }
       list = list.slice(1);
       localStorage.setItem(KEPT, JSON.stringify(list));
     }
   } catch {
-    /* still no connection: stays kept */
+    // Still no connection: kept for when the phone says it is back, and tried
+    // now and then too, since a phone can say "online" on a signal that goes nowhere.
+    sendKeptIn(30);
   } finally {
     if (!list.length) localStorage.removeItem(KEPT);
     sendingKept = false;

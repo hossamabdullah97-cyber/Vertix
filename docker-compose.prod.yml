@@ -114,6 +114,11 @@ services:
         NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
         NEXT_PUBLIC_SUPPORT_PHONE: ${NEXT_PUBLIC_SUPPORT_PHONE:-}
     restart: unless-stopped
+    environment:
+      # The server renders cards with the API's data: it asks the API here,
+      # passing on each visitor's address, so the API's per-address limits
+      # count visitors rather than this server (Caddy would replace it).
+      API_INTERNAL_URL: http://api:4000/api
     depends_on:
       - api
 
