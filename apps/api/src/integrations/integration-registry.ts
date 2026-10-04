@@ -79,9 +79,9 @@ export const INTEGRATION_REGISTRY: IntegrationProviderDef[] = [
 
   // --- Communication ---
   { key: 'slack', name: 'Slack', category: 'communication', auth: 'webhook_url', status: 'coming_soon', popular: true, description: 'Send lead and event notifications to a Slack channel.', scopes: ['Post messages'] },
-  { key: 'ms_teams', name: 'Microsoft Teams', category: 'communication', auth: 'webhook_url', status: 'coming_soon', description: 'Post workspace events to a Teams channel.', scopes: ['Post messages'] },
+  { key: 'ms_teams', name: 'Microsoft Teams', category: 'communication', auth: 'webhook_url', status: 'available', description: 'Post new leads and workspace events to a Teams channel.', scopes: ['Post messages'] },
   { key: 'whatsapp_business', name: 'WhatsApp Business', category: 'communication', auth: 'oauth2', status: 'coming_soon', description: 'Notify and message contacts via WhatsApp Business.', scopes: ['Send messages'] },
-  { key: 'telegram', name: 'Telegram', category: 'communication', auth: 'api_key', status: 'coming_soon', description: 'Send event notifications via a Telegram bot.', scopes: ['Send messages'] },
+  { key: 'telegram', name: 'Telegram', category: 'communication', auth: 'api_key', status: 'available', description: 'Post new leads and workspace events to a Telegram group or channel through your bot.', scopes: ['Send messages'] },
 
   // --- Calendar ---
   { key: 'google_calendar', name: 'Google Calendar', category: 'calendar', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Turn meeting requests into calendar events.', scopes: ['Calendar events'] },

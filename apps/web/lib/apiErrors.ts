@@ -180,6 +180,19 @@ export const AR_MESSAGES: Record<string, string> = {
   'Not Found': 'غير موجود',
   'Could not reach the server': 'تعذّر الاتصال بالخادم. تأكد من اتصالك بالإنترنت وحاول مرة أخرى',
   'Internal server error': 'حدث خطأ في الخادم. حاول مرة أخرى',
+
+  // Telegram and Teams (integrations/channels)
+  'That does not look like a bot token. Copy it from @BotFather.': 'هذا لا يبدو رمز بوت. انسخه من \u2068@BotFather\u2069.',
+  'Telegram could not be reached. Try again in a moment.': 'تعذّر الوصول إلى Telegram. حاول مرة أخرى بعد قليل.',
+  'Telegram does not know this token. Copy it again from @BotFather.': 'لا يعرف Telegram هذا الرمز. انسخه مجدداً من \u2068@BotFather\u2069.',
+  'Telegram does not know this token any more. Copy it again from @BotFather.': 'لم يعد Telegram يعرف هذا الرمز. انسخه مجدداً من \u2068@BotFather\u2069.',
+  'Telegram refused the token.': 'رفض Telegram هذا الرمز.',
+  'This bot already sends its messages to another service (a webhook), so its chats cannot be listed. Use a new bot.':
+    'هذا البوت يرسل رسائله بالفعل إلى خدمة أخرى (webhook)، لذلك لا يمكن عرض محادثاته. استخدم بوتاً جديداً.',
+  'Saving connections is not set up on this server yet.': 'حفظ الاتصالات غير مُعدّ على هذا الخادم بعد.',
+  'Choose the chat to post to.': 'اختر المحادثة التي يُنشر فيها.',
+  'Paste the link from a Teams workflow ("When a Teams webhook request is received").': 'الصق الرابط من سير عمل في Teams («\u2068When a Teams webhook request is received\u2069»).',
+  'Connect it again: its details were removed.': 'اربطه مجدداً: حُذفت بياناته.',
 };
 
 /** Messages with a value in them. The capture groups carry that value across. */
@@ -203,6 +216,10 @@ export const AR_PATTERNS: [RegExp, (...m: string[]) => string][] = [
   [/^Too many attempts\. Try again in (\d+) minutes?\.$/, (n) => `محاولات كثيرة. حاول مرة أخرى بعد ${n} دقيقة.`],
   [/^Unknown action type: (.+)$/, (a) => `نوع إجراء غير معروف: ${a}`],
   [/^Unknown event\(s\): (.+)$/, (e) => `أحداث غير معروفة: ${e}`],
+  [/^(\S+) is not a chat or channel integration\.$/, (p) => `${p} ليس تكامل محادثات أو قنوات.`],
+  [/^The bot cannot post in that chat \((.*)\)\. Add it to the group, or make it an admin of the channel\.$/, (d) => `لا يستطيع البوت النشر في هذه المحادثة (${d}). أضفه إلى المجموعة، أو اجعله مشرفاً في القناة.`],
+  [/^Teams refused the message \((.*)\)\. Check that the workflow is turned on and the link is copied whole\.$/, (d) => `رفض Teams الرسالة (${d}). تأكد أن سير العمل مفعّل وأن الرابط منسوخ كاملاً.`],
+  [/^The message did not arrive \((.*)\)\. Try again in a moment\.$/, (d) => `لم تصل الرسالة (${d}). حاول مرة أخرى بعد قليل.`],
   [/^Unknown scope\(s\): (.+)$/, (s) => `صلاحيات غير معروفة: ${s}`],
   [/^Plan limit reached/, () => 'وصلت إلى حد باقتك. رقِّ الباقة لإضافة المزيد.'],
   [/^An occasion can last at most (\d+) days$/, (n) => `يمكن أن تستمر المناسبة ${n} يوماً على الأكثر`],

@@ -108,7 +108,9 @@
     "goalTeam": "The team reached its goal",
     "goalYou": "You reached your goal",
     "goalMember": "{{name}} reached their goal",
-    "goalBody": "{{metric}} {{period}}: {{value}} of {{target}}"
+    "goalBody": "{{metric}} {{period}}: {{value}} of {{target}}",
+    "integrationFailed": "{{name}} stopped receiving messages",
+    "integrationFailedBody": "Connect it again from Integrations."
   },
   "push": {
     "title": "On this device",

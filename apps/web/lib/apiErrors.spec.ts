@@ -91,6 +91,12 @@ describe('apiErrorText', () => {
     expect(apiErrorText('Card not found', [], 'ar')).toBe('البطاقة غير موجودة');
     expect(apiErrorText('hubspot is not connected.', [], 'ar')).toBe('hubspot غير متصل.');
     expect(apiErrorText('Too many attempts. Try again in 1 minute.', [], 'ar')).toContain('1');
+    // Why Telegram or Teams turned a message away, in their own words inside ours.
+    expect(apiErrorText('The bot cannot post in that chat (Forbidden: bot was kicked from the group chat). Add it to the group, or make it an admin of the channel.', [], 'ar')).toBe(
+      'لا يستطيع البوت النشر في هذه المحادثة (Forbidden: bot was kicked from the group chat). أضفه إلى المجموعة، أو اجعله مشرفاً في القناة.',
+    );
+    expect(apiErrorText('Teams refused the message (HTTP 404). Check that the workflow is turned on and the link is copied whole.', [], 'ar')).toContain('HTTP 404');
+    expect(apiErrorText('The message did not arrive (No answer in time). Try again in a moment.', [], 'ar')).toMatch(/^لم تصل الرسالة/);
   });
 
   it('never shows English in Arabic', () => {

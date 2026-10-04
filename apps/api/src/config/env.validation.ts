@@ -36,6 +36,9 @@ export const envSchema = z.object({
   S3_BUCKET: z.string().optional(),
   S3_PUBLIC_URL: z.string().optional(),
 
+  // Telegram's Bot API; only changed to point tests at a stand-in.
+  TELEGRAM_API_URL: z.string().url().optional(),
+
   // The time zone meeting hours are in for cards whose owner has not chosen one.
   DEFAULT_TIMEZONE: z.string().default('Africa/Cairo'),
 

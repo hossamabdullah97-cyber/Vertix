@@ -11,6 +11,7 @@ import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/ui/Sheet';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CopyField, Field, Notice, SheetSection, Toggle, iso, type Handoff } from './shared';
+import { CHANNEL_APPS, ChannelSettings, ChannelSetup } from './ChannelSetup';
 
 interface Connection {
   status: 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'SYNCING' | 'REQUIRES_REAUTH';
@@ -293,6 +294,8 @@ function AppSheet({
 
   const state = stateOf(app);
   const conn = app.connection;
+  // Telegram and Teams are set up in the sheet itself, not through an OAuth redirect.
+  const channel = CHANNEL_APPS.has(app.key);
 
   async function connect() {
     setError('');
@@ -307,14 +310,14 @@ function AppSheet({
   }
 
   const footer =
-    canManage && (state === 'connected' || state === 'attention' || state === 'ready') ? (
+    canManage && (state === 'connected' || state === 'attention' || (state === 'ready' && !channel)) ? (
       <div className="flex flex-wrap justify-end gap-2">
         {state !== 'ready' && (
           <button onClick={() => setConfirm('disconnect')} className="v-btn v-btn-ghost text-red-600 dark:text-red-400">
             {t('apps.disconnect')}
           </button>
         )}
-        {state !== 'connected' && (
+        {state !== 'connected' && !channel && (
           <button onClick={connect} disabled={!!busy} className="v-btn disabled:opacity-60">
             {busy === 'connect' ? t('apps.connecting') : state === 'attention' ? t('apps.reconnect') : t('apps.connect')}
           </button>
@@ -346,9 +349,11 @@ function AppSheet({
             <div className="rounded-lg bg-elevated px-4 py-3 text-sm ring-1 ring-inset ring-line">
               <p className="flex items-center gap-2 font-medium text-ink">
                 <span className={`h-2 w-2 rounded-full ${DOT[state]}`} />
-                {conn?.account ? t('apps.account', { account: iso(conn.account) }) : t(`apps.state.${state}`)}
+                {conn?.account ? t(channel ? 'apps.channel.postsTo' : 'apps.account', { account: iso(conn.account) }) : t(`apps.state.${state}`)}
               </p>
-              {conn?.lastSyncAt && <p className="mt-1 text-muted">{t('apps.lastSync', { time: formatRelativeTime(conn.lastSyncAt, locale) })}</p>}
+              {conn?.lastSyncAt && (
+                <p className="mt-1 text-muted">{t(channel ? 'apps.channel.lastSent' : 'apps.lastSync', { time: formatRelativeTime(conn.lastSyncAt, locale) })}</p>
+              )}
               {conn?.status === 'REQUIRES_REAUTH' && <p className="mt-2 text-amber-700 dark:text-amber-400">{t('apps.expired')}</p>}
               {conn?.lastError && <p className="mt-2 break-words text-red-700 dark:text-red-300">{conn.lastError}</p>}
             </div>
@@ -396,6 +401,9 @@ function AppSheet({
           )}
 
           {app.crmSyncable && state === 'connected' && <CrmSync app={app} canManage={canManage} />}
+
+          {channel && state === 'connected' && <ChannelSettings appKey={app.key} canManage={canManage} onChanged={onChanged} />}
+          {channel && canManage && (state === 'ready' || state === 'attention') && <ChannelSetup key={app.key} appKey={app.key} appName={app.name} onConnected={onChanged} />}
         </div>
       </Sheet>
 

@@ -92,6 +92,10 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
       return { title: t('notifications:types.automationFailed'), body: t('notifications:types.automationFailedBody', { event: event(m.event) }) };
     case 'webhook.failed':
       return { title: t('notifications:types.webhookFailed'), body: t('notifications:types.webhookFailedBody', { event: event(m.event) }) };
+    case 'integration.failed': {
+      const name = str(m.provider) === 'telegram' ? 'Telegram' : str(m.provider) === 'ms_teams' ? 'Microsoft Teams' : str(m.provider);
+      return { title: t('notifications:types.integrationFailed', { name: iso(name) }), body: t('notifications:types.integrationFailedBody') };
+    }
     case 'member.added':
       return { title: t('notifications:types.memberAdded'), body: role(m.role) ? t('notifications:types.memberAddedBody', { role: role(m.role) }) : '' };
     case 'member.role_changed':
@@ -152,6 +156,8 @@ export function linkOf(n: Notif): string | null {
       return '/integrations?tab=automations';
     case 'webhook.failed':
       return '/integrations?tab=webhooks';
+    case 'integration.failed':
+      return '/integrations';
     case 'team.created':
       return str(m.teamId) ? `/team?team=${encodeURIComponent(str(m.teamId))}` : '/team?view=teams';
     case 'team.deleted':

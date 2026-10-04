@@ -116,7 +116,9 @@
     "goalTeam": "حقق الفريق هدفه",
     "goalYou": "حققت هدفك",
     "goalMember": "حقق {{name}} هدفه",
-    "goalBody": "{{metric}} {{period}}: {{value}} من {{target}}"
+    "goalBody": "{{metric}} {{period}}: {{value}} من {{target}}",
+    "integrationFailed": "توقف {{name}} عن استقبال الرسائل",
+    "integrationFailedBody": "اربطوه مجدداً من صفحة التكاملات."
   },
   "push": {
     "title": "على هذا الجهاز",

@@ -48,6 +48,10 @@ suite('describe', () => {
     );
   });
 
+  it('names the chat app that stopped receiving messages', () => {
+    expect(describe(n({ type: 'integration.failed', metadata: { provider: 'telegram' } }), t).title).toBe('notifications:types.integrationFailed(name=Telegram)');
+  });
+
   it('shows what people wrote themselves as they wrote it', () => {
     // An automation's own message is the owner's words, not ours to translate.
     expect(describe(n({ type: 'automation.triggered', title: 'Call them', body: 'Now' }), t)).toEqual({ title: 'Call them', body: 'Now' });
@@ -64,6 +68,7 @@ suite('linkOf', () => {
   it('sends failures to where they can be fixed', () => {
     expect(linkOf(n({ type: 'webhook.failed' }))).toBe('/integrations?tab=webhooks');
     expect(linkOf(n({ type: 'automation.failed' }))).toBe('/integrations?tab=automations');
+    expect(linkOf(n({ type: 'integration.failed', metadata: { provider: 'ms_teams' } }))).toBe('/integrations');
   });
 
   it('opens the team that was created, and nothing for what has no page', () => {

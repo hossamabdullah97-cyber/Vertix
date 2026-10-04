@@ -13,6 +13,7 @@ import { CrmSyncService } from './crm/crm-sync.service';
 import { AuditService } from '../organizations/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { signWebhook, SIGNATURE_HEADER } from './webhook-signature';
+import { ChannelsService } from './channels/channels.service';
 
 /** Every event an endpoint may subscribe to (section 10). '*' means all. */
 export const WEBHOOK_EVENTS = [
@@ -57,6 +58,7 @@ export class WebhookService {
     private readonly vault: CredentialVault,
     private readonly automations: AutomationService,
     private readonly crmSync: CrmSyncService,
+    private readonly channels: ChannelsService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
   ) {}
@@ -243,6 +245,9 @@ export class WebhookService {
     // Push to any connected CRM whose sync is enabled (e.g. lead.created →
     // HubSpot contact). Also best-effort and non-blocking.
     void this.crmSync.onEvent(orgId, event, data).catch(() => undefined);
+
+    // Tell a connected Telegram chat or Teams channel. Also best-effort.
+    void this.channels.onEvent(orgId, event, data).catch(() => undefined);
 
     const endpoints = await this.db.webhookEndpoint.findMany({
       where: {
