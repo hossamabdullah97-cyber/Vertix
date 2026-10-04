@@ -568,6 +568,9 @@ model LeadAlertSettings {
   phone     String?
   /// The language the alerts are written in: en | ar.
   lang      String   @default("en")
+  /// The Sunday-morning email about the workspace's week. Null means the
+  /// default for the person's role: on for owners and admins, off for managers.
+  weeklyReport Boolean?
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

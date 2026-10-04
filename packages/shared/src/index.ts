@@ -504,6 +504,7 @@ export const leadAlertSettingsSchema = z
     whatsapp: z.boolean(),
     phone: z.string().trim().max(32).nullable(),
     lang: z.enum(['en', 'ar']),
+    weeklyReport: z.boolean(),
   })
   .partial();
 export type LeadAlertSettingsInput = z.infer<typeof leadAlertSettingsSchema>;

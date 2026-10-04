@@ -58,6 +58,8 @@ export class LeadAlertsService {
       whatsapp: row?.whatsapp ?? DEFAULTS.whatsapp,
       phone: row?.phone ?? DEFAULTS.phone,
       lang: ((row?.lang as AlertLang) ?? DEFAULTS.lang) as AlertLang,
+      /** The weekly report: null until chosen (then it follows the role: on for owners and admins). */
+      weeklyReport: row?.weeklyReport ?? null,
       address: user?.email ?? null,
       whatsappReady: this.whatsappReady,
       /** Whether the person has chosen, rather than living with the defaults. */
@@ -66,8 +68,9 @@ export class LeadAlertsService {
   }
 
   async update(userId: string, input: LeadAlertSettingsInput) {
-    const data: { email?: boolean; whatsapp?: boolean; phone?: string | null; lang?: string } = {};
+    const data: { email?: boolean; whatsapp?: boolean; phone?: string | null; lang?: string; weeklyReport?: boolean } = {};
     if (input.email !== undefined) data.email = input.email;
+    if (input.weeklyReport !== undefined) data.weeklyReport = input.weeklyReport;
     if (input.lang !== undefined) data.lang = input.lang;
     if (input.phone !== undefined) {
       if (input.phone === null || input.phone === '') data.phone = null;
