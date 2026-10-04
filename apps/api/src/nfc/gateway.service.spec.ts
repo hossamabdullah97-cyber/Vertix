@@ -23,7 +23,8 @@ describe('GatewayService', () => {
   it('finds a chip however its serial is spelled in the URL', async () => {
     const { gateway, db } = setup();
     const r = await gateway.resolve('04a1b2c3', ctx);
-    expect(db.nfcTag.findFirst).toHaveBeenCalledWith({ where: { uid: '04:A1:B2:C3' } });
+    // Only a chip of a workspace that has not been deleted.
+    expect(db.nfcTag.findFirst).toHaveBeenCalledWith({ where: { uid: '04:A1:B2:C3', org: { deletedAt: null } } });
     expect(r.state).toBe('ok');
     expect(r.redirectUrl).toBe('https://web.test/c/jane?t=04%3AA1%3AB2%3AC3');
   });

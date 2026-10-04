@@ -97,7 +97,7 @@
     "danger": "Delete",
     "delete": "Delete workspace",
     "deleteTitle": "Delete {{name}}?",
-    "deleteBody": "Its members lose it, and its cards go offline. This can't be undone from the console.",
+    "deleteBody": "Its members lose it and its cards, chips and forms go offline at once. It can be restored below for 30 days; then it is erased for good, with its cards, leads and files. A paid plan stops renewing now.",
     "deleting": "Deleting…",
     "form": {
       "name": "Workspace name",
@@ -113,6 +113,19 @@
       "needName": "Give the workspace a name.",
       "needEmail": "Enter the owner's email.",
       "needPassword": "Set a password of at least 8 characters."
+    },
+    "deleted": {
+      "title_one": "Deleted workspace ({{n}})",
+      "title_other": "Deleted workspaces ({{n}})",
+      "hint": "Each can be restored until the date shown. After it, the workspace is erased for good with its cards, leads, events and files, and its chips go back to stock.",
+      "counts": "{{members}} members · {{cards}} cards · {{leads}} leads",
+      "on": "Deleted {{date}}",
+      "erasedOn": "Erased {{date}}",
+      "restore": "Restore",
+      "restoring": "Restoring…",
+      "restoreTitle": "Restore {{name}}?",
+      "restoreBody": "Its members get it back as it was, and its published cards and chips work again. A plan that was cancelled stays cancelled.",
+      "restored": "{{name}} is restored."
     }
   },
   "people": {

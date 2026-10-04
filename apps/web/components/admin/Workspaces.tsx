@@ -29,6 +29,12 @@ export function Workspaces({ orgs, reload }: { orgs: AdminOrg[] | null; reload: 
   );
   const open = orgs?.find((o) => o.id === openId) ?? null;
   const n = (v: number) => formatNumber(v, locale);
+  // Deleting moves a workspace from the table to the deleted list below.
+  const [version, setVersion] = useState(0);
+  const reloadAll = async () => {
+    await reload();
+    setVersion((v) => v + 1);
+  };
 
   return (
     <div className="max-w-[1180px]">
@@ -111,7 +117,9 @@ export function Workspaces({ orgs, reload }: { orgs: AdminOrg[] | null; reload: 
         </div>
       )}
 
-      <WorkspaceSheet org={open} onClose={() => setOpenId(null)} reload={reload} />
+      <DeletedWorkspaces version={version} onRestored={reload} />
+
+      <WorkspaceSheet org={open} onClose={() => setOpenId(null)} reload={reloadAll} />
       <NewWorkspace open={creating} onClose={() => setCreating(false)} onCreated={() => reload().then(() => setCreating(false))} />
     </div>
   );
@@ -328,6 +336,91 @@ function WorkspaceSheet({ org, onClose, reload }: { org: AdminOrg | null; onClos
         }}
       />
     </>
+  );
+}
+
+interface DeletedOrg {
+  id: string;
+  name: string;
+  slug: string;
+  deletedAt: string;
+  purgeAt: string;
+  membersCount: number;
+  cardsCount: number;
+  leadsCount: number;
+}
+
+/**
+ * Workspaces deleted but not yet erased: each can be restored until its date,
+ * after which OrgPurgeService erases it with its cards, leads and files.
+ */
+function DeletedWorkspaces({ version, onRestored }: { version: number; onRestored: () => Promise<void> }) {
+  const { t } = useTranslation('admin');
+  const { locale } = useLocale();
+  const [rows, setRows] = useState<DeletedOrg[] | null>(null);
+  const [restoring, setRestoring] = useState<DeletedOrg | null>(null);
+  const [done, setDone] = useState('');
+
+  useEffect(() => {
+    authFetch<DeletedOrg[]>('/admin/organizations/deleted').then(setRows).catch(() => setRows([]));
+  }, [version]);
+
+  if (!rows?.length && !done) return null;
+  const date = (d: string) => formatDate(d, locale, { year: 'numeric', month: 'short', day: 'numeric' });
+  const n = (v: number) => formatNumber(v, locale);
+
+  return (
+    <section className="mt-10">
+      <h2 className="text-sm font-semibold text-ink">{t('workspaces.deleted.title', { count: rows?.length ?? 0, n: n(rows?.length ?? 0) })}</h2>
+      <p className="mb-3 mt-1 text-sm text-muted">{t('workspaces.deleted.hint')}</p>
+      {done && (
+        <Notice tone="success" onDismiss={() => setDone('')}>
+          {done}
+        </Notice>
+      )}
+      {!!rows?.length && (
+        <div className="v-card overflow-hidden">
+          <ul className="divide-y divide-line">
+            {rows.map((o) => (
+              <li key={o.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+                <OrgMark name={o.name} size={30} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-ink">{o.name}</span>
+                  <span className="block text-xs text-muted">
+                    {t('workspaces.deleted.counts', { members: n(o.membersCount), cards: n(o.cardsCount), leads: n(o.leadsCount) })}
+                  </span>
+                </span>
+                <span className="text-xs text-muted">
+                  {t('workspaces.deleted.on', { date: date(o.deletedAt) })}
+                  <span className="mx-1.5 text-faint">·</span>
+                  <span className="font-medium text-red-700 dark:text-red-300">{t('workspaces.deleted.erasedOn', { date: date(o.purgeAt) })}</span>
+                </span>
+                <button onClick={() => setRestoring(o)} className="v-btn v-btn-ghost shrink-0">
+                  <Icon name="undo" size={14} /> {t('workspaces.deleted.restore')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <ConfirmDialog
+        open={!!restoring}
+        title={t('workspaces.deleted.restoreTitle', { name: restoring?.name ?? '' })}
+        body={t('workspaces.deleted.restoreBody')}
+        confirmLabel={t('workspaces.deleted.restore')}
+        busyLabel={t('workspaces.deleted.restoring')}
+        cancelLabel={t('cancel')}
+        onCancel={() => setRestoring(null)}
+        onConfirm={async () => {
+          const o = restoring!;
+          await authFetch(`/admin/organizations/${o.id}/restore`, { method: 'POST' });
+          setRestoring(null);
+          setDone(t('workspaces.deleted.restored', { name: o.name }));
+          setRows(await authFetch<DeletedOrg[]>('/admin/organizations/deleted').catch(() => []));
+          await onRestored();
+        }}
+      />
+    </section>
   );
 }
 

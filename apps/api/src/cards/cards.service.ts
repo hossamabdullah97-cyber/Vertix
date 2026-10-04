@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LimitsService } from '../billing/limits.service';
 import { isPlaceholderSlug, slugFromName } from './card-slug';
 import { recentlyDeleted } from './restore-window';
+import { LIVE_ORG } from '../common/live-org';
 
 const MANAGER_ROLES = ['OWNER', 'ADMIN', 'MANAGER'];
 
@@ -227,7 +228,7 @@ export class CardsService {
     opts: { p?: string; code?: string; req?: any } = {},
   ) {
     const card = await this.db.card.findFirst({
-      where: { slug, isPublished: true },
+      where: { slug, isPublished: true, ...LIVE_ORG },
       select: {
         id: true,
         slug: true,

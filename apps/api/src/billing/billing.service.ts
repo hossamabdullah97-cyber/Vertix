@@ -170,6 +170,28 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * For a workspace being deleted: stops any paid renewal so a deleted
+   * workspace is never charged again. Best-effort and quiet: true when a
+   * subscription was cancelled at Paymob, false when there was none to
+   * cancel or Paymob could not be reached (logged, for someone to follow up).
+   */
+  async stopRenewals(orgId: string): Promise<boolean> {
+    const sub = await this.db.subscription.findFirst({ where: { orgId } });
+    if (!sub?.paymobSubscriptionId || !LIVE.has(sub.status)) return false;
+    if (!this.paymob) {
+      this.logger.error(`Workspace ${orgId} was deleted with a live Paymob subscription, but billing is not configured: cancel ${sub.paymobSubscriptionId} at Paymob by hand`);
+      return false;
+    }
+    try {
+      await this.cancel(orgId);
+      return true;
+    } catch (e) {
+      this.logger.error(`Workspace ${orgId} was deleted but its Paymob subscription ${sub.paymobSubscriptionId} could not be cancelled: ${(e as Error).message}`);
+      return false;
+    }
+  }
+
+  /**
    * A callback from Paymob: a payment was processed, or a subscription changed.
    * Only ids are read from it; the facts come from Paymob itself.
    */

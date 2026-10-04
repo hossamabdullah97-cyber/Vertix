@@ -66,6 +66,17 @@ export class AdminController {
     return this.adminService.getOrganizations(search || '');
   }
 
+  /** Deleted workspaces that can still be restored, with when each is erased. */
+  @Get('organizations/deleted')
+  getDeletedOrganizations() {
+    return this.adminService.getDeletedOrganizations();
+  }
+
+  @Post('organizations/:id/restore')
+  restoreOrganization(@Param('id') orgId: string, @CurrentUser() actor: JwtPayload) {
+    return this.adminService.restoreOrganization(orgId, actor.sub);
+  }
+
   @Patch('organizations/:id/plan')
   updateOrganizationPlan(
     @Param('id') orgId: string,

@@ -75,3 +75,39 @@ describe('accounts the console creates', () => {
     expect(userCreate).not.toHaveBeenCalled();
   });
 });
+
+describe('AdminService deleting and restoring a workspace', () => {
+  function make(org: Record<string, unknown> | null) {
+    const prisma = {
+      client: {
+        organization: {
+          findUnique: jest.fn().mockResolvedValue(org),
+          findFirst: jest.fn().mockResolvedValue(org),
+          update: jest.fn().mockResolvedValue({}),
+        },
+        auditLog: { create: jest.fn() },
+      },
+    };
+    const billing = { stopRenewals: jest.fn().mockResolvedValue(true) };
+    return { service: new AdminService(prisma as never, billing as never), prisma, billing };
+  }
+
+  it('hides the workspace, stops its renewals and says when it will be erased', async () => {
+    const { service, prisma, billing } = make({ id: 'o1', name: 'Acme' });
+    const r = await service.deleteOrganization('o1', 'admin1');
+    expect(prisma.client.organization.update).toHaveBeenCalledWith({ where: { id: 'o1' }, data: { deletedAt: expect.any(Date) } });
+    expect(billing.stopRenewals).toHaveBeenCalledWith('o1');
+    expect(r).toMatchObject({ success: true, renewalsStopped: true });
+    expect(new Date(r.purgeAt).getTime() - Date.now()).toBeGreaterThan(29 * 86_400_000);
+  });
+
+  it('restores only a workspace that was deleted', async () => {
+    const { service, prisma } = make({ id: 'o1', name: 'Acme' });
+    await service.restoreOrganization('o1', 'admin1');
+    expect(prisma.client.organization.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'o1', deletedAt: { not: null } } }));
+    expect(prisma.client.organization.update).toHaveBeenCalledWith({ where: { id: 'o1' }, data: { deletedAt: null } });
+
+    const none = make(null);
+    await expect(none.service.restoreOrganization('o2', 'admin1')).rejects.toThrow('Organization not found');
+  });
+});

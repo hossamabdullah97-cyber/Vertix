@@ -6,6 +6,6 @@ import { BillingController } from './billing.controller';
 @Module({
   controllers: [BillingController],
   providers: [BillingService, LimitsService],
-  exports: [LimitsService],
+  exports: [LimitsService, BillingService],
 })
 export class BillingModule {}

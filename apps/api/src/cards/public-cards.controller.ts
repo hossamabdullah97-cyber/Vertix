@@ -18,6 +18,7 @@ import { availabilityOf, openSlots } from './availability';
 import { bookedMeetings } from './booked-meetings';
 import { PrismaService } from '../prisma/prisma.service';
 import { walletCardOf } from './wallet/wallet-card';
+import { LIVE_ORG } from '../common/live-org';
 
 /** Public card page — no authentication, shows published cards only. */
 @Controller('c')
@@ -63,7 +64,7 @@ export class PublicCardsController {
   @Get(':slug/availability')
   async availability(@Param('slug') slug: string) {
     const card = await this.prisma.client.card.findFirst({
-      where: { slug, isPublished: true, deletedAt: null },
+      where: { slug, isPublished: true, deletedAt: null, ...LIVE_ORG },
       select: { id: true, theme: true },
     });
     if (!card) throw new NotFoundException('Card not found');

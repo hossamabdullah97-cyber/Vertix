@@ -1,4 +1,6 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, ConflictException, Optional } from '@nestjs/common';
+import { BillingService } from '../billing/billing.service';
+import { purgeDate, PURGE_AFTER_DAYS } from './org-purge.service';
 import { runWithTenant } from '@vertex/db';
 import { planPrices } from '../billing/prices';
 import { PrismaService } from '../prisma/prisma.service';
@@ -49,7 +51,10 @@ function hostOf(url?: string | null): string {
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly billing?: BillingService,
+  ) {}
 
   /**
    * Records a platform-admin action.
@@ -439,16 +444,62 @@ export class AdminService {
     return { success: true };
   }
 
+  /**
+   * Deletes a workspace: at once off the service (no sign-in to it, no public
+   * card, chip or form), restorable for PURGE_AFTER_DAYS, then erased for good
+   * by OrgPurgeService. A paid plan stops renewing now, not at erasure.
+   */
   async deleteOrganization(orgId: string, actorId: string) {
     const org = await this.prisma.client.organization.findUnique({ where: { id: orgId } });
     if (!org) throw new NotFoundException('Organization not found');
 
+    const deletedAt = new Date();
     await this.prisma.client.organization.update({
       where: { id: orgId },
-      data: { deletedAt: new Date() },
+      data: { deletedAt },
     });
+    const renewalsStopped = (await this.billing?.stopRenewals(orgId)) ?? false;
 
-    await this.logAdminAction(actorId, 'DELETE_ORGANIZATION', 'Organization', orgId, { name: org.name }, orgId);
+    await this.logAdminAction(actorId, 'DELETE_ORGANIZATION', 'Organization', orgId, { name: org.name, renewalsStopped }, orgId);
+    return { success: true, purgeAt: purgeDate(deletedAt).toISOString(), renewalsStopped };
+  }
+
+  /** Deleted workspaces still in their restore window, soonest erased first. */
+  async getDeletedOrganizations() {
+    const orgs = await this.prisma.client.organization.findMany({
+      where: { deletedAt: { not: null } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        plan: true,
+        deletedAt: true,
+        _count: { select: { memberships: true, cards: true, leads: true } },
+      },
+      orderBy: { deletedAt: 'asc' },
+    });
+    return orgs.map((o) => ({
+      id: o.id,
+      name: o.name,
+      slug: o.slug,
+      plan: o.plan,
+      deletedAt: o.deletedAt,
+      purgeAt: purgeDate(o.deletedAt!),
+      membersCount: o._count.memberships,
+      cardsCount: o._count.cards,
+      leadsCount: o._count.leads,
+    }));
+  }
+
+  /** Brings a deleted workspace back, while it has not been erased yet. */
+  async restoreOrganization(orgId: string, actorId: string) {
+    const org = await this.prisma.client.organization.findFirst({
+      where: { id: orgId, deletedAt: { not: null } },
+      select: { id: true, name: true },
+    });
+    if (!org) throw new NotFoundException('Organization not found');
+    await this.prisma.client.organization.update({ where: { id: orgId }, data: { deletedAt: null } });
+    await this.logAdminAction(actorId, 'RESTORE_ORGANIZATION', 'Organization', orgId, { name: org.name, windowDays: PURGE_AFTER_DAYS }, orgId);
     return { success: true };
   }
 
