@@ -78,6 +78,15 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
       const when = str(m.meetingAt) ? meetingWhen(str(m.meetingAt), str(m.timezone), locale) : '';
       return { title, body: [n.body ?? '', when].filter(Boolean).join(' · ') };
     }
+    case 'lead.follow_up': {
+      const name = str(m.name);
+      const hours = typeof m.waitingHours === 'number' ? m.waitingHours : 24;
+      const days = Math.max(1, Math.round(hours / 24));
+      return {
+        title: name ? t('notifications:types.followUp', { name: iso(name) }) : t('notifications:types.followUpNoName'),
+        body: [str(m.company), t('notifications:types.followUpBody', { count: days })].filter(Boolean).join(' · '),
+      };
+    }
     case 'automation.failed':
       return { title: t('notifications:types.automationFailed'), body: t('notifications:types.automationFailedBody', { event: event(m.event) }) };
     case 'webhook.failed':
@@ -113,6 +122,7 @@ export function linkOf(n: Notif): string | null {
   const data = (m.data ?? {}) as Record<string, unknown>;
   switch (n.type) {
     case 'lead.captured':
+    case 'lead.follow_up':
       return str(m.leadId) ? `/leads?lead=${encodeURIComponent(str(m.leadId))}` : '/leads';
     case 'automation.triggered':
       return str(data.leadId) ? `/leads?lead=${encodeURIComponent(str(data.leadId))}` : '/integrations?tab=automations';

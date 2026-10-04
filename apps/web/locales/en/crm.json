@@ -218,7 +218,8 @@
       "EMAIL": "Email",
       "MEETING": "Meeting",
       "STAGE_CHANGE": "Stage change",
-      "SCAN": "Scan"
+      "SCAN": "Scan",
+      "WHATSAPP": "WhatsApp"
     }
   },
   "reports": {
@@ -360,5 +361,51 @@
   "showMore": {
     "button": "Show {{n}} more",
     "of": "{{shown}} of {{total}}"
+  },
+  "waiting": {
+    "hours_one": "an hour",
+    "hours_other": "{{count}} hours",
+    "days_one": "a day",
+    "days_other": "{{count}} days",
+    "badge": "Waiting · {{span}}",
+    "banner": "Nobody has reached out yet · waiting {{span}}",
+    "lastContact": "Last contact {{when}}"
+  },
+  "compose": {
+    "title": "Message",
+    "to": "Message {{name}}",
+    "back": "Back",
+    "whatsapp": "WhatsApp",
+    "email": "Email",
+    "noPhone": "This lead has no phone number that WhatsApp can use.",
+    "noEmail": "This lead has no email address.",
+    "ready": "Ready messages",
+    "blank": "Blank",
+    "subject": "Subject",
+    "message": "Message",
+    "hint": "Edit it as you like. It opens ready to send, and is saved to this lead's activity.",
+    "openWhatsapp": "Open in WhatsApp",
+    "openEmail": "Open in email",
+    "logFailed": "The message opened, but it couldn't be saved to the lead.",
+    "manage": "Edit ready messages",
+    "manageTitle": "Ready messages",
+    "manageHint": "The messages your team sends leads. Fields such as the lead's first name are filled in for each lead when a message is opened.",
+    "add": "New message",
+    "name": "Name",
+    "fields": "Insert a field",
+    "field": {
+      "first_name": "First name",
+      "name": "Full name",
+      "company": "Company",
+      "my_name": "My name",
+      "my_company": "My company",
+      "my_phone": "My phone",
+      "card_link": "Card link"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "saveFailed": "Couldn't save the message."
   }
 }

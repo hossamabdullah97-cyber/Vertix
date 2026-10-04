@@ -542,11 +542,53 @@ export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 
 // A user-logged CRM activity on a lead (note / call / email / meeting).
 export const addLeadActivitySchema = z.object({
-  type: z.enum(['NOTE', 'CALL', 'EMAIL', 'MEETING']),
+  type: z.enum(['NOTE', 'CALL', 'EMAIL', 'WHATSAPP', 'MEETING']),
   note: z.string().max(2000).optional(),
   meetingAt: z.string().optional(), // ISO datetime for MEETING
 });
 export type AddLeadActivityInput = z.infer<typeof addLeadActivitySchema>;
+
+/// Reaching out to a lead from the app: a call placed, or a WhatsApp message
+/// or email opened ready to send. Logged on the lead, and it counts as the
+/// contact the follow-up reminders wait for.
+export const leadContactSchema = z.object({
+  channel: z.enum(['CALL', 'WHATSAPP', 'EMAIL']),
+  note: z.string().max(4000).optional(),
+  subject: z.string().max(300).optional(),
+  templateId: z.string().max(60).optional(),
+});
+export type LeadContactInput = z.infer<typeof leadContactSchema>;
+
+// Ready messages ("message templates")
+export const messageChannel = z.enum(['WHATSAPP', 'EMAIL']);
+export const createMessageTemplateSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  channel: messageChannel,
+  subject: z.string().max(300).optional().nullable(),
+  body: z.string().trim().min(1).max(4000),
+});
+export type CreateMessageTemplateInput = z.infer<typeof createMessageTemplateSchema>;
+export const updateMessageTemplateSchema = createMessageTemplateSchema.partial();
+export type UpdateMessageTemplateInput = z.infer<typeof updateMessageTemplateSchema>;
+
+/** The fields a ready message can use, as {{field}}. */
+export const TEMPLATE_FIELDS = ['first_name', 'name', 'company', 'my_name', 'my_company', 'my_phone', 'card_link'] as const;
+export type TemplateField = (typeof TEMPLATE_FIELDS)[number];
+
+/**
+ * Fills a ready message. A field with no value is dropped along with the
+ * space before it, so "Hi {{first_name}}," reads "Hi," rather than "Hi ,";
+ * unknown {{fields}} are left as typed, so a typo shows instead of vanishing.
+ */
+export function renderTemplate(text: string, values: Partial<Record<TemplateField, string | null | undefined>>): string {
+  return text
+    .replace(/([ \t]?)\{\{\s*([a-z_]+)\s*\}\}/g, (whole, space: string, key: string) => {
+      if (!(TEMPLATE_FIELDS as readonly string[]).includes(key)) return whole;
+      const v = values[key as TemplateField]?.trim();
+      return v ? `${space}${v}` : '';
+    })
+    .replace(/[ \t]+([,.!?،؟])/g, '$1');
+}
 
 // CRM tasks — due-dated to-dos, optionally linked to a lead.
 export const taskPriority = z.enum(['LOW', 'MEDIUM', 'HIGH']);

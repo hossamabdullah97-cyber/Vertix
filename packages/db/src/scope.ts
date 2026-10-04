@@ -34,6 +34,7 @@ export const SOFT_DELETE_MODELS = new Set<string>([
   'ApiKey',
   'Automation',
   'IntegrationOAuthApp',
+  'MessageTemplate',
 ]);
 
 /**
@@ -69,6 +70,7 @@ export const TENANT_MODELS = new Set<string>([
   'ApprovalRequest',
   'Occasion',
   'CardPresence',
+  'MessageTemplate',
 ]);
 
 /** Operations that take a where clause; orgId is injected (extendedWhereUnique is on in Prisma 6). */

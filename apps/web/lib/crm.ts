@@ -12,8 +12,49 @@ export interface Lead {
   temperature: 'COLD' | 'WARM' | 'HOT';
   source: string;
   stageId: string | null;
+  assignedTo?: string | null;
+  /** When someone first / last reached out (a call, WhatsApp, email or meeting). */
+  firstContactedAt?: string | null;
+  lastContactedAt?: string | null;
   createdAt: string;
   card: { slug: string } | null;
+}
+
+const HOUR = 3_600_000;
+/** A lead nobody reached for this long is flagged in the lists (the first reminder goes out then too). */
+export const WAITING_FLAG_HOURS = 24;
+/** Past this, a lead is old news rather than waiting (the reminders stop too). */
+const WAITING_GIVE_UP_HOURS = 14 * 24;
+
+/**
+ * Hours a lead has been waiting for anyone to reach out, or null once someone
+ * has (or when the list did not say, as an old cached copy might not).
+ */
+export function waitingHours(lead: Lead, now = Date.now()): number | null {
+  if (lead.firstContactedAt !== null) return null;
+  const h = Math.floor((now - new Date(lead.createdAt).getTime()) / HOUR);
+  return h >= 0 ? h : 0;
+}
+
+/** Whether to flag a lead as waiting for a reply in the lists. */
+export function awaitsReply(lead: Lead, now = Date.now()): boolean {
+  const h = waitingHours(lead, now);
+  return h !== null && h >= WAITING_FLAG_HOURS && h <= WAITING_GIVE_UP_HOURS;
+}
+
+/** "a day", "3 days", "5 hours": how long, for the waiting labels. */
+export function waitingSpan(hours: number, t: (k: string, o?: Record<string, unknown>) => string): string {
+  return hours < 24 ? t('waiting.hours', { count: Math.max(1, hours) }) : t('waiting.days', { count: Math.floor(hours / 24) });
+}
+
+/** A wa.me link to the lead's number (Egyptian 01… understood), with a message ready. */
+export function whatsappHref(phone: string, text?: string): string | null {
+  let d = phone.replace(/[^\d+]/g, '');
+  if (d.startsWith('+')) d = d.slice(1);
+  else if (d.startsWith('00')) d = d.slice(2);
+  else if (/^01[0125]\d{8}$/.test(d)) d = `20${d.slice(1)}`;
+  if (!/^[1-9]\d{7,14}$/.test(d)) return null;
+  return `https://wa.me/${d}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 }
 
 /** Deal values are in Egyptian pounds, the currency the product is sold in. */
@@ -49,7 +90,7 @@ export function stageKey(name: string): string {
   return `stages.${name.trim().toLowerCase()}`;
 }
 
-export type ActivityType = 'NOTE' | 'CALL' | 'EMAIL' | 'MEETING' | 'STAGE_CHANGE' | 'SCORE_CHANGE' | 'SCAN';
+export type ActivityType = 'NOTE' | 'CALL' | 'EMAIL' | 'WHATSAPP' | 'MEETING' | 'STAGE_CHANGE' | 'SCORE_CHANGE' | 'SCAN';
 
 export interface LeadActivity {
   id: string;
@@ -67,6 +108,7 @@ export const ACTIVITY_META: Record<ActivityType, { label: string; icon: string; 
   NOTE: { label: 'Note', icon: 'file-text', color: '#8b5cf6' },
   CALL: { label: 'Call', icon: 'phone', color: '#0ea5e9' },
   EMAIL: { label: 'Email', icon: 'mail', color: '#ea4335' },
+  WHATSAPP: { label: 'WhatsApp', icon: 'whatsapp', color: '#25d366' },
   MEETING: { label: 'Meeting', icon: 'calendar', color: '#22c55e' },
   STAGE_CHANGE: { label: 'Stage changed', icon: 'chart-bar', color: '#6366f1' },
   SCORE_CHANGE: { label: 'Score changed', icon: 'sparkle', color: '#f59e0b' },
@@ -219,7 +261,8 @@ export function quickLinks(lead: Lead) {
   const links: { key: string; icon: string; href: string; label: string; color: string }[] = [];
   if (lead.phone) {
     links.push({ key: 'call', icon: 'phone', href: `tel:${lead.phone}`, label: 'Call', color: '#0ea5e9' });
-    links.push({ key: 'whatsapp', icon: 'whatsapp', href: `https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`, label: 'WhatsApp', color: '#25d366' });
+    const wa = whatsappHref(lead.phone);
+    if (wa) links.push({ key: 'whatsapp', icon: 'whatsapp', href: wa, label: 'WhatsApp', color: '#25d366' });
   }
   if (lead.email) {
     links.push({ key: 'email', icon: 'mail', href: `mailto:${lead.email}`, label: 'Email', color: '#ea4335' });

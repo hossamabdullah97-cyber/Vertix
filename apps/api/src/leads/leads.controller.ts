@@ -17,6 +17,8 @@ import { memoryStorage } from 'multer';
 import { sniffImage } from '../uploads/storage.service';
 import {
   addLeadActivitySchema,
+  leadContactSchema,
+  type LeadContactInput,
   leadCaptureSchema,
   meetingResponseSchema,
   createLeadSchema,
@@ -109,6 +111,18 @@ export class LeadsController {
     @Body(new ZodValidationPipe(addLeadActivitySchema)) body: AddLeadActivityInput,
   ) {
     return this.leads.addActivity(tenant, id, body);
+  }
+
+  /** A call, WhatsApp message or email sent from the app: logged, and counts as contact. */
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Post(':id/contact')
+  contact(
+    @Tenant() tenant: TenantContext,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(leadContactSchema)) body: LeadContactInput,
+  ) {
+    return this.leads.contact(tenant, id, body);
   }
 
   /** Accept or decline the meeting a visitor asked for; the visitor is emailed. */

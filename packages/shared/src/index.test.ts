@@ -6,6 +6,7 @@ import {
   createTagSchema,
   createTagsBatchSchema,
   normalizeUid,
+  renderTemplate,
   PLAN_LIMITS,
   Plan,
   isPaidPlan,
@@ -128,5 +129,16 @@ describe('normalizeUid', () => {
   it('is applied by the tag schemas', () => {
     expect(createTagSchema.parse({ uid: '04a1b2c3' }).uid).toBe('04:A1:B2:C3');
     expect(createTagsBatchSchema.parse({ uids: ['04a1b2c3'] }).uids).toEqual(['04:A1:B2:C3']);
+  });
+});
+
+describe('renderTemplate', () => {
+  it('fills known fields and drops empty ones cleanly', () => {
+    expect(renderTemplate('Hi {{first_name}}, this is {{my_name}} from {{my_company}}.', { first_name: 'Mona', my_name: 'Omar', my_company: '' })).toBe('Hi Mona, this is Omar from.');
+    expect(renderTemplate('أهلاً {{first_name}}، معك {{my_name}}', { first_name: '', my_name: 'عمر' })).toBe('أهلاً، معك عمر');
+  });
+
+  it('leaves an unknown field visible', () => {
+    expect(renderTemplate('Hi {{frist_name}}', { first_name: 'Mona' })).toBe('Hi {{frist_name}}');
   });
 });
