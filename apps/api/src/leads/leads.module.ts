@@ -3,10 +3,11 @@ import { LeadsService } from './leads.service';
 import { LeadsController } from './leads.controller';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { AuthThrottleService } from '../auth/auth-throttle.service';
+import { FollowUpService } from './follow-up.service';
 
 @Module({
   imports: [IntegrationsModule],
   controllers: [LeadsController],
-  providers: [LeadsService, AuthThrottleService],
+  providers: [LeadsService, AuthThrottleService, FollowUpService],
 })
 export class LeadsModule {}

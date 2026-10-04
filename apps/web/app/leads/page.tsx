@@ -484,6 +484,7 @@ export default function LeadsPage() {
         onPatch={(patch) => selectedLead && patchLead(selectedLead.id, patch, t('toasts.leadUpdated'))}
         onAddTask={(input) => createTask(input)}
         onToggleTask={toggleTask}
+        onContacted={(id, times) => setLeads((list) => list.map((l) => (l.id === id ? { ...l, ...times } : l)))}
       />
 
       <AnimatePresence>

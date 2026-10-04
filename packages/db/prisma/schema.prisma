@@ -104,6 +104,7 @@ model Organization {
   crmSyncRecords    CrmSyncRecord[]
   occasions         Occasion[]
   cardPresence      CardPresence[]
+  messageTemplates  MessageTemplate[]
 
   @@index([deletedAt])
   @@map("organizations")
@@ -381,6 +382,14 @@ model Lead {
   /// The chip the visitor arrived from, when it can be established. This is
   /// what lets a member's hardware be credited with the clients it produced.
   tagId       String?
+  /// When someone first, and last, reached out: a call, a WhatsApp message,
+  /// an email or a meeting logged on the lead. Null until then, which is what
+  /// the follow-up reminders (FollowUpService) look for.
+  firstContactedAt   DateTime?
+  lastContactedAt    DateTime?
+  /// Follow-up reminders sent while nobody had reached out (at most two).
+  followUpReminders  Int       @default(0)
+  followUpRemindedAt DateTime?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?   // Soft delete
@@ -399,6 +408,7 @@ model Lead {
   @@index([assignedTo])
   @@index([tagId])
   @@index([deletedAt])
+  @@index([firstContactedAt, createdAt])
   @@map("leads")
 }
 
@@ -521,6 +531,33 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+/// A ready message a team sends leads (WhatsApp or email), with {{name}}-style
+/// fields filled from the lead and the sender. Kept per workspace; managers
+/// edit them, everyone uses them.
+model MessageTemplate {
+  id        String         @id @default(cuid())
+  orgId     String
+  createdBy String?
+  name      String
+  channel   MessageChannel
+  subject   String?
+  body      String
+  order     Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@map("message_templates")
+}
+
+enum MessageChannel {
+  WHATSAPP
+  EMAIL
 }
 
 model LeadAlertSettings {
@@ -752,6 +789,7 @@ enum ActivityType {
   NOTE
   CALL
   EMAIL
+  WHATSAPP
   MEETING
   STAGE_CHANGE
   SCORE_CHANGE

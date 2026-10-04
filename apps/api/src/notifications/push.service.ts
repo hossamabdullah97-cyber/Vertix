@@ -46,6 +46,20 @@ export function pushPayload(n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'me
         tag: leadId ? `lead-${leadId}` : 'lead',
       };
     }
+    case 'lead.follow_up': {
+      const leadId = s(m.leadId);
+      const name = s(m.name);
+      const days = Math.max(1, Math.round((typeof m.waitingHours === 'number' ? m.waitingHours : 24) / 24));
+      const waiting = ar
+        ? days === 1 ? 'بلا رد منذ يوم' : days === 2 ? 'بلا رد منذ يومين' : `بلا رد منذ ${days} أيام`
+        : days === 1 ? 'No reply for a day' : `No reply for ${days} days`;
+      return {
+        title: ar ? (name ? `${name} ينتظر ردك` : 'عميل ينتظر ردك') : name ? `${name} is waiting for a reply` : 'A lead is waiting for a reply',
+        body: [s(m.company), waiting].filter(Boolean).join(' · '),
+        url: leadId ? `/leads?lead=${encodeURIComponent(leadId)}` : '/leads',
+        tag: leadId ? `follow-${leadId}` : 'follow-up',
+      };
+    }
     case 'push.test':
       return {
         title: ar ? 'الإشعارات تعمل' : 'Notifications are on',

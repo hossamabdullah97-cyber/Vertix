@@ -14,6 +14,7 @@ import { BillingModule } from './billing/billing.module';
 import { MailModule } from './mail/mail.module';
 import { LeadsModule } from './leads/leads.module';
 import { TasksModule } from './tasks/tasks.module';
+import { MessagesModule } from './messages/messages.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -48,6 +49,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter';
     BillingModule,
     LeadsModule,
     TasksModule,
+    MessagesModule,
     UploadsModule,
     AdminModule,
     IntegrationsModule,

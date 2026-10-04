@@ -99,7 +99,15 @@
     "workspaceUpdated": "تم تحديث إعدادات مساحة العمل",
     "workspaceUpdatedBy": "حدّث {{actor}} إعدادات مساحة العمل",
     "approved": "تمت الموافقة على طلبك",
-    "rejected": "تم رفض طلبك"
+    "rejected": "تم رفض طلبك",
+    "followUp": "{{name}} ينتظر ردك",
+    "followUpNoName": "عميل ينتظر ردك",
+    "followUpBody_zero": "بلا رد",
+    "followUpBody_one": "بلا رد منذ يوم",
+    "followUpBody_two": "بلا رد منذ يومين",
+    "followUpBody_few": "بلا رد منذ {{count}} أيام",
+    "followUpBody_many": "بلا رد منذ {{count}} يوماً",
+    "followUpBody_other": "بلا رد منذ {{count}} يوم"
   },
   "push": {
     "title": "على هذا الجهاز",

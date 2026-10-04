@@ -54,7 +54,7 @@ export function ActivitiesTimeline({
   }, [activities, filterType]);
 
   const page = useShowMore(filtered);
-  const types: (ActivityType | 'ALL')[] = ['ALL', 'NOTE', 'CALL', 'EMAIL', 'MEETING', 'STAGE_CHANGE', 'SCAN'];
+  const types: (ActivityType | 'ALL')[] = ['ALL', 'NOTE', 'CALL', 'WHATSAPP', 'EMAIL', 'MEETING', 'STAGE_CHANGE', 'SCAN'];
 
   return (
     <div className="space-y-6">

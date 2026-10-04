@@ -3,7 +3,7 @@ import { MailService } from '../mail/mail.service';
 import { buildIcs, googleCalendarLink, type CalendarEvent } from './ics';
 import { meetingReplyEmail } from './meeting-mail';
 import { ConfigService } from '@nestjs/config';
-import type { AddLeadActivityInput, CreateLeadInput, LeadCaptureInput, MeetingResponseInput } from '@vertex/shared';
+import type { AddLeadActivityInput, CreateLeadInput, LeadCaptureInput, LeadContactInput, MeetingResponseInput } from '@vertex/shared';
 import { normalizeUid } from '@vertex/shared';
 import type { Prisma, TenantContext } from '@vertex/db';
 import { CardScanError, CardScanner } from './card-scan';
@@ -31,6 +31,9 @@ const SCAN_WINDOW_MS = 60 * 60_000;
 
 /** How long the same details sent to the same card count as one lead (see capture). */
 export const RESEND_WINDOW_MS = 10 * 60_000;
+
+/** Logged activities that mean someone reached the lead (a note does not). */
+const CONTACT_TYPES = new Set<string>(['CALL', 'EMAIL', 'WHATSAPP', 'MEETING']);
 
 @Injectable()
 export class LeadsService {
@@ -311,6 +314,9 @@ export class LeadsService {
         temperature: true,
         source: true,
         stageId: true,
+        assignedTo: true,
+        firstContactedAt: true,
+        lastContactedAt: true,
         createdAt: true,
         card: { select: { slug: true } },
       },
@@ -332,6 +338,9 @@ export class LeadsService {
         temperature: true,
         source: true,
         stageId: true,
+        assignedTo: true,
+        firstContactedAt: true,
+        lastContactedAt: true,
         createdAt: true,
         card: { select: { slug: true } },
         activities: {
@@ -348,7 +357,7 @@ export class LeadsService {
   async addActivity(viewer: TenantContext, id: string, input: AddLeadActivityInput) {
     const lead = await this.db.lead.findFirst({ where: { id, ...this.visibleTo(viewer) }, select: { id: true } });
     if (!lead) throw new NotFoundException('Lead not found');
-    return this.db.leadActivity.create({
+    const activity = await this.db.leadActivity.create({
       data: {
         leadId: id,
         type: input.type,
@@ -356,6 +365,40 @@ export class LeadsService {
       },
       select: { id: true, type: true, metadata: true, createdAt: true },
     });
+    if (CONTACT_TYPES.has(input.type)) await this.markContacted(id, activity.createdAt);
+    return activity;
+  }
+
+  /**
+   * Reaching out from the app (a call placed, a WhatsApp message or email
+   * opened ready to send): logged on the lead with what was sent, and it is
+   * the contact the follow-up reminders wait for.
+   */
+  async contact(viewer: TenantContext, id: string, input: LeadContactInput) {
+    const lead = await this.db.lead.findFirst({ where: { id, ...this.visibleTo(viewer) }, select: { id: true } });
+    if (!lead) throw new NotFoundException('Lead not found');
+    const activity = await this.db.leadActivity.create({
+      data: {
+        leadId: id,
+        type: input.channel,
+        metadata: {
+          note: input.note?.trim() || null,
+          ...(input.subject ? { subject: input.subject } : {}),
+          ...(input.templateId ? { templateId: input.templateId } : {}),
+          by: viewer.userId,
+          manual: true,
+        },
+      },
+      select: { id: true, type: true, metadata: true, createdAt: true },
+    });
+    const times = await this.markContacted(id, activity.createdAt);
+    return { activity, ...times };
+  }
+
+  /** Records that someone reached out at `at`: the first time once, the last time always. */
+  private async markContacted(id: string, at: Date) {
+    await this.db.lead.updateMany({ where: { id, firstContactedAt: null }, data: { firstContactedAt: at } });
+    return this.db.lead.update({ where: { id }, data: { lastContactedAt: at }, select: { firstContactedAt: true, lastContactedAt: true } });
   }
 
   /**
@@ -485,6 +528,8 @@ export class LeadsService {
       });
     }
 
+    // Answering the request is reaching out.
+    await this.markContacted(id, new Date());
     return { activity, emailed };
   }
 

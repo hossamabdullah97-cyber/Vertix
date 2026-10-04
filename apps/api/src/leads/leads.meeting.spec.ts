@@ -27,7 +27,12 @@ function setup(opts: { meta?: Record<string, unknown>; email?: string | null; ot
         }
       : opts.lead;
   const db = {
-    lead: { findFirst: jest.fn(async () => lead) },
+    lead: {
+      findFirst: jest.fn(async () => lead),
+      // Answering counts as reaching out (firstContactedAt / lastContactedAt).
+      updateMany: jest.fn(async () => ({ count: 1 })),
+      update: jest.fn(async () => ({ firstContactedAt: new Date(), lastContactedAt: new Date() })),
+    },
     leadActivity: {
       findMany: jest.fn(async () => (opts.others ?? []).map((metadata) => ({ metadata }))),
       update: jest.fn(async ({ data }: { data: { metadata: unknown } }) => ({ id: 'act1', type: 'MEETING', metadata: data.metadata, createdAt: new Date() })),

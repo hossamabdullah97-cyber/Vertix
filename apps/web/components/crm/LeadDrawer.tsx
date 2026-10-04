@@ -23,11 +23,14 @@ import {
   stageKey,
   sourceMeta,
   quickLinks,
+  waitingHours,
+  waitingSpan,
   dueMeta,
   currencyLabel,
 } from '@/lib/crm';
 import { Heat } from './LeadCard';
 import { MeetingRequest, meetingRequestOf } from './MeetingRequest';
+import { ComposeMessage, type Channel, type ContactResult } from './ComposeMessage';
 
 const TEMPS: Temp[] = ['COLD', 'WARM', 'HOT'];
 
@@ -55,6 +58,7 @@ export function LeadDrawer({
   onPatch,
   onAddTask,
   onToggleTask,
+  onContacted,
 }: {
   lead: Lead | null;
   stages: Stage[];
@@ -64,6 +68,8 @@ export function LeadDrawer({
   onPatch: (patch: LeadPatch) => void;
   onAddTask: (input: CreateTaskInput) => Promise<void> | void;
   onToggleTask: (id: string, completed: boolean) => void;
+  /** Someone reached out from the panel; the list updates its "waiting" flag. */
+  onContacted?: (id: string, times: { firstContactedAt: string | null; lastContactedAt: string | null }) => void;
 }) {
   const { t } = useTranslation('crm');
 
@@ -108,6 +114,7 @@ export function LeadDrawer({
               onPatch={onPatch}
               onAddTask={onAddTask}
               onToggleTask={onToggleTask}
+              onContacted={onContacted}
             />
           </motion.aside>
         </>
@@ -125,6 +132,7 @@ function DrawerBody({
   onPatch,
   onAddTask,
   onToggleTask,
+  onContacted,
 }: {
   lead: Lead;
   stages: Stage[];
@@ -134,6 +142,7 @@ function DrawerBody({
   onPatch: (patch: LeadPatch) => void;
   onAddTask: (input: CreateTaskInput) => Promise<void> | void;
   onToggleTask: (id: string, completed: boolean) => void;
+  onContacted?: (id: string, times: { firstContactedAt: string | null; lastContactedAt: string | null }) => void;
 }) {
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
@@ -243,6 +252,19 @@ function DrawerBody({
   const openTasks = tasks.filter((tk) => !tk.completed).length;
   const meetingRequest = meetingRequestOf(activities);
 
+  // Writing to the lead opens the composer; a call is logged as it is placed.
+  const [compose, setCompose] = useState<Channel | null>(null);
+  const contacted = (r: ContactResult) => {
+    setActivities((a) => [r.activity, ...a]);
+    onContacted?.(lead.id, { firstContactedAt: r.firstContactedAt, lastContactedAt: r.lastContactedAt });
+  };
+  function logCall() {
+    authFetch<ContactResult>(`/leads/${lead.id}/contact`, { method: 'POST', body: JSON.stringify({ channel: 'CALL' }) })
+      .then(contacted)
+      .catch(() => undefined);
+  }
+  const waiting = waitingHours(lead);
+
   return (
     <>
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-4 text-xs text-faint">
@@ -286,6 +308,11 @@ function DrawerBody({
                   href={l.href}
                   target={l.key === 'whatsapp' ? '_blank' : undefined}
                   rel="noreferrer"
+                  onClick={(e) => {
+                    if (l.key === 'call') return logCall();
+                    e.preventDefault();
+                    setCompose(l.key === 'whatsapp' ? 'WHATSAPP' : 'EMAIL');
+                  }}
                   className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-[10px] py-2 text-xs font-medium text-muted ring-1 ring-inset ring-line transition-colors hover:bg-elevated hover:text-ink"
                 >
                   <span className="text-ink">
@@ -296,6 +323,18 @@ function DrawerBody({
               ))}
             </div>
           )}
+
+          {waiting !== null ? (
+            <p className="mt-3 flex items-center gap-2 rounded-[10px] bg-amber-50 px-3 py-2.5 text-xs font-medium text-amber-900 ring-1 ring-inset ring-amber-200 dark:bg-amber-500/10 dark:text-amber-100 dark:ring-amber-500/20">
+              <Icon name="clock" size={14} className="shrink-0" />
+              {t('waiting.banner', { span: waitingSpan(waiting, t) })}
+            </p>
+          ) : lead.lastContactedAt ? (
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+              <Icon name="check" size={13} className="shrink-0" />
+              {t('waiting.lastContact', { when: formatRelativeTime(lead.lastContactedAt, locale) })}
+            </p>
+          ) : null}
 
           {!loadingLog && meetingRequest && (
             <MeetingRequest
@@ -564,6 +603,9 @@ function DrawerBody({
           )}
         </div>
       </div>
+      <AnimatePresence>
+        {compose && <ComposeMessage key={compose} lead={lead} initial={compose} onClose={() => setCompose(null)} onSent={contacted} />}
+      </AnimatePresence>
     </>
   );
 }

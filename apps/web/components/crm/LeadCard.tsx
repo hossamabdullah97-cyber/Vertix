@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
-import { type Lead, type Temp, sourceMeta, quickLinks, formatMoney } from '@/lib/crm';
+import { type Lead, type Temp, sourceMeta, quickLinks, formatMoney, awaitsReply, waitingHours, waitingSpan } from '@/lib/crm';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatRelativeTime } from '@/lib/format';
 
@@ -27,6 +27,17 @@ export function Heat({ temp, label }: { temp: Temp; label?: string }) {
 }
 
 /** A lead on the pipeline board: who, where from, what it is worth. Drag to move stages. */
+/** "Waiting · 2 days": a lead nobody has reached out to yet. */
+export function WaitingBadge({ hours, className = '' }: { hours: number; className?: string }) {
+  const { t } = useTranslation('crm');
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-2xs font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200 ${className}`}>
+      <Icon name="clock" size={11} />
+      {t('waiting.badge', { span: waitingSpan(hours, t) })}
+    </span>
+  );
+}
+
 export function LeadCard({
   lead,
   onOpen,
@@ -73,6 +84,7 @@ export function LeadCard({
         )}
         <span className="ms-auto shrink-0">{formatRelativeTime(lead.createdAt, locale, 'narrow')}</span>
       </div>
+      {awaitsReply(lead) && <WaitingBadge hours={waitingHours(lead)!} className="mt-2" />}
 
       {/* Contact shortcuts appear on hover so the card stays quiet at rest. */}
       {links.length > 0 && (

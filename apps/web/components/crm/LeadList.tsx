@@ -5,8 +5,8 @@ import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
-import { Heat } from './LeadCard';
-import { type Lead, type Stage, quickLinks, sourceMeta, stageKey } from '@/lib/crm';
+import { Heat, WaitingBadge } from './LeadCard';
+import { type Lead, type Stage, quickLinks, sourceMeta, stageKey, awaitsReply, waitingHours } from '@/lib/crm';
 import { ShowMore, useShowMore } from '@/components/crm/ShowMore';
 
 /**
@@ -84,6 +84,7 @@ export function LeadList({
                       <Icon name={src.icon} size={12} />
                       {t(`sources.${l.source}`, src.label)} · {formatRelativeTime(l.createdAt, locale, 'narrow')}
                     </span>
+                    {awaitsReply(l) && <WaitingBadge hours={waitingHours(l)!} className="mt-1" />}
                   </span>
                 </button>
                 {reach.map((q) => (

@@ -95,7 +95,11 @@
     "workspaceUpdated": "Workspace settings were updated",
     "workspaceUpdatedBy": "{{actor}} updated the workspace settings",
     "approved": "Your request was approved",
-    "rejected": "Your request was declined"
+    "rejected": "Your request was declined",
+    "followUp": "{{name}} is waiting for a reply",
+    "followUpNoName": "A lead is waiting for a reply",
+    "followUpBody_one": "No reply for a day",
+    "followUpBody_other": "No reply for {{count}} days"
   },
   "push": {
     "title": "On this device",
