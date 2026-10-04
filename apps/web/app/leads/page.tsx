@@ -253,6 +253,9 @@ export default function LeadsPage() {
               <Icon name="download" size={14} /> <span className="hidden sm:inline">{t('export.button')}</span>
             </button>
           )}
+          <Link href="/meet" className="v-btn v-btn-ghost" title={t('meet.title')}>
+            <Icon name="users" size={14} /> <span className="hidden sm:inline">{t('meet.title')}</span>
+          </Link>
           <button type="button" onClick={() => setAdding(true)} aria-keyshortcuts="n" title={`${t('add.button')} (N)`} className="v-btn">
             <Icon name="plus" size={14} /> {t('add.button')}
           </button>

@@ -639,6 +639,9 @@ export default function HomePage() {
         </div>
         {!fresh && (
         <div className="flex flex-wrap items-center gap-2">
+        <Link href="/meet" className="v-btn sm:!h-8">
+          <Icon name="users" size={14} /> {t('meet')}
+        </Link>
         <button onClick={() => setShowOccasions(true)} className="v-btn v-btn-ghost sm:!h-8">
           <Icon name="calendar" size={14} /> {t('occasions.button')}
         </button>

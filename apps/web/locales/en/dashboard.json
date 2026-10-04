@@ -255,5 +255,6 @@
     },
     "liveBanner": "is on now · day {{day}} of {{days}}",
     "openLive": "Live report"
-  }
+  },
+  "meet": "Met someone"
 }

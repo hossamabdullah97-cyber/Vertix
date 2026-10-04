@@ -260,7 +260,8 @@
     "share": "Shared link",
     "view": "Profile view",
     "card_scan": "Paper card",
-    "manual": "Added by hand"
+    "manual": "Added by hand",
+    "in_person": "Met in person"
   },
   "meeting": {
     "title": "Meeting request",
@@ -352,7 +353,8 @@
       "ai": "Read by AI. Check the details before saving; the photo isn't kept.",
       "device": "Read on this phone; the photo never left it. Check the name, title and company before saving.",
       "deviceArabic": "Read on this phone; the photo never left it. Arabic is harder to read this way: check every field, the phone number above all, before saving."
-    }
+    },
+    "quickTitle": "Their details"
   },
   "list": {
     "allStages": "All",
@@ -407,5 +409,30 @@
     "delete": "Delete",
     "cancel": "Cancel",
     "saveFailed": "Couldn't save the message."
+  },
+  "meet": {
+    "title": "Met someone",
+    "back": "Back",
+    "qrHint": "Let them scan this with their phone camera. Your card opens, and they can save you or send you their details.",
+    "whichCard": "Which card",
+    "shareLink": "Share the link instead",
+    "shareText": "Here's my card",
+    "noCard": "You don't have a published card yet. Make one, and it shows here as a QR code to scan.",
+    "makeCard": "Go to Cards",
+    "modes": {
+      "qr": "My QR",
+      "card": "Their card",
+      "number": "Their number"
+    },
+    "metAt": "Met at {{name}}",
+    "greeting": "Nice to meet you! Here's my card, so you have my details: {{url}}",
+    "mailSubject": "Nice to meet you",
+    "saved": "{{name}} is in your leads",
+    "sendNow": "Send them your card now, while you're still together.",
+    "savedNoContact": "Add a phone number or email later to follow up.",
+    "sendWhatsapp": "Send my card on WhatsApp",
+    "sendEmail": "Send my card by email",
+    "openLead": "Open the lead",
+    "next": "Next person"
   }
 }

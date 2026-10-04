@@ -35,7 +35,8 @@ export default function TrackView({ slug }: { slug: string }) {
     fetch(`${API_URL}/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, type: 'VIEW', visitorId: v }),
+      // ?via=qr: opened from the QR the owner showed in person ("Met someone").
+      body: JSON.stringify({ slug, type: 'VIEW', visitorId: v, ...(new URLSearchParams(location.search).get('via') === 'qr' ? { metadata: { via: 'qr' } } : {}) }),
       keepalive: true,
     }).catch(() => {});
   }, [slug]);
