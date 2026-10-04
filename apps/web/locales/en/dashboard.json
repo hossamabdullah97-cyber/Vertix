@@ -192,7 +192,68 @@
     },
     "errors": {
       "range": "The end date is before the start date."
-    }
+    },
+    "report": "Report"
   },
-  "deletedCard": "A deleted card"
+  "deletedCard": "A deleted card",
+  "eventReport": {
+    "crumb": "Analytics",
+    "failed": "This report couldn't be loaded.",
+    "export": "Export leads",
+    "live": "Live · day {{day}} of {{days}}",
+    "upcoming": "Not started yet",
+    "ended": "Ended",
+    "notYet": "The report fills in as soon as the occasion starts: every tap, visit and lead from its days.",
+    "times": "{{x}}× your usual daily leads: {{per}} a day, against an ordinary day in the four weeks before.",
+    "fromNothing_one": "1 lead you wouldn't have had: none came in during the four weeks before.",
+    "fromNothing_other": "{{n}} leads you wouldn't have had: none came in during the four weeks before.",
+    "perDay": "{{per}} leads a day, about the same as an ordinary day.",
+    "leads": "Leads",
+    "reached": "People reached",
+    "taps": "Chip taps",
+    "meetings": "Meeting requests",
+    "usual": "Usual day: {{n}}",
+    "views": "{{n}} card visits",
+    "followUp": "Following up",
+    "contacted": "Reached out to {{c}} of {{n}}",
+    "median": "Half of them heard back within {{span}}.",
+    "underHour": "an hour",
+    "stillWaiting_one": "1 lead is still waiting for a first reply.",
+    "stillWaiting_other": "{{n}} leads are still waiting for a first reply.",
+    "won_one": "1 deal won from it, worth {{value}}.",
+    "won_other": "{{n}} deals won from it, worth {{value}}.",
+    "byDay": "Day by day",
+    "dayLine": "{{leads}} leads · {{views}} visits · {{taps}} taps",
+    "hours": "When it was busiest",
+    "peak": "Busiest {{from}}–{{to}}",
+    "hoursHint": "Taps and card visits by hour of the day, all days together. Worth knowing for who staffs the stand when.",
+    "team": "The team",
+    "member": "Member",
+    "cols": {
+      "reached": "Reached",
+      "leads": "Leads",
+      "won": "Won"
+    },
+    "noTeam": "No taps or leads credited to anyone.",
+    "chips": "Busiest chips",
+    "chipLine": "{{taps}} taps · {{leads}} leads",
+    "noChips": "No chips were tapped.",
+    "leadsTitle": "Its leads ({{n}})",
+    "noLeads": "No leads came in during it.",
+    "unnamed": "Unnamed lead",
+    "by": "via {{name}}",
+    "reachedOut": "Reached",
+    "csv": {
+      "name": "Name",
+      "company": "Company",
+      "email": "Email",
+      "phone": "Phone",
+      "by": "Brought in by",
+      "added": "Added",
+      "contacted": "First contact",
+      "stage": "Stage"
+    },
+    "liveBanner": "is on now · day {{day}} of {{days}}",
+    "openLive": "Live report"
+  }
 }

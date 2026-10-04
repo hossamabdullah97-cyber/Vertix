@@ -663,6 +663,28 @@ export default function HomePage() {
 
       {errorBanner}
       <PushPrompt />
+      {/* An occasion on today: its report, live. */}
+      {canManageOccasions &&
+        (() => {
+          const live = occasionOn(occasions, new Date().toISOString().slice(0, 10));
+          if (!live) return null;
+          return (
+            <Link
+              href={`/analytics/events/${live.occasion.id}`}
+              className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-3.5 hover:bg-emerald-500/[0.1]"
+            >
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              </span>
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="font-semibold text-ink">{live.occasion.name}</span>{' '}
+                <span className="text-muted">{t('eventReport.liveBanner', { day: live.day, days: live.days })}</span>
+              </span>
+              <span className="shrink-0 text-sm font-medium text-accent">{t('eventReport.openLive')}</span>
+            </Link>
+          );
+        })()}
       {onboarding}
 
       {!fresh && (
