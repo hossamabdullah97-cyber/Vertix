@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@/components/Icon';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -27,6 +27,8 @@ export function Sheet({
   footer?: React.ReactNode;
 }) {
   const { dir } = useLocale();
+  // The title names the dialog, as a screen reader announces it.
+  const titleId = useId();
   // Slides in from the edge it sits on, which is the left in Arabic.
   const dx = dir === 'rtl' ? -24 : 24;
 
@@ -55,11 +57,14 @@ export function Sheet({
             transition={{ type: 'spring', stiffness: 420, damping: 38 }}
             role="dialog"
             aria-modal="true"
+            aria-labelledby={titleId}
             className="fixed inset-y-0 end-0 z-50 flex w-full max-w-[440px] flex-col bg-surface shadow-2xl sm:inset-y-2 sm:end-2 sm:rounded-[14px] sm:ring-1 sm:ring-line"
           >
             <header className="flex items-start gap-3 border-b border-line px-5 py-4">
               <div className="min-w-0 flex-1">
-                <div className="text-md font-semibold text-ink">{title}</div>
+                <h2 id={titleId} className="text-md font-semibold text-ink">
+                  {title}
+                </h2>
                 {subtitle && <div className="mt-0.5 text-xs text-faint">{subtitle}</div>}
               </div>
               <button

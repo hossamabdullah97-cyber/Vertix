@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { UserThrottlerGuard } from './common/user-throttler.guard';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -65,8 +66,9 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter';
   providers: [
     // Captures unhandled errors, reports 5xx to Sentry, returns clean JSON.
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
-    // Order matters: Throttler -> JWT (auth) -> Tenant (isolation) -> Roles (permissions)
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Order matters: Throttler -> JWT (auth) -> Tenant (isolation) -> Roles (permissions).
+    // Limits count per signed-in person, else per address.
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

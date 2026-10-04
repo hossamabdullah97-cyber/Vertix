@@ -16,7 +16,8 @@
     "db:generate": "pnpm --filter @vertex/db generate",
     "db:migrate": "pnpm --filter @vertex/db migrate",
     "db:seed": "pnpm --filter @vertex/db seed",
-    "db:studio": "pnpm --filter @vertex/db studio"
+    "db:studio": "pnpm --filter @vertex/db studio",
+    "e2e": "pnpm --filter @vertex/e2e e2e"
   },
   "devDependencies": {
     "embedded-postgres": "18.4.0-beta.17",
