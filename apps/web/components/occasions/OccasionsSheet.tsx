@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '@/lib/client';
 import { formatDate } from '@/lib/format';
@@ -161,14 +162,31 @@ export function OccasionsSheet({
                       {formatDate(`${o.startsOn}T12:00:00Z`, locale, { day: 'numeric' })}
                     </span>
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-ink">{o.name}</span>
-                    <span className="block truncate text-xs text-muted">{range(o)}</span>
-                  </span>
+                  {canManage ? (
+                    // What it brought in: the occasion's report (managers and up, as the API allows).
+                    <Link href={`/analytics/events/${o.id}`} className="group min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-ink group-hover:underline">{o.name}</span>
+                      <span className="flex items-center gap-1 truncate text-xs text-muted">
+                        {range(o)}
+                        {o.startsOn <= todayKey() && (
+                          <>
+                            <span aria-hidden>·</span>
+                            <span className="font-medium text-accent">{t('occasions.report')}</span>
+                          </>
+                        )}
+                      </span>
+                    </Link>
+                  ) : (
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-ink">{o.name}</span>
+                      <span className="block truncate text-xs text-muted">{range(o)}</span>
+                    </span>
+                  )}
                   {canManage && (
                     <ActionMenu
                       label={t('occasions.more')}
                       items={[
+                        { key: 'report', label: t('occasions.report'), icon: 'chart-bar', href: `/analytics/events/${o.id}` },
                         { key: 'edit', label: t('occasions.edit'), icon: 'settings', onSelect: () => edit(o) },
                         { key: 'delete', label: t('occasions.delete'), icon: 'trash', danger: true, separated: true, onSelect: () => setRemoving(o) },
                       ]}
