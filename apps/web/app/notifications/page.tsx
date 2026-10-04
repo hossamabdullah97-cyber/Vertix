@@ -36,6 +36,10 @@ export default function NotificationsPage() {
   const [unread, setUnread] = useState(0);
   const [orgNames, setOrgNames] = useState<Map<string, string>>(new Map());
   const [prefsOpen, setPrefsOpen] = useState(false);
+  // "Turn it off" in an email (the weekly report) lands with the settings open.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('settings') === '1') setPrefsOpen(true);
+  }, []);
 
   // The setup checklist links here to open the settings straight away.
   useEffect(() => {

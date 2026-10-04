@@ -61,7 +61,12 @@
     "testFailed": "WhatsApp didn't accept the message. Check the number and try again.",
     "tooMany": "Too many tests for now. Try again later.",
     "testEmail": "Send a test alert",
-    "testEmailSent": "A test alert went to {{address}}."
+    "testEmailSent": "A test alert went to {{address}}.",
+    "weekly": "Weekly report",
+    "weeklyHint": "Every Sunday morning by email: the week's leads, taps and meetings against the week before, who is waiting for a reply, and the team's best.",
+    "weeklyNow": "Send me this week's report now",
+    "reportSent": "Sent to {{address}}.",
+    "reportQuiet": "Sent to {{address}}. It was a quiet week, so there's little in it."
   },
   "prefs": {
     "intro": "Choose what shows up here. Turning a type off stops new ones; the ones you have stay.",

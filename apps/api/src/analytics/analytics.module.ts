@@ -8,5 +8,6 @@ import { IntegrationsModule } from '../integrations/integrations.module';
   imports: [IntegrationsModule],
   controllers: [AnalyticsController, TrackingController],
   providers: [AnalyticsService],
+  exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

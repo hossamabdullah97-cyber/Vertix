@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authFetch, apiMessageOf, type ApiError } from '@/lib/client';
+import { authFetch, apiMessageOf, peek, type ApiError, type Me } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Icon } from '@/components/Icon';
 
@@ -13,6 +13,8 @@ interface Settings {
   lang: 'en' | 'ar';
   address: string | null;
   whatsappReady: boolean;
+  /** Null until chosen: then on for owners and admins, off for managers. */
+  weeklyReport: boolean | null;
 }
 
 /** Same rule as the API: digits with the country code; Egyptian 01… is understood. */
@@ -53,7 +55,14 @@ export function LeadAlerts({ open }: { open: boolean }) {
   const [s, setS] = useState<Settings | null>(null);
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
-  const [busy, setBusy] = useState<'save' | 'test' | 'test-email' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'test' | 'test-email' | 'report' | null>(null);
+  // The weekly report is for the people who run the workspace.
+  const [me, setMe] = useState<Me | null>(() => peek<Me>('/auth/me') ?? null);
+  useEffect(() => {
+    if (open) authFetch<Me>('/auth/me').then(setMe).catch(() => undefined);
+  }, [open]);
+  const runsWorkspace = me?.role === 'OWNER' || me?.role === 'ADMIN' || me?.role === 'MANAGER';
+  const weeklyOn = s ? (s.weeklyReport ?? (me?.role === 'OWNER' || me?.role === 'ADMIN')) : false;
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +75,20 @@ export function LeadAlerts({ open }: { open: boolean }) {
       .catch(() => setS(null));
   }, [open]);
 
-  async function save(patch: Partial<Pick<Settings, 'email' | 'whatsapp' | 'phone'>>, done?: string) {
+  async function sendReport() {
+    setBusy('report');
+    setStatus(null);
+    try {
+      const r = await authFetch<{ sent: boolean; quiet: boolean }>('/reports/weekly/preview', { method: 'POST' });
+      setStatus(r.sent ? { kind: 'ok', text: r.quiet ? t('alerts.reportQuiet', { address: s?.address ?? '' }) : t('alerts.reportSent', { address: s?.address ?? '' }) } : { kind: 'error', text: t('alerts.testFailed') });
+    } catch (e) {
+      setStatus({ kind: 'error', text: (e as ApiError).status === 429 || /too many/i.test(apiMessageOf(e)) ? t('alerts.tooMany') : t('alerts.testFailed') });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function save(patch: Partial<Pick<Settings, 'email' | 'whatsapp' | 'phone' | 'weeklyReport'>>, done?: string) {
     const before = s;
     if (s) setS({ ...s, ...patch });
     try {
@@ -143,6 +165,22 @@ export function LeadAlerts({ open }: { open: boolean }) {
           </span>
           <Switch on={!!s?.email} disabled={!s} label={t('alerts.email')} onClick={() => s && save({ email: !s.email })} />
         </li>
+
+        {runsWorkspace && (
+          <li className="flex items-start gap-3 px-5 py-4">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated text-muted ring-1 ring-inset ring-line">
+              <Icon name="chart-bar" size={15} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-ink">{t('alerts.weekly')}</span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t('alerts.weeklyHint')}</span>
+              <button type="button" className="v-hit mt-1.5 text-xs font-medium text-accent hover:underline disabled:opacity-60" disabled={busy !== null || !s} onClick={sendReport}>
+                {busy === 'report' ? t('loading') : t('alerts.weeklyNow')}
+              </button>
+            </span>
+            <Switch on={weeklyOn} disabled={!s} label={t('alerts.weekly')} onClick={() => s && save({ weeklyReport: !weeklyOn })} />
+          </li>
+        )}
 
         <li className="px-5 py-4">
           <div className="flex items-start gap-3">
