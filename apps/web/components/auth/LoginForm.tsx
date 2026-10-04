@@ -4,9 +4,10 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { login, register, safeNext } from '@/lib/client';
+import { login, register, safeNext, type TwoStepChallenge } from '@/lib/client';
 import { AuthShell } from './AuthShell';
 import { GoogleButton } from './GoogleButton';
+import { TwoStepForm } from './TwoStepForm';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText, emailProps } from './fields';
 import { problemOf, useChecks } from '@/lib/validate';
 
@@ -27,6 +28,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   const [org, setOrg] = useState('');
   const [error, setError] = useState<{ text: string; taken?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [challenge, setChallenge] = useState<TwoStepChallenge | null>(null);
 
   const isLogin = mode === 'login';
   const checks = useChecks({
@@ -58,7 +60,12 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
     setBusy(true);
     try {
       if (mode === 'login') {
-        await login(email, password);
+        const pending = await login(email, password);
+        if (pending) {
+          setChallenge(pending);
+          setBusy(false);
+          return;
+        }
         window.location.href = safeNext(next) ?? '/dashboard';
       } else {
         await register({ email, password, name, organizationName: org });
@@ -70,9 +77,23 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
     }
   }
 
-  const afterGoogle = useCallback(() => {
+  const goOn = useCallback(() => {
     window.location.href = safeNext(next) ?? '/dashboard';
   }, [next]);
+  const afterGoogle = useCallback((pending: TwoStepChallenge | null) => (pending ? setChallenge(pending) : goOn()), [goOn]);
+
+  if (challenge) {
+    return (
+      <TwoStepForm
+        mfaToken={challenge.mfaToken}
+        onDone={goOn}
+        onCancel={() => {
+          setChallenge(null);
+          setPassword('');
+        }}
+      />
+    );
+  }
 
   return (
     <AuthShell title={isLogin ? t('login.title') : t('register.title')} subtitle={isLogin ? t('login.subtitle') : t('register.subtitle')}>

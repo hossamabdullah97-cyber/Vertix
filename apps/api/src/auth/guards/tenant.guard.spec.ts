@@ -4,6 +4,7 @@ import { ADMIN_ORG } from '@vertex/db';
 import { TenantGuard } from './tenant.guard';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PLATFORM_SCOPE_KEY } from '../decorators/platform-scope.decorator';
+import { TWO_STEP_EXEMPT_KEY } from '../decorators/two-step-exempt.decorator';
 import type { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -16,7 +17,8 @@ import type { PrismaService } from '../../prisma/prisma.service';
 
 type Membership = {
   role: string;
-  org: { isActive: boolean; deletedAt: Date | null };
+  org: { isActive: boolean; deletedAt: Date | null; settings?: unknown };
+  user?: { totpEnabledAt: Date | null };
 } | null;
 
 /** What the organization lookup finds, for the super-admin path. */
@@ -36,6 +38,7 @@ function makeGuard(
   // table, not against membership. Defaulting this to a live org keeps every
   // other test reading as it did before that check existed.
   org: OrgRow = liveOrg(),
+  twoStepExempt = false,
 ) {
   const findFirst = jest.fn().mockResolvedValue(membership);
   const findUnique = jest.fn().mockResolvedValue(org);
@@ -49,6 +52,7 @@ function makeGuard(
     getAllAndOverride: (key: string) => {
       if (key === IS_PUBLIC_KEY) return isPublic;
       if (key === PLATFORM_SCOPE_KEY) return platformScope;
+      if (key === TWO_STEP_EXEMPT_KEY) return twoStepExempt;
       return undefined;
     },
   } as unknown as Reflector;
@@ -71,6 +75,7 @@ function request(user: unknown, headerOrg?: string) {
 const activeMember = (role = 'EMPLOYEE'): Membership => ({
   role,
   org: { isActive: true, deletedAt: null },
+  user: { totpEnabledAt: null },
 });
 
 const member = { sub: 'u1', email: 'a@b.co', orgId: 'org_acme', role: 'EMPLOYEE' };
@@ -287,5 +292,32 @@ describe('TenantGuard — routes without a tenant', () => {
     const { req, ctx } = request(undefined);
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
     expect(req.tenant).toBeUndefined();
+  });
+});
+
+describe('TenantGuard — a workspace that requires two-step verification', () => {
+  const requiring = (totpEnabledAt: Date | null): Membership => ({
+    role: 'EMPLOYEE',
+    org: { isActive: true, deletedAt: null, settings: { require2fa: true } },
+    user: { totpEnabledAt },
+  });
+
+  it('turns away a member without it', async () => {
+    const { guard } = makeGuard(requiring(null));
+    const { ctx } = request(member, 'org_acme');
+    await expect(guard.canActivate(ctx)).rejects.toThrow('Two-step verification is required in this workspace');
+  });
+
+  it('lets them reach what they need to set it up', async () => {
+    const { guard } = makeGuard(requiring(null), false, false, liveOrg(), true);
+    const { ctx } = request(member, 'org_acme');
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+  });
+
+  it('lets in a member who has it', async () => {
+    const { guard } = makeGuard(requiring(new Date()));
+    const { ctx, req } = request(member, 'org_acme');
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(req.tenant).toMatchObject({ orgId: 'org_acme' });
   });
 });

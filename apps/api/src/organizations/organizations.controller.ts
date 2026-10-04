@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { updateOrgSchema, type JwtPayload, type UpdateOrgInput } from '@vertex/shared';
+import { orgSecuritySchema, updateOrgSchema, type JwtPayload, type OrgSecurityInput, type UpdateOrgInput } from '@vertex/shared';
 import type { TenantContext } from '@vertex/db';
 import { OrganizationsService } from './organizations.service';
 import { AuditService } from './audit.service';
@@ -8,6 +8,7 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { OrgId, Tenant } from '../auth/decorators/tenant.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { TwoStepExempt } from '../auth/decorators/two-step-exempt.decorator';
 
 @Controller('orgs')
 export class OrganizationsController {
@@ -17,12 +18,15 @@ export class OrganizationsController {
     private readonly notifications: NotificationsService,
   ) {}
 
+  // The workspace switcher, so a member held at one workspace's two-step screen can leave for another.
+  @TwoStepExempt()
   @Get()
   list(@CurrentUser() user: JwtPayload) {
     return this.orgs.listForUser(user.sub);
   }
 
   /** The current active organization — available to any member. */
+  @TwoStepExempt()
   @Get('current')
   current(@OrgId() orgId: string) {
     return this.orgs.getCurrent(orgId);
@@ -53,5 +57,23 @@ export class OrganizationsController {
       metadata: { name: updated.name },
     });
     return updated;
+  }
+
+  @Roles('OWNER', 'ADMIN')
+  @Get('security')
+  security(@OrgId() orgId: string) {
+    return this.orgs.security(orgId);
+  }
+
+  @Roles('OWNER', 'ADMIN')
+  @Patch('security')
+  async updateSecurity(
+    @OrgId() orgId: string,
+    @Tenant() tenant: TenantContext,
+    @Body(new ZodValidationPipe(orgSecuritySchema)) body: OrgSecurityInput,
+  ) {
+    const out = await this.orgs.updateSecurity(orgId, tenant.userId, body.require2fa);
+    await this.audit.log(tenant, body.require2fa ? 'org.two_step_required' : 'org.two_step_optional', { targetType: 'organization', targetId: orgId });
+    return out;
   }
 }

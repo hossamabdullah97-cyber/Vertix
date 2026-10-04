@@ -136,7 +136,7 @@ export function SubmitButton({ busy, label, busyLabel }: { busy: boolean; label:
  * A refused call, in words the person can act on and in their language. The
  * API speaks English; the status says what happened.
  */
-export function authErrorText(err: unknown, t: TFunction, context: 'login' | 'register' | 'link' | 'google', locale: Locale): string {
+export function authErrorText(err: unknown, t: TFunction, context: 'login' | 'register' | 'link' | 'google' | 'code', locale: Locale): string {
   if (!(err instanceof AuthError)) return t('auth:errors.generic');
   switch (err.status) {
     case 0:
@@ -147,6 +147,7 @@ export function authErrorText(err: unknown, t: TFunction, context: 'login' | 're
         ? t('auth:errors.tooManyUntil', { time: formatTime(Date.now() + err.retryAfter * 1000, locale) })
         : t('auth:errors.tooMany');
     case 401:
+      if (context === 'code') return /expired/i.test(err.message) ? t('auth:twoStep.expired') : t('auth:twoStep.wrong');
       if (context === 'google') return /different Google/i.test(err.message) ? t('auth:google.otherAccount') : t('auth:google.failed');
       return context === 'login' ? t('auth:errors.invalidCredentials') : t('auth:errors.linkInvalid');
     case 503:

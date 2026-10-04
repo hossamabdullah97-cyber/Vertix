@@ -21,6 +21,7 @@ import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
 import { VerifyEmailBanner } from '@/components/ui/VerifyEmailBanner';
+import { TwoStepPanel } from '@/components/account/TwoStepPanel';
 import { registerServiceWorker, syncPush } from '@/lib/pwa';
 import { Shortcuts, SHOW_SHORTCUTS } from '@/components/ui/Shortcuts';
 
@@ -617,6 +618,15 @@ export default function AppShell({
         </div>
       </div>
       <div className="border-t border-line pt-1">
+        <Link
+          role="menuitem"
+          href="/account"
+          onClick={() => setMenuOpen(false)}
+          className="flex h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted transition-colors hover:bg-elevated hover:text-ink md:h-8"
+        >
+          <Icon name="shield" size={15} />
+          {t('account.security')}
+        </Link>
         <button
           role="menuitem"
           onClick={() => {
@@ -974,7 +984,20 @@ export default function AppShell({
           )}
 
           <main className={bleed ? '' : `mx-auto px-5 py-6 md:px-8 md:py-7 ${fluid ? 'w-full max-w-[1560px]' : 'max-w-[1240px]'}`}>
-            {children}
+            {me?.twoFactorRequired && !me.twoFactorEnabled ? (
+              // The workspace requires two-step verification and this account
+              // has none yet: the API refuses everything else here, so the
+              // page is the setup until it is on (or they switch workspace).
+              <div className={`mx-auto max-w-[680px] ${bleed ? 'px-5 py-8' : ''}`}>
+                <h2 className="text-xl font-semibold text-ink">{t('twoStepGate.title', { org: activeOrgName })}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{t('twoStepGate.body')}</p>
+                <div className="mt-6">
+                  <TwoStepPanel onChange={(on) => on && setMe((m) => (m ? { ...m, twoFactorEnabled: true } : m))} />
+                </div>
+              </div>
+            ) : (
+              children
+            )}
           </main>
           {/* Room for the phone's bottom bar, so the last row is never under it. */}
           <div className="h-[var(--v-dock)] md:hidden" aria-hidden />

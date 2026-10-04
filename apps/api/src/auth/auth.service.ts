@@ -17,6 +17,7 @@ import {
   type LoginInput,
   type JwtPayload,
   type AuthTokens,
+  type SignInResult,
   type Role,
   type Plan,
 } from '@vertex/shared';
@@ -33,6 +34,8 @@ import {
   tooManyAttempts,
 } from './auth-throttle.service';
 import { GoogleIdTokenVerifier, GoogleTokenError } from './google-id-token';
+import { TwoFactorService } from './two-factor.service';
+import { requiresTwoStep } from './guards/tenant.guard';
 
 const VERIFY_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const VERIFY_RESEND_LIMIT = 5;
@@ -74,6 +77,7 @@ export class AuthService {
     private readonly tokens: TokensService,
     private readonly mail: MailService,
     private readonly throttle: AuthThrottleService,
+    private readonly twoFactor: TwoFactorService,
   ) {}
 
   async register(input: RegisterInput): Promise<AuthTokens> {
@@ -111,7 +115,7 @@ export class AuthService {
    * right password, until the window ends. Unknown emails are counted the
    * same way, so the limit says nothing about which accounts exist.
    */
-  async login(input: LoginInput, ip = 'unknown'): Promise<AuthTokens> {
+  async login(input: LoginInput, ip = 'unknown'): Promise<SignInResult> {
     const email = normalizeEmail(input.email);
     const keys = { address: `sign-in:${ip}:${email}`, account: `sign-in:${email}` };
     const wait = Math.max(
@@ -135,9 +139,29 @@ export class AuthService {
       throw await refuse();
     }
     await this.throttle.clear(keys.address, keys.account);
+    return this.signIn(user);
+  }
 
+  /** The second step of a sign-in: the code screen's code, then the session. */
+  async completeTwoStep(mfaToken: string, code: string): Promise<AuthTokens> {
+    const userId = await this.twoFactor.completeChallenge(mfaToken, code);
+    const user = await this.prisma.client.user.findFirst({ where: { id: userId, deletedAt: null }, select: { id: true, email: true } });
+    if (!user) throw new UnauthorizedException('Account not found');
+    return this.sessionFor(user);
+  }
+
+  /** A session, or first the code screen when the account has two-step verification. */
+  private async signIn(user: { id: string; email: string; totpEnabledAt: Date | null }): Promise<SignInResult> {
+    if (user.totpEnabledAt) {
+      // Suspended everywhere is refused before the code, as without two-step.
+      await this.defaultMembership(user.id);
+      return this.twoFactor.challenge(user.id);
+    }
+    return this.sessionFor(user);
+  }
+
+  private async sessionFor(user: { id: string; email: string }): Promise<AuthTokens> {
     const membership = await this.defaultMembership(user.id);
-
     return this.issueTokens({
       sub: user.id,
       email: user.email,
@@ -184,16 +208,17 @@ export class AuthService {
     token: string,
     password: string,
     name?: string,
-  ): Promise<AuthTokens> {
+  ): Promise<SignInResult> {
     const rec = await this.tokens.verify('INVITE', token);
     if (!rec.userId || !rec.orgId) {
       throw new UnauthorizedException('Invalid invitation');
     }
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await this.prisma.client.user.update({
+    const user = await this.prisma.client.user.update({
       where: { id: rec.userId },
       data: { passwordHash, emailVerified: new Date(), ...(name ? { name } : {}) },
+      select: { totpEnabledAt: true },
     });
     await this.prisma.client.membership.update({
       where: { userId_orgId: { userId: rec.userId, orgId: rec.orgId } },
@@ -201,6 +226,8 @@ export class AuthService {
     });
     await this.tokens.consume(rec.id);
 
+    // Someone who already has an account with two-step verification still gives a code.
+    if (user.totpEnabledAt) return this.twoFactor.challenge(rec.userId);
     return this.issueTokens({
       sub: rec.userId,
       email: rec.email,
@@ -311,11 +338,19 @@ export class AuthService {
         isSuperAdmin: true,
         createdAt: true,
         emailVerified: true,
+        totpEnabledAt: true,
       },
     });
     if (!user) throw new UnauthorizedException('Account not found');
-    const { emailVerified, ...rest } = user;
-    return { ...rest, emailVerified: !!emailVerified };
+    const { emailVerified, totpEnabledAt, ...rest } = user;
+    return { ...rest, emailVerified: !!emailVerified, twoFactorEnabled: !!totpEnabledAt };
+  }
+
+  /** Whether the active workspace requires two-step verification. */
+  async workspaceRequiresTwoStep(orgId?: string): Promise<boolean> {
+    if (!orgId) return false;
+    const org = await this.prisma.client.organization.findUnique({ where: { id: orgId }, select: { settings: true } });
+    return requiresTwoStep(org?.settings);
   }
 
   /**
@@ -360,7 +395,7 @@ export class AuthService {
    * with that email is linked to it, and a new person gets an account and a
    * workspace of their own, as with register().
    */
-  async google(credential: string): Promise<AuthTokens> {
+  async google(credential: string): Promise<SignInResult> {
     const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
     if (!clientId) throw new ServiceUnavailableException('Google sign-in is not set up on this server');
     this.googleVerifier ??= new GoogleIdTokenVerifier(clientId);
@@ -406,13 +441,7 @@ export class AuthService {
           },
         });
       }
-      const membership = await this.defaultMembership(user.id);
-      return this.issueTokens({
-        sub: user.id,
-        email: user.email,
-        orgId: membership?.orgId,
-        role: membership?.role as Role | undefined,
-      });
+      return this.signIn(user);
     }
 
     const name = who.name ?? email.split('@')[0]!;

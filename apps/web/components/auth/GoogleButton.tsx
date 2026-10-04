@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { authProviders, googleSignIn } from '@/lib/client';
+import { authProviders, googleSignIn, type TwoStepChallenge } from '@/lib/client';
 import { FormMessage, authErrorText } from './fields';
 
 interface GoogleId {
@@ -39,7 +39,7 @@ function loadScript(): Promise<void> {
  * a Google client id. Someone new gets an account and a workspace; someone
  * who already signs in with that email is signed in to their account.
  */
-export function GoogleButton({ mode, onDone }: { mode: 'login' | 'register'; onDone: () => void }) {
+export function GoogleButton({ mode, onDone }: { mode: 'login' | 'register'; onDone: (challenge: TwoStepChallenge | null) => void }) {
   const { t } = useTranslation('auth');
   const { locale } = useLocale();
   const box = useRef<HTMLDivElement>(null);
@@ -70,8 +70,7 @@ export function GoogleButton({ mode, onDone }: { mode: 'login' | 'register'; onD
             setError(null);
             setBusy(true);
             try {
-              await googleSignIn(credential);
-              onDone();
+              onDone(await googleSignIn(credential));
             } catch (err) {
               setError(authErrorText(err, t, 'google', locale));
               setBusy(false);
