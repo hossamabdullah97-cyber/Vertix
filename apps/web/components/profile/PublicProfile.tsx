@@ -16,6 +16,7 @@ import { QRCode } from '@/components/QRCode';
 import { Lightbox } from '@/components/Lightbox';
 import { Constellation } from '@/components/profile/Constellation';
 import { isEmail, useChecks } from '@/lib/validate';
+import { keepThisPage } from '@/lib/sw';
 
 function visitorId(): string | undefined {
   try {
@@ -66,6 +67,7 @@ export function PublicProfile({
   const [saved, setSaved] = useState(false);
   const [gallery, setGallery] = useState<{ images: string[]; index: number } | null>(null);
   useSendKept(!preview);
+  const offline = useKeepForOffline(!preview);
 
   const links = useMemo<Resolved[]>(
     () =>
@@ -101,7 +103,8 @@ export function PublicProfile({
           : undefined,
       }
     : null;
-  const vcardUrl = `${API_URL}/c/${profile.slug}/vcard${vq.toString() ? `?${vq}` : ''}`;
+  // From this site, not the API's, so the phone can keep it with the card (sw.js).
+  const vcardUrl = `/c/${profile.slug}/contact.vcf${vq.toString() ? `?${vq}` : ''}`;
 
   /** In the preview a tap only shows what would happen. */
   const guard = (e: React.MouseEvent) => {
@@ -295,6 +298,15 @@ export function PublicProfile({
   return (
     <div dir={dir} lang={profile.lang} style={profileStyle(profile)} {...profileAttrs(profile)} className={`relative bg-[var(--p-surface)] text-[var(--p-fg)] ${preview ? 'h-full overflow-hidden' : ''}`}>
       {preview ? <div className="no-scrollbar h-full overflow-y-auto overscroll-contain">{body}</div> : body}
+
+      {offline && (
+        <div role="status" className="pointer-events-none fixed inset-x-0 top-3 z-40 flex justify-center px-4">
+          <p className="flex max-w-md items-center gap-2 rounded-full bg-[#17171a]/90 px-3.5 py-2 text-sm text-white shadow-lg backdrop-blur">
+            <Icon name="wifi-off" size={14} />
+            <span>{t.offlineCopy}</span>
+          </p>
+        </div>
+      )}
 
       <BottomSheet open={sheet === 'share'} onClose={() => setSheet(null)} contained={preview} title={t.shareTitle} closeLabel={t.close}>
         <ShareBody slug={profile.slug} name={profile.name} t={t} preview={preview} />
@@ -1040,6 +1052,30 @@ async function sendKept() {
     if (!list.length) localStorage.removeItem(KEPT);
     sendingKept = false;
   }
+}
+
+/**
+ * Keeps this card on the phone (sw.js): the page, what it loaded and its
+ * contact file, so it opens again without a signal. The first visit arrives
+ * before the service worker runs, so the page hands over the list itself.
+ * Returns whether the phone is offline now, for the note at the top.
+ */
+function useKeepForOffline(enabled: boolean): boolean {
+  const [offline, setOffline] = useState(false);
+  useEffect(() => {
+    if (!enabled) return;
+    const update = () => setOffline(navigator.onLine === false);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    const contact = document.querySelector<HTMLAnchorElement>('a[href*="/contact.vcf"]')?.href;
+    keepThisPage(contact ? [contact] : []);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, [enabled]);
+  return offline;
 }
 
 /** Sends whatever this phone kept from an earlier card visit, now and when the connection returns. */

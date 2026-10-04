@@ -15,6 +15,7 @@ keeps its report, screenshots and traces as the `e2e-report` artifact.
 | `meet.spec.ts` | "Met someone": the QR code, taking a number, the WhatsApp link |
 | `duplicates.spec.ts` | One person entered twice is found and merged |
 | `goals.spec.ts` | A team goal set from the dashboard counts the week's leads |
+| `offline.spec.ts` | Without a signal: a card opened once opens again, its contact saves, a visitor's details wait and arrive once back online; "Met someone" still shows the QR code and keeps a number taken offline |
 | `pages.spec.ts` | Every main page opens without errors, in English and in Arabic on a phone (right-to-left, no untranslated keys, no sideways scrolling) |
 
 Every test starts its own account through the API and closes it at the end,

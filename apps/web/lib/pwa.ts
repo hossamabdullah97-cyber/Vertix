@@ -6,6 +6,9 @@
  * subscription the API sends to (PushService).
  */
 import { authFetch } from '@/lib/client';
+import { registerServiceWorker } from '@/lib/sw';
+
+export { registerServiceWorker };
 
 export type PushState =
   /** This server has no push keys, or the browser has no push at all. */
@@ -32,13 +35,6 @@ function pushSupported(): boolean {
   return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
-/** Registers the service worker once per page load; quiet when the browser has none. */
-let registration: Promise<ServiceWorkerRegistration | null> | null = null;
-export function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return Promise.resolve(null);
-  registration ??= navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => null);
-  return registration;
-}
 
 let serverKey: Promise<string | null> | null = null;
 function publicKey(): Promise<string | null> {

@@ -434,7 +434,8 @@
     "sendWhatsapp": "Send my card on WhatsApp",
     "sendEmail": "Send my card by email",
     "openLead": "Open the lead",
-    "next": "Next person"
+    "next": "Next person",
+    "waiting": "No signal: saved on this phone, and added to your leads as soon as you're back online."
   },
   "duplicates": {
     "title": "Possible duplicates",

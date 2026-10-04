@@ -40,6 +40,9 @@ export function logout() {
   // Otherwise the next account to sign in on this browser inherits a
   // "selected organization" that belongs to whoever was signed in before.
   localStorage.removeItem(ACTIVE_ORG_KEY);
+  // The cards "Met someone" keeps for showing without a signal.
+  localStorage.removeItem('vertex_meet_cards');
+  localStorage.removeItem('vertex_meet_card');
   if (typeof document !== 'undefined') {
     document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
   }

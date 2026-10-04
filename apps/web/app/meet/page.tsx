@@ -9,6 +9,7 @@ import { whatsappHref } from '@/lib/crm';
 import type { Lead } from '@/lib/crm';
 import type { Occasion } from '@/lib/occasions';
 import { useStoredTheme } from '@/lib/useStoredTheme';
+import { keepThisPage } from '@/lib/sw';
 import { QRCode } from '@/components/QRCode';
 import { Icon } from '@/components/Icon';
 import { AddLead } from '@/components/crm/AddLead';
@@ -45,9 +46,30 @@ export default function MeetPage() {
       return;
     }
     setOrigin(window.location.origin);
+    // The last cards shown are kept on the phone, so the QR code still shows
+    // at a stand with no signal (sw.js keeps the page itself).
+    const MEET_KEPT = 'vertex_meet_cards';
     Promise.all([authFetch<Me>('/auth/me'), authFetch<Card[]>('/cards')])
-      .then(([me, all]) => {
-        const mine = all.filter((c) => c.ownerId === me.sub && c.isPublished);
+      .then(([me, all]) => all.filter((c) => c.ownerId === me.sub && c.isPublished))
+      .then(
+        (mine) => {
+          try {
+            localStorage.setItem(MEET_KEPT, JSON.stringify(mine.map((c) => ({ id: c.id, slug: c.slug, ownerId: c.ownerId, isPublished: true, vcardData: { fullName: c.vcardData?.fullName ?? '' } }))));
+          } catch {
+            /* private mode */
+          }
+          keepThisPage();
+          return mine;
+        },
+        () => {
+          try {
+            return JSON.parse(localStorage.getItem(MEET_KEPT) || '[]') as Card[];
+          } catch {
+            return [];
+          }
+        },
+      )
+      .then((mine) => {
         setCards(mine);
         let last: string | null = null;
         try {
@@ -236,6 +258,8 @@ export default function MeetPage() {
 function SendCard({ lead, url, greeting, onDone }: { lead: Lead; url: string; greeting: string; onDone: () => void }) {
   const { t } = useTranslation('crm');
   const wa = lead.phone && url ? whatsappHref(lead.phone, greeting) : null;
+  // Taken down without a signal: it waits on this phone until it can be sent.
+  const waiting = lead.id.startsWith('pending-');
   const mail = lead.email && url ? `mailto:${lead.email}?subject=${encodeURIComponent(t('meet.mailSubject'))}&body=${encodeURIComponent(greeting)}` : null;
   return (
     <div className="mt-6 flex flex-col items-center text-center">
@@ -244,6 +268,11 @@ function SendCard({ lead, url, greeting, onDone }: { lead: Lead; url: string; gr
       </span>
       <h2 className="mt-4 text-xl font-semibold">{t('meet.saved', { name: lead.name || lead.phone || lead.email || '' })}</h2>
       <p className="mt-1.5 text-sm text-muted">{wa || mail ? t('meet.sendNow') : t('meet.savedNoContact')}</p>
+      {waiting && (
+        <p className="mt-3 flex items-center gap-2 rounded-lg bg-amber-500/[0.08] px-3 py-2 text-xs text-amber-800 ring-1 ring-inset ring-amber-500/20 dark:text-amber-300">
+          <Icon name="wifi-off" size={13} /> {t('meet.waiting')}
+        </p>
+      )}
       <div className="mt-6 grid w-full gap-2">
         {wa && (
           <a href={wa} target="_blank" rel="noreferrer" className="v-btn !h-12 !bg-[#25D366] !text-white hover:!bg-[#1ebe5b]">
@@ -255,9 +284,11 @@ function SendCard({ lead, url, greeting, onDone }: { lead: Lead; url: string; gr
             <Icon name="mail" size={16} /> {t('meet.sendEmail')}
           </a>
         )}
-        <Link href={`/leads?lead=${lead.id}`} className="v-btn v-btn-ghost !h-12">
-          {t('meet.openLead')}
-        </Link>
+        {!waiting && (
+          <Link href={`/leads?lead=${lead.id}`} className="v-btn v-btn-ghost !h-12">
+            {t('meet.openLead')}
+          </Link>
+        )}
         <button type="button" onClick={onDone} className="v-btn v-btn-ghost !h-12">
           {t('meet.next')}
         </button>
