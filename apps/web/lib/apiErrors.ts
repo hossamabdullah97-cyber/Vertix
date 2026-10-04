@@ -32,6 +32,7 @@ export const AR_MESSAGES: Record<string, string> = {
   'User not found': 'المستخدم غير موجود',
   'Template not found': 'الرسالة الجاهزة غير موجودة',
   'Goal not found': 'الهدف غير موجود',
+  'Choose at least two leads': 'اختر عميلين محتملين على الأقل',
   'Choose the member this goal is for': 'اختر العضو الذي يخصه هذا الهدف',
   'Choose at least one other lead to merge': 'اختر عميلاً محتملاً آخر واحداً على الأقل للدمج',
   'Push notifications are not set up on this server': 'إشعارات الأجهزة غير مُفعّلة على هذا الخادم',

@@ -53,6 +53,12 @@ export class AdminController {
     return this.adminService.updateUserStatus(userId, status, actor.sub);
   }
 
+  /** For someone who lost their phone and their recovery codes, once support has confirmed who they are. */
+  @Post('users/:id/reset-2fa')
+  resetTwoStep(@Param('id') userId: string, @CurrentUser() actor: JwtPayload) {
+    return this.adminService.resetTwoStep(userId, actor.sub);
+  }
+
   @Post('users/:id/impersonate')
   impersonate(
     @Param('id') userId: string,

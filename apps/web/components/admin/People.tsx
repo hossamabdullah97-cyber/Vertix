@@ -151,6 +151,8 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
   const { locale } = useLocale();
   const [last, setLast] = useState<AdminUser | null>(user);
   const [confirm, setConfirm] = useState<'SUSPENDED' | 'ACTIVE' | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState('');
   useEffect(() => {
     if (user) setLast(user);
   }, [user]);
@@ -182,6 +184,11 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
           <div className="flex flex-wrap gap-2">
             {u.isSuperAdmin && <span className="v-badge v-badge-accent">{t('people.admin')}</span>}
             {suspended && <span className="v-badge v-badge-warning">{t('people.suspended')}</span>}
+            {u.twoFactorEnabled && (
+              <span className="v-badge">
+                <Icon name="shield" size={11} /> {t('people.twoStepOn')}
+              </span>
+            )}
             <span className="text-xs text-faint">
               {t('people.cols.joined')} {formatDate(u.createdAt, locale)}
             </span>
@@ -210,6 +217,17 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
             <span className="tabular text-ink">{formatNumber(u.leadsCount, locale)}</span>
           </p>
 
+          {u.twoFactorEnabled && (
+            <section className="border-t border-line pt-5">
+              <h3 className="text-sm font-semibold text-ink">{t('people.twoStepTitle')}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted">{t('people.twoStepHint')}</p>
+              {resetError && <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">{resetError}</p>}
+              <button onClick={() => (setResetError(''), setResetting(true))} className="v-btn v-btn-ghost mt-3">
+                <Icon name="shield" size={14} /> {t('people.twoStepReset')}
+              </button>
+            </section>
+          )}
+
           {u.organizations.length > 0 && (
             <section className="border-t border-line pt-5">
               {suspended ? (
@@ -225,6 +243,26 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
           )}
         </div>
       </Sheet>
+
+      <ConfirmDialog
+        open={resetting}
+        title={t('people.twoStepResetTitle', { name })}
+        body={t('people.twoStepResetBody')}
+        confirmLabel={t('people.twoStepReset')}
+        busyLabel={t('people.twoStepResetting')}
+        cancelLabel={t('cancel')}
+        danger
+        onCancel={() => setResetting(false)}
+        onConfirm={async () => {
+          try {
+            await authFetch(`/admin/users/${u.id}/reset-2fa`, { method: 'POST' });
+            onChanged();
+          } catch (e) {
+            setResetError((e as Error).message);
+          }
+          setResetting(false);
+        }}
+      />
 
       <ConfirmDialog
         open={!!confirm}

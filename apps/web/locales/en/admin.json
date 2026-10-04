@@ -166,7 +166,14 @@
       "needEmail": "Enter an email.",
       "needWorkspace": "Name their workspace.",
       "needPassword": "Set a password of at least 8 characters."
-    }
+    },
+    "twoStepOn": "Two-step on",
+    "twoStepTitle": "Two-step verification",
+    "twoStepHint": "For someone who lost both their phone and their recovery codes. Confirm who they are first (from the email address on the account, and what they know about their workspace). They'll be told by email.",
+    "twoStepReset": "Turn off two-step verification",
+    "twoStepResetting": "Turning off…",
+    "twoStepResetTitle": "Turn off two-step verification for {{name}}?",
+    "twoStepResetBody": "They will sign in with their password alone until they set it up again. A workspace that requires it will ask them to. Only do this once you're sure who is asking."
   },
   "jobs": {
     "intro": "The platform's background work: webhook deliveries and automation runs, newest first.",

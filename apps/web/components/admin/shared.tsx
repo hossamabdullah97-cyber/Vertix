@@ -26,6 +26,8 @@ export interface AdminUser {
   name: string | null;
   createdAt: string;
   isSuperAdmin: boolean;
+  /** Signs in with a code from an authenticator app too. */
+  twoFactorEnabled?: boolean;
   organizations: { id: string; name: string; role: string; status: string }[];
   cardsCount: number;
   leadsCount: number;

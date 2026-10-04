@@ -826,6 +826,13 @@ export function duplicateGroups<T extends DuplicateCandidate>(leads: T[]): { lea
     .map(([root, g]) => ({ leads: g, by: [...(reasons.get(root) ?? [])].sort() }));
 }
 
+/** One group of leads, however they are ordered: their ids, sorted and joined. */
+export const duplicateKey = (leads: { id: string }[]) => leads.map((l) => l.id).sort().join(',');
+
+// Marking a group of leads as different people, for the whole team.
+export const dismissDuplicatesSchema = z.object({ leadIds: z.array(z.string().min(1)).min(2).max(50) });
+export type DismissDuplicatesInput = z.infer<typeof dismissDuplicatesSchema>;
+
 // Merging duplicates into the lead that is kept.
 export const mergeLeadsSchema = z.object({ duplicateIds: z.array(z.string().min(1)).min(1).max(20) });
 export type MergeLeadsInput = z.infer<typeof mergeLeadsSchema>;

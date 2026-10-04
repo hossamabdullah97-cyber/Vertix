@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { TenantContext } from '@vertex/db';
-import { duplicateGroups, emailKey, phoneKey } from '@vertex/shared';
+import { duplicateGroups, duplicateKey, emailKey, phoneKey } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { WebhookService } from '../integrations/webhook.service';
 import { leadsVisibleTo } from './lead-visibility';
@@ -108,7 +108,31 @@ export class LeadMergeService {
       select: { ...SELECT, assignee: { select: { name: true, email: true } } },
       take: 5000,
     });
-    return duplicateGroups(leads).slice(0, 200);
+    const dismissed = new Set(await this.dismissed());
+    return duplicateGroups(leads)
+      .filter((g) => !dismissed.has(duplicateKey(g.leads)))
+      .slice(0, 200);
+  }
+
+  /** The groups someone in the workspace said are different people. */
+  async dismissed(): Promise<string[]> {
+    const rows = await this.db.duplicateDismissal.findMany({ select: { key: true } });
+    return rows.map((r) => r.key);
+  }
+
+  /** "Not the same person": the group stops showing for everyone (until another lead joins it). */
+  async dismiss(viewer: TenantContext, leadIds: string[]) {
+    const ids = [...new Set(leadIds)];
+    if (ids.length < 2) throw new BadRequestException('Choose at least two leads');
+    const seen = await this.db.lead.count({ where: { id: { in: ids }, ...leadsVisibleTo(viewer) } });
+    if (seen !== ids.length) throw new NotFoundException('Lead not found');
+    const key = duplicateKey(ids.map((id) => ({ id })));
+    await this.db.duplicateDismissal.upsert({
+      where: { orgId_key: { orgId: viewer.orgId, key } },
+      create: { orgId: viewer.orgId, key, createdById: viewer.userId },
+      update: {},
+    });
+    return { key };
   }
 
   /** Folds `duplicateIds` into `keepId`: their history and tasks move over, then they are deleted. */
