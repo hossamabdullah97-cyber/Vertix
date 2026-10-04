@@ -7,6 +7,10 @@ import { defineConfig, devices } from '@playwright/test';
  */
 const CI = !!process.env.CI;
 
+// Lets a test cut off the service worker's network too (offline.spec.ts);
+// without it, going "offline" would still let the worker fetch.
+process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1';
+
 export default defineConfig({
   testDir: './tests',
   timeout: 60_000,

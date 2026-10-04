@@ -1,14 +1,19 @@
 /*
- * Vertex Connect service worker: notifications on the lock screen (Web Push)
- * and a page to show instead of the browser's error when the phone is
- * offline. It caches nothing else on purpose, so the app is never served
- * stale: every page still comes from the network.
+ * Vertex Connect service worker: notifications on the lock screen (Web Push),
+ * a page to show instead of the browser's error when the phone is offline,
+ * and the cards a visitor has opened, so a card still opens (and its contact
+ * still saves) after the signal goes, at a crowded stand or in a basement
+ * hall. Everything is fetched from the network first: what is kept is only
+ * served when the network fails, so nobody sees a stale card while online.
  */
-const CACHE = 'vertex-shell-v2';
+const SHELL = 'vertex-shell-v3';
+const CARDS = 'vertex-cards-v1';
 const OFFLINE = '/offline.html';
+/** Cards are small; this keeps a busy event's worth without filling the phone. */
+const MAX_KEPT = 300;
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll([OFFLINE])));
+  event.waitUntil(caches.open(SHELL).then((c) => c.addAll([OFFLINE])));
   self.skipWaiting();
 });
 
@@ -16,15 +21,101 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== CARDS).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
 
-// Pages only, and only when the network fails.
+/** A card page (/c/slug), its contact file, or the "Met someone" screen. */
+const isCardPage = (url) => /^\/c\/[^/]+\/?$/.test(url.pathname) || url.pathname === '/meet';
+const isContactFile = (url) => /^\/c\/[^/]+\/contact\.vcf$/.test(url.pathname);
+/**
+ * The build's own files, and the app's translations: their names (or their
+ * ?v=) change with their content, so a kept copy is never stale.
+ */
+const isBuildFile = (url) =>
+  url.origin === self.location.origin &&
+  (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/fonts/') || (url.pathname.startsWith('/i18n/') && url.searchParams.has('v')));
+/** Requested by a card page (its scripts, styles, photos). */
+const forCard = (request) => {
+  try {
+    return isCardPage(new URL(request.referrer));
+  } catch {
+    return false;
+  }
+};
+
+async function keep(request, response) {
+  if (!response || !(response.ok || response.type === 'opaque')) return;
+  const cache = await caches.open(CARDS);
+  await cache.put(request, response);
+  const keys = await cache.keys();
+  // Oldest first: the ones kept longest ago go.
+  for (const old of keys.slice(0, Math.max(0, keys.length - MAX_KEPT))) await cache.delete(old);
+}
+
+async function fromKept(request) {
+  return (await caches.match(request)) || (await caches.match(request, { ignoreSearch: true }));
+}
+
+/** The network, keeping a copy; the kept copy when the network fails. */
+async function networkFirst(event, fallback) {
+  try {
+    const response = await fetch(event.request);
+    event.waitUntil(keep(event.request, response.clone()));
+    return response;
+  } catch (err) {
+    const kept = await fromKept(event.request);
+    if (kept) return kept;
+    if (fallback) return (await caches.match(fallback)) || Response.error();
+    throw err;
+  }
+}
+
 self.addEventListener('fetch', (event) => {
-  if (event.request.mode !== 'navigate') return;
-  event.respondWith(fetch(event.request).catch(() => caches.match(OFFLINE)));
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+
+  // The contact file first: tapping "Save contact" is a navigation too.
+  if (url.origin === self.location.origin && isContactFile(url)) return event.respondWith(networkFirst(event));
+  if (request.mode === 'navigate') {
+    if (url.origin === self.location.origin && isCardPage(url)) return event.respondWith(networkFirst(event, OFFLINE));
+    // Every other page: from the network, the offline page when there is none.
+    return event.respondWith(fetch(request).catch(() => caches.match(OFFLINE)));
+  }
+  if (isBuildFile(url)) {
+    // Kept for a card: served from the copy (it cannot change); otherwise the network.
+    return event.respondWith(
+      caches.match(request).then((kept) => kept || (forCard(request) ? networkFirst(event) : fetch(request))),
+    );
+  }
+  if (request.destination === 'image' && forCard(request)) return event.respondWith(networkFirst(event));
+});
+
+/**
+ * A card page asks for itself and what it loaded to be kept: on the very
+ * first visit the page arrived before this worker was running, so nothing
+ * of it went through the fetch handler above.
+ */
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type !== 'keep-card' || !Array.isArray(data.urls)) return;
+  event.waitUntil(
+    Promise.all(
+      data.urls.slice(0, 80).map(async (u) => {
+        try {
+          const url = new URL(u, self.location.origin);
+          if (url.origin === self.location.origin && !(isCardPage(url) || isContactFile(url) || isBuildFile(url))) return;
+          if (await caches.match(url.href)) return;
+          const response = await fetch(url.href, url.origin === self.location.origin ? {} : { mode: 'no-cors' });
+          await keep(new Request(url.href), response);
+        } catch {
+          /* kept next time */
+        }
+      }),
+    ),
+  );
 });
 
 self.addEventListener('push', (event) => {

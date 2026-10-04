@@ -190,6 +190,27 @@ export function AddLead({
     try {
       const body: Record<string, string> = { source: fromScan ? 'card_scan' : inPerson ? 'in_person' : 'manual' };
       for (const [k, v] of Object.entries(fields)) if (v.trim()) body[k] = v.trim();
+      if (navigator.onLine === false) {
+        // No signal: the outbox keeps it on this phone and sends it once
+        // the connection is back (lib/outbox.ts). Nothing to wait for here.
+        void authFetch<Lead>('/leads', { method: 'POST', body: JSON.stringify(body) }).catch(() => undefined);
+        onAdded({
+          id: `pending-${Date.now()}`,
+          name: body.name ?? null,
+          email: body.email ?? null,
+          phone: body.phone ?? null,
+          company: body.company ?? null,
+          score: 0,
+          value: 0,
+          temperature: 'WARM',
+          source: body.source!,
+          stageId: null,
+          createdAt: new Date().toISOString(),
+          card: null,
+        });
+        close();
+        return;
+      }
       const lead = await authFetch<Lead>('/leads', { method: 'POST', body: JSON.stringify(body) });
       onAdded(lead);
       close();
