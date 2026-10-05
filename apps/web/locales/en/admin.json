@@ -174,7 +174,15 @@
     "twoStepReset": "Turn off two-step verification",
     "twoStepResetting": "Turning off…",
     "twoStepResetTitle": "Turn off two-step verification for {{name}}?",
-    "twoStepResetBody": "They will sign in with their password alone until they set it up again. A workspace that requires it will ask them to. Only do this once you're sure who is asking."
+    "twoStepResetBody": "They will sign in with their password alone until they set it up again. A workspace that requires it will ask them to. Only do this once you're sure who is asking.",
+    "signOutTitle": "Signed-in devices",
+    "signOutHint": "For an account that may be in someone else's hands: every browser and phone signed in to it is signed out within seconds. They can sign in again with their password.",
+    "signOutAll": "Sign out everywhere",
+    "signingOut": "Signing out…",
+    "signOutConfirmTitle": "Sign {{name}} out everywhere?",
+    "signOutConfirmBody": "Every device signed in to this account is signed out, including any they are using now.",
+    "signedOut_one": "Signed out of {{count}} device.",
+    "signedOut_other": "Signed out of {{count}} devices."
   },
   "jobs": {
     "intro": "The platform's background work: webhook deliveries and automation runs, newest first.",

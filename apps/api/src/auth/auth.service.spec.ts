@@ -25,6 +25,7 @@ type Deps = {
   organization?: Partial<Record<string, jest.Mock>>;
   tokens?: Partial<Record<string, jest.Mock>>;
   twoFactor?: Partial<Record<string, jest.Mock>>;
+  sessions?: Partial<Record<string, jest.Mock>>;
   signed?: Record<string, unknown>[];
 };
 
@@ -95,6 +96,14 @@ function makeService(d: Deps = {}) {
 
   const twoFactor = { challenge: jest.fn(async (sub: string) => ({ mfaRequired: true, mfaToken: `mfa_${sub}` })), ...d.twoFactor };
 
+  const sessions = {
+    start: jest.fn().mockResolvedValue('sess_1'),
+    renew: jest.fn().mockResolvedValue(true),
+    revoke: jest.fn().mockResolvedValue({ ok: true }),
+    revokeAll: jest.fn().mockResolvedValue({ count: 0 }),
+    ...d.sessions,
+  };
+
   const service = new AuthService(
     prisma,
     jwt as never,
@@ -103,8 +112,9 @@ function makeService(d: Deps = {}) {
     mail,
     throttle as never,
     twoFactor as never,
+    sessions as never,
   );
-  return { service, prisma, jwt, tokens, mail, signed, throttle };
+  return { service, prisma, jwt, tokens, mail, signed, throttle, sessions };
 }
 
 /** The access token is the first signAsync call; the refresh token is the second. */
@@ -358,6 +368,8 @@ describe('AuthService.refresh', () => {
       sub: 'u1',
       email: 'a@b.co',
       isSuperAdmin: false,
+      // Only which device it belongs to, so it can be signed out.
+      sid: 'sess_1',
     });
   });
 
@@ -405,6 +417,62 @@ describe('AuthService.refresh', () => {
     jwt.verifyAsync.mockResolvedValue({ sub: 'u1', email: 'a@b.co', isSuperAdmin: true });
     await service.refresh('tok');
     expect(access(signed).isSuperAdmin).toBe(false);
+  });
+});
+
+describe('signed-in devices', () => {
+  const account = { id: 'u1', email: 'a@b.co', passwordHash: '' };
+
+  it('starts one per sign-in, from the browser and address that signed in, and names it in both tokens', async () => {
+    const { service, signed, sessions } = makeService({ user: { findFirst: jest.fn().mockResolvedValue({ ...account, passwordHash: HASH }) } });
+    await service.login({ email: 'a@b.co', password: PASSWORD }, '1.2.3.4', 'Chrome UA');
+    expect(sessions.start).toHaveBeenCalledWith('u1', { ip: '1.2.3.4', userAgent: 'Chrome UA' }, { announce: true });
+    expect(access(signed).sid).toBe('sess_1');
+    expect(refreshClaims(signed).sid).toBe('sess_1');
+  });
+
+  it('does not announce the first device of a new account', async () => {
+    const { service, sessions } = makeService({ user: { create: jest.fn().mockResolvedValue({ id: 'u9', email: 'n@b.co' }) } });
+    await service.register({ email: 'n@b.co', password: PASSWORD, kind: 'team', organizationName: 'Acme' }, { ip: '1.1.1.1', userAgent: 'UA' });
+    expect(sessions.start).toHaveBeenCalledWith('u9', { ip: '1.1.1.1', userAgent: 'UA' }, {});
+  });
+
+  it('renews the same device, and refuses one that was signed out', async () => {
+    const { service, jwt, signed, sessions } = makeService();
+    jwt.verifyAsync.mockResolvedValue({ sub: 'u1', email: 'a@b.co', sid: 'sess_7' });
+    await service.refresh('tok', { ip: '5.5.5.5' });
+    expect(sessions.renew).toHaveBeenCalledWith('sess_7', 'u1', { ip: '5.5.5.5' });
+    expect(sessions.start).not.toHaveBeenCalled();
+    expect(access(signed).sid).toBe('sess_7');
+
+    sessions.renew.mockResolvedValue(false);
+    await expect(service.refresh('tok')).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('gives a token from before devices were kept a device of its own', async () => {
+    const { service, jwt, signed, sessions } = makeService();
+    jwt.verifyAsync.mockResolvedValue({ sub: 'u1', email: 'a@b.co' });
+    await service.refresh('tok', { userAgent: 'UA' });
+    expect(sessions.start).toHaveBeenCalledWith('u1', { userAgent: 'UA' }, {});
+    expect(access(signed).sid).toBe('sess_1');
+  });
+
+  it('signs out the device a refresh token belongs to, and shrugs at one it cannot read', async () => {
+    const { service, jwt, sessions } = makeService();
+    jwt.verifyAsync.mockResolvedValue({ sub: 'u1', email: 'a@b.co', sid: 'sess_7' });
+    await expect(service.logout('tok')).resolves.toEqual({ ok: true });
+    expect(sessions.revoke).toHaveBeenCalledWith('u1', 'sess_7');
+    jwt.verifyAsync.mockRejectedValue(new Error('expired'));
+    await expect(service.logout('old')).resolves.toEqual({ ok: true });
+  });
+
+  it('signs every device out when the password is reset', async () => {
+    const { service, sessions } = makeService({
+      tokens: { verify: jest.fn().mockResolvedValue({ id: 't1', userId: 'u1' }) },
+      user: { findUnique: jest.fn().mockResolvedValue({ emailVerified: new Date(), isSuperAdmin: false }) },
+    });
+    await service.resetPassword('t', 'BrandNewPass1!');
+    expect(sessions.revokeAll).toHaveBeenCalledWith('u1');
   });
 });
 

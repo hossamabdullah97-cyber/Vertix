@@ -34,6 +34,24 @@ export function getToken(): string | null {
 const ACTIVE_ORG_KEY = 'vertex_org_id';
 
 export function logout() {
+  // The device's session ends on the server too, so the refresh token left
+  // behind (a shared computer, a copied profile) renews nothing. It outlives
+  // the page that is navigating away.
+  const refreshToken = typeof window !== 'undefined' ? localStorage.getItem(REFRESH_KEY) : null;
+  if (refreshToken) {
+    try {
+      void Promise.resolve(
+        fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+          keepalive: true,
+        }),
+      ).catch(() => undefined);
+    } catch {
+      // Signing out here never waits on, or fails with, the server.
+    }
+  }
   // Changes still waiting for a connection belong to this account, not the next one.
   clearOutbox();
   localStorage.removeItem(TOKEN_KEY);
@@ -516,6 +534,22 @@ export const twoStep = {
   enable: (code: string) => authFetch<{ recoveryCodes: string[] }>('/auth/2fa/enable', { method: 'POST', body: JSON.stringify({ code: code.trim() }) }),
   disable: (code: string) => authFetch<{ ok: true }>('/auth/2fa/disable', { method: 'POST', body: JSON.stringify({ code: code.trim() }) }),
   recoveryCodes: (code: string) => authFetch<{ recoveryCodes: string[] }>('/auth/2fa/recovery-codes', { method: 'POST', body: JSON.stringify({ code: code.trim() }) }),
+};
+
+export interface SignedInDevice {
+  id: string;
+  userAgent: string | null;
+  ip: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+  current: boolean;
+}
+
+/** The devices the account is signed in on (auth_sessions). */
+export const devices = {
+  list: () => authFetch<SignedInDevice[]>('/auth/sessions'),
+  signOut: (id: string) => authFetch<{ ok: true }>(`/auth/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  signOutOthers: () => authFetch<{ count: number }>('/auth/sessions/revoke-others', { method: 'POST' }),
 };
 
 /** Saves data the API returned as a .json file on the person's device. */

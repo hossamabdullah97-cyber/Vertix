@@ -16,6 +16,7 @@ function make(opts: { memberships: Mem[]; others: Record<string, number>; otherO
     nfcTag: { updateMany: rec('nfcTag.updateMany') },
     membership: { updateMany: rec('membership.updateMany') },
     pushSubscription: { deleteMany: rec('push.deleteMany') },
+    authSession: { deleteMany: rec('sessions.deleteMany') },
     personalAccessToken: { deleteMany: rec('pat.deleteMany') },
     leadAlertSettings: { deleteMany: rec('alerts.deleteMany') },
     notificationPreference: { deleteMany: rec('prefs.deleteMany') },

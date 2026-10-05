@@ -297,6 +297,8 @@ export class AdminService {
         data: { status: status as any }
       });
     }
+    // Suspended is out now, not when the devices' tokens next renew.
+    if (status === 'SUSPENDED') await this.signOutEverywhere(userId);
 
     await this.logAdminAction(actorId, `UPDATE_USER_STATUS_${status}`, 'User', userId, { previous: 'ACTIVE' });
     return { success: true };
@@ -327,6 +329,20 @@ export class AdminService {
       })
       .catch(() => false);
     return { success: true };
+  }
+
+  /** Every device a person is signed in on, signed out; their access ends within seconds. */
+  private signOutEverywhere(userId: string) {
+    return this.prisma.client.authSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+  }
+
+  /** For an account that may be in someone else's hands. */
+  async signOutUser(userId: string, actorId: string) {
+    const user = await this.prisma.client.user.findFirst({ where: { id: userId, deletedAt: null }, select: { email: true } });
+    if (!user) throw new NotFoundException('User not found');
+    const { count } = await this.signOutEverywhere(userId);
+    await this.logAdminAction(actorId, 'SIGN_OUT_USER', 'User', userId, { email: user.email, sessions: count });
+    return { success: true, sessions: count };
   }
 
   async impersonateUser(userId: string, actorId: string) {

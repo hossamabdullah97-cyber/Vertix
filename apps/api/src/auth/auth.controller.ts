@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Ip, Patch, Post, UsePipes } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UsePipes } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
   registerSchema,
@@ -31,6 +31,8 @@ import { TwoStepExempt } from './decorators/two-step-exempt.decorator';
 import { OrgId, Tenant } from './decorators/tenant.decorator';
 import type { TenantContext } from '@vertex/db';
 import { PersonRoute } from './decorators/person-route.decorator';
+import { Client } from './decorators/client-info.decorator';
+import { SessionsService, type ClientInfo } from './sessions.service';
 
 /**
  * The pages that take a password or send a link: 20 requests a minute per
@@ -43,29 +45,31 @@ const AUTH_PAGE_LIMIT = { default: { limit: Number(process.env.AUTH_RATE_LIMIT) 
 @TwoStepExempt()
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly sessions: SessionsService,
+  ) {}
 
   @Public()
   @Throttle(AUTH_PAGE_LIMIT)
   @Post('register')
-  @UsePipes(new ZodValidationPipe(registerSchema))
-  register(@Body() body: RegisterInput) {
-    return this.auth.register(body);
+  register(@Body(new ZodValidationPipe(registerSchema)) body: RegisterInput, @Client() client: ClientInfo) {
+    return this.auth.register(body, client);
   }
 
   @Public()
   @Throttle(AUTH_PAGE_LIMIT)
   @Post('login')
-  login(@Body(new ZodValidationPipe(loginSchema)) body: LoginInput, @Ip() ip: string) {
-    return this.auth.login(body, ip);
+  login(@Body(new ZodValidationPipe(loginSchema)) body: LoginInput, @Client() client: ClientInfo) {
+    return this.auth.login(body, client.ip ?? 'unknown', client.userAgent ?? undefined);
   }
 
   /** The code screen of a sign-in with two-step verification. */
   @Public()
   @Throttle(AUTH_PAGE_LIMIT)
   @Post('login/2fa')
-  loginTwoStep(@Body(new ZodValidationPipe(mfaLoginSchema)) body: MfaLoginInput) {
-    return this.auth.completeTwoStep(body.mfaToken, body.code);
+  loginTwoStep(@Body(new ZodValidationPipe(mfaLoginSchema)) body: MfaLoginInput, @Client() client: ClientInfo) {
+    return this.auth.completeTwoStep(body.mfaToken, body.code, client);
   }
 
   /** Which sign-in methods the page should offer. */
@@ -78,15 +82,45 @@ export class AuthController {
   @Public()
   @Throttle(AUTH_PAGE_LIMIT)
   @Post('google')
-  google(@Body(new ZodValidationPipe(googleSignInSchema)) body: GoogleSignInInput) {
-    return this.auth.google(body.credential);
+  google(@Body(new ZodValidationPipe(googleSignInSchema)) body: GoogleSignInInput, @Client() client: ClientInfo) {
+    return this.auth.google(body.credential, client);
   }
 
   @Public()
   @Post('refresh')
+  refresh(@Body(new ZodValidationPipe(refreshSchema)) body: RefreshInput, @Client() client: ClientInfo) {
+    return this.auth.refresh(body.refreshToken, client);
+  }
+
+  /** Signing out: this device's session ends, not only the browser's copy of it. */
+  @Public()
+  @Post('logout')
+  @HttpCode(200)
   @UsePipes(new ZodValidationPipe(refreshSchema))
-  refresh(@Body() body: RefreshInput) {
-    return this.auth.refresh(body.refreshToken);
+  logout(@Body() body: RefreshInput) {
+    return this.auth.logout(body.refreshToken);
+  }
+
+  /** The devices this account is signed in on, this one first. */
+  @PersonRoute()
+  @Get('sessions')
+  listSessions(@CurrentUser() user: JwtPayload) {
+    return this.sessions.list(user.sub, user.sid);
+  }
+
+  /** Signs every other device out. */
+  @PersonRoute()
+  @Post('sessions/revoke-others')
+  @HttpCode(200)
+  revokeOtherSessions(@CurrentUser() user: JwtPayload) {
+    return this.sessions.revokeAll(user.sub, user.sid);
+  }
+
+  /** Signs one device out (this one included: the page then signs out here too). */
+  @PersonRoute()
+  @Delete('sessions/:id')
+  revokeSession(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.sessions.revoke(user.sub, id);
   }
 
   @Public()
@@ -94,8 +128,9 @@ export class AuthController {
   @Post('accept-invite')
   acceptInvite(
     @Body(new ZodValidationPipe(acceptInviteSchema)) body: AcceptInviteInput,
+    @Client() client: ClientInfo,
   ) {
-    return this.auth.acceptInvite(body.token, body.password, body.name);
+    return this.auth.acceptInvite(body.token, body.password, body.name, client);
   }
 
   @Public()

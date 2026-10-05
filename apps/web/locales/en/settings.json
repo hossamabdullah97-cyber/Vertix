@@ -30,6 +30,27 @@
     "confirmDisable": "Enter a code from your app, or a recovery code, to turn two-step verification off.",
     "confirmRegenerate": "Enter a code from your app to get new recovery codes. The old ones stop working."
   },
+  "devices": {
+    "title": "Where you're signed in",
+    "body": "Each browser and phone signed in to your account. Sign out any you don't recognise, or that you no longer use. We email you when a new device signs in.",
+    "on": "{{browser}} on {{os}}",
+    "unknown": "Unknown device",
+    "thisDevice": "This device",
+    "activeNow": "Active now",
+    "lastActive": "Last active {{when}}",
+    "since": "signed in {{date}}",
+    "signOut": "Sign out",
+    "signOutNamed": "Sign out {{device}}",
+    "signingOut": "Signing out…",
+    "signOutOthers": "Sign out all other devices",
+    "confirmOthers_one": "Sign out the other device? It will have to sign in again.",
+    "confirmOthers_other": "Sign out the {{count}} other devices? They will have to sign in again.",
+    "confirm": "Sign them out",
+    "cancel": "Cancel",
+    "signedOutOne": "{{device}} was signed out.",
+    "signedOutOthers_one": "The other device was signed out.",
+    "signedOutOthers_other": "{{count}} devices were signed out."
+  },
   "data": {
     "title": "Your data",
     "body": "Download a copy of everything your account holds: your profile, the workspaces you're in, your cards, the leads from your cards or assigned to you with their history, and your notifications.",

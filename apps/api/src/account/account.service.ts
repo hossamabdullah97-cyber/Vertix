@@ -171,6 +171,8 @@ export class AccountService {
         await tx.nfcTag.updateMany({ where: { assignedUserId: userId }, data: { assignedUserId: null } });
         await tx.membership.updateMany({ where: { userId, deletedAt: null }, data: { deletedAt: now } });
         await tx.pushSubscription.deleteMany({ where: { userId } });
+        // Every device it was signed in on, with the addresses they came from.
+        await tx.authSession.deleteMany({ where: { userId } });
         await tx.personalAccessToken.deleteMany({ where: { userId } });
         await tx.leadAlertSettings.deleteMany({ where: { userId } });
         await tx.notificationPreference.deleteMany({ where: { userId } });

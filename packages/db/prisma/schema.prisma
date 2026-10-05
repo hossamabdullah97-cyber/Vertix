@@ -70,6 +70,7 @@ model User {
   heldTags           NfcTag[]                @relation("TagHolder")
   pushSubscriptions  PushSubscription[]      @relation("PushSubscriptions")
   goals              Goal[]                  @relation("GoalMember")
+  authSessions       AuthSession[]           @relation("AuthSessions")
 
   @@index([deletedAt])
   @@map("users")
@@ -530,6 +531,26 @@ model NotificationPreference {
 /// A browser or installed app on one device that receives push notifications
 /// for a user (Web Push). One row per device; the push service's endpoint
 /// identifies it, and a device that signs in as someone else moves over.
+/// A signed-in device: one per sign-in, kept alive by its refresh token and
+/// listed on the account page, where it can be signed out. Its access tokens
+/// carry its id, so signing it out ends them too, not only the next renewal.
+model AuthSession {
+  id         String    @id @default(cuid())
+  userId     String
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  /// Renewed with each refresh; a device left alone past it is signed out.
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  user User @relation("AuthSessions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@map("auth_sessions")
+}
+
 model PushSubscription {
   id         String    @id @default(cuid())
   userId     String
