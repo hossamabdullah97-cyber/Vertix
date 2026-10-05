@@ -12,6 +12,7 @@ import type { Plan } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymobClient, PaymobError, type PaymobSubscription } from './paymob.client';
 import { planPrices, toCents, type PaidPlan, type PlanPrices } from './prices';
+import { workspaceLink } from '../common/workspace-link';
 
 type SubStatus = 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELED';
 
@@ -148,7 +149,7 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
       itemName: `Vertex Connect ${plan === 'PRO' ? 'Pro' : 'Business'}`,
       customer: { firstName: first ?? 'Vertex', lastName: rest.join(' ') || 'Customer', email: customer.email, phone: customer.phone },
       notificationUrl: `${api}/api/billing/paymob/webhook`,
-      redirectionUrl: `${appUrl}/billing?checkout=done`,
+      redirectionUrl: appUrl + workspaceLink('/billing?checkout=done', orgId),
       extras: { orgId, plan },
     });
     return { url: checkoutUrl };

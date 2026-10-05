@@ -146,14 +146,15 @@ export class MailService {
     });
   }
 
-  sendAddedNotice(to: string, orgName: string) {
+  /** For someone who already has an account: they choose, signed in, whether to join. */
+  sendJoinInvite(to: string, link: string, orgName: string, role: string, inviter: string | null) {
     return this.send({
       to,
-      subject: `You've been added to ${orgName}`,
+      subject: `${inviter ?? 'Someone'} invited you to ${orgName} on Vertex Connect`,
       html: this.layout(
-        `You now have access to <b>${orgName}</b> on Vertex Connect.`,
-        'Open Vertex Connect',
-        this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000'),
+        `${inviter ? `<b>${escapeHtml(inviter)}</b> invited you` : "You're invited"} to join <b>${escapeHtml(orgName)}</b> as <b>${role}</b>. Sign in to accept or decline. Nothing changes until you do.`,
+        'See the invitation',
+        link,
       ),
     });
   }
@@ -167,4 +168,8 @@ export class MailService {
         <p style="color:#6b6b76;font-size:12px">Or paste this link: ${link}</p>
       </div>`;
   }
+}
+
+function escapeHtml(v: string): string {
+  return v.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 }

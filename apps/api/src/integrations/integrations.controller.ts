@@ -30,6 +30,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RequireScopes } from '../access/scopes.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { workspaceLink } from '../common/workspace-link';
 
 const oauthAppSchema = z.object({
   clientId: z.string().min(1).max(500),
@@ -144,8 +145,8 @@ export class IntegrationsController {
     const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
     if (error) return res.redirect(`${appUrl}/integrations?error=${encodeURIComponent(error)}`);
     try {
-      const { provider } = await this.oauth.handleCallback(code, state);
-      return res.redirect(`${appUrl}/integrations?connected=${encodeURIComponent(provider)}`);
+      const { provider, orgId } = await this.oauth.handleCallback(code, state);
+      return res.redirect(appUrl + workspaceLink(`/integrations?connected=${encodeURIComponent(provider)}`, orgId));
     } catch (e) {
       return res.redirect(`${appUrl}/integrations?error=${encodeURIComponent((e as Error).message)}`);
     }

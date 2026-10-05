@@ -108,7 +108,7 @@
   "details": {
     "invited": "Invited {{when}}",
     "joined": "Joined {{when}}",
-    "invitedNote": "They haven't accepted the invitation yet. They get access once they sign in from the email.",
+    "invitedNote": "They haven't answered the invitation yet. They join once they accept it, from the email or from the app if they already have an account.",
     "suspendedNote": "They can't sign in to this workspace until access is restored.",
     "selfNote": "This is you. Another owner or admin changes your role.",
     "role": "Role",
@@ -183,7 +183,7 @@
   "invite": {
     "button": "Invite people",
     "title": "Invite people",
-    "subtitle": "They get an email with a link to join this workspace.",
+    "subtitle": "They get an email to join this workspace, and join only if they accept.",
     "email": "Email",
     "name": "Name",
     "optional": "optional",

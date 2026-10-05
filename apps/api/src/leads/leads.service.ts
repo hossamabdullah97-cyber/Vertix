@@ -262,6 +262,7 @@ export class LeadsService {
     const vcard = (card.vcardData ?? {}) as Record<string, unknown>;
     void this.alerts.leadCaptured(card.ownerId, {
       leadId: lead.id,
+      orgId: card.orgId,
       intent,
       name: input.name,
       email: input.email || null,

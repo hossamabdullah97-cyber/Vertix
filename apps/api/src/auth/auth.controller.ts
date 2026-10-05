@@ -30,6 +30,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { TwoStepExempt } from './decorators/two-step-exempt.decorator';
 import { OrgId, Tenant } from './decorators/tenant.decorator';
 import type { TenantContext } from '@vertex/db';
+import { PersonRoute } from './decorators/person-route.decorator';
 
 /**
  * The pages that take a password or send a link: 20 requests a minute per
@@ -134,6 +135,7 @@ export class AuthController {
    * `plan`/`verified` reflect the ACTIVE organization (the x-organization-id
    * header), not the token's org, since the app can switch workspaces.
    */
+  @PersonRoute()
   @Get('me')
   async me(@CurrentUser() user: JwtPayload, @OrgId() activeOrgId?: string, @Tenant() tenant?: TenantContext) {
     const [profile, badge, twoFactorRequired, workspaceKind] = await Promise.all([
@@ -145,11 +147,13 @@ export class AuthController {
     // The token names the workspace it was issued in; the role shown is the
     // one held in the workspace open now (an owner of their own, a member of
     // the company's).
-    const active = tenant ? { orgId: tenant.orgId, role: tenant.role } : {};
+    // In no workspace (removed from the last one), there is no role to show.
+    const active = tenant ? { orgId: tenant.orgId, role: tenant.role } : user.isSuperAdmin ? {} : { orgId: undefined, role: undefined };
     return { ...user, ...active, ...profile, ...badge, twoFactorRequired, workspaceKind, sub: user.sub };
   }
 
   /** Returns the same shape as GET /me so callers can swap their copy wholesale. */
+  @PersonRoute()
   @Patch('me')
   async updateMe(
     @CurrentUser() user: JwtPayload,

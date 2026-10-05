@@ -25,6 +25,7 @@ beforeEach(() => {
   (globalThis as unknown as { localStorage: MemoryStorage }).localStorage =
     new MemoryStorage();
   (globalThis as unknown as { window: unknown }).window = globalThis;
+  (globalThis as unknown as { location: unknown }).location = undefined;
   (globalThis as unknown as { document: { cookie: string } }).document = {
     cookie: '',
   };
@@ -108,6 +109,61 @@ describe('switching organizations still works once signed in', () => {
 
     const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
     expect(headers['x-organization-id']).toBe('org_the_user_deliberately_selected');
+  });
+});
+
+describe('a link names its workspace', () => {
+  async function requestFrom(search: string) {
+    (globalThis as unknown as { location: { search: string } }).location = { search };
+    const { authFetch } = await import('./client');
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, text: async () => '{}' } as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    await authFetch('/leads');
+    return (fetchMock.mock.calls[0][1].headers as Record<string, string>)['x-organization-id'];
+  }
+
+  it('opens in the workspace the link names, by its address, before anything loads', async () => {
+    const { setActiveOrgId } = await import('./client');
+    const { rememberWorkspaces } = await import('./workspaces');
+    setActiveOrgId('org_personal');
+    rememberWorkspaces([{ id: 'org_personal', slug: 'mona' }, { id: 'org_nile', slug: 'nile-co' }]);
+    expect(await requestFrom('?lead=l1&w=nile-co')).toBe('org_nile');
+    // And stays there afterwards.
+    expect(localStorage.getItem('vertex_org_id')).toBe('org_nile');
+  });
+
+  it('takes an id too, as the links the server writes carry', async () => {
+    const { setActiveOrgId } = await import('./client');
+    const { rememberWorkspaces } = await import('./workspaces');
+    setActiveOrgId('org_personal');
+    rememberWorkspaces([{ id: 'org_personal', slug: 'mona' }, { id: 'org_nile', slug: 'nile-co' }]);
+    expect(await requestFrom('?w=org_nile')).toBe('org_nile');
+  });
+
+  it('never sends a workspace this browser does not know the person is in', async () => {
+    const { setActiveOrgId } = await import('./client');
+    const { rememberWorkspaces } = await import('./workspaces');
+    setActiveOrgId('org_personal');
+    rememberWorkspaces([{ id: 'org_personal', slug: 'mona' }]);
+    // The shell says "not in this workspace" once the list confirms it.
+    expect(await requestFrom('?w=someone-elses')).toBe('org_personal');
+  });
+
+  it('is forgotten at sign-out with the rest', async () => {
+    const { logout } = await import('./client');
+    const { rememberWorkspaces } = await import('./workspaces');
+    rememberWorkspaces([{ id: 'org_nile', slug: 'nile-co' }]);
+    logout();
+    expect(localStorage.getItem('vertex_org_slugs')).toBeNull();
+  });
+});
+
+describe('withWorkspace', () => {
+  it('sets the workspace on an address, keeping the rest', async () => {
+    const { withWorkspace } = await import('./workspaces');
+    expect(withWorkspace('/leads?lead=l1', 'nile-co')).toBe('/leads?lead=l1&w=nile-co');
+    expect(withWorkspace('/dashboard?w=old', 'new')).toBe('/dashboard?w=new');
+    expect(withWorkspace('/team#x', null)).toBe('/team#x');
   });
 });
 

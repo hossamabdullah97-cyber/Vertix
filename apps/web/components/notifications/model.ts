@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 import { authFetch, getActiveOrgId, setActiveOrgId } from '@/lib/client';
 import { OPEN_LEAD_EVENT } from '@/lib/events';
+import { withWorkspace } from '@/lib/workspaces';
 import type { Locale } from '@/lib/i18n/config';
 
 /** "Thu 1 Oct, 10:30" in the zone the meeting was booked in (or this device's). */
@@ -97,6 +98,18 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
       const name = names[str(m.provider)] ?? str(m.provider);
       return { title: t('notifications:types.integrationFailed', { name: iso(name) }), body: t('notifications:types.integrationFailedBody') };
     }
+    case 'member.invited': {
+      const org = iso(str(m.orgName));
+      const inviter = str(m.inviter);
+      return {
+        title: inviter ? t('notifications:types.invitedBy', { actor: iso(inviter), org }) : t('notifications:types.invited', { org }),
+        body: role(m.role) ? t('notifications:types.invitedBody', { role: role(m.role) }) : '',
+      };
+    }
+    case 'member.joined':
+      return { title: t('notifications:types.memberJoined', { name: iso(n.body ?? '') }), body: role(m.role) ? t('notifications:types.memberAddedBody', { role: role(m.role) }) : '' };
+    case 'member.declined':
+      return { title: t('notifications:types.memberDeclined', { name: iso(n.body ?? '') }), body: '' };
     case 'member.added':
       return { title: t('notifications:types.memberAdded'), body: role(m.role) ? t('notifications:types.memberAddedBody', { role: role(m.role) }) : '' };
     case 'member.role_changed':
@@ -169,6 +182,8 @@ export function linkOf(n: Notif): string | null {
     case 'goal.you_reached':
     case 'goal.member_reached':
       return '/dashboard';
+    case 'member.invited':
+      return '/invitations';
     default:
       return n.type.startsWith('member.') ? '/team' : null;
   }
@@ -188,7 +203,7 @@ export function openNotification(n: Notif, navigate: (href: string) => void) {
   if (!href) return;
   if (n.orgId && n.orgId !== getActiveOrgId()) {
     setActiveOrgId(n.orgId);
-    window.location.href = href;
+    window.location.href = withWorkspace(href, n.orgId);
     return;
   }
   navigate(href);

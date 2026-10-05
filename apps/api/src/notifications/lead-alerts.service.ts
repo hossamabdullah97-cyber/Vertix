@@ -6,6 +6,7 @@ import { MailService } from '../mail/mail.service';
 import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
 import { alertEmail, alertWhatsApp, normalizePhone, type AlertLang, type LeadAlert } from './lead-alert';
 import { WhatsAppClient } from './whatsapp.client';
+import { workspaceLink } from '../common/workspace-link';
 
 const DEFAULTS = { email: true, whatsapp: false, phone: null as string | null, lang: 'en' as AlertLang };
 
@@ -135,9 +136,9 @@ export class LeadAlertsService {
     return { ok: true as const };
   }
 
-  leadLink(leadId: string): string {
+  leadLink(leadId: string, orgId?: string | null): string {
     const base = (this.config.get<string>('APP_PUBLIC_URL') || 'http://localhost:3000').replace(/\/$/, '');
-    return `${base}/leads?lead=${encodeURIComponent(leadId)}`;
+    return base + workspaceLink(`/leads?lead=${encodeURIComponent(leadId)}`, orgId);
   }
 
   /** Tells the owner about a new lead on every channel they chose. Never throws. */
@@ -152,7 +153,7 @@ export class LeadAlertsService {
       // The language the owner chose; before they choose, the card's own.
       const chosen = row?.lang === 'ar' || row?.lang === 'en' ? row.lang : alert.lang;
       const lang: AlertLang = chosen === 'ar' ? 'ar' : 'en';
-      const full: LeadAlert = { ...alert, link: this.leadLink(alert.leadId) };
+      const full: LeadAlert = { ...alert, link: this.leadLink(alert.leadId, alert.orgId) };
       const jobs: Promise<unknown>[] = [];
       if (s.email && owner.email) {
         const { subject, html } = alertEmail(full, lang);

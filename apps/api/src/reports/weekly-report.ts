@@ -1,3 +1,4 @@
+import { workspaceLink } from '../common/workspace-link';
 /**
  * The Sunday-morning email about a workspace's week: what it adds up to,
  * against the week before, and what is waiting on someone. Pure, so it can be
@@ -109,7 +110,7 @@ export function weeklyReportSubject(r: WeeklyReport, lang: ReportLang): string {
 }
 
 /** The email, as HTML that holds up in mail apps: tables and inline styles only. */
-export function weeklyReportHtml(r: WeeklyReport, lang: ReportLang, appUrl: string): string {
+export function weeklyReportHtml(r: WeeklyReport, lang: ReportLang, appUrl: string, workspace?: string | null): string {
   const t = T[lang];
   const tag = lang === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB';
   const num = (n: number) => new Intl.NumberFormat(tag).format(n);
@@ -118,7 +119,9 @@ export function weeklyReportHtml(r: WeeklyReport, lang: ReportLang, appUrl: stri
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const align = lang === 'ar' ? 'right' : 'left';
   const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Tahoma,Arial,sans-serif";
-  const base = appUrl.replace(/\/$/, '');
+  const root = appUrl.replace(/\/$/, '');
+  // Every link opens in the workspace the report is about.
+  const at = (path: string) => root + workspaceLink(path, workspace);
 
   const delta = ([now, before]: [number, number]) => {
     if (now === before) return `<span style="color:#71717a">${t.same}</span>`;
@@ -154,7 +157,7 @@ export function weeklyReportHtml(r: WeeklyReport, lang: ReportLang, appUrl: stri
               <div style="font-size:12px;color:#71717a">${[l.company ? esc(l.company) : '', t.waitingFor(t.hours(l.hours))].filter(Boolean).join(' · ')}</div>
             </td>
             <td style="padding:10px 0;border-top:1px solid #f1f0ec" align="${lang === 'ar' ? 'left' : 'right'}">
-              <a href="${base}/leads?lead=${encodeURIComponent(l.id)}" style="font-size:13px;font-weight:600;color:#2563eb;text-decoration:none">${t.reply}</a>
+              <a href="${at(`/leads?lead=${encodeURIComponent(l.id)}`)}" style="font-size:13px;font-weight:600;color:#2563eb;text-decoration:none">${t.reply}</a>
             </td>
           </tr>`,
         )
@@ -216,10 +219,10 @@ export function weeklyReportHtml(r: WeeklyReport, lang: ReportLang, appUrl: stri
   }
   ${sections}
   <tr><td style="padding:26px 24px 8px" align="center">
-    <a href="${base}/dashboard" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:12px">${t.open}</a>
+    <a href="${at('/dashboard')}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:12px">${t.open}</a>
   </td></tr>
   <tr><td style="padding:14px 24px 24px;font-size:12px;color:#a1a1aa;line-height:1.6" align="center">
-    ${t.footer(esc(r.orgName))} <a href="${base}/notifications?settings=1" style="color:#71717a">${t.turnOff}</a>
+    ${t.footer(esc(r.orgName))} <a href="${at('/notifications?settings=1')}" style="color:#71717a">${t.turnOff}</a>
   </td></tr>
 </table>
 </td></tr></table>

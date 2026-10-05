@@ -1,3 +1,4 @@
+import { workspaceLink } from '../../common/workspace-link';
 /**
  * What a Telegram chat or a Teams channel is told when something happens in a
  * workspace: a title, a few labelled facts and a link to open it in the app,
@@ -86,13 +87,13 @@ function when(iso: string, lang: ChannelLang, timeZone: string): string {
 export function channelMessage(
   event: string,
   data: Record<string, unknown>,
-  opts: { lang: ChannelLang; appUrl: string; timeZone: string },
+  opts: { lang: ChannelLang; appUrl: string; timeZone: string; workspace?: string | null },
 ): ChannelMessage | null {
   const t = TEXT[opts.lang];
   const app = opts.appUrl.replace(/\/$/, '');
   const fact = (label: string, value: string) => (value ? [{ label, value }] : []);
   const card = str(data.cardSlug) || str(data.slug);
-  const leadLink = str(data.leadId) ? { label: t.open, url: `${app}/leads?lead=${encodeURIComponent(str(data.leadId))}` } : undefined;
+  const leadLink = str(data.leadId) ? { label: t.open, url: app + workspaceLink(`/leads?lead=${encodeURIComponent(str(data.leadId))}`, opts.workspace) } : undefined;
 
   switch (event) {
     case 'lead.created':

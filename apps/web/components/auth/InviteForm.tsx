@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { acceptInvite, type TwoStepChallenge } from '@/lib/client';
+import { acceptInvite, apiMessageOf, type TwoStepChallenge } from '@/lib/client';
 import { TwoStepForm } from './TwoStepForm';
 import { AuthShell } from './AuthShell';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText } from './fields';
@@ -14,7 +14,7 @@ export function InviteForm({ token }: { token: string }) {
   const { locale } = useLocale();
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<{ text: string; link: boolean } | null>(null);
+  const [error, setError] = useState<{ text: string; link: boolean; signIn?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [challenge, setChallenge] = useState<TwoStepChallenge | null>(null);
   const checks = useChecks({ password: problemOf(password, { required: true, min: 8 }) });
@@ -34,6 +34,12 @@ export function InviteForm({ token }: { token: string }) {
       }
       window.location.href = '/dashboard';
     } catch (err) {
+      // Someone who already has an account answers signed in, from the app.
+      if (/already have an account/i.test(apiMessageOf(err))) {
+        setError({ text: t('invite.haveAccount'), link: false, signIn: true });
+        setBusy(false);
+        return;
+      }
       const text = authErrorText(err, t, 'link', locale);
       setError({ text, link: text === t('errors.linkInvalid') });
       setBusy(false);
@@ -56,9 +62,17 @@ export function InviteForm({ token }: { token: string }) {
           <FormMessage tone="danger">
             {error.text}
             {error.link && <> {t('invite.expiredBody')}</>}
+            {error.signIn && (
+              <>
+                {' '}
+                <a href="/login?next=/invitations" className="font-medium underline">
+                  {t('invite.signInToAnswer')}
+                </a>
+              </>
+            )}
           </FormMessage>
         )}
-        {!error?.link && (
+        {!error?.link && !error?.signIn && (
           <>
             <Field
               label={

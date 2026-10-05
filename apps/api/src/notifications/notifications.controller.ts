@@ -9,8 +9,10 @@ import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.serv
 const PUSH_TEST_LIMIT = 5;
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { PersonRoute } from '../auth/decorators/person-route.decorator';
 
 /** Notifications are recipient-scoped (per user), available in any workspace. */
+@PersonRoute()
 @Controller('notifications')
 export class NotificationsController {
   constructor(

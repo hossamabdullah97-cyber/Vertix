@@ -30,6 +30,16 @@ describe('pushPayload', () => {
     expect(pushPayload({ ...n, metadata: { leadId: 'L2', intent: 'CONTACT' } }, 'en').title).toBe('New lead');
   });
 
+  it('opens in the workspace it came from, whichever is open on the phone', () => {
+    const p = pushPayload({ type: 'lead.captured', title: 'New lead', body: 'Laila', metadata: { leadId: 'l1' }, orgId: 'org_nile' }, 'en');
+    expect(p.url).toBe('/leads?lead=l1&w=org_nile');
+  });
+
+  it('asks an invitee in their language, opening their invitations', () => {
+    const p = pushPayload({ type: 'member.invited', title: "You're invited to join Nile Co", body: 'Mona', metadata: { orgId: 'org_nile', orgName: 'Nile Co' }, orgId: null }, 'ar');
+    expect(p).toMatchObject({ title: 'دعوة للانضمام إلى Nile Co', body: 'Mona', url: '/invitations' });
+  });
+
   it('keeps the title of kinds it has no words for', () => {
     expect(pushPayload({ type: 'member.added', title: 'Sara joined', body: 'x' }, 'ar', 'n9')).toEqual({ title: 'Sara joined', body: 'x', url: '/team', tag: 'n-n9' });
   });

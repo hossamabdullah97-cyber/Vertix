@@ -10,6 +10,7 @@ import { OrgId, Tenant } from '../auth/decorators/tenant.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { TwoStepExempt } from '../auth/decorators/two-step-exempt.decorator';
+import { PersonRoute } from '../auth/decorators/person-route.decorator';
 
 @Controller('orgs')
 export class OrganizationsController {
@@ -21,6 +22,7 @@ export class OrganizationsController {
 
   // The workspace switcher, so a member held at one workspace's two-step screen can leave for another.
   @TwoStepExempt()
+  @PersonRoute()
   @Get()
   list(@CurrentUser() user: JwtPayload) {
     return this.orgs.listForUser(user.sub);
@@ -51,6 +53,7 @@ export class OrganizationsController {
 
   /** A personal workspace of one's own, for someone who only has a company's. */
   @TwoStepExempt()
+  @PersonRoute()
   @Post('personal')
   createPersonal(@CurrentUser() user: JwtPayload) {
     return this.orgs.createPersonal(user.sub);

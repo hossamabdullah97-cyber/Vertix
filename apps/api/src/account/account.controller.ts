@@ -5,9 +5,11 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TwoStepExempt } from '../auth/decorators/two-step-exempt.decorator';
 import { AccountService } from './account.service';
+import { PersonRoute } from '../auth/decorators/person-route.decorator';
 
 /** The signed-in person's own account: their data, and closing it. */
 @TwoStepExempt()
+@PersonRoute()
 @Controller('account')
 export class AccountController {
   constructor(private readonly account: AccountService) {}

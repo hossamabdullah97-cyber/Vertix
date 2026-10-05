@@ -110,7 +110,12 @@
     "goalMember": "{{name}} reached their goal",
     "goalBody": "{{metric}} {{period}}: {{value}} of {{target}}",
     "integrationFailed": "{{name}} stopped working",
-    "integrationFailedBody": "Connect it again from Integrations."
+    "integrationFailedBody": "Connect it again from Integrations.",
+    "invited": "You are invited to join {{org}}",
+    "invitedBy": "{{actor}} invited you to join {{org}}",
+    "invitedBody": "As {{role}}. Open to join or decline.",
+    "memberJoined": "{{name}} joined the workspace",
+    "memberDeclined": "{{name}} declined the invitation"
   },
   "push": {
     "title": "On this device",

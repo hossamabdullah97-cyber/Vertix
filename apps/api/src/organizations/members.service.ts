@@ -56,10 +56,11 @@ export class MembersService {
   }
 
   /**
-   * Invites a member by email. Users who already hold an account are added
-   * immediately and notified. Everyone else — a new address, or a placeholder
-   * left by an invitation that was never accepted — gets a one-time link and
-   * chooses their own password. Re-inviting resends that link.
+   * Invites a member by email. Nobody joins a workspace without saying yes:
+   * someone who already holds an account is asked in the app and by email,
+   * and joins when they accept. Everyone else — a new address, or a
+   * placeholder left by an invitation that was never accepted — gets a
+   * one-time link and chooses their own password. Re-inviting asks again.
    */
   /** A personal workspace has no team: it becomes a company's or team's first. */
   async assertTeamWorkspace(orgId: string) {
@@ -79,20 +80,25 @@ export class MembersService {
 
     const existingUser = await this.db.user.findFirst({
       where: { email: input.email },
-      select: { id: true, passwordHash: true },
+      select: { id: true, passwordHash: true, googleId: true },
     });
 
-    // An account only counts as real once its owner has set a password. A row
-    // with no passwordHash is a placeholder from an earlier invitation, so it
-    // gets invited again rather than being treated as a joinable account —
-    // otherwise it would land as ACTIVE with no way to ever sign in.
-    const pendingMembership =
-      existingUser && !existingUser.passwordHash
-        ? await this.db.membership.findFirst({
-            where: { userId: existingUser.id },
-            select: { id: true },
-          })
-        : null;
+    // An account only counts as real once its owner can sign in: a password,
+    // or a linked Google account. Anything else is a placeholder from an
+    // earlier invitation, invited again through the emailed link.
+    const hasAccount = !!(existingUser?.passwordHash || existingUser?.googleId);
+    // Their place here, if any (the tenant scope keeps this to this workspace).
+    const current = existingUser
+      ? await this.db.membership.findFirst({
+          where: { userId: existingUser.id },
+          select: { id: true, status: true },
+        })
+      : null;
+    if (hasAccount && current && current.status !== 'INVITED') {
+      throw new ConflictException('This user is already a member');
+    }
+    // An invitation still open holds its seat; asking again reuses it.
+    const pendingMembership = current && (!hasAccount || current.status === 'INVITED') ? current : null;
 
     // Resending an invitation reuses the seat that invitation already holds,
     // so it must not be charged against the plan a second time.
@@ -109,38 +115,32 @@ export class MembersService {
     const orgName = org?.name ?? 'your organization';
     const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
 
-    if (existingUser?.passwordHash) {
-      const already = await this.db.membership.findFirst({
-        where: { userId: existingUser.id },
-      });
-      if (already) throw new ConflictException('This user is already a member');
-
-      await this.attachMembership(tenant, existingUser.id, {
-        role: input.role,
-        teamId: input.teamId,
-        status: 'ACTIVE',
-      });
-      const emailSent = await this.mail.sendAddedNotice(input.email, orgName);
-      await this.audit.log(tenant, 'member.added', { targetType: 'user', targetId: existingUser.id, metadata: { email: input.email, role: input.role, emailSent } });
+    if (existingUser && hasAccount) {
+      if (pendingMembership) {
+        await this.db.membership.update({
+          where: { id: pendingMembership.id },
+          data: { role: input.role, ...(input.teamId !== undefined ? { teamId: input.teamId } : {}), status: 'INVITED' },
+        });
+      } else {
+        await this.attachMembership(tenant, existingUser.id, { role: input.role, teamId: input.teamId, status: 'INVITED' });
+      }
+      const inviter = await this.db.user.findUnique({ where: { id: tenant.userId }, select: { name: true, email: true } });
+      const inviterName = inviter?.name || inviter?.email || null;
+      const emailSent = await this.mail.sendJoinInvite(input.email, `${appUrl}/invitations`, orgName, input.role, inviterName);
+      await this.audit.log(tenant, 'member.invited', { targetType: 'user', targetId: existingUser.id, metadata: { email: input.email, role: input.role, emailSent, existingAccount: true } });
+      // Theirs, not the workspace's: they are not in it yet.
       await this.notifications.notify({
         userId: existingUser.id,
-        orgId: tenant.orgId,
+        orgId: null,
         actorId: tenant.userId,
-        type: 'member.added',
+        type: 'member.invited',
         category: 'ORGANIZATION',
-        priority: 'MEDIUM',
-        title: `You were added to ${orgName}`,
-        body: `Role: ${input.role}`,
-        metadata: { role: input.role },
+        priority: 'HIGH',
+        title: `You're invited to join ${orgName}`,
+        body: inviterName ?? undefined,
+        metadata: { orgId: tenant.orgId, orgName, role: input.role, inviter: inviterName },
       });
-      void this.webhooks
-        .emit(tenant.orgId, 'member.added', {
-          userId: existingUser.id,
-          email: input.email,
-          role: input.role,
-        })
-        .catch(() => undefined);
-      return { status: 'added' as const, email: input.email, emailSent };
+      return { status: 'invited' as const, email: input.email, emailSent };
     }
 
     // Pending invitee: reuse the placeholder account if one exists, otherwise

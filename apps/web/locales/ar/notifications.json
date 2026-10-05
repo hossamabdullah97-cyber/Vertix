@@ -118,7 +118,12 @@
     "goalMember": "حقق {{name}} هدفه",
     "goalBody": "{{metric}} {{period}}: {{value}} من {{target}}",
     "integrationFailed": "توقف ربط {{name}} عن العمل",
-    "integrationFailedBody": "اربطوه مجدداً من صفحة التكاملات."
+    "integrationFailedBody": "اربطوه مجدداً من صفحة التكاملات.",
+    "invited": "دعوة للانضمام إلى {{org}}",
+    "invitedBy": "دعوة من {{actor}} للانضمام إلى {{org}}",
+    "invitedBody": "بدور {{role}}. افتحها للانضمام أو الرفض.",
+    "memberJoined": "انضمام {{name}} إلى مساحة العمل",
+    "memberDeclined": "الدعوة لم تُقبل: {{name}}"
   },
   "push": {
     "title": "على هذا الجهاز",

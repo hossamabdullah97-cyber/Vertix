@@ -101,7 +101,7 @@ export class WeeklyReportService implements OnModuleInit, OnModuleDestroy {
     const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
     let sent = 0;
     for (const r of to) {
-      const ok = await this.mail.send({ to: r.email, subject: weeklyReportSubject(report, r.lang), html: weeklyReportHtml(report, r.lang, appUrl) });
+      const ok = await this.mail.send({ to: r.email, subject: weeklyReportSubject(report, r.lang), html: weeklyReportHtml(report, r.lang, appUrl, orgId) });
       if (ok) sent++;
     }
     return sent;
@@ -114,7 +114,7 @@ export class WeeklyReportService implements OnModuleInit, OnModuleDestroy {
     const lang: ReportLang = user.leadAlerts?.lang === 'ar' ? 'ar' : 'en';
     const report = await this.build(orgId, new Date());
     const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
-    const sent = await this.mail.send({ to: user.email, subject: weeklyReportSubject(report, lang), html: weeklyReportHtml(report, lang, appUrl) });
+    const sent = await this.mail.send({ to: user.email, subject: weeklyReportSubject(report, lang), html: weeklyReportHtml(report, lang, appUrl, orgId) });
     return { sent, quiet: isQuietWeek(report) };
   }
 
