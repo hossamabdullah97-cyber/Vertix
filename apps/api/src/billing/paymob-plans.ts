@@ -1,7 +1,8 @@
 /**
- * Creates (or updates) the Pro and Business subscription plans at Paymob from
- * the prices in the environment, and prints their ids for PAYMOB_PLAN_PRO and
- * PAYMOB_PLAN_BUSINESS. Run after changing a price:
+ * Creates (or updates) the Personal, Pro and Business subscription plans at
+ * Paymob from the prices in the environment, and prints their ids for
+ * PAYMOB_PLAN_PERSONAL, PAYMOB_PLAN_PRO and PAYMOB_PLAN_BUSINESS. Run after
+ * changing a price:
  *
  *   pnpm --filter @vertex/api paymob:plans
  *
@@ -9,7 +10,8 @@
  * through it), API_PUBLIC_URL (for Paymob's callbacks) and the prices.
  */
 import { PaymobClient } from './paymob.client';
-import { planPrices, toCents, type PaidPlan } from './prices';
+import { PAID_PLANS } from '@vertex/shared';
+import { planItemName, planPrices, toCents } from './prices';
 
 async function main() {
   const env = process.env;
@@ -29,7 +31,7 @@ async function main() {
   });
   const prices = planPrices((k) => env[k]);
 
-  for (const plan of ['PRO', 'BUSINESS'] as PaidPlan[]) {
+  for (const plan of PAID_PLANS) {
     const price = prices[plan];
     if (!price) {
       console.log(`${plan}: no PRICE_${plan}_EGP set, skipped`);
@@ -40,7 +42,7 @@ async function main() {
       await client.updatePlan(Number(existing), { amountCents: toCents(price), motoIntegrationId: moto });
       console.log(`${plan}: plan ${existing} now charges ${price} EGP a month`);
     } else {
-      const created = await client.createPlan({ name: `Vertex Connect ${plan === 'PRO' ? 'Pro' : 'Business'}`, amountCents: toCents(price), motoIntegrationId: moto, webhookUrl });
+      const created = await client.createPlan({ name: planItemName(plan), amountCents: toCents(price), motoIntegrationId: moto, webhookUrl });
       console.log(`${plan}: created plan ${created.id} at ${price} EGP a month. Set PAYMOB_PLAN_${plan}=${created.id}`);
     }
   }

@@ -8,6 +8,7 @@ import {
   normalizeUid,
   renderTemplate,
   PLAN_LIMITS,
+  plansFor,
   Plan,
   isPaidPlan,
   trackEventSchema,
@@ -65,6 +66,14 @@ describe('PLAN_LIMITS', () => {
   it('carries limits only: prices are server settings, in pounds', () => {
     for (const def of Object.values(PLAN_LIMITS)) expect(def).not.toHaveProperty('price');
   });
+
+  it('has a personal plan for one person: more than Free, no seats to share', () => {
+    expect(PLAN_LIMITS.PERSONAL.members).toBe(1);
+    expect(PLAN_LIMITS.PERSONAL.cards).toBeGreaterThan(PLAN_LIMITS.FREE.cards!);
+    expect(isPaidPlan('PERSONAL')).toBe(true);
+    expect(plansFor('PERSONAL')).toEqual(['FREE', 'PERSONAL']);
+    expect(plansFor('TEAM')).not.toContain('PERSONAL');
+  });
 });
 
 describe('isPaidPlan', () => {
@@ -90,7 +99,7 @@ describe('isPaidPlan', () => {
     for (const plan of Plan.options) {
       expect(typeof isPaidPlan(plan)).toBe('boolean');
     }
-    expect(Plan.options.filter(isPaidPlan)).toEqual(['PRO', 'BUSINESS', 'ENTERPRISE']);
+    expect(Plan.options.filter(isPaidPlan)).toEqual(['PERSONAL', 'PRO', 'BUSINESS', 'ENTERPRISE']);
   });
 });
 

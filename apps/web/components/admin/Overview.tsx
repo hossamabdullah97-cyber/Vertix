@@ -91,7 +91,7 @@ export function Overview({ orgs, onOpen }: { orgs: AdminOrg[] | null; onOpen: (t
   const byPlan = PLANS.map((p) => ({ plan: p, count: orgs?.filter((o) => o.plan === p).length ?? 0 }));
   const total = Math.max(1, orgs?.length ?? 0);
   const recent = [...(orgs ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
-  const PLAN_BAR: Record<string, string> = { FREE: 'bg-line-strong', PRO: 'bg-accent', BUSINESS: 'bg-accent/60', ENTERPRISE: 'bg-emerald-500' };
+  const PLAN_BAR: Record<string, string> = { FREE: 'bg-line-strong', PERSONAL: 'bg-accent/40', PRO: 'bg-accent', BUSINESS: 'bg-accent/60', ENTERPRISE: 'bg-emerald-500' };
 
   return (
     <div className="max-w-[1180px] space-y-8">

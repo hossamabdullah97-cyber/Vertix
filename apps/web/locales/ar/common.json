@@ -56,6 +56,7 @@
     "upgrade": "عرض الخطط",
     "plans": {
       "FREE": "المجانية",
+      "PERSONAL": "الشخصية",
       "PRO": "الاحترافية",
       "BUSINESS": "الأعمال",
       "ENTERPRISE": "المؤسسات"

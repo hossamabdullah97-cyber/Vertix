@@ -11,7 +11,11 @@ import { randomUUID } from 'node:crypto';
 import type { Plan } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymobClient, PaymobError, type PaymobSubscription } from './paymob.client';
-import { planPrices, toCents, type PaidPlan, type PlanPrices } from './prices';
+import { planItemName, planPrices, toCents, type PaidPlan, type PlanPrices } from './prices';
+import { plansFor } from '@vertex/shared';
+
+export const PERSONAL_PLAN_ONLY = 'The personal plan is for your own workspace. Choose a team plan for a company or team.';
+export const TEAM_PLANS_ONLY = 'A personal workspace has the personal plan. Make it a team workspace in Settings for the team plans.';
 import { workspaceLink } from '../common/workspace-link';
 
 type SubStatus = 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELED';
@@ -35,7 +39,7 @@ export function checkoutReference(orgId: string, plan: PaidPlan): string {
   return `vc_${orgId}_${plan}_${randomUUID().slice(0, 8)}`;
 }
 export function parseReference(ref: unknown): { orgId: string; plan: PaidPlan } | null {
-  const m = typeof ref === 'string' ? ref.match(/^vc_([a-z0-9]+)_(PRO|BUSINESS)_[0-9a-f]{8}$/) : null;
+  const m = typeof ref === 'string' ? ref.match(/^vc_([a-z0-9]+)_(PERSONAL|PRO|BUSINESS)_[0-9a-f]{8}$/) : null;
   return m ? { orgId: m[1]!, plan: m[2] as PaidPlan } : null;
 }
 
@@ -72,7 +76,7 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
   ) {
     const get = (k: string) => config.get<string>(k)?.trim() || undefined;
     const planId = (k: string) => (get(k) && /^\d+$/.test(get(k)!) ? Number(get(k)) : null);
-    this.plans = { PRO: planId('PAYMOB_PLAN_PRO'), BUSINESS: planId('PAYMOB_PLAN_BUSINESS') };
+    this.plans = { PERSONAL: planId('PAYMOB_PLAN_PERSONAL'), PRO: planId('PAYMOB_PLAN_PRO'), BUSINESS: planId('PAYMOB_PLAN_BUSINESS') };
     const apiKey = get('PAYMOB_API_KEY');
     const secretKey = get('PAYMOB_SECRET_KEY');
     const publicKey = get('PAYMOB_PUBLIC_KEY');
@@ -133,6 +137,11 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
     const planId = this.plans[plan];
     const price = this.prices()[plan];
     if (!planId || !price) throw new ServiceUnavailableException(`The ${plan} plan is not on sale`);
+    // A person's own workspace buys the personal plan; a company's or team's, the team plans.
+    const org = await this.db.organization.findUnique({ where: { id: orgId }, select: { kind: true } });
+    if (!plansFor(org?.kind).includes(plan)) {
+      throw new BadRequestException(plan === 'PERSONAL' ? PERSONAL_PLAN_ONLY : TEAM_PLANS_ONLY);
+    }
 
     const existing = await this.db.subscription.findFirst({ where: { orgId } });
     if (existing?.paymobSubscriptionId && existing.plan === plan && LIVE.has(existing.status)) {
@@ -146,7 +155,7 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
       planId,
       amountCents: toCents(price),
       reference: checkoutReference(orgId, plan),
-      itemName: `Vertex Connect ${plan === 'PRO' ? 'Pro' : 'Business'}`,
+      itemName: planItemName(plan),
       customer: { firstName: first ?? 'Vertex', lastName: rest.join(' ') || 'Customer', email: customer.email, phone: customer.phone },
       notificationUrl: `${api}/api/billing/paymob/webhook`,
       redirectionUrl: appUrl + workspaceLink('/billing?checkout=done', orgId),

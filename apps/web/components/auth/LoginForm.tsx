@@ -19,7 +19,7 @@ type Mode = 'login' | 'register';
  * address (?mode=register) so the landing page's buttons open the right one,
  * and switching sides keeps what was already typed.
  */
-export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; next: string | null; expired: boolean }) {
+export function LoginForm({ initialMode, next, expired, initialKind = null }: { initialMode: Mode; next: string | null; expired: boolean; initialKind?: 'personal' | 'team' | null }) {
   const { t } = useTranslation('auth');
   const { locale } = useLocale();
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -28,7 +28,8 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   const [name, setName] = useState('');
   const [org, setOrg] = useState('');
   // Who the account is for: decides whether there is a company to name.
-  const [kind, setKind] = useState<'personal' | 'team' | null>(null);
+  // A pricing page's button can say which (?kind=personal).
+  const [kind, setKind] = useState<'personal' | 'team' | null>(initialKind);
   const [error, setError] = useState<{ text: string; taken?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [challenge, setChallenge] = useState<TwoStepChallenge | null>(null);

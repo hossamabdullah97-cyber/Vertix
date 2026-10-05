@@ -12,6 +12,6 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function Home() {
-  const plans = await apiGet<{ prices: Record<'PRO' | 'BUSINESS', number | null> }>('/billing/plans');
-  return <Landing prices={plans?.prices ?? { PRO: null, BUSINESS: null }} />;
+  const plans = await apiGet<{ prices: Partial<Record<'PERSONAL' | 'PRO' | 'BUSINESS', number | null>> }>('/billing/plans');
+  return <Landing prices={plans?.prices ?? {}} />;
 }

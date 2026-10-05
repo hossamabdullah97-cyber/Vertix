@@ -63,9 +63,11 @@ export const envSchema = z.object({
   PAYMOB_PUBLIC_KEY: z.string().optional(),
   PAYMOB_CARD_INTEGRATION_ID: z.string().optional(),
   PAYMOB_MOTO_INTEGRATION_ID: z.string().optional(),
+  PAYMOB_PLAN_PERSONAL: z.string().optional(),
   PAYMOB_PLAN_PRO: z.string().optional(),
   PAYMOB_PLAN_BUSINESS: z.string().optional(),
   // Monthly prices in Egyptian pounds; a plan without one is not sold.
+  PRICE_PERSONAL_EGP: z.string().optional(),
   PRICE_PRO_EGP: z.string().optional(),
   PRICE_BUSINESS_EGP: z.string().optional(),
   // This API's own public address, for Paymob's callbacks (defaults to the

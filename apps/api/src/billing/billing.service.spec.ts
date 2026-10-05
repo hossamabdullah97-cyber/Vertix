@@ -1,5 +1,5 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
-import { BillingService, callbackIds, checkoutReference, parseReference, subStatus } from './billing.service';
+import { BillingService, callbackIds, checkoutReference, parseReference, PERSONAL_PLAN_ONLY, subStatus, TEAM_PLANS_ONLY } from './billing.service';
 import type { PaymobClient, PaymobSubscription, PaymobTransaction } from './paymob.client';
 
 /**
@@ -13,8 +13,10 @@ const ENV = {
   PAYMOB_SECRET_KEY: 'sk',
   PAYMOB_PUBLIC_KEY: 'pk',
   PAYMOB_CARD_INTEGRATION_ID: '111',
+  PAYMOB_PLAN_PERSONAL: '500',
   PAYMOB_PLAN_PRO: '501',
   PAYMOB_PLAN_BUSINESS: '502',
+  PRICE_PERSONAL_EGP: '149',
   PRICE_PRO_EGP: '499',
   PRICE_BUSINESS_EGP: '1999',
   APP_PUBLIC_URL: 'https://app.vertex.test',
@@ -22,7 +24,7 @@ const ENV = {
 
 type Paymob = { [K in keyof PaymobClient]: jest.Mock };
 
-function makeService(env: Record<string, string | undefined> = ENV, stored: Record<string, unknown> | null = null) {
+function makeService(env: Record<string, string | undefined> = ENV, stored: Record<string, unknown> | null = null, kind: 'PERSONAL' | 'TEAM' = 'TEAM') {
   const orgUpdate = jest.fn().mockResolvedValue({});
   const subUpsert = jest.fn().mockResolvedValue({});
   const subUpdate = jest.fn().mockResolvedValue({});
@@ -30,7 +32,7 @@ function makeService(env: Record<string, string | undefined> = ENV, stored: Reco
   const findMany = jest.fn().mockResolvedValue([]);
   const prisma = {
     client: {
-      organization: { update: orgUpdate },
+      organization: { update: orgUpdate, findUnique: jest.fn().mockResolvedValue({ kind }) },
       subscription: { upsert: subUpsert, update: subUpdate, findFirst, findMany },
       $transaction: jest.fn().mockImplementation((ops: unknown[]) => Promise.all(ops)),
     },
@@ -233,6 +235,21 @@ describe('BillingService.createCheckout', () => {
     });
     expect(parseReference(arg.reference)).toEqual({ orgId: 'org1', plan: 'PRO' });
   });
+
+  it('sells a person’s own workspace the personal plan, and only that', async () => {
+    const own = makeService(ENV, null, 'PERSONAL');
+    await expect(own.service.createCheckout('org1', 'PERSONAL', customer, 'https://api.test')).resolves.toMatchObject({ url: expect.any(String) });
+    const arg = own.paymob.createSubscriptionIntention.mock.calls[0][0];
+    expect(arg).toMatchObject({ planId: 500, amountCents: 14900, itemName: 'Vertex Connect Personal' });
+    expect(parseReference(arg.reference)).toEqual({ orgId: 'org1', plan: 'PERSONAL' });
+    await expect(makeService(ENV, null, 'PERSONAL').service.createCheckout('org1', 'PRO', customer, 'https://api.test')).rejects.toThrow(TEAM_PLANS_ONLY);
+  });
+
+  it('does not sell the personal plan to a company or team', async () => {
+    const { service, paymob } = makeService(ENV, null, 'TEAM');
+    await expect(service.createCheckout('org1', 'PERSONAL', customer, 'https://api.test')).rejects.toThrow(PERSONAL_PLAN_ONLY);
+    expect(paymob.createSubscriptionIntention).not.toHaveBeenCalled();
+  });
 });
 
 describe('BillingService.cancel and lapses', () => {
@@ -264,7 +281,7 @@ describe('BillingService.cancel and lapses', () => {
 describe('BillingService prices', () => {
   it('reads prices in pounds and sells only what is fully set up', () => {
     const { service } = makeService({ ...ENV, PRICE_BUSINESS_EGP: 'abc' });
-    expect(service.prices()).toEqual({ PRO: 499, BUSINESS: null });
+    expect(service.prices()).toEqual({ PERSONAL: 149, PRO: 499, BUSINESS: null });
     expect(service.sells('PRO')).toBe(true);
     expect(service.sells('BUSINESS')).toBe(false);
     expect(makeService({}).service.enabled).toBe(false);

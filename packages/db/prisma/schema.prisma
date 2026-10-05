@@ -726,6 +726,7 @@ enum TokenType {
 
 enum Plan {
   FREE
+  PERSONAL
   PRO
   BUSINESS
   ENTERPRISE
