@@ -59,6 +59,12 @@ export class AdminController {
     return this.adminService.resetTwoStep(userId, actor.sub);
   }
 
+  /** Signs a person out on every device, for an account that may be in someone else's hands. */
+  @Post('users/:id/sign-out')
+  signOutUser(@Param('id') userId: string, @CurrentUser() actor: JwtPayload) {
+    return this.adminService.signOutUser(userId, actor.sub);
+  }
+
   @Post('users/:id/impersonate')
   impersonate(
     @Param('id') userId: string,

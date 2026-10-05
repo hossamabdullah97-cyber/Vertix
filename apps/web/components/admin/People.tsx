@@ -153,6 +153,8 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
   const [confirm, setConfirm] = useState<'SUSPENDED' | 'ACTIVE' | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetError, setResetError] = useState('');
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutNote, setSignOutNote] = useState('');
   useEffect(() => {
     if (user) setLast(user);
   }, [user]);
@@ -228,6 +230,15 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
             </section>
           )}
 
+          <section className="border-t border-line pt-5">
+            <h3 className="text-sm font-semibold text-ink">{t('people.signOutTitle')}</h3>
+            <p className="mt-1 text-sm leading-relaxed text-muted">{t('people.signOutHint')}</p>
+            {signOutNote && <p role="status" className="mt-2 text-sm text-muted">{signOutNote}</p>}
+            <button onClick={() => (setSignOutNote(''), setSigningOut(true))} className="v-btn v-btn-ghost mt-3">
+              <Icon name="logout" size={14} /> {t('people.signOutAll')}
+            </button>
+          </section>
+
           {u.organizations.length > 0 && (
             <section className="border-t border-line pt-5">
               {suspended ? (
@@ -261,6 +272,26 @@ function PersonSheet({ user, onClose, onChanged }: { user: AdminUser | null; onC
             setResetError((e as Error).message);
           }
           setResetting(false);
+        }}
+      />
+
+      <ConfirmDialog
+        open={signingOut}
+        title={t('people.signOutConfirmTitle', { name })}
+        body={t('people.signOutConfirmBody')}
+        confirmLabel={t('people.signOutAll')}
+        busyLabel={t('people.signingOut')}
+        cancelLabel={t('cancel')}
+        danger
+        onCancel={() => setSigningOut(false)}
+        onConfirm={async () => {
+          try {
+            const { sessions } = await authFetch<{ sessions: number }>(`/admin/users/${u.id}/sign-out`, { method: 'POST' });
+            setSignOutNote(t('people.signedOut', { count: sessions }));
+          } catch (e) {
+            setSignOutNote((e as Error).message);
+          }
+          setSigningOut(false);
         }}
       />
 

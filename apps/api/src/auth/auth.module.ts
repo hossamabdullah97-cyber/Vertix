@@ -7,11 +7,12 @@ import { AuthController } from './auth.controller';
 import { TwoFactorController } from './two-factor.controller';
 import { TwoFactorService } from './two-factor.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { SessionsService } from './sessions.service';
 
 @Module({
   imports: [PassportModule, JwtModule.register({})],
   controllers: [AuthController, TwoFactorController],
-  providers: [AuthService, AuthThrottleService, TwoFactorService, JwtStrategy],
-  exports: [AuthService, TwoFactorService],
+  providers: [AuthService, AuthThrottleService, TwoFactorService, SessionsService, JwtStrategy],
+  exports: [AuthService, TwoFactorService, SessionsService],
 })
 export class AuthModule {}

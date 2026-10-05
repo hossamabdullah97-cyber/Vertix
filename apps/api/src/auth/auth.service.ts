@@ -37,6 +37,7 @@ import { GoogleIdTokenVerifier, GoogleTokenError } from './google-id-token';
 import { workspaceSlug } from '../common/workspace-slug';
 import { TwoFactorService } from './two-factor.service';
 import { requiresTwoStep } from './guards/tenant.guard';
+import { SessionsService, type ClientInfo } from './sessions.service';
 
 const VERIFY_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const VERIFY_RESEND_LIMIT = 5;
@@ -71,9 +72,10 @@ export class AuthService {
     private readonly mail: MailService,
     private readonly throttle: AuthThrottleService,
     private readonly twoFactor: TwoFactorService,
+    private readonly sessions: SessionsService,
   ) {}
 
-  async register(input: RegisterInput): Promise<AuthTokens> {
+  async register(input: RegisterInput, client: ClientInfo = {}): Promise<AuthTokens> {
     const email = normalizeEmail(input.email);
     const existing = await this.prisma.client.user.findFirst({
       where: { email: emailIs(email) },
@@ -96,12 +98,7 @@ export class AuthService {
     // failure must not fail the sign-up: the link can be sent again.
     await this.sendVerification(user.id, user.email).catch(() => undefined);
 
-    return this.issueTokens({
-      sub: user.id,
-      email: user.email,
-      orgId,
-      role: 'OWNER',
-    });
+    return this.openSession({ sub: user.id, email: user.email, orgId, role: 'OWNER' }, client);
   }
 
   /**
@@ -111,7 +108,7 @@ export class AuthService {
    * right password, until the window ends. Unknown emails are counted the
    * same way, so the limit says nothing about which accounts exist.
    */
-  async login(input: LoginInput, ip = 'unknown'): Promise<SignInResult> {
+  async login(input: LoginInput, ip = 'unknown', userAgent?: string): Promise<SignInResult> {
     const email = normalizeEmail(input.email);
     const keys = { address: `sign-in:${ip}:${email}`, account: `sign-in:${email}` };
     const wait = Math.max(
@@ -135,38 +132,38 @@ export class AuthService {
       throw await refuse();
     }
     await this.throttle.clear(keys.address, keys.account);
-    return this.signIn(user);
+    return this.signIn(user, { ip, userAgent });
   }
 
   /** The second step of a sign-in: the code screen's code, then the session. */
-  async completeTwoStep(mfaToken: string, code: string): Promise<AuthTokens> {
+  async completeTwoStep(mfaToken: string, code: string, client: ClientInfo = {}): Promise<AuthTokens> {
     const userId = await this.twoFactor.completeChallenge(mfaToken, code);
     const user = await this.prisma.client.user.findFirst({ where: { id: userId, deletedAt: null }, select: { id: true, email: true } });
     if (!user) throw new UnauthorizedException('Account not found');
-    return this.sessionFor(user);
+    return this.sessionFor(user, client);
   }
 
   /** A session, or first the code screen when the account has two-step verification. */
-  private async signIn(user: { id: string; email: string; totpEnabledAt: Date | null }): Promise<SignInResult> {
+  private async signIn(user: { id: string; email: string; totpEnabledAt: Date | null }, client: ClientInfo): Promise<SignInResult> {
     if (user.totpEnabledAt) {
       // Suspended everywhere is refused before the code, as without two-step.
       await this.defaultMembership(user.id);
       return this.twoFactor.challenge(user.id);
     }
-    return this.sessionFor(user);
+    return this.sessionFor(user, client);
   }
 
-  private async sessionFor(user: { id: string; email: string }): Promise<AuthTokens> {
+  /** A sign-in of an existing account: a new device, told to its owner if unfamiliar. */
+  private async sessionFor(user: { id: string; email: string }, client: ClientInfo): Promise<AuthTokens> {
     const membership = await this.defaultMembership(user.id);
-    return this.issueTokens({
-      sub: user.id,
-      email: user.email,
-      orgId: membership?.orgId,
-      role: membership?.role as Role | undefined,
-    });
+    return this.openSession(
+      { sub: user.id, email: user.email, orgId: membership?.orgId, role: membership?.role as Role | undefined },
+      client,
+      { announce: true },
+    );
   }
 
-  async refresh(refreshToken: string): Promise<AuthTokens> {
+  async refresh(refreshToken: string, client: ClientInfo = {}): Promise<AuthTokens> {
     let payload: JwtPayload;
     try {
       payload = await this.jwt.verifyAsync<JwtPayload>(refreshToken, {
@@ -189,14 +186,26 @@ export class AuthService {
     // back from the membership — which also means a role change, removal or
     // suspension takes effect on the next refresh instead of lingering for
     // the token's whole lifetime.
-    const membership = await this.defaultMembership(payload.sub);
+    // A device signed out from the account page renews no more.
+    if (payload.sid && !(await this.sessions.renew(payload.sid, payload.sub, client))) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
 
-    return this.issueTokens({
-      sub: payload.sub,
-      email: payload.email,
-      orgId: membership?.orgId,
-      role: membership?.role as Role | undefined,
-    });
+    const membership = await this.defaultMembership(payload.sub);
+    const next = { sub: payload.sub, email: payload.email, orgId: membership?.orgId, role: membership?.role as Role | undefined };
+    // A token from before devices were kept becomes one, so it can be listed and signed out.
+    return payload.sid ? this.issueTokens({ ...next, sid: payload.sid }) : this.openSession(next, client);
+  }
+
+  /** Signs out the device a refresh token belongs to; an unreadable token has nothing to end. */
+  async logout(refreshToken: string): Promise<{ ok: true }> {
+    try {
+      const payload = await this.jwt.verifyAsync<JwtPayload>(refreshToken, { secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET') });
+      if (payload.sid) await this.sessions.revoke(payload.sub, payload.sid).catch(() => undefined);
+    } catch {
+      // Expired or forged: the browser forgets it either way.
+    }
+    return { ok: true };
   }
 
   /** Completes an invitation: sets the password, activates the membership, logs in. */
@@ -204,6 +213,7 @@ export class AuthService {
     token: string,
     password: string,
     name?: string,
+    client: ClientInfo = {},
   ): Promise<SignInResult> {
     const rec = await this.tokens.verify('INVITE', token);
     if (!rec.userId || !rec.orgId) {
@@ -230,12 +240,7 @@ export class AuthService {
 
     // Someone who already has an account with two-step verification still gives a code.
     if (user.totpEnabledAt) return this.twoFactor.challenge(rec.userId);
-    return this.issueTokens({
-      sub: rec.userId,
-      email: rec.email,
-      orgId: rec.orgId,
-      role: (rec.role as Role) ?? 'EMPLOYEE',
-    });
+    return this.openSession({ sub: rec.userId, email: rec.email, orgId: rec.orgId, role: (rec.role as Role) ?? 'EMPLOYEE' }, client);
   }
 
   /** Emails a fresh confirmation link; any earlier one stops working. */
@@ -325,6 +330,8 @@ export class AuthService {
       data: { passwordHash, ...(user && !user.emailVerified ? { emailVerified: new Date() } : {}) },
     });
     await this.tokens.consume(rec.id);
+    // Whoever knew the old password is signed out wherever they were.
+    await this.sessions.revokeAll(rec.userId);
     return { ok: true };
   }
 
@@ -404,7 +411,7 @@ export class AuthService {
    * with that email is linked to it, and a new person gets an account and a
    * workspace of their own, as with register().
    */
-  async google(credential: string): Promise<SignInResult> {
+  async google(credential: string, client: ClientInfo = {}): Promise<SignInResult> {
     const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
     if (!clientId) throw new ServiceUnavailableException('Google sign-in is not set up on this server');
     this.googleVerifier ??= new GoogleIdTokenVerifier(clientId);
@@ -450,7 +457,7 @@ export class AuthService {
           },
         });
       }
-      return this.signIn(user);
+      return this.signIn(user, client);
     }
 
     const name = who.name ?? email.split('@')[0]!;
@@ -461,7 +468,7 @@ export class AuthService {
       name,
       'PERSONAL',
     );
-    return this.issueTokens({ sub: created.user.id, email: created.user.email, orgId: created.orgId, role: 'OWNER' });
+    return this.openSession({ sub: created.user.id, email: created.user.email, orgId: created.orgId, role: 'OWNER' }, client);
   }
 
   /** A new person with a workspace they own (their own, or a team's), its sales pipeline ready. */
@@ -510,6 +517,12 @@ export class AuthService {
     return null;
   }
 
+  /** A new signed-in device and its first tokens. */
+  private async openSession(payload: JwtPayload, client: ClientInfo, opts: { announce?: boolean } = {}): Promise<AuthTokens> {
+    const sid = await this.sessions.start(payload.sub, client, opts);
+    return this.issueTokens({ ...payload, sid });
+  }
+
   private async issueTokens(payload: JwtPayload): Promise<AuthTokens> {
     const user = await this.prisma.client.user.findUnique({
       where: { id: payload.sub },
@@ -523,7 +536,7 @@ export class AuthService {
         expiresIn: this.config.get<string>('JWT_ACCESS_TTL', '15m'),
       }),
       this.jwt.signAsync(
-        { sub: payload.sub, email: payload.email, isSuperAdmin },
+        { sub: payload.sub, email: payload.email, isSuperAdmin, sid: payload.sid },
         {
           secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
           expiresIn: this.config.get<string>('JWT_REFRESH_TTL', '7d'),

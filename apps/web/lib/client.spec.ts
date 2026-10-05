@@ -499,3 +499,20 @@ describe('changes made without a connection wait and go out later', () => {
     expect(localStorage.getItem('vertex_outbox')).toBeNull();
   });
 });
+
+describe('signing out', () => {
+  it('ends the device’s session on the server too, and forgets it here', async () => {
+    const { logout } = await import('./client');
+    localStorage.setItem('vertex_token', 'acc.1');
+    localStorage.setItem('vertex_refresh', 'refresh.1');
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    logout();
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(String(url)).toMatch(/\/auth\/logout$/);
+    expect(JSON.parse(String((init as RequestInit).body))).toEqual({ refreshToken: 'refresh.1' });
+    expect((init as RequestInit).keepalive).toBe(true);
+    expect(localStorage.getItem('vertex_refresh')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+});

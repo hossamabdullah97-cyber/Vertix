@@ -32,6 +32,8 @@ export const AR_MESSAGES: Record<string, string> = {
   'Invalid invitation': 'الدعوة غير صالحة',
   'Invalid or expired link': 'الرابط غير صالح أو انتهت صلاحيته',
   'Invalid refresh token': 'انتهت الجلسة. سجّل الدخول مرة أخرى',
+  'This device was signed out': 'تم تسجيل الخروج من هذا الجهاز. سجّل الدخول مرة أخرى',
+  'Session not found': 'هذا الجهاز لم يعد مسجّل الدخول',
   'Invalid token': 'الرمز غير صالح',
   'Token not found': 'الرمز غير موجود',
   'There is no account with this email yet. Set a password of at least 8 characters to create one.':

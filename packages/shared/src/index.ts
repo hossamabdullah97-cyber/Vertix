@@ -212,6 +212,8 @@ export interface JwtPayload {
   orgId?: string;
   role?: Role;
   isSuperAdmin?: boolean;
+  /** The signed-in device this token belongs to (auth_sessions); absent on tokens issued before sessions were kept. */
+  sid?: string;
 }
 
 export interface AuthTokens {
@@ -891,3 +893,60 @@ export const setGoalSchema = z
   })
   .refine((g) => (g.scope === 'MEMBER') === !!g.userId, { message: 'Choose the member this goal is for', path: ['userId'] });
 export type SetGoalInput = z.infer<typeof setGoalSchema>;
+
+// ===========================================================================
+//  Signed-in devices
+// ===========================================================================
+
+export type DeviceKind = 'phone' | 'tablet' | 'desktop';
+
+export interface DeviceInfo {
+  browser: string | null;
+  os: string | null;
+  kind: DeviceKind;
+}
+
+/**
+ * What a browser's user agent says it is, in words a person recognises:
+ * "Chrome", "iPhone", "phone". Unknown parts stay null rather than guessed.
+ */
+export function describeDevice(ua: string | null | undefined): DeviceInfo {
+  const s = ua ?? '';
+  const browser = /Edg(e|A|iOS)?\//.test(s)
+    ? 'Edge'
+    : /OPR\/|Opera/.test(s)
+      ? 'Opera'
+      : /SamsungBrowser\//.test(s)
+        ? 'Samsung Internet'
+        : /Firefox\/|FxiOS\//.test(s)
+          ? 'Firefox'
+          : /Chrome\/|CriOS\//.test(s)
+            ? 'Chrome'
+            : /Safari\//.test(s) && /Version\//.test(s)
+              ? 'Safari'
+              : null;
+  const os = /iPhone/.test(s)
+    ? 'iPhone'
+    : /iPad/.test(s)
+      ? 'iPad'
+      : /Android/.test(s)
+        ? 'Android'
+        : /Windows/.test(s)
+          ? 'Windows'
+          : /Mac OS X|Macintosh/.test(s)
+            ? 'macOS'
+            : /CrOS/.test(s)
+              ? 'ChromeOS'
+              : /Linux/.test(s)
+                ? 'Linux'
+                : null;
+  const kind: DeviceKind = /iPad|Tablet/.test(s) || (/Android/.test(s) && !/Mobile/.test(s)) ? 'tablet' : /Mobi|iPhone/.test(s) ? 'phone' : 'desktop';
+  return { browser, os, kind };
+}
+
+/** "Chrome on Windows", or as much of it as is known. */
+export function deviceLabel(ua: string | null | undefined): string {
+  const { browser, os } = describeDevice(ua);
+  if (browser && os) return `${browser} on ${os}`;
+  return browser ?? os ?? 'Unknown device';
+}

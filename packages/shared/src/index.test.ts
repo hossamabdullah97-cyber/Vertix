@@ -183,3 +183,24 @@ describe('duplicate leads', () => {
     expect(groups[0]!.by).toEqual(['email', 'phone']);
   });
 });
+
+import { describeDevice, deviceLabel } from './index';
+
+describe('describeDevice', () => {
+  it('names the browser, the system and the kind of device', () => {
+    const chromeWin = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36';
+    const safariPhone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+    const edgeMac = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0';
+    const samsungTab = 'Mozilla/5.0 (Linux; Android 13; SM-X700) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0.0.0 Safari/537.36';
+    expect(describeDevice(chromeWin)).toEqual({ browser: 'Chrome', os: 'Windows', kind: 'desktop' });
+    expect(describeDevice(safariPhone)).toEqual({ browser: 'Safari', os: 'iPhone', kind: 'phone' });
+    expect(describeDevice(edgeMac)).toEqual({ browser: 'Edge', os: 'macOS', kind: 'desktop' });
+    expect(describeDevice(samsungTab)).toEqual({ browser: 'Samsung Internet', os: 'Android', kind: 'tablet' });
+    expect(deviceLabel(chromeWin)).toBe('Chrome on Windows');
+  });
+
+  it('says nothing it does not know', () => {
+    expect(describeDevice(null)).toEqual({ browser: null, os: null, kind: 'desktop' });
+    expect(deviceLabel('curl/8.0')).toBe('Unknown device');
+  });
+});

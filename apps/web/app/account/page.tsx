@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { authFetch, getToken, type Me } from '@/lib/client';
 import AppShell from '@/components/AppShell';
 import { TwoStepPanel } from '@/components/account/TwoStepPanel';
+import { DevicesPanel } from '@/components/account/DevicesPanel';
 import { ProfilePhotoCard } from '@/components/ProfilePhotoCard';
 import { DeleteAccount, ExportMyData } from '@/components/account/AccountData';
 
@@ -30,6 +31,7 @@ export default function AccountPage() {
         {/* The photo goes with the person, whatever workspace they are in. */}
         {me && <ProfilePhotoCard me={me} onChange={setMe} />}
         <TwoStepPanel />
+        <DevicesPanel />
         <ExportMyData />
         <DeleteAccount me={me} />
       </div>
