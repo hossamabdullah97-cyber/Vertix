@@ -103,9 +103,9 @@
       "pipedrive": "Sync deals and people with Pipedrive.",
       "dynamics": "Connect leads to Dynamics 365 Sales.",
       "mailchimp": "Add captured contacts to Mailchimp audiences.",
-      "brevo": "Sync contacts into Brevo (Sendinblue) lists.",
-      "klaviyo": "Push profiles and events to Klaviyo.",
-      "activecampaign": "Sync contacts into ActiveCampaign automations.",
+      "brevo": "Add new leads to a Brevo contact list.",
+      "klaviyo": "Add new leads as profiles on a Klaviyo list.",
+      "activecampaign": "Add new leads as contacts on an ActiveCampaign list.",
       "slack": "Send lead and event notifications to a Slack channel.",
       "ms_teams": "Post new leads and workspace events to a Microsoft Teams channel.",
       "whatsapp_business": "Notify and message contacts via WhatsApp Business.",
@@ -199,6 +199,40 @@
       },
       "postsTo": "Posts to {{account}}",
       "lastSent": "Last message {{time}}"
+    },
+    "audience": {
+      "setUp": "Connect {{name}}",
+      "where": {
+        "brevo": "In Brevo, open SMTP & API → API keys, create a key and paste it here.",
+        "activecampaign": "In ActiveCampaign, open Settings → Developer. Copy the API URL and the API key, and paste both here.",
+        "klaviyo": "In Klaviyo, open Settings → API keys and create a private key with full access to Profiles and Lists. Paste it here."
+      },
+      "openKeys": "Open {{name}}",
+      "accountUrl": "API URL",
+      "key": "API key",
+      "keyHint": "It is kept encrypted, and only used to add your leads.",
+      "check": "Check the key",
+      "recheck": "Check again",
+      "checking": "Checking…",
+      "account": "Connected to {{account}}",
+      "list": "Add leads to",
+      "noLists": "This account has no lists yet. Make one in the tool, then check again.",
+      "autoSync": "Add each new lead as it arrives",
+      "consent": "Leads are added to the list, not subscribed to your campaigns. Email only the people who agreed to hear from you.",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "settings": "Your leads in this tool",
+      "addsTo": "Adds leads to {{list}}",
+      "change": "Change list",
+      "counts": {
+        "synced": "Added",
+        "skipped": "Skipped",
+        "failed": "Failed"
+      },
+      "skippedWhy": "Leads without an email address are skipped: this tool needs one.",
+      "syncRecent": "Add recent leads now",
+      "syncing": "Adding…",
+      "synced": "Added {{synced}}, skipped {{skipped}}, failed {{failed}}."
     }
   },
   "events": {

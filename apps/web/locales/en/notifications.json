@@ -109,7 +109,7 @@
     "goalYou": "You reached your goal",
     "goalMember": "{{name}} reached their goal",
     "goalBody": "{{metric}} {{period}}: {{value}} of {{target}}",
-    "integrationFailed": "{{name}} stopped receiving messages",
+    "integrationFailed": "{{name}} stopped working",
     "integrationFailedBody": "Connect it again from Integrations."
   },
   "push": {

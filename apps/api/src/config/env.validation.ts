@@ -44,6 +44,10 @@ export const envSchema = z.object({
 
   // Telegram's Bot API; only changed to point tests at a stand-in.
   TELEGRAM_API_URL: z.string().url().optional(),
+  // Email-marketing APIs; likewise only changed for tests.
+  BREVO_API_URL: z.string().url().optional(),
+  KLAVIYO_API_URL: z.string().url().optional(),
+  ACTIVECAMPAIGN_API_URL: z.string().url().optional(),
 
   // The time zone meeting hours are in for cards whose owner has not chosen one.
   DEFAULT_TIMEZONE: z.string().default('Africa/Cairo'),
