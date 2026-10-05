@@ -37,7 +37,8 @@
     "leads": "Leads",
     "tags": "NFC tags",
     "files": "Files",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "workspaces": "Workspaces"
   },
   "searchKeys": {
     "navigate": "Navigate",
@@ -60,7 +61,12 @@
     "kindTeam": "Company or team",
     "kindPersonalShort": "Personal",
     "createPersonal": "Create my personal workspace",
-    "creatingPersonal": "Creating…"
+    "creatingPersonal": "Creating…",
+    "unread_one": "{{count}} unread notification",
+    "unread_other": "{{count}} unread notifications",
+    "unreadElsewhere_one": "{{count}} unread notification in your other workspaces",
+    "unreadElsewhere_other": "{{count}} unread notifications in your other workspaces",
+    "switchTo": "Switch to {{name}}"
   },
   "plan": {
     "cards": "{{used}} of {{limit}} cards",
@@ -100,7 +106,10 @@
     "newLead": "Add a lead",
     "newCard": "New card",
     "invite": "Invite people",
-    "addChips": "Add chips"
+    "addChips": "Add chips",
+    "workspaces": "Workspaces",
+    "workspaceNumber": "Switch to the workspace with that number in the menu",
+    "workspaceMenu": "Open the workspace menu"
   },
   "twoStepGate": {
     "title": "{{org}} requires two-step verification",

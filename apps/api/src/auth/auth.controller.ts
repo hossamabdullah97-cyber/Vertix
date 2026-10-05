@@ -36,7 +36,9 @@ import { PersonRoute } from './decorators/person-route.decorator';
  * The pages that take a password or send a link: 20 requests a minute per
  * address, on top of the per-account limits inside AuthService.
  */
-const AUTH_PAGE_LIMIT = { default: { limit: 20, ttl: 60_000 } };
+// Per address, a minute. The browser tests sign up and in from one address
+// far faster than people do, so they raise it (AUTH_RATE_LIMIT); nothing else should.
+const AUTH_PAGE_LIMIT = { default: { limit: Number(process.env.AUTH_RATE_LIMIT) || 20, ttl: 60_000 } };
 
 @TwoStepExempt()
 @Controller('auth')

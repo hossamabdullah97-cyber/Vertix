@@ -25,6 +25,8 @@ export const envSchema = z.object({
 
   // Proxies in front of the API: a count ("1") or their addresses. Unset when
   // the API is reached directly. See config/trust-proxy.ts.
+  /** Sign-in and sign-up requests a minute per address (default 20). Raised only for the browser tests. */
+  AUTH_RATE_LIMIT: z.coerce.number().int().positive().optional(),
   TRUST_PROXY: z
     .string()
     .optional()

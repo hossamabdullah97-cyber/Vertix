@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch } from '@/lib/client';
+import { authFetch, getActiveOrgId } from '@/lib/client';
+import { workspaceNames } from '@/lib/workspaces';
 import { Icon } from '@/components/Icon';
 import { NotificationRow } from '@/components/notifications/NotificationRow';
-import { NOTIFS_CHANGED, announceChange, openNotification, type Notif } from '@/components/notifications/model';
+import { NOTIFS_CHANGED, announceChange, announceUnreadByWorkspace, openNotification, type Notif } from '@/components/notifications/model';
 
 /**
  * The bell in the top bar: how many are unread, and the latest few. Opening
@@ -25,8 +26,11 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   const fetchCount = useCallback(() => {
-    authFetch<{ count: number }>('/notifications/unread-count')
-      .then((r) => setCount(r.count))
+    authFetch<{ count: number; byWorkspace?: Record<string, number> }>('/notifications/unread-count')
+      .then((r) => {
+        setCount(r.count);
+        announceUnreadByWorkspace(r.byWorkspace);
+      })
       .catch(() => {});
   }, []);
 
@@ -56,6 +60,14 @@ export function NotificationBell() {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  // One from a workspace other than the open one says which.
+  const otherName = (n: Notif) => {
+    const active = getActiveOrgId();
+    if (!n.orgId || !active || n.orgId === active) return undefined;
+    const names = workspaceNames();
+    return Object.keys(names).length > 1 ? names[n.orgId] : undefined;
+  };
 
   function toggle() {
     const next = !open;
@@ -163,7 +175,7 @@ export function NotificationBell() {
                 <ul className="divide-y divide-line">
                   {shown.map((n) => (
                     <li key={n.id}>
-                      <NotificationRow n={n} compact onOpen={openOne} />
+                      <NotificationRow n={n} compact otherWorkspace={otherName(n)} onOpen={openOne} />
                     </li>
                   ))}
                 </ul>

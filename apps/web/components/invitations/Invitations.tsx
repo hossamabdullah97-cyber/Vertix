@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getToken, setActiveOrgId } from '@/lib/client';
-import { withWorkspace } from '@/lib/workspaces';
+import { authFetch, getToken } from '@/lib/client';
+import { openWorkspace } from '@/lib/switch';
 import { formatRelativeTime } from '@/lib/format';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { OrgMark } from '@/components/OrgMark';
@@ -52,8 +52,8 @@ export function InvitationList({ invites, compact = false }: { invites: Invitati
     try {
       await authFetch(`/invitations/${encodeURIComponent(inv.org.id)}/${accept ? 'accept' : 'decline'}`, { method: 'POST' });
       if (accept) {
-        setActiveOrgId(inv.org.id);
-        window.location.href = withWorkspace('/dashboard', inv.org.slug);
+        window.dispatchEvent(new Event(INVITES_CHANGED));
+        openWorkspace(inv.org.id, inv.org.slug, '/dashboard');
         return;
       }
       window.dispatchEvent(new Event(INVITES_CHANGED));

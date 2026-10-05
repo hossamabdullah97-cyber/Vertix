@@ -75,7 +75,8 @@ export class NotificationsController {
 
   @Get('unread-count')
   async unreadCount(@CurrentUser() user: JwtPayload) {
-    return { count: await this.notifications.unreadCount(user.sub) };
+    const [count, byWorkspace] = await Promise.all([this.notifications.unreadCount(user.sub), this.notifications.unreadByWorkspace(user.sub)]);
+    return { count, byWorkspace };
   }
 
   @Get('preferences')
