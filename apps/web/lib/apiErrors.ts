@@ -199,6 +199,9 @@ export const AR_MESSAGES: Record<string, string> = {
     'الصق رابط API من ActiveCampaign (Settings ثم Developer)، مثل \u2068https://youraccount.api-us1.com\u2069.',
   'Paste the API key.': 'الصق مفتاح API.',
   'Choose one of the account’s lists.': 'اختر إحدى قوائم الحساب.',
+  'Choose the Mailchimp audience leads join.': 'اختر جمهور Mailchimp الذي ينضم إليه العملاء.',
+  'Salesforce did not say where this org’s API is. Connect it again.': 'لم يحدد Salesforce عنوان API لهذه المؤسسة. اربطه مجدداً.',
+  'Mailchimp did not say which data centre this account is in. Connect it again.': 'لم يحدد Mailchimp مركز البيانات لهذا الحساب. اربطه مجدداً.',
 };
 
 /** Messages with a value in them. The capture groups carry that value across. */

@@ -94,15 +94,19 @@
         "company": "Company",
         "source": "Source",
         "temperature": "Temperature"
-      }
+      },
+      "chooseAudience": "Choose the audience leads join first.",
+      "choose": "Choose",
+      "resultSkipped": "Sent {{synced}}, skipped {{skipped}} without an email, failed {{failed}}.",
+      "noEmail": "Skipped: no email address"
     },
     "descriptions": {
-      "hubspot": "Sync leads and contacts with HubSpot CRM.",
-      "salesforce": "Push leads and meetings into Salesforce.",
-      "zoho_crm": "Two-way contact and lead sync with Zoho CRM.",
-      "pipedrive": "Sync deals and people with Pipedrive.",
+      "hubspot": "Send new leads to HubSpot as contacts.",
+      "salesforce": "Send new leads to Salesforce as Leads.",
+      "zoho_crm": "Send new leads to Zoho CRM as Leads.",
+      "pipedrive": "Send new leads to Pipedrive as people, under their organization.",
       "dynamics": "Connect leads to Dynamics 365 Sales.",
-      "mailchimp": "Add captured contacts to Mailchimp audiences.",
+      "mailchimp": "Add new leads to a Mailchimp audience.",
       "brevo": "Add new leads to a Brevo contact list.",
       "klaviyo": "Add new leads as profiles on a Klaviyo list.",
       "activecampaign": "Add new leads as contacts on an ActiveCampaign list.",
@@ -155,7 +159,8 @@
       "Files": "Files",
       "Receive events": "Receive events",
       "Measurement": "Measurement",
-      "Containers": "Containers"
+      "Containers": "Containers",
+      "Organizations": "Organizations"
     },
     "channel": {
       "setUp": "Connect {{name}}",

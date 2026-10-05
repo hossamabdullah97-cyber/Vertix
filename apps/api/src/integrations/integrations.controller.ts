@@ -39,6 +39,7 @@ const oauthAppSchema = z.object({
 const syncConfigSchema = z.object({
   syncEnabled: z.boolean().optional(),
   fieldMapping: z.record(z.string()).optional(),
+  listId: z.string().min(1).max(100).optional(),
 });
 
 /**
@@ -197,5 +198,13 @@ export class IntegrationsController {
   @Get(':provider/sync-records')
   syncRecords(@Tenant() tenant: TenantContext, @Param('provider') provider: string) {
     return this.crmSync.records(tenant, provider);
+  }
+
+  /** The audiences of a connected Mailchimp account, to choose where leads go. */
+  @RequireScopes('integration:read')
+  @Roles('OWNER', 'ADMIN')
+  @Get(':provider/sync-lists')
+  syncLists(@Tenant() tenant: TenantContext, @Param('provider') provider: string) {
+    return this.crmSync.lists(tenant, provider);
   }
 }
