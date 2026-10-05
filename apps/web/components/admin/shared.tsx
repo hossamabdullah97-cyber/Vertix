@@ -3,8 +3,8 @@
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
 
-export type Plan = 'FREE' | 'PRO' | 'BUSINESS' | 'ENTERPRISE';
-export const PLANS: Plan[] = ['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE'];
+export type Plan = 'FREE' | 'PERSONAL' | 'PRO' | 'BUSINESS' | 'ENTERPRISE';
+export const PLANS: Plan[] = ['FREE', 'PERSONAL', 'PRO', 'BUSINESS', 'ENTERPRISE'];
 
 export interface AdminOrg {
   id: string;
@@ -121,6 +121,7 @@ export function PasswordField({ id, value, onChange }: { id: string; value: stri
 
 export const PLAN_BADGE: Record<string, string> = {
   FREE: 'v-badge-neutral',
+  PERSONAL: 'v-badge-accent',
   PRO: 'v-badge-accent',
   BUSINESS: 'v-badge-accent',
   ENTERPRISE: 'v-badge-success',

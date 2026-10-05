@@ -53,6 +53,7 @@
   },
   "plans": {
     "FREE": "مجانية",
+    "PERSONAL": "شخصي",
     "PRO": "Pro",
     "BUSINESS": "Business",
     "ENTERPRISE": "Enterprise"

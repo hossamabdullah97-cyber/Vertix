@@ -116,9 +116,14 @@
   "pricing": {
     "label": "Pricing",
     "title": "Start free. Pay when your team grows.",
-    "subtitle": "The pipeline, analytics and integrations come with every plan. Plans differ in how many cards, members and chips you can have.",
+    "subtitle": "Leads, analytics and integrations are in every plan. Plans differ in how many cards, people and chips they include.",
     "start": "Get started",
-    "note": "Prices are in Egyptian pounds, billed monthly by card through Paymob. You can cancel at any time from Billing."
+    "note": "Prices are in Egyptian pounds, billed monthly by card through Paymob. You can cancel at any time from Billing.",
+    "personalLabel": "For yourself",
+    "personalStart": "Start on your own",
+    "personalFree": "Start free; move to the personal plan when you need more.",
+    "personalAll": "Every feature: leads, analytics, integrations",
+    "teamsHeading": "For companies and teams"
   },
   "faq": {
     "label": "Questions",

@@ -15,6 +15,8 @@ export const AR_MESSAGES: Record<string, string> = {
   'Email is already in use': 'هذا البريد الإلكتروني مستخدم بالفعل',
   'This is already a company or team workspace.': 'هذه مساحة عمل لشركة أو فريق بالفعل.',
   'You already have a personal workspace.': 'لديك مساحة شخصية بالفعل.',
+  'The personal plan is for your own workspace. Choose a team plan for a company or team.': 'الخطة الشخصية لمساحتك الخاصة. اختر خطة فريق لمساحة شركة أو فريق.',
+  'A personal workspace has the personal plan. Make it a team workspace in Settings for the team plans.': 'المساحة الشخصية لها الخطة الشخصية. حوّلها إلى مساحة فريق من الإعدادات لتظهر خطط الفرق.',
   'This invitation is no longer open.': 'لم تعد هذه الدعوة متاحة.',
   'You already have an account. Sign in to accept the invitation.': 'لديك حساب بالفعل. سجّل الدخول لقبول الدعوة.',
   'This is your personal workspace. Make it a company or team workspace in Settings to invite people.': 'هذه مساحتك الشخصية. حوّلها إلى مساحة عمل لشركة أو فريق من الإعدادات لدعوة أشخاص.',

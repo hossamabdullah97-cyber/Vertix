@@ -47,13 +47,15 @@
   "plansHint": "Prices are in Egyptian pounds, per month. A new plan applies as soon as the payment is confirmed.",
   "plans": {
     "FREE": "Free",
+    "PERSONAL": "Personal",
     "PRO": "Pro",
     "BUSINESS": "Business",
     "ENTERPRISE": "Enterprise"
   },
   "taglines": {
     "FREE": "One card, to try it out.",
-    "PRO": "For a person or a small team.",
+    "PERSONAL": "Your own card and leads, with more room to grow.",
+    "PRO": "For a small team.",
     "BUSINESS": "For teams handing out many cards.",
     "ENTERPRISE": "For large organizations, on contract."
   },

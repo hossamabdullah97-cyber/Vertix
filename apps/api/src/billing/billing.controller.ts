@@ -32,7 +32,7 @@ export class BillingController {
       prices,
       currency: CURRENCY,
       billingEnabled: this.billing.enabled,
-      onSale: { PRO: this.billing.sells('PRO'), BUSINESS: this.billing.sells('BUSINESS') },
+      onSale: { PERSONAL: this.billing.sells('PERSONAL'), PRO: this.billing.sells('PRO'), BUSINESS: this.billing.sells('BUSINESS') },
     };
   }
 

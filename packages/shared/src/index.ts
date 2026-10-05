@@ -7,7 +7,7 @@ import { z } from 'zod';
 export const Role = z.enum(['OWNER', 'ADMIN', 'MANAGER', 'EMPLOYEE']);
 export type Role = z.infer<typeof Role>;
 
-export const Plan = z.enum(['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE']);
+export const Plan = z.enum(['FREE', 'PERSONAL', 'PRO', 'BUSINESS', 'ENTERPRISE']);
 export type Plan = z.infer<typeof Plan>;
 
 // Plan limits. null = unlimited. Prices are server settings (apps/api/src/billing/prices.ts).
@@ -20,6 +20,8 @@ export interface PlanDef {
 
 export const PLAN_LIMITS: Record<Plan, PlanDef> = {
   FREE: { label: 'Free', cards: 1, members: 2, nfcTags: 5 },
+  // One person's own workspace, paid: no seats to count.
+  PERSONAL: { label: 'Personal', cards: 3, members: 1, nfcTags: 10 },
   PRO: { label: 'Pro', cards: 5, members: 5, nfcTags: 50 },
   BUSINESS: { label: 'Business', cards: 25, members: 25, nfcTags: 500 },
   ENTERPRISE: { label: 'Enterprise', cards: null, members: null, nfcTags: null },
@@ -31,7 +33,19 @@ export const PLAN_LIMITS: Record<Plan, PlanDef> = {
  * Prices are settings on the server (see apps/api/src/billing/prices.ts).
  */
 export function isPaidPlan(plan: Plan | null | undefined): boolean {
-  return plan === 'PRO' || plan === 'BUSINESS' || plan === 'ENTERPRISE';
+  return plan === 'PERSONAL' || plan === 'PRO' || plan === 'BUSINESS' || plan === 'ENTERPRISE';
+}
+
+/** The plans bought at checkout. */
+export const PAID_PLANS = ['PERSONAL', 'PRO', 'BUSINESS'] as const;
+export type PaidPlan = (typeof PAID_PLANS)[number];
+
+/**
+ * The plans a workspace is offered, by its kind: a person's own workspace has
+ * no team to count seats for; a company's or team's is offered the team plans.
+ */
+export function plansFor(kind: 'PERSONAL' | 'TEAM' | null | undefined): Plan[] {
+  return kind === 'PERSONAL' ? ['FREE', 'PERSONAL'] : ['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE'];
 }
 
 export interface UsageSummary {
@@ -46,7 +60,7 @@ export interface UsageSummary {
 }
 
 export const checkoutSchema = z.object({
-  plan: z.enum(['PRO', 'BUSINESS']),
+  plan: z.enum(PAID_PLANS),
   /** Paymob asks for the payer's mobile number. */
   phone: z.string().trim().regex(/^\+?[0-9 ]{8,16}$/, 'Enter a mobile number'),
 });

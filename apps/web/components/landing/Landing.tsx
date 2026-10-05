@@ -16,7 +16,7 @@ import { Contactless, SectionHead, WRAP } from './shared';
  * hydrates a small part of the page. The theme is on <html> (see
  * lib/themeScript.ts).
  */
-export function Landing({ prices }: { prices: Record<'PRO' | 'BUSINESS', number | null> }) {
+export function Landing({ prices }: { prices: Partial<Record<'PERSONAL' | 'PRO' | 'BUSINESS', number | null>> }) {
   return (
     <div className="min-h-screen bg-canvas text-ink antialiased">
       <Suspense fallback={null}>

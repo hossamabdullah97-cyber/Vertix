@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import type { UsageSummary } from '@vertex/shared';
+import { plansFor, type UsageSummary } from '@vertex/shared';
 import { authFetch, getActiveOrgId, getToken, type Me } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatCurrency, formatDate, formatNumber } from '@/lib/format';
@@ -12,7 +12,10 @@ import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
 import { SALES_MAILTO } from '@/lib/contact';
 
-type Plan = 'FREE' | 'PRO' | 'BUSINESS' | 'ENTERPRISE';
+type Plan = 'FREE' | 'PERSONAL' | 'PRO' | 'BUSINESS' | 'ENTERPRISE';
+/** The plans bought at checkout. */
+type Paid = 'PERSONAL' | 'PRO' | 'BUSINESS';
+const isPaid = (p: string): p is Paid => p === 'PERSONAL' || p === 'PRO' || p === 'BUSINESS';
 type Resource = 'cards' | 'members' | 'nfcTags';
 
 interface PlanDef {
@@ -25,13 +28,14 @@ interface PlanDef {
 interface PlansResponse {
   plans: Record<string, PlanDef>;
   /** Monthly prices in pounds; null when the server has none set. */
-  prices: Record<'PRO' | 'BUSINESS', number | null>;
+  prices: Record<Paid, number | null>;
   currency: string;
   billingEnabled: boolean;
-  onSale: Record<'PRO' | 'BUSINESS', boolean>;
+  onSale: Record<Paid, boolean>;
 }
 
-const ORDER: Plan[] = ['FREE', 'PRO', 'BUSINESS', 'ENTERPRISE'];
+// Every plan, cheapest first; a workspace is offered those for its kind (plansFor).
+const ORDER: Plan[] = ['FREE', 'PERSONAL', 'PRO', 'BUSINESS', 'ENTERPRISE'];
 const RESOURCES: { key: Resource; href: string; icon: string; page: string }[] = [
   { key: 'cards', href: '/cards', icon: 'grid', page: 'nav:items.cards' },
   { key: 'members', href: '/team', icon: 'users', page: 'nav:items.team' },
@@ -55,11 +59,11 @@ export default function BillingPage() {
   const { t } = useTranslation('billing');
   const { locale } = useLocale();
   const [plans, setPlans] = useState<Record<string, PlanDef>>({});
-  const [prices, setPrices] = useState<PlansResponse['prices']>({ PRO: null, BUSINESS: null });
-  const [onSale, setOnSale] = useState<PlansResponse['onSale']>({ PRO: false, BUSINESS: false });
+  const [prices, setPrices] = useState<PlansResponse['prices']>({ PERSONAL: null, PRO: null, BUSINESS: null });
+  const [onSale, setOnSale] = useState<PlansResponse['onSale']>({ PERSONAL: false, PRO: false, BUSINESS: false });
   const [enabled, setEnabled] = useState(true);
   // The plan waiting for a mobile number before checkout opens.
-  const [asking, setAsking] = useState<'PRO' | 'BUSINESS' | null>(null);
+  const [asking, setAsking] = useState<Paid | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [sub, setSub] = useState<UsageSummary | null>(null);
   const [me, setMe] = useState<Me | null>(null);
@@ -110,7 +114,10 @@ export default function BillingPage() {
   const live = !!sub && sub.plan !== 'FREE' && LIVE.has(sub.status);
   const canCancel = enabled && !!sub?.subscribed && isOwner;
   const name = (p: string) => t(`plans.${p}`, { defaultValue: plans[p]?.label ?? p });
-  const priceOf = (p: Plan) => (p === 'PRO' || p === 'BUSINESS' ? prices[p] : null);
+  const priceOf = (p: Plan) => (isPaid(p) ? prices[p] ?? null : null);
+  // A person's own workspace is offered the personal plan; a company's or team's, the team plans.
+  const own = me?.workspaceKind === 'PERSONAL';
+  const offered = plansFor(me?.workspaceKind) as Plan[];
 
   async function go(key: string, path: string, body?: unknown) {
     setError('');
@@ -127,8 +134,8 @@ export default function BillingPage() {
     setNotice(null);
     window.history.replaceState(null, '', window.location.pathname);
   }
-  const checkout = (plan: Plan) => (plan === 'PRO' || plan === 'BUSINESS') && setAsking(plan);
-  function pay(plan: 'PRO' | 'BUSINESS', phone: string) {
+  const checkout = (plan: Plan) => isPaid(plan) && setAsking(plan);
+  function pay(plan: Paid, phone: string) {
     try {
       localStorage.setItem(PHONE_KEY, phone);
     } catch {
@@ -241,6 +248,8 @@ export default function BillingPage() {
               onCancel={() => setConfirmCancel(true)}
               upgrade={canChange && enabled ? (plan) => checkout(plan) : undefined}
               live={live}
+              offered={offered}
+              own={own}
             />
 
             <section aria-labelledby="plans-title">
@@ -250,8 +259,8 @@ export default function BillingPage() {
                 </h2>
                 <p className="mt-1 text-sm text-muted">{t('plansHint')}</p>
               </div>
-              <div className="grid gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-2 xl:grid-cols-4">
-                {ORDER.filter((p) => plans[p]).map((p) => (
+              <div className={`grid gap-px overflow-hidden rounded-xl bg-line ring-1 ring-line sm:grid-cols-2 ${offered.length > 2 ? 'xl:grid-cols-4' : 'max-w-[760px]'}`}>
+                {offered.filter((p) => plans[p]).map((p) => (
                   <PlanColumn
                     key={p}
                     plan={p}
@@ -261,6 +270,7 @@ export default function BillingPage() {
                     current={sub.plan === p}
                     action={planAction(p)}
                     busy={busy === p}
+                    own={own}
                   />
                 ))}
               </div>
@@ -299,7 +309,7 @@ export default function BillingPage() {
     if (p === 'ENTERPRISE') return { kind: 'sales' };
     if (!enabled || !canChange) return { kind: 'none' };
     if (p === 'FREE') return live && canCancel ? { kind: 'button', primary: false, label: t('plan.switchTo', { plan: name(p) }), run: () => setConfirmCancel(true) } : { kind: 'none' };
-    if (!onSale[p as 'PRO' | 'BUSINESS']) return { kind: 'none' };
+    if (!isPaid(p) || !onSale[p]) return { kind: 'none' };
     const up = rank(p) > rank(sub.plan);
     return { kind: 'button', primary: up, label: t(sub.plan === p ? 'plan.resume' : up ? 'plan.upgrade' : 'plan.switchTo', { plan: name(p) }), run: () => checkout(p) };
   }
@@ -443,6 +453,8 @@ function Current({
   canCancel,
   onCancel,
   upgrade,
+  offered,
+  own,
 }: {
   sub: UsageSummary;
   def: PlanDef;
@@ -454,6 +466,8 @@ function Current({
   canCancel: boolean;
   onCancel: () => void;
   upgrade?: (plan: Plan) => void;
+  offered: Plan[];
+  own: boolean;
 }) {
   const { t } = useTranslation('billing');
   const { locale } = useLocale();
@@ -477,8 +491,10 @@ function Current({
         : '';
 
   // The first limit that is full, and the next plan that lifts it.
-  const full = RESOURCES.find((r) => def[r.key] !== null && sub.usage[r.key] >= (def[r.key] as number));
-  const next = full ? ORDER.find((p) => rank(p) > rank(plan) && plans[p] && (plans[p][full.key] === null || (plans[p][full.key] as number) > sub.usage[full.key])) : undefined;
+  // A person's own workspace has no seats to count.
+  const resources = own ? RESOURCES.filter((r) => r.key !== 'members') : RESOURCES;
+  const full = resources.find((r) => def[r.key] !== null && sub.usage[r.key] >= (def[r.key] as number));
+  const next = full ? offered.find((p) => rank(p) > rank(plan) && plans[p] && (plans[p][full.key] === null || (plans[p][full.key] as number) > sub.usage[full.key])) : undefined;
   // Enterprise is sold by contract, so it is suggested but never a button.
   const nextAction = next && next !== 'ENTERPRISE' && upgrade ? () => upgrade(next) : undefined;
 
@@ -517,8 +533,8 @@ function Current({
         </div>
       )}
 
-      <ul className="grid border-t border-line sm:grid-cols-3">
-        {RESOURCES.map((r, i) => (
+      <ul className={`grid border-t border-line ${resources.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        {resources.map((r, i) => (
           <UsageCell key={r.key} resource={r} used={sub.usage[r.key]} limit={def[r.key]} first={i === 0} />
         ))}
       </ul>
@@ -593,12 +609,12 @@ function UsageCell({ resource, used, limit, first }: { resource: (typeof RESOURC
   );
 }
 
-function PlanColumn({ plan, def, price, name, current, action, busy }: { plan: Plan; def: PlanDef; price: number | null; name: string; current: boolean; action: PlanAction; busy: boolean }) {
+function PlanColumn({ plan, def, price, name, current, action, busy, own }: { plan: Plan; def: PlanDef; price: number | null; name: string; current: boolean; action: PlanAction; busy: boolean; own: boolean }) {
   const { t } = useTranslation('billing');
   const { locale } = useLocale();
   const paid = plan !== 'FREE';
 
-  const features: string[] = (['cards', 'members', 'nfcTags'] as const).map((k) =>
+  const features: string[] = (own ? (['cards', 'nfcTags'] as const) : (['cards', 'members', 'nfcTags'] as const)).map((k) =>
     def[k] === null ? t(`features.${k}Unlimited`) : t(`features.${k}`, { count: def[k] as number }),
   );
   if (paid) features.push(t('features.verified'));

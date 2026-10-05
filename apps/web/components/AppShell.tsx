@@ -267,7 +267,9 @@ export default function AppShell({
             setNoAccess(asked);
             return;
           }
-          if (hit.id !== getActiveOrgId()) {
+          // Against the workspace this page loaded in: once the list is
+          // remembered, the address alone would already name the new one.
+          if (hit.id !== activeId) {
             handleSwitchOrg(hit.id, hit.slug, true);
             return;
           }

@@ -191,7 +191,7 @@ export class AdminService {
     let enterpriseSubs = 0;
     for (const sub of activeSubs) {
       if (sub.plan === 'ENTERPRISE') enterpriseSubs += 1;
-      else if (sub.plan === 'PRO' || sub.plan === 'BUSINESS') mrr += prices[sub.plan] ?? 0;
+      else if (sub.plan === 'PERSONAL' || sub.plan === 'PRO' || sub.plan === 'BUSINESS') mrr += prices[sub.plan] ?? 0;
     }
     const arr = mrr * 12;
 

@@ -49,6 +49,7 @@
   },
   "plans": {
     "FREE": "Free",
+    "PERSONAL": "Personal",
     "PRO": "Pro",
     "BUSINESS": "Business",
     "ENTERPRISE": "Enterprise"

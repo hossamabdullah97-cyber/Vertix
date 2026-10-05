@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { LoginForm } from '@/components/auth/LoginForm';
 
-type Search = { mode?: string; next?: string; expired?: string };
+type Search = { mode?: string; next?: string; expired?: string; kind?: string };
 
 export function generateMetadata({ searchParams }: { searchParams: Search }): Metadata {
   return { title: searchParams.mode === 'register' ? 'Create your account · Vertex Connect' : 'Sign in · Vertex Connect' };
@@ -15,6 +15,7 @@ export default function LoginPage({ searchParams }: { searchParams: Search }) {
       initialMode={searchParams.mode === 'register' ? 'register' : 'login'}
       next={typeof searchParams.next === 'string' ? searchParams.next : null}
       expired={searchParams.expired === '1'}
+      initialKind={searchParams.kind === 'personal' || searchParams.kind === 'team' ? searchParams.kind : null}
     />
   );
 }

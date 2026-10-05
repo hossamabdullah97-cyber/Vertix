@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { call, closeAccount, expect, PASSWORD, test, type Account } from './support';
+import { call, closeAccount, expect, PASSWORD, signIn, test, type Account } from './support';
 
 /** Someone on their own, and what changes when they start working with a team. */
 
@@ -53,4 +53,27 @@ test('a person signing up for themselves gets a workspace without team machinery
 test('a company’s own workspace stays a team’s, with nothing to convert', async ({ account }) => {
   expect((await account.api('/auth/me')).data).toMatchObject({ workspaceKind: 'TEAM' });
   expect((await account.api('/orgs/current/convert', { body: { name: 'Again' } })).status).toBe(400);
+});
+
+test('each kind of workspace is offered its own plans', async ({ page, account }) => {
+  // A company's: the team plans, not the personal one.
+  await signIn(page, account);
+  await page.goto('/billing');
+  await expect(page.getByRole('heading', { name: 'Pro', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Personal', exact: true })).toHaveCount(0);
+
+  // A person's own: Free and Personal, with no seats counted.
+  const personal = (await account.api<{ id: string; slug: string }>('/orgs/personal', { body: {} })).data;
+  await page.goto(`/billing?w=${personal.slug}`);
+  await expect(page.getByRole('heading', { name: 'Personal', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pro', exact: true })).toHaveCount(0);
+  await expect(page.getByText(/members/i)).toHaveCount(0);
+});
+
+test('the pricing page’s personal button opens sign-up for oneself', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Start on your own' }).click();
+  await expect(page).toHaveURL(/kind=personal/);
+  await expect(page.getByRole('radio', { name: /Just me/ })).toBeChecked();
+  await expect(page.getByLabel('Company or team name')).toHaveCount(0);
 });
