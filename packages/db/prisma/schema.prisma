@@ -80,6 +80,9 @@ model Organization {
   name      String
   slug      String    @unique
   plan      Plan      @default(FREE)
+  /// A person's own space, or a company's or team's. It decides what the app
+  /// shows (an individual has no team to manage), not who can see the data.
+  kind      WorkspaceKind @default(TEAM)
   isActive  Boolean   @default(true)
   branding  Json?     // colors, logo, fonts — the organization's visual identity
   settings  Json?
@@ -1015,6 +1018,11 @@ model PersonalAccessToken {
 enum IntegrationScope {
   ORG
   USER
+}
+
+enum WorkspaceKind {
+  PERSONAL
+  TEAM
 }
 
 enum IntegrationStatus {

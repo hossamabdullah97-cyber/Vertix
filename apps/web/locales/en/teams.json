@@ -193,8 +193,9 @@
     "emailFailed": "{{email}} was added, but the email didn't go out. Try inviting them again later."
   },
   "personal": {
-    "title": "Teams live in an organization",
-    "body": "This is your personal workspace. Switch to an organization from the menu at the top of the sidebar to invite people and build teams."
+    "title": "This is your personal workspace",
+    "body": "To invite people and make teams, make it a company or team workspace. Your cards, leads and chips stay as they are.",
+    "convert": "Make it a team workspace"
   },
   "teams": {
     "newTeam": "New team",

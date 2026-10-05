@@ -32,7 +32,7 @@ function setup(opts: { teams?: { id: string; name: string }[]; invite?: jest.Moc
       seats--;
     }),
   };
-  const members = { invite: opts.invite ?? jest.fn(async (_t: unknown, i: { email: string }) => ({ status: 'invited', email: i.email, emailSent: true })) };
+  const members = { assertTeamWorkspace: jest.fn(async () => undefined), invite: opts.invite ?? jest.fn(async (_t: unknown, i: { email: string }) => ({ status: 'invited', email: i.email, emailSent: true })) };
   let n = 0;
   const teams = { create: jest.fn(async (_t: unknown, i: { name: string }) => ({ id: `t-new-${++n}`, name: i.name })) };
   const cards = { create: jest.fn(async () => ({ id: `card-${++n}` })) };

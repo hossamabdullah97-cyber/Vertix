@@ -15,7 +15,6 @@ import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { CardThumb } from '@/components/cards/CardThumb';
-import { ProfilePhotoCard } from '@/components/ProfilePhotoCard';
 import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Sheet } from '@/components/ui/Sheet';
@@ -212,16 +211,20 @@ export default function TeamPage() {
   };
 
   // ---------------------------------------------------------------------------
-  // A personal workspace has no team; it keeps the profile photo, which lives here.
-  if (orgId === null) {
+  // A person's own workspace has no team; the way to one is in its settings.
+  if (orgId === null || me?.workspaceKind === 'PERSONAL') {
     return (
       <AppShell title={t('title')}>
         <div className="mx-auto max-w-[560px] space-y-4">
           <div className="rounded-xl px-6 py-8 text-center ring-1 ring-inset ring-line">
             <h2 className="text-lg font-semibold text-ink">{t('personal.title')}</h2>
             <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{t('personal.body')}</p>
+            {me?.role === 'OWNER' && (
+              <Link href="/workspace" className="v-btn mt-5">
+                <Icon name="users" size={14} /> {t('personal.convert')}
+              </Link>
+            )}
           </div>
-          {me && <ProfilePhotoCard me={me} onChange={setMe} />}
         </div>
       </AppShell>
     );

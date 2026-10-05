@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Header, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Header, Patch, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { orgSecuritySchema, updateOrgSchema, type JwtPayload, type OrgSecurityInput, type UpdateOrgInput } from '@vertex/shared';
+import { convertWorkspaceSchema, orgSecuritySchema, updateOrgSchema, type ConvertWorkspaceInput, type JwtPayload, type OrgSecurityInput, type UpdateOrgInput } from '@vertex/shared';
 import type { TenantContext } from '@vertex/db';
 import { OrganizationsService } from './organizations.service';
 import { AuditService } from './audit.service';
@@ -38,6 +38,22 @@ export class OrganizationsController {
   @Get('audit-logs')
   auditLogs() {
     return this.audit.list();
+  }
+
+  /** Makes the owner's personal workspace a company's or team's, to invite people. */
+  @Roles('OWNER')
+  @Post('current/convert')
+  async convert(@OrgId() orgId: string, @Tenant() tenant: TenantContext, @Body(new ZodValidationPipe(convertWorkspaceSchema)) body: ConvertWorkspaceInput) {
+    const org = await this.orgs.convertToTeam(orgId, body.name);
+    await this.audit.log(tenant, 'org.converted_to_team', { targetType: 'organization', targetId: orgId, metadata: { name: org.name } });
+    return org;
+  }
+
+  /** A personal workspace of one's own, for someone who only has a company's. */
+  @TwoStepExempt()
+  @Post('personal')
+  createPersonal(@CurrentUser() user: JwtPayload) {
+    return this.orgs.createPersonal(user.sub);
   }
 
   /** Update the active org's profile + branding (admins only). */

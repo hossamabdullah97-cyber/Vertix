@@ -610,6 +610,8 @@ export default function HomePage() {
   // A brand-new workspace has nothing to chart yet: Home is just the setup steps until a card goes out.
   // A member's Home is about their own card: the workspace's other cards do not count.
   const member = me?.role === 'EMPLOYEE';
+  // A person's own workspace has no team: no members' activity, no teams to show.
+  const personal = me?.workspaceKind === 'PERSONAL';
   const fresh = !cards.some((c) => c.isPublished) && leads.length === 0 && (member || topCards.length === 0);
 
   const largestTeams = [...teams]
@@ -929,7 +931,7 @@ export default function HomePage() {
       </>
       )}
 
-      {!member && (
+      {!member && !personal && (
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="v-card">
           <PanelHeader title={t('activity.title')} />

@@ -3,7 +3,8 @@
     "overview": "Overview",
     "workspace": "Workspace",
     "organization": "Organization",
-    "administration": "Administration"
+    "administration": "Administration",
+    "yours": "Your account"
   },
   "items": {
     "dashboard": "Home",
@@ -51,11 +52,15 @@
     "favorites": "Favorites",
     "recents": "Recent",
     "workspaces": "Workspaces",
-    "personal": "Personal workspace",
     "noResults": "No workspaces match",
     "onlyOne": "This is your only workspace.",
     "favorite": "Add to favorites",
-    "unfavorite": "Remove from favorites"
+    "unfavorite": "Remove from favorites",
+    "kindPersonal": "Your personal workspace",
+    "kindTeam": "Company or team",
+    "kindPersonalShort": "Personal",
+    "createPersonal": "Create my personal workspace",
+    "creatingPersonal": "Creating…"
   },
   "plan": {
     "cards": "{{used}} of {{limit}} cards",
@@ -100,5 +105,10 @@
   "twoStepGate": {
     "title": "{{org}} requires two-step verification",
     "body": "Your workspace asks everyone to sign in with a code from their phone as well as a password. Turn it on below to carry on; it takes a minute."
+  },
+  "noWorkspace": {
+    "title": "You are not in any workspace",
+    "body": "You left your company’s workspace, or it was removed. Create your own to make your card and keep your leads, or ask your company to invite you again.",
+    "create": "Create my personal workspace"
   }
 }

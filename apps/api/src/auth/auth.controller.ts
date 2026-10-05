@@ -28,7 +28,8 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { TwoStepExempt } from './decorators/two-step-exempt.decorator';
-import { OrgId } from './decorators/tenant.decorator';
+import { OrgId, Tenant } from './decorators/tenant.decorator';
+import type { TenantContext } from '@vertex/db';
 
 /**
  * The pages that take a password or send a link: 20 requests a minute per
@@ -134,13 +135,18 @@ export class AuthController {
    * header), not the token's org, since the app can switch workspaces.
    */
   @Get('me')
-  async me(@CurrentUser() user: JwtPayload, @OrgId() activeOrgId?: string) {
-    const [profile, badge, twoFactorRequired] = await Promise.all([
+  async me(@CurrentUser() user: JwtPayload, @OrgId() activeOrgId?: string, @Tenant() tenant?: TenantContext) {
+    const [profile, badge, twoFactorRequired, workspaceKind] = await Promise.all([
       this.auth.getProfile(user.sub),
       this.auth.getPlanBadge(activeOrgId),
       this.auth.workspaceRequiresTwoStep(activeOrgId),
+      this.auth.workspaceKind(activeOrgId),
     ]);
-    return { ...user, ...profile, ...badge, twoFactorRequired, sub: user.sub };
+    // The token names the workspace it was issued in; the role shown is the
+    // one held in the workspace open now (an owner of their own, a member of
+    // the company's).
+    const active = tenant ? { orgId: tenant.orgId, role: tenant.role } : {};
+    return { ...user, ...active, ...profile, ...badge, twoFactorRequired, workspaceKind, sub: user.sub };
   }
 
   /** Returns the same shape as GET /me so callers can swap their copy wholesale. */

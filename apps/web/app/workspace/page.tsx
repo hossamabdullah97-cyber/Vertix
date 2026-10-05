@@ -26,6 +26,7 @@ interface Org {
   name: string;
   slug: string;
   plan: string;
+  kind?: 'PERSONAL' | 'TEAM';
   branding: Record<string, unknown> | null;
   settings: Record<string, unknown> | null;
 }
@@ -122,10 +123,14 @@ export default function WorkspaceSettingsPage() {
     );
   }
 
+  // A person's own workspace: its settings are theirs, and there are no members to hold to two-step verification.
+  const own = org?.kind === 'PERSONAL';
+  const title = own ? t('titlePersonal') : t('title');
+
   return (
-    <AppShell title={t('title')}>
-      <nav role="tablist" aria-label={t('title')} className="no-scrollbar -mx-5 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
-        {SECTIONS.filter((s) => s !== 'security' || canEdit).map((s) => {
+    <AppShell title={title}>
+      <nav role="tablist" aria-label={title} className="no-scrollbar -mx-5 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
+        {SECTIONS.filter((s) => s !== 'security' || (canEdit && !own)).map((s) => {
           const active = section === s;
           return (
             <button
@@ -163,6 +168,16 @@ export default function WorkspaceSettingsPage() {
           <>
             <General org={org} canEdit={canEdit} onSave={save} />
             {me?.role === 'OWNER' && <ExportWorkspace org={org} onError={setError} />}
+            {own && me?.role === 'OWNER' && (
+              <ConvertToTeam
+                onDone={(updated) => {
+                  setOrg(updated);
+                  window.dispatchEvent(new Event(ORG_UPDATED));
+                  window.location.href = '/team';
+                }}
+                onError={setError}
+              />
+            )}
           </>
         ) : section === 'brand' ? (
           <Brand org={org} canEdit={canEdit} onSave={save} />
@@ -315,6 +330,51 @@ function ExportWorkspace({ org, onError }: { org: Org; onError: (m: string) => v
       <button type="button" onClick={run} disabled={busy} className="v-btn v-btn-ghost disabled:opacity-50">
         <Icon name="download" size={14} /> {busy ? t('export.preparing') : t('export.download')}
       </button>
+    </Row>
+  );
+}
+
+/**
+ * Making one's own workspace a company's or team's: the same cards, leads and
+ * chips, with a name the team will see and people to invite. One way.
+ */
+function ConvertToTeam({ onDone, onError }: { onDone: (org: Org) => void; onError: (m: string) => void }) {
+  const { t } = useTranslation('organizations');
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function run(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      onDone(await authFetch<Org>('/orgs/current/convert', { method: 'POST', body: JSON.stringify({ name: name.trim() }) }));
+    } catch (err) {
+      onError((err as Error).message);
+      setBusy(false);
+    }
+  }
+  return (
+    <Row title={t('convert.title')} hint={t('convert.hint')}>
+      {open ? (
+        <form onSubmit={run} className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t('convert.placeholder')}
+            aria-label={t('convert.name')}
+            autoComplete="organization"
+            className="v-field sm:w-56"
+          />
+          <button type="submit" disabled={!name.trim() || busy} className="v-btn disabled:opacity-50">
+            {busy ? t('convert.converting') : t('convert.confirm')}
+          </button>
+        </form>
+      ) : (
+        <button type="button" onClick={() => setOpen(true)} className="v-btn v-btn-ghost">
+          <Icon name="users" size={14} /> {t('convert.start')}
+        </button>
+      )}
     </Row>
   );
 }

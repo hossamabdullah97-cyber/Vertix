@@ -10,7 +10,7 @@ import { resendVerification, type Me } from '@/lib/client';
  * saying why it matters (inviting the team and paying wait on it) and
  * offering the link again. Gone as soon as the address is confirmed.
  */
-export function VerifyEmailBanner({ me }: { me: Me | null }) {
+export function VerifyEmailBanner({ me, personal = false }: { me: Me | null; personal?: boolean }) {
   const { t } = useTranslation('common');
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
   const [message, setMessage] = useState('');
@@ -39,7 +39,7 @@ export function VerifyEmailBanner({ me }: { me: Me | null }) {
       <Icon name="mail" size={15} className="shrink-0" />
       <span className="min-w-0 flex-1">
         <span className="font-semibold">{t('verifyEmail.title')}</span>{' '}
-        {state === 'sent' ? t('verifyEmail.sent', { email }) : state === 'failed' ? message : t('verifyEmail.body', { email })}
+        {state === 'sent' ? t('verifyEmail.sent', { email }) : state === 'failed' ? message : t(personal ? 'verifyEmail.bodyPersonal' : 'verifyEmail.body', { email })}
       </span>
       {state !== 'sent' && (
         <button

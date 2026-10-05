@@ -1,14 +1,21 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { UpdateOrgInput } from '@vertex/shared';
+import { ADMIN_ORG, runWithTenant } from '@vertex/db';
+import { defaultStageRows, type UpdateOrgInput } from '@vertex/shared';
+import { workspaceSlug } from '../common/workspace-slug';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class OrganizationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listForUser(userId: string) {
+  /** Every workspace the person is in, whichever one the request came from. */
+  listForUser(userId: string) {
+    return runWithTenant({ orgId: ADMIN_ORG, userId, role: 'OWNER' }, () => this.memberships(userId));
+  }
+
+  private async memberships(userId: string) {
     const memberships = await this.prisma.client.membership.findMany({
-      where: { userId, status: 'ACTIVE' },
+      where: { userId, status: 'ACTIVE', org: { deletedAt: null } },
       include: {
         org: {
           select: {
@@ -16,6 +23,7 @@ export class OrganizationsService {
             name: true,
             slug: true,
             branding: true,
+            kind: true,
           },
         },
       },
@@ -30,7 +38,48 @@ export class OrganizationsService {
     // Organization is not a tenant-scoped table — query by id explicitly.
     return this.prisma.client.organization.findUnique({
       where: { id: orgId },
-      select: { id: true, name: true, slug: true, plan: true, branding: true, settings: true },
+      select: { id: true, name: true, slug: true, plan: true, kind: true, branding: true, settings: true },
+    });
+  }
+
+  /**
+   * Makes a person's own workspace a company's or team's: same cards, leads
+   * and chips, now with a team to invite. Only the owner, and only one way.
+   */
+  async convertToTeam(orgId: string, name: string) {
+    const org = await this.prisma.client.organization.findUnique({ where: { id: orgId }, select: { kind: true } });
+    if (org?.kind !== 'PERSONAL') throw new BadRequestException('This is already a company or team workspace.');
+    return this.prisma.client.organization.update({
+      where: { id: orgId },
+      data: { kind: 'TEAM', name: name.trim() },
+      select: { id: true, name: true, slug: true, plan: true, kind: true, branding: true, settings: true },
+    });
+  }
+
+  /**
+   * A personal workspace for someone who only has their company's: their own
+   * card, outside the company. One each.
+   */
+  async createPersonal(userId: string) {
+    // Across workspaces: the request runs in the company's, whose scope would
+    // both hide a personal workspace held elsewhere and rewrite the new
+    // membership into the company.
+    return runWithTenant({ orgId: ADMIN_ORG, userId, role: 'OWNER' }, () => this.makePersonal(userId));
+  }
+
+  private async makePersonal(userId: string) {
+    const owned = await this.prisma.client.membership.findFirst({
+      where: { userId, role: 'OWNER', status: 'ACTIVE', org: { kind: 'PERSONAL', deletedAt: null } },
+      select: { orgId: true },
+    });
+    if (owned) throw new BadRequestException('You already have a personal workspace.');
+    const user = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+    const name = user?.name?.trim() || user?.email.split('@')[0] || 'Personal';
+    return this.prisma.client.$transaction(async (tx) => {
+      const org = await tx.organization.create({ data: { name, slug: workspaceSlug(name), kind: 'PERSONAL' }, select: { id: true, name: true, slug: true, kind: true } });
+      await tx.membership.create({ data: { userId, orgId: org.id, role: 'OWNER' } });
+      await tx.pipelineStage.createMany({ data: defaultStageRows(org.id) });
+      return org;
     });
   }
 
@@ -55,7 +104,7 @@ export class OrganizationsService {
         ...(input.branding !== undefined ? { branding: (input.branding ?? undefined) as never } : {}),
         ...(input.settings !== undefined ? { settings: (settings ?? undefined) as never } : {}),
       },
-      select: { id: true, name: true, slug: true, plan: true, branding: true, settings: true },
+      select: { id: true, name: true, slug: true, plan: true, kind: true, branding: true, settings: true },
     });
   }
 

@@ -34,6 +34,7 @@ import {
   tooManyAttempts,
 } from './auth-throttle.service';
 import { GoogleIdTokenVerifier, GoogleTokenError } from './google-id-token';
+import { workspaceSlug } from '../common/workspace-slug';
 import { TwoFactorService } from './two-factor.service';
 import { requiresTwoStep } from './guards/tenant.guard';
 
@@ -41,16 +42,6 @@ const VERIFY_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const VERIFY_RESEND_LIMIT = 5;
 const VERIFY_RESEND_WINDOW_MS = 60 * 60 * 1000;
 
-function slugify(input: string): string {
-  const base = input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40);
-  const suffix = Math.random().toString(36).slice(2, 7);
-  return `${base || 'org'}-${suffix}`;
-}
 
 /** Stored and compared without the case or spaces a phone keyboard adds. */
 function normalizeEmail(email: string): string {
@@ -91,9 +82,12 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(input.password, 10);
 
+    // On one's own, the workspace is the person's, in their name.
+    const personal = input.kind === 'personal';
     const { user, orgId } = await this.createAccount(
       { email, name: input.name, passwordHash },
-      input.organizationName,
+      personal ? input.name!.trim() : input.organizationName!,
+      personal ? 'PERSONAL' : 'TEAM',
     );
     // The account is usable straight away; the link only has to be opened
     // before inviting anyone or paying (see verified-email.ts). A mail
@@ -369,6 +363,13 @@ export class AuthService {
     return { plan, verified: isPaidPlan(plan) };
   }
 
+  /** Whether the active workspace is a person's own or a company's (null with none). */
+  async workspaceKind(orgId: string | undefined): Promise<'PERSONAL' | 'TEAM' | null> {
+    if (!orgId || orgId === 'admin') return null;
+    const org = await this.prisma.client.organization.findFirst({ where: { id: orgId, deletedAt: null }, select: { kind: true } });
+    return org?.kind ?? null;
+  }
+
   /** Updates the account profile. `avatarUrl: null` clears the photo. */
   async updateProfile(
     userId: string,
@@ -445,22 +446,26 @@ export class AuthService {
     }
 
     const name = who.name ?? email.split('@')[0]!;
+    // Google says who the person is, not whether there is a team: they start
+    // on their own, and can make it a company's workspace later.
     const created = await this.createAccount(
       { email, name, googleId: who.sub, emailVerified: new Date(), avatarUrl: who.picture },
       name,
+      'PERSONAL',
     );
     return this.issueTokens({ sub: created.user.id, email: created.user.email, orgId: created.orgId, role: 'OWNER' });
   }
 
-  /** A new person with a workspace they own, its sales pipeline ready. */
+  /** A new person with a workspace they own (their own, or a team's), its sales pipeline ready. */
   private createAccount(
     data: { email: string; name?: string | null; passwordHash?: string; googleId?: string; emailVerified?: Date; avatarUrl?: string | null },
     organizationName: string,
+    kind: 'PERSONAL' | 'TEAM',
   ) {
     return this.prisma.client.$transaction(async (tx) => {
       const user = await tx.user.create({ data });
       const org = await tx.organization.create({
-        data: { name: organizationName, slug: slugify(organizationName) },
+        data: { name: organizationName, slug: workspaceSlug(organizationName), kind },
       });
       await tx.membership.create({
         data: { userId: user.id, orgId: org.id, role: 'OWNER' },

@@ -445,13 +445,15 @@ export async function register(input: {
   email: string;
   password: string;
   name?: string;
-  organizationName: string;
+  /** On one's own (a personal workspace) or for a company or team, which then needs its name. */
+  kind: 'personal' | 'team';
+  organizationName?: string;
 }) {
   const data = await authPost<AuthTokens>('register', {
     ...input,
     email: input.email.trim(),
     name: input.name?.trim() || undefined,
-    organizationName: input.organizationName.trim(),
+    organizationName: input.kind === 'team' ? input.organizationName?.trim() : undefined,
   });
   saveTokens(data);
   setActiveOrgId(null);
@@ -635,6 +637,8 @@ export interface Me {
   twoFactorEnabled?: boolean;
   /** Whether the active workspace requires that of its members. */
   twoFactorRequired?: boolean;
+  /** The active workspace: a person's own, or a company's or team's. */
+  workspaceKind?: 'PERSONAL' | 'TEAM' | null;
 }
 
 export interface NfcTag {

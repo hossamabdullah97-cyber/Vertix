@@ -59,6 +59,7 @@ export class MembersImportService {
 
   async importMany(tenant: TenantContext, input: ImportMembersInput): Promise<{ results: ImportResult[] }> {
     // Every row would be refused one by one otherwise (see MembersService.invite).
+    await this.members.assertTeamWorkspace(tenant.orgId);
     await assertEmailVerified(this.prisma.client, tenant.userId);
     const org = await this.db.organization.findUnique({ where: { id: tenant.orgId }, select: { name: true } });
 
