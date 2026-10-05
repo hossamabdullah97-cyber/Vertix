@@ -99,13 +99,27 @@ export type HardwareType = z.infer<typeof HardwareType>;
 //  Auth DTOs
 // ===========================================================================
 
-export const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().min(1).max(120).optional(),
-  organizationName: z.string().min(1).max(120),
-});
-export type RegisterInput = z.infer<typeof registerSchema>;
+/**
+ * Signing up: on one's own (a personal workspace in the person's name), or
+ * for a company or team, which then needs its name. Without `kind`, as older
+ * clients send it, it is a team.
+ */
+export const registerSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    name: z.string().min(1).max(120).optional(),
+    kind: z.enum(['personal', 'team']).default('team'),
+    organizationName: z.string().trim().min(1).max(120).optional(),
+  })
+  .refine((d) => d.kind === 'personal' || !!d.organizationName, { message: 'Enter the company or team name', path: ['organizationName'] })
+  .refine((d) => d.kind === 'team' || !!d.name?.trim(), { message: 'Enter your name', path: ['name'] });
+/** Making a personal workspace a company's or team's: the name it goes by. */
+export const convertWorkspaceSchema = z.object({ name: z.string().trim().min(1, 'Enter the company or team name').max(120) });
+export type ConvertWorkspaceInput = z.infer<typeof convertWorkspaceSchema>;
+
+// As sent: `kind` may be missing (an older client), which means a team.
+export type RegisterInput = z.input<typeof registerSchema>;
 
 export const loginSchema = z.object({
   email: z.string().email(),

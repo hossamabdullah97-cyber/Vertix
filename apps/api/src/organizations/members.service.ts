@@ -17,6 +17,9 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { WebhookService } from '../integrations/webhook.service';
 import { assertEmailVerified } from '../auth/verified-email';
 
+/** Said when someone tries to bring people into a personal workspace. */
+export const PERSONAL_HAS_NO_TEAM = 'This is your personal workspace. Make it a company or team workspace in Settings to invite people.';
+
 @Injectable()
 export class MembersService {
   constructor(
@@ -58,7 +61,14 @@ export class MembersService {
    * left by an invitation that was never accepted — gets a one-time link and
    * chooses their own password. Re-inviting resends that link.
    */
+  /** A personal workspace has no team: it becomes a company's or team's first. */
+  async assertTeamWorkspace(orgId: string) {
+    const org = await this.prisma.client.organization.findUnique({ where: { id: orgId }, select: { kind: true } });
+    if (org?.kind === 'PERSONAL') throw new BadRequestException(PERSONAL_HAS_NO_TEAM);
+  }
+
   async invite(tenant: TenantContext, input: InviteMemberInput) {
+    await this.assertTeamWorkspace(tenant.orgId);
     await assertEmailVerified(this.prisma.client, tenant.userId);
     // Ownership can only be handed out by an owner — otherwise an ADMIN could
     // mint a second OWNER by invitation and escalate through it.

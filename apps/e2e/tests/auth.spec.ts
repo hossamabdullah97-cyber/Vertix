@@ -5,8 +5,9 @@ test.describe('signing up and signing in', () => {
   test('a new person creates an account and lands in their workspace', async ({ page }) => {
     const email = `e2e-signup-${randomBytes(4).toString('hex')}@example.test`;
     await page.goto('/login?mode=register');
+    await page.getByText('A company or team', { exact: true }).click();
     await page.getByLabel('Your name').fill('Nour Signup');
-    await page.getByLabel('Company or team').fill('Nour Studio');
+    await page.getByLabel('Company or team name').fill('Nour Studio');
     await page.locator('input[autocomplete=email]').fill(email);
     await page.locator('input[type=password]').fill(PASSWORD);
     await page.getByRole('button', { name: 'Create account' }).click();

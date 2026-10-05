@@ -57,6 +57,22 @@ const GROUPS: { labelKey: string; showLabel: boolean; items: { href: string; lab
   },
 ];
 
+/**
+ * The sidebar for a person's own workspace: no team to manage, and what was
+ * the organization's is theirs ("Your account": integrations and settings).
+ */
+function groupsFor(personal: boolean) {
+  if (!personal) return GROUPS;
+  return GROUPS.map((g) =>
+    g.labelKey === 'groups.organization' ? { ...g, labelKey: 'groups.yours', items: g.items.filter((i) => i.href !== '/team') } : g,
+  );
+}
+
+/** Whether the workspace in use is a person's own. */
+function personalWorkspaceEarly(orgs: OrgRow[], id: string | null) {
+  return orgs.find((o) => o.org.id === id)?.org.kind === 'PERSONAL';
+}
+
 /** The phone's bottom bar: the four places people go most. Everything else is under More. */
 const DOCK = ['/dashboard', '/cards', '/leads', '/analytics'];
 
@@ -100,7 +116,7 @@ type PaletteItem = {
   leadId?: string;
 };
 
-type OrgRow = { org: { id: string; name: string; slug: string; branding?: Record<string, unknown> | null }; role: string };
+type OrgRow = { org: { id: string; name: string; slug: string; kind?: 'PERSONAL' | 'TEAM'; branding?: Record<string, unknown> | null }; role: string };
 
 /**
  * What the sidebar last showed. Every page mounts its own shell, so without
@@ -278,6 +294,18 @@ export default function AppShell({
     window.location.reload();
   };
 
+  // A personal workspace of one's own, for someone who has only a company's.
+  const [creatingPersonal, setCreatingPersonal] = useState(false);
+  const createPersonal = async () => {
+    setCreatingPersonal(true);
+    try {
+      const org = await authFetch<{ id: string }>('/orgs/personal', { method: 'POST' });
+      handleSwitchOrg(org.id);
+    } catch {
+      setCreatingPersonal(false);
+    }
+  };
+
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -289,17 +317,18 @@ export default function AppShell({
   };
 
   // Switcher Items filtering
-  const allWorkspaceItems = useMemo(() => [
-    { id: 'personal', name: t('switcher.personal'), isOrg: false, slug: 'personal', branding: null as Record<string, unknown> | null },
-    ...orgs.map((o) => ({ id: o.org.id, name: o.org.name, isOrg: true, slug: o.org.slug, branding: o.org.branding ?? null })),
-  ], [orgs, t]);
+  // Only real workspaces: a person's own, and the companies or teams they belong to.
+  const allWorkspaceItems = useMemo(
+    () => orgs.map((o) => ({ id: o.org.id, name: o.org.name, isOrg: true, slug: o.org.slug, branding: o.org.branding ?? null, personal: o.org.kind === 'PERSONAL' })),
+    [orgs],
+  );
 
   const filteredItems = useMemo(() => allWorkspaceItems.filter((item) =>
     item.name.toLowerCase().includes(switcherSearch.toLowerCase())
   ), [allWorkspaceItems, switcherSearch]);
 
   const visibleSwitcherItems = useMemo(() => {
-    const list: { id: string; name: string; isOrg: boolean; slug: string; type: 'fav' | 'recent' | 'all' }[] = [];
+    const list: { id: string; name: string; isOrg: boolean; slug: string; personal: boolean; type: 'fav' | 'recent' | 'all' }[] = [];
     if (switcherSearch === '') {
       // Add Favorites
       allWorkspaceItems
@@ -371,12 +400,13 @@ export default function AppShell({
     }
   };
 
+  const groups = useMemo(() => groupsFor(personalWorkspaceEarly(orgs, selectedOrgId)), [orgs, selectedOrgId]);
   const navItems = useMemo(() => {
-    const items = GROUPS.flatMap((g) => g.items);
+    const items = groups.flatMap((g) => g.items);
     return me?.isSuperAdmin
       ? [...items, { href: '/admin', labelKey: 'items.adminConsole', icon: 'shield' }]
       : items;
-  }, [me?.isSuperAdmin]);
+  }, [me?.isSuperAdmin, groups]);
 
   // Everything the command menu can show for the current query, in display order.
   const paletteItems = useMemo<PaletteItem[]>(() => {
@@ -542,9 +572,17 @@ export default function AppShell({
 
   // Until then the switcher shows a placeholder, not "Personal" or a blank name.
   const orgPending = !ready || (!!selectedOrgId && !orgsLoaded);
-  const activeOrgName = selectedOrgId
-    ? orgs.find((o) => o.org.id === selectedOrgId)?.org.name ?? ''
-    : t('switcher.personal');
+  const activeOrg = orgs.find((o) => o.org.id === selectedOrgId)?.org;
+  const activeOrgName = activeOrg?.name ?? '';
+  // A person's own workspace has no team: the sidebar leaves the team out.
+  const personalWorkspace = activeOrg?.kind === 'PERSONAL';
+  // Someone who only has their company's can make one of their own.
+  const ownsPersonal = orgs.some((o) => o.org.kind === 'PERSONAL' && o.role === 'OWNER');
+  // One workspace of one's own and nothing else: nothing to switch to or make.
+  const switcherNeeded = orgs.length > 1 || !ownsPersonal;
+  // Removed from their only workspace: the one thing to do is make their own,
+  // so the menus and actions that need a workspace stay out of the way.
+  const noWorkspace = orgsLoaded && orgs.length === 0 && !me?.isSuperAdmin;
 
   const totalWorkspacesCount = allWorkspaceItems.length;
 
@@ -663,11 +701,12 @@ export default function AppShell({
         </Link>
 
         {/* Workspace switcher */}
-        <div ref={switcherRef} className="relative z-40 mb-2">
+        <div ref={switcherRef} className={`relative z-40 mb-2 ${noWorkspace ? 'hidden' : ''}`}>
           <button
-            onClick={() => setSwitcherOpen(!switcherOpen)}
-            aria-expanded={switcherOpen}
-            className="flex w-full items-center gap-2.5 rounded-lg bg-surface px-2 py-1.5 text-start shadow-sm ring-1 ring-line transition-colors hover:bg-elevated"
+            onClick={() => switcherNeeded && setSwitcherOpen(!switcherOpen)}
+            aria-expanded={switcherNeeded ? switcherOpen : undefined}
+            aria-disabled={!switcherNeeded || undefined}
+            className={`flex w-full items-center gap-2.5 rounded-lg bg-surface px-2 py-1.5 text-start shadow-sm ring-1 ring-line transition-colors ${switcherNeeded ? 'hover:bg-elevated' : 'cursor-default'}`}
           >
             {orgPending ? (
               <span aria-hidden className="v-skeleton h-[22px] w-[22px] shrink-0 rounded-md" />
@@ -683,17 +722,22 @@ export default function AppShell({
                 <span className="v-skeleton block h-3 w-24 rounded" />
               </span>
             ) : (
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{activeOrgName}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-ink">{activeOrgName}</span>
+                {activeOrg && <span className="block truncate text-2xs text-faint">{t(personalWorkspace ? 'switcher.kindPersonal' : 'switcher.kindTeam')}</span>}
+              </span>
             )}
-            <span className="text-faint">
-              <Icon name="chevron-down" size={14} />
-            </span>
+            {switcherNeeded && (
+              <span className="text-faint">
+                <Icon name="chevron-down" size={14} />
+              </span>
+            )}
           </button>
 
           {switcherOpen && (
             <div className="absolute inset-x-0 top-full z-50 mt-1.5 space-y-1.5 rounded-xl border border-line bg-surface p-1.5 text-start shadow-lg">
               {totalWorkspacesCount <= 1 ? (
-                <p className="px-2.5 py-3 text-center text-xs text-muted">{t('switcher.onlyOne')}</p>
+                <p className="px-2.5 pb-1 pt-2 text-xs text-muted">{t('switcher.onlyOne')}</p>
               ) : (
                 <>
                   <div className="relative">
@@ -792,6 +836,7 @@ export default function AppShell({
                                 </span>
                               )}
                               <span className="truncate">{item.name}</span>
+                              {item.personal && <span className="shrink-0 rounded bg-elevated px-1 text-2xs text-faint ring-1 ring-inset ring-line">{t('switcher.kindPersonalShort')}</span>}
                             </span>
                             <span className="flex items-center gap-1.5">
                               {active && (
@@ -817,18 +862,30 @@ export default function AppShell({
                   </div>
                 </>
               )}
+              {!ownsPersonal && (
+                <button
+                  onClick={createPersonal}
+                  disabled={creatingPersonal}
+                  className="flex h-8 w-full items-center gap-2 rounded-md border-t border-line px-2.5 pt-1 text-start text-xs text-muted transition-colors hover:bg-elevated hover:text-ink disabled:opacity-60"
+                >
+                  <Icon name="plus" size={13} />
+                  {creatingPersonal ? t('switcher.creatingPersonal') : t('switcher.createPersonal')}
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        <button onClick={() => setPaletteOpen(true)} className="v-nav-item w-full text-faint">
-          <Icon name="search" size={16} />
-          <span className="flex-1 text-start">{t('search')}</span>
-          <kbd className="font-mono text-2xs text-faint">{shortcut}</kbd>
-        </button>
+        {!noWorkspace && (
+          <button onClick={() => setPaletteOpen(true)} className="v-nav-item w-full text-faint">
+            <Icon name="search" size={16} />
+            <span className="flex-1 text-start">{t('search')}</span>
+            <kbd className="font-mono text-2xs text-faint">{shortcut}</kbd>
+          </button>
+        )}
 
-        <nav className="flex flex-col gap-0.5">
-          {GROUPS.map((group) => (
+        <nav className={`flex flex-col gap-0.5 ${noWorkspace ? 'hidden' : ''}`}>
+          {groups.map((group) => (
             <div key={group.labelKey} className="flex flex-col gap-0.5">
               {group.showLabel && (
                 <p className="px-2 pb-1 pt-4 text-2xs font-medium text-faint">{t(group.labelKey)}</p>
@@ -969,17 +1026,17 @@ export default function AppShell({
             <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold text-ink">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <NotificationBell />
-              {action}
+              {!noWorkspace && action}
             </div>
           </header>
           </div>
 
-          <VerifyEmailBanner me={me} />
+          <VerifyEmailBanner me={me} personal={personalWorkspace} />
 
           {mobileTitle && (title || action) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">
               <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight text-ink">{title}</h1>
-              {action}
+              {!noWorkspace && action}
             </div>
           )}
 
@@ -995,6 +1052,19 @@ export default function AppShell({
                   <TwoStepPanel onChange={(on) => on && setMe((m) => (m ? { ...m, twoFactorEnabled: true } : m))} />
                 </div>
               </div>
+            ) : noWorkspace ? (
+              // In no workspace at all (left or removed from the only one):
+              // nothing here would work, so the way on is said instead.
+              <div className="mx-auto max-w-[480px] py-12 text-center">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-elevated text-muted ring-1 ring-inset ring-line">
+                  <Icon name="user" size={20} />
+                </span>
+                <h2 className="mt-4 text-xl font-semibold text-ink">{t('noWorkspace.title')}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{t('noWorkspace.body')}</p>
+                <button onClick={createPersonal} disabled={creatingPersonal} className="v-btn mt-6 disabled:opacity-60">
+                  {creatingPersonal ? t('switcher.creatingPersonal') : t('noWorkspace.create')}
+                </button>
+              </div>
             ) : (
               children
             )}
@@ -1007,7 +1077,7 @@ export default function AppShell({
       {/* Phone bottom bar: the four places people go most, and the rest under More. */}
       <nav
         aria-label={t('mobile.label')}
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur-md md:hidden"
+        className={`fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur-md md:hidden ${noWorkspace ? 'hidden' : ''}`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="grid h-16 grid-cols-5">
@@ -1095,6 +1165,7 @@ export default function AppShell({
                             </span>
                           )}
                           <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                          {item.personal && <span className="shrink-0 text-xs text-faint">{t('switcher.kindPersonalShort')}</span>}
                           {active && (
                             <span className="text-accent">
                               <Icon name="check" size={16} />
@@ -1105,6 +1176,19 @@ export default function AppShell({
                     );
                   })}
                 </ul>
+              </div>
+            )}
+            {!ownsPersonal && orgsLoaded && (
+              <div className="border-t border-line px-4 pt-2">
+                <button
+                  type="button"
+                  onClick={createPersonal}
+                  disabled={creatingPersonal}
+                  className="flex min-h-12 w-full items-center gap-3 rounded-lg px-2 text-start text-base text-muted hover:bg-elevated hover:text-ink disabled:opacity-60"
+                >
+                  <Icon name="plus" size={18} />
+                  {creatingPersonal ? t('switcher.creatingPersonal') : t('switcher.createPersonal')}
+                </button>
               </div>
             )}
           </div>

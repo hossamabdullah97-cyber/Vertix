@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { authFetch, getToken, type Me } from '@/lib/client';
 import AppShell from '@/components/AppShell';
 import { TwoStepPanel } from '@/components/account/TwoStepPanel';
+import { ProfilePhotoCard } from '@/components/ProfilePhotoCard';
 import { DeleteAccount, ExportMyData } from '@/components/account/AccountData';
 
 /** The signed-in person's own account, apart from any workspace: how they sign in, their data, closing it. */
@@ -26,6 +27,8 @@ export default function AccountPage() {
     <AppShell title={t('title')}>
       <p className="max-w-[640px] text-sm leading-relaxed text-muted">{t('subtitle')}</p>
       <div className="mt-6 max-w-[760px] space-y-4">
+        {/* The photo goes with the person, whatever workspace they are in. */}
+        {me && <ProfilePhotoCard me={me} onChange={setMe} />}
         <TwoStepPanel />
         <ExportMyData />
         <DeleteAccount me={me} />

@@ -281,6 +281,18 @@ describe('AuthService.register', () => {
     expect(access(signed)).toMatchObject({ orgId: 'org_new', role: 'OWNER' });
   });
 
+  it('makes a team workspace in the company’s name, as before, when asked for one or not told', async () => {
+    const { service, prisma } = makeService({ user: { create: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co' }) } });
+    await service.register({ email: 'a@b.co', password: PASSWORD, organizationName: 'Acme' });
+    expect((prisma.client.organization.create as unknown as jest.Mock).mock.calls[0][0].data).toMatchObject({ name: 'Acme', kind: 'TEAM' });
+  });
+
+  it('makes a personal workspace in the person’s own name for someone on their own', async () => {
+    const { service, prisma } = makeService({ user: { create: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co' }) } });
+    await service.register({ email: 'a@b.co', password: PASSWORD, kind: 'personal', name: ' Mona Adel ' });
+    expect((prisma.client.organization.create as unknown as jest.Mock).mock.calls[0][0].data).toMatchObject({ name: 'Mona Adel', kind: 'PERSONAL' });
+  });
+
   it('seeds the default pipeline so the CRM is usable immediately', async () => {
     const { service, prisma } = makeService({
       user: { create: jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co' }) },
@@ -807,7 +819,8 @@ describe('AuthService.google', () => {
       data: expect.objectContaining({ email: 'mona@example.com', name: 'Mona Adel', googleId: 'g-1' }),
     });
     expect((prisma.client.user.create as jest.Mock).mock.calls[0][0].data.passwordHash).toBeUndefined();
-    expect(prisma.client.organization.create).toHaveBeenCalledWith({ data: expect.objectContaining({ name: 'Mona Adel' }) });
+    // Google says who they are, not whether there is a team: they start on their own.
+    expect(prisma.client.organization.create).toHaveBeenCalledWith({ data: expect.objectContaining({ name: 'Mona Adel', kind: 'PERSONAL' }) });
     expect(prisma.client.pipelineStage.createMany).toHaveBeenCalled();
     expect(access(signed)).toMatchObject({ sub: 'u3', orgId: 'org_new', role: 'OWNER' });
   });

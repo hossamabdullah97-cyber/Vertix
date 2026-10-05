@@ -89,5 +89,15 @@
     "hint": "Everything in this workspace as one JSON file: members, cards, leads with their history, pipeline, chips, occasions and ready messages. Only owners can do this.",
     "download": "Download export",
     "preparing": "Preparing…"
+  },
+  "titlePersonal": "Your account settings",
+  "convert": {
+    "title": "Working with a team?",
+    "hint": "Make this a company or team workspace to invite people. Your cards, leads and chips stay as they are.",
+    "start": "Make it a team workspace",
+    "name": "Company or team name",
+    "placeholder": "Company or team name",
+    "confirm": "Make it a team workspace",
+    "converting": "Changing…"
   }
 }

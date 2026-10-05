@@ -57,7 +57,7 @@ describe('a fresh sign-in never inherits a stale organization selection', () => 
     setActiveOrgId('org_from_a_previous_account');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(TOKENS)));
 
-    await register({ email: 'a@b.co', password: 'pw', organizationName: 'Acme' });
+    await register({ email: 'a@b.co', password: 'pw', kind: 'team', organizationName: 'Acme' });
 
     expect(getActiveOrgId()).toBeNull();
   });

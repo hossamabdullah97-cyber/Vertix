@@ -107,6 +107,7 @@
     "sent": "A new link is on its way to {{email}}. Check your spam folder too.",
     "notSent": "The email couldn't be sent. Try again in a moment.",
     "resend": "Send it again",
-    "sending": "Sending…"
+    "sending": "Sending…",
+    "bodyPersonal": "We sent a link to {{email}}. You will need it to choose a plan."
   }
 }

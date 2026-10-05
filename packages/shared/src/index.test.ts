@@ -16,6 +16,14 @@ import {
 } from './index';
 
 describe('registerSchema', () => {
+  it('asks a team for its name, and someone on their own only for theirs', () => {
+    expect(registerSchema.safeParse({ email: 'a@b.co', password: 'longenough', kind: 'personal', name: 'Mona' }).success).toBe(true);
+    expect(registerSchema.safeParse({ email: 'a@b.co', password: 'longenough', kind: 'personal' }).success).toBe(false);
+    expect(registerSchema.safeParse({ email: 'a@b.co', password: 'longenough', kind: 'team', name: 'Mona' }).success).toBe(false);
+    // An older client sends no kind: a team, as before.
+    expect(registerSchema.safeParse({ email: 'a@b.co', password: 'longenough', organizationName: 'Acme' })).toMatchObject({ success: true, data: { kind: 'team' } });
+  });
+
   it('accepts a valid payload', () => {
     const r = registerSchema.safeParse({
       email: 'a@b.co',

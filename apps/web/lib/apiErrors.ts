@@ -13,6 +13,11 @@ export const AR_MESSAGES: Record<string, string> = {
   // Accounts and sign-in
   'Account not found': 'الحساب غير موجود',
   'Email is already in use': 'هذا البريد الإلكتروني مستخدم بالفعل',
+  'This is already a company or team workspace.': 'هذه مساحة عمل لشركة أو فريق بالفعل.',
+  'You already have a personal workspace.': 'لديك مساحة شخصية بالفعل.',
+  'This is your personal workspace. Make it a company or team workspace in Settings to invite people.': 'هذه مساحتك الشخصية. حوّلها إلى مساحة عمل لشركة أو فريق من الإعدادات لدعوة أشخاص.',
+  'Enter the company or team name': 'أدخل اسم الشركة أو الفريق',
+  'Enter your name': 'أدخل اسمك',
   'Google has not verified this email address': 'لم تتحقق Google من هذا البريد الإلكتروني',
   'Google sign-in failed': 'تعذّر تسجيل الدخول بحساب Google',
   'Google sign-in is not set up on this server': 'تسجيل الدخول بحساب Google غير مُفعّل على هذا الخادم',

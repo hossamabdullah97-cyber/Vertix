@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { login, register, safeNext, type TwoStepChallenge } from '@/lib/client';
 import { AuthShell } from './AuthShell';
+import { Icon } from '@/components/Icon';
 import { GoogleButton } from './GoogleButton';
 import { TwoStepForm } from './TwoStepForm';
 import { Field, FormMessage, PasswordInput, SubmitButton, authErrorText, emailProps } from './fields';
@@ -26,6 +27,8 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [org, setOrg] = useState('');
+  // Who the account is for: decides whether there is a company to name.
+  const [kind, setKind] = useState<'personal' | 'team' | null>(null);
   const [error, setError] = useState<{ text: string; taken?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [challenge, setChallenge] = useState<TwoStepChallenge | null>(null);
@@ -33,7 +36,8 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
   const isLogin = mode === 'login';
   const checks = useChecks({
     name: isLogin ? null : problemOf(name, { required: true }),
-    org: isLogin ? null : problemOf(org, { required: true }),
+    kind: isLogin || kind ? null : 'required',
+    org: isLogin || kind !== 'team' ? null : problemOf(org, { required: true }),
     email: problemOf(email, { required: true, kind: 'email' }),
     password: problemOf(password, { required: true, min: isLogin ? undefined : 8 }),
   });
@@ -68,7 +72,7 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
         }
         window.location.href = safeNext(next) ?? '/dashboard';
       } else {
-        await register({ email, password, name, organizationName: org });
+        await register({ email, password, name, kind: kind!, organizationName: org });
         window.location.href = '/dashboard';
       }
     } catch (err) {
@@ -116,12 +120,33 @@ export function LoginForm({ initialMode, next, expired }: { initialMode: Mode; n
 
         {!isLogin && (
           <>
+            <fieldset>
+              <legend className="mb-2 text-sm font-medium text-ink">{t('register.for')}</legend>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup">
+                {(['personal', 'team'] as const).map((k) => (
+                  <label
+                    key={k}
+                    className={`flex cursor-pointer flex-col gap-1 rounded-xl p-3 ring-1 ring-inset transition-colors ${kind === k ? 'bg-accent/[0.06] ring-2 ring-accent' : 'ring-line hover:bg-elevated'}`}
+                  >
+                    <input type="radio" name="kind" value={k} checked={kind === k} onChange={() => setKind(k)} className="sr-only" />
+                    <span className="flex items-center gap-2 text-sm font-medium text-ink">
+                      <Icon name={k === 'personal' ? 'user' : 'users'} size={15} className={kind === k ? 'text-accent' : 'text-muted'} />
+                      {t(`register.kinds.${k}`)}
+                    </span>
+                    <span className="text-xs leading-snug text-muted">{t(`register.kinds.${k}Body`)}</span>
+                  </label>
+                ))}
+              </div>
+              {say('kind') && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{t('register.chooseKind')}</p>}
+            </fieldset>
             <Field label={t('register.name')} error={say('name')}>
               {(p) => <input {...p} {...checks.bind('name')} className="v-field" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('register.namePlaceholder')} autoComplete="name" />}
             </Field>
-            <Field label={t('register.organization')} hint={t('register.organizationHint')} error={say('org')}>
-              {(p) => <input {...p} {...checks.bind('org')} className="v-field" value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t('register.organizationPlaceholder')} autoComplete="organization" />}
-            </Field>
+            {kind === 'team' && (
+              <Field label={t('register.organization')} hint={t('register.organizationHint')} error={say('org')}>
+                {(p) => <input {...p} {...checks.bind('org')} className="v-field" value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t('register.organizationPlaceholder')} autoComplete="organization" />}
+              </Field>
+            )}
           </>
         )}
 
