@@ -12,22 +12,26 @@ async function goOnline(context: BrowserContext) {
 }
 /**
  * Waits until the service worker runs the page and has kept these addresses
- * and every script, style and font the page loaded from this site.
+ * and every script, style and font the page loaded from this site. Polled
+ * from here: waitForFunction does not wait for an async check, it takes the
+ * promise itself as a yes.
  */
 async function kept(page: Page, ...paths: string[]) {
-  await page.waitForFunction(
-    async (list) => {
-      if (!navigator.serviceWorker.controller) return false;
-      const loaded = performance
-        .getEntriesByType('resource')
-        .map((r) => r.name)
-        .filter((u) => u.startsWith(location.origin) && /\/_next\/static\/|\/fonts\//.test(u));
-      for (const u of [...list.map((p) => new URL(p, location.href).href), ...loaded]) if (!(await caches.match(u, { ignoreSearch: true }))) return false;
-      return true;
-    },
-    paths,
-    { timeout: 20_000, polling: 300 },
-  );
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async (list) => {
+          if (!navigator.serviceWorker.controller) return false;
+          const loaded = performance
+            .getEntriesByType('resource')
+            .map((r) => r.name)
+            .filter((u) => u.startsWith(location.origin) && /\/_next\/static\/|\/fonts\//.test(u));
+          for (const u of [...list.map((p) => new URL(p, location.href).href), ...loaded]) if (!(await caches.match(u, { ignoreSearch: true }))) return false;
+          return true;
+        }, paths),
+      { timeout: 20_000, intervals: [300] },
+    )
+    .toBe(true);
 }
 
 /** What the service worker has kept (the build's files left out), for a failure to show. */
@@ -93,7 +97,9 @@ test.describe('without a signal', () => {
     await expect(page.locator('img[alt="QR code"]')).toBeVisible();
     await kept(page, '/meet');
     // And its translations, which the signed-in app loads separately.
-    await page.waitForFunction(async () => (await (await caches.open('vertex-cards-v1')).keys()).some((r) => r.url.includes('/i18n/')), null, { timeout: 20_000 });
+    await expect
+      .poll(() => page.evaluate(async () => (await (await caches.open('vertex-cards-v1')).keys()).some((r) => r.url.includes('/i18n/'))), { timeout: 20_000 })
+      .toBe(true);
 
     await goOffline(context);
     await page.reload();
