@@ -9,18 +9,33 @@ import { GO_TO, notForShortcuts, runPageShortcut, usePageShortcuts } from '@/lib
 /** Opens the list from elsewhere (the account menu). */
 export const SHOW_SHORTCUTS = 'vertex:shortcuts';
 
+/** W then a number (the workspace's place in the menu) or W again (the menu); the shell acts on it. */
+export const WORKSPACE_KEY = 'vertex:workspace-key';
+export type WorkspaceKey = { number: number } | { menu: true };
+
 /** Listens for the shortcuts (lib/shortcuts.ts) and shows their list on "?". */
 export function Shortcuts({ onSearch }: { onSearch: () => void }) {
   const { t } = useTranslation('nav');
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const pending = useRef<number | null>(null); // G was pressed; the next letter picks the page
+  const pendingW = useRef<number | null>(null); // W was pressed; a number picks the workspace
   const page = usePageShortcuts();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (notForShortcuts(e)) return;
       const key = e.key.toLowerCase();
+      if (pendingW.current !== null) {
+        window.clearTimeout(pendingW.current);
+        pendingW.current = null;
+        const detail: WorkspaceKey | null = /^[1-9]$/.test(key) ? { number: Number(key) } : key === 'w' ? { menu: true } : null;
+        if (detail) {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent<WorkspaceKey>(WORKSPACE_KEY, { detail }));
+        }
+        return;
+      }
       if (pending.current !== null) {
         window.clearTimeout(pending.current);
         pending.current = null;
@@ -39,6 +54,8 @@ export function Shortcuts({ onSearch }: { onSearch: () => void }) {
         onSearch();
       } else if (key === 'g') {
         pending.current = window.setTimeout(() => (pending.current = null), 1200);
+      } else if (key === 'w') {
+        pendingW.current = window.setTimeout(() => (pendingW.current = null), 1200);
       } else if (runPageShortcut(key)) {
         e.preventDefault();
       }
@@ -87,6 +104,13 @@ export function Shortcuts({ onSearch }: { onSearch: () => void }) {
           <ul className="divide-y divide-line">
             <Row keys={['/']} label={t('shortcuts.search')} />
             <Row keys={['?']} label={t('shortcuts.help')} />
+          </ul>
+        </section>
+        <section>
+          <h3 className="mb-1 text-xs font-medium text-faint">{t('shortcuts.workspaces')}</h3>
+          <ul className="divide-y divide-line">
+            <Row keys={['W', '+', '1…9']} label={t('shortcuts.workspaceNumber')} />
+            <Row keys={['W', '+', 'W']} label={t('shortcuts.workspaceMenu')} />
           </ul>
         </section>
         <section>

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { cookies, headers } from 'next/headers';
 import './globals.css';
 import { LanguageProvider } from '@/components/i18n/LanguageProvider';
+import { WorkspaceScope } from '@/components/WorkspaceScope';
 import { LOCALE_COOKIE, dirOf, resolveLocale } from '@/lib/i18n/config';
 import Script from 'next/script';
 import { resources } from '@/lib/i18n/resources';
@@ -68,7 +69,7 @@ export default function RootLayout({
             {/* The page's language only, cached, and in place before hydration; the other is fetched on a switch. */}
             <Script src={urls[locale]} strategy="beforeInteractive" />
             <LanguageProvider initialLocale={locale} urls={urls}>
-              {children}
+              <WorkspaceScope>{children}</WorkspaceScope>
             </LanguageProvider>
           </>
         )}

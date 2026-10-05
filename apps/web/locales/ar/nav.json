@@ -37,7 +37,8 @@
     "leads": "العملاء المحتملون",
     "tags": "بطاقات NFC",
     "files": "الملفات",
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "workspaces": "مساحات العمل"
   },
   "searchKeys": {
     "navigate": "تنقّل",
@@ -60,7 +61,20 @@
     "kindTeam": "شركة أو فريق",
     "kindPersonalShort": "شخصي",
     "createPersonal": "أنشئ مساحتي الشخصية",
-    "creatingPersonal": "جارٍ الإنشاء…"
+    "creatingPersonal": "جارٍ الإنشاء…",
+    "unread_zero": "لا إشعارات غير مقروءة",
+    "unread_one": "إشعار واحد غير مقروء",
+    "unread_two": "إشعاران غير مقروءين",
+    "unread_few": "{{count}} إشعارات غير مقروءة",
+    "unread_many": "{{count}} إشعاراً غير مقروء",
+    "unread_other": "{{count}} إشعار غير مقروء",
+    "unreadElsewhere_zero": "لا إشعارات غير مقروءة في مساحاتك الأخرى",
+    "unreadElsewhere_one": "إشعار واحد غير مقروء في مساحاتك الأخرى",
+    "unreadElsewhere_two": "إشعاران غير مقروءين في مساحاتك الأخرى",
+    "unreadElsewhere_few": "{{count}} إشعارات غير مقروءة في مساحاتك الأخرى",
+    "unreadElsewhere_many": "{{count}} إشعاراً غير مقروء في مساحاتك الأخرى",
+    "unreadElsewhere_other": "{{count}} إشعار غير مقروء في مساحاتك الأخرى",
+    "switchTo": "الانتقال إلى {{name}}"
   },
   "plan": {
     "cards": "{{used}} من {{limit}} بطاقات",
@@ -102,7 +116,10 @@
     "newLead": "إضافة عميل",
     "newCard": "بطاقة جديدة",
     "invite": "دعوة أشخاص",
-    "addChips": "إضافة شرائح"
+    "addChips": "إضافة شرائح",
+    "workspaces": "مساحات العمل",
+    "workspaceNumber": "الانتقال إلى المساحة صاحبة هذا الرقم في القائمة",
+    "workspaceMenu": "فتح قائمة المساحات"
   },
   "twoStepGate": {
     "title": "{{org}} تتطلب التحقق بخطوتين",

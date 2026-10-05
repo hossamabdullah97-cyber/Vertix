@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
-import { authFetch, getActiveOrgId, setActiveOrgId } from '@/lib/client';
+import { authFetch, getActiveOrgId } from '@/lib/client';
 import { OPEN_LEAD_EVENT } from '@/lib/events';
-import { withWorkspace } from '@/lib/workspaces';
+import { openWorkspace } from '@/lib/switch';
 import type { Locale } from '@/lib/i18n/config';
 
 /** "Thu 1 Oct, 10:30" in the zone the meeting was booked in (or this device's). */
@@ -29,6 +29,15 @@ export interface Notif {
   createdAt: string;
   orgId?: string | null;
   actor: { name: string | null; email: string; avatarUrl?: string | null } | null;
+}
+
+/** Unread per workspace (by id), as the bell last counted them; the switcher shows them. */
+export const UNREAD_BY_WORKSPACE = 'vertex:unread-by-workspace';
+let unreadByWorkspace: Record<string, number> = {};
+export const lastUnreadByWorkspace = () => unreadByWorkspace;
+export function announceUnreadByWorkspace(next: Record<string, number> | undefined) {
+  unreadByWorkspace = next ?? {};
+  window.dispatchEvent(new CustomEvent(UNREAD_BY_WORKSPACE, { detail: unreadByWorkspace }));
 }
 
 /** Fired after a notification is read or archived, so the bell recounts. */
@@ -202,8 +211,7 @@ export function openNotification(n: Notif, navigate: (href: string) => void) {
   const href = linkOf(n);
   if (!href) return;
   if (n.orgId && n.orgId !== getActiveOrgId()) {
-    setActiveOrgId(n.orgId);
-    window.location.href = withWorkspace(href, n.orgId);
+    openWorkspace(n.orgId, null, href);
     return;
   }
   navigate(href);

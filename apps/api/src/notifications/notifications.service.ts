@@ -110,6 +110,14 @@ export class NotificationsService {
     return this.db.notification.count({ where: { userId, readAt: null, archivedAt: null } });
   }
 
+  /** Unread, per workspace they came from; ones about the person themselves (an invitation) have none. */
+  async unreadByWorkspace(userId: string): Promise<Record<string, number>> {
+    const rows = await this.db.notification.groupBy({ by: ['orgId'], where: { userId, readAt: null, archivedAt: null }, _count: { _all: true } });
+    const out: Record<string, number> = {};
+    for (const r of rows) if (r.orgId) out[r.orgId] = r._count._all;
+    return out;
+  }
+
   // --- Per-category preferences (a missing row means "enabled") ---
   getPreferences(userId: string) {
     return this.db.notificationPreference.findMany({

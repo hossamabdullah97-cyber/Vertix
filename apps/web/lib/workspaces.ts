@@ -34,20 +34,38 @@ export function dropWorkspaceFromAddress() {
   window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
 }
 
-/** Remembers the workspaces this person is in, slug → id. */
-export function rememberWorkspaces(orgs: { id: string; slug?: string | null }[]) {
+const NAMES_KEY = 'vertex_org_names';
+
+/** Remembers the workspaces this person is in: slug → id, and each one's name. */
+export function rememberWorkspaces(orgs: { id: string; slug?: string | null; name?: string | null }[]) {
   const map: Record<string, string> = {};
-  for (const o of orgs) if (o.slug) map[o.slug] = o.id;
+  const names: Record<string, string> = {};
+  for (const o of orgs) {
+    if (o.slug) map[o.slug] = o.id;
+    if (o.name) names[o.id] = o.name;
+  }
   try {
     localStorage.setItem(SLUGS_KEY, JSON.stringify(map));
+    localStorage.setItem(NAMES_KEY, JSON.stringify(names));
   } catch {
     /* storage unavailable: the switch then happens once the list loads */
+  }
+}
+
+/** The names of the workspaces this person is in, by id. */
+export function workspaceNames(): Record<string, string> {
+  try {
+    const v = JSON.parse(localStorage.getItem(NAMES_KEY) ?? '{}');
+    return v && typeof v === 'object' ? (v as Record<string, string>) : {};
+  } catch {
+    return {};
   }
 }
 
 export function forgetWorkspaces() {
   try {
     localStorage.removeItem(SLUGS_KEY);
+    localStorage.removeItem(NAMES_KEY);
   } catch {
     /* nothing to forget */
   }

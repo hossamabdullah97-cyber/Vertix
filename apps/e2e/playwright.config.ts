@@ -35,7 +35,7 @@ export default defineConfig({
       cwd: '../api',
       url: 'http://localhost:4000/api/health',
       // The background sweeps (reminders, reports, purges) stay off.
-      env: { ...(process.env as Record<string, string>), NODE_ENV: 'test' },
+      env: { ...(process.env as Record<string, string>), NODE_ENV: 'test', AUTH_RATE_LIMIT: '500' },
       reuseExistingServer: !CI,
       timeout: 120_000,
       stdout: 'pipe',

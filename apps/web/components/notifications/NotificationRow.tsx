@@ -103,7 +103,7 @@ export function NotificationRow({
             <bdi>{body}</bdi>
           </p>
         )}
-        {otherWorkspace && !compact && <p className="mt-1 text-xs text-faint">{t('otherWorkspace', { name: `\u2068${otherWorkspace}\u2069` })}</p>}
+        {otherWorkspace && <p className={`${compact ? 'mt-0.5' : 'mt-1'} truncate text-xs text-faint`}>{t('otherWorkspace', { name: `\u2068${otherWorkspace}\u2069` })}</p>}
       </div>
       {!compact && items.length > 0 && (
         <span className="-me-1.5 -mt-1 shrink-0" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
