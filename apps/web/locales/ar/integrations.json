@@ -105,7 +105,7 @@
       "salesforce": "إرسال العملاء الجدد إلى Salesforce كعملاء محتملين (Leads).",
       "zoho_crm": "إرسال العملاء الجدد إلى Zoho CRM كعملاء محتملين (Leads).",
       "pipedrive": "إرسال العملاء الجدد إلى Pipedrive كأشخاص، تحت شركاتهم.",
-      "dynamics": "ربط العملاء المحتملين بـ Dynamics 365 Sales.",
+      "dynamics": "إرسال العملاء الجدد إلى Dynamics 365 Sales كعملاء محتملين (Leads).",
       "mailchimp": "إضافة العملاء الجدد إلى جمهور في Mailchimp.",
       "brevo": "إضافة العملاء الجدد إلى قائمة جهات اتصال في Brevo.",
       "klaviyo": "إضافة العملاء الجدد كملفات شخصية في قائمة على Klaviyo.",
@@ -238,6 +238,12 @@
       "syncRecent": "إضافة أحدث العملاء الآن",
       "syncing": "جارٍ الإضافة…",
       "synced": "أُضيف {{synced}}، وتُخطّي {{skipped}}، وفشل {{failed}}."
+    },
+    "dynamics": {
+      "title": "حسابكم في Dynamics 365",
+      "hint": "العنوان الذي تفتحون به Dynamics 365 Sales، وفيه يُنشأ العملاء المحتملون.",
+      "address": "عنوان Dynamics 365",
+      "azure": "سجّلوا تطبيقاً في Microsoft Entra (Azure)، وأضيفوا إليه عنوان إعادة التوجيه أدناه، وامنحوه صلاحية Dynamics CRM باسم ⁨user_impersonation⁩. ثم أدخلوا معرّف العميل والمفتاح السري هنا."
     }
   },
   "events": {

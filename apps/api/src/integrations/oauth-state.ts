@@ -14,6 +14,8 @@ export interface StatePayload {
   nonce: string;
   /** Unix seconds expiry. */
   exp: number;
+  /** Where the account's API lives, when it is chosen before consent (Dynamics: the environment). */
+  site?: string;
 }
 
 function b64url(buf: Buffer): string {

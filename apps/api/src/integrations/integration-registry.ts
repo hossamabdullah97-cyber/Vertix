@@ -69,7 +69,7 @@ export const INTEGRATION_REGISTRY: IntegrationProviderDef[] = [
   { key: 'salesforce', name: 'Salesforce', category: 'crm', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Send new leads to Salesforce as Leads.', scopes: ['Leads'] },
   { key: 'zoho_crm', name: 'Zoho CRM', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Send new leads to Zoho CRM as Leads.', scopes: ['Leads'] },
   { key: 'pipedrive', name: 'Pipedrive', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Send new leads to Pipedrive as people, under their organization.', scopes: ['Persons', 'Organizations'] },
-  { key: 'dynamics', name: 'Microsoft Dynamics', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Connect leads to Dynamics 365 Sales.', scopes: ['Leads', 'Contacts'] },
+  { key: 'dynamics', name: 'Microsoft Dynamics', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Send new leads to Dynamics 365 Sales as Leads.', scopes: ['Leads'] },
 
   // --- Marketing ---
   { key: 'mailchimp', name: 'Mailchimp', category: 'marketing', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Add new leads to a Mailchimp audience.', scopes: ['Audiences'] },

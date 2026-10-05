@@ -7,6 +7,7 @@ import { AuditService } from '../../organizations/audit.service';
 import { HubSpotConnector } from './hubspot.connector';
 import {
   ConnectorError,
+  DynamicsConnector,
   MailchimpConnector,
   PipedriveConnector,
   SalesforceConnector,
@@ -16,6 +17,7 @@ import {
 } from './connectors';
 import {
   applyMapping,
+  DEFAULT_DYNAMICS_MAPPING,
   DEFAULT_HUBSPOT_MAPPING,
   DEFAULT_MAILCHIMP_MAPPING,
   DEFAULT_PIPEDRIVE_MAPPING,
@@ -36,6 +38,7 @@ const CRM_PROVIDERS: Record<string, { defaultMapping: FieldMapping; audience?: t
   zoho_crm: { defaultMapping: DEFAULT_ZOHO_MAPPING },
   pipedrive: { defaultMapping: DEFAULT_PIPEDRIVE_MAPPING },
   mailchimp: { defaultMapping: DEFAULT_MAILCHIMP_MAPPING, audience: true },
+  dynamics: { defaultMapping: DEFAULT_DYNAMICS_MAPPING },
 };
 
 export interface CrmSyncConfig {
@@ -85,6 +88,8 @@ export class CrmSyncService {
         return new PipedriveConnector();
       case 'mailchimp':
         return new MailchimpConnector();
+      case 'dynamics':
+        return new DynamicsConnector();
       default:
         throw new BadRequestException(`${provider} is not a supported CRM connector.`);
     }

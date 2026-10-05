@@ -105,7 +105,7 @@
       "salesforce": "Send new leads to Salesforce as Leads.",
       "zoho_crm": "Send new leads to Zoho CRM as Leads.",
       "pipedrive": "Send new leads to Pipedrive as people, under their organization.",
-      "dynamics": "Connect leads to Dynamics 365 Sales.",
+      "dynamics": "Send new leads to Dynamics 365 Sales as Leads.",
       "mailchimp": "Add new leads to a Mailchimp audience.",
       "brevo": "Add new leads to a Brevo contact list.",
       "klaviyo": "Add new leads as profiles on a Klaviyo list.",
@@ -238,6 +238,12 @@
       "syncRecent": "Add recent leads now",
       "syncing": "Adding…",
       "synced": "Added {{synced}}, skipped {{skipped}}, failed {{failed}}."
+    },
+    "dynamics": {
+      "title": "Your Dynamics 365",
+      "hint": "The address you open Dynamics 365 Sales at. Leads are created there.",
+      "address": "Dynamics 365 address",
+      "azure": "Register an app in Microsoft Entra (Azure), add the redirect address below to it, and give it the Dynamics CRM permission user_impersonation. Then enter its client ID and secret here."
     }
   },
   "events": {

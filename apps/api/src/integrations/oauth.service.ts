@@ -17,6 +17,7 @@ import {
   redirectUri,
   buildAuthorizationUrl,
   apiBaseFor,
+  dynamicsScopes,
   type ResolvedOAuthConfig,
 } from './oauth-providers';
 import { signState, verifyState } from './oauth-state';
@@ -120,8 +121,18 @@ export class OAuthService {
   // ---------------------------------------------------------------- authorize
 
   /** Builds the provider consent URL to redirect the user to. */
-  async getAuthorizationUrl(tenant: TenantContext, provider: string): Promise<{ url: string }> {
+  async getAuthorizationUrl(tenant: TenantContext, provider: string, opts: { environment?: string } = {}): Promise<{ url: string }> {
     const cfg = await this.requireConfig(tenant.orgId, provider);
+    // Dynamics asks for access to one environment, so it is chosen first and
+    // carried, signed, to the callback.
+    let site: string | undefined;
+    if (provider === 'dynamics') {
+      // The address as entered, on Microsoft's hosts only; a test override changes where the API is called, not what is asked for.
+      const environment = apiBaseFor('dynamics', opts.environment, { get: () => undefined });
+      if (!environment) throw new BadRequestException('Enter your Dynamics 365 address, like https://yourorg.crm4.dynamics.com.');
+      cfg.scopes = dynamicsScopes(environment);
+      site = apiBaseFor('dynamics', environment, this.config) ?? environment;
+    }
     const state = signState(
       {
         orgId: tenant.orgId,
@@ -129,6 +140,7 @@ export class OAuthService {
         provider,
         nonce: randomUUID(),
         exp: Math.floor(Date.now() / 1000) + STATE_TTL_SECONDS,
+        ...(site ? { site } : {}),
       },
       this.stateSecret(),
     );
@@ -148,7 +160,7 @@ export class OAuthService {
 
     const cfg = await this.requireConfig(state.orgId, state.provider);
     const tokens = await this.exchangeCode(cfg, code);
-    const account = await this.accountOf(state.provider, tokens);
+    const account = state.site ? { apiBase: state.site, name: new URL(state.site).hostname.split('.')[0] } : await this.accountOf(state.provider, tokens);
     await this.store(state.orgId, state.userId, state.provider, tokens, account);
 
     await this.audit.log(

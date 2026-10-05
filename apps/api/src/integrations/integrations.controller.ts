@@ -124,8 +124,8 @@ export class IntegrationsController {
   @RequireScopes('integration:write')
   @Roles('OWNER', 'ADMIN')
   @Get(':provider/authorize')
-  authorize(@Tenant() tenant: TenantContext, @Param('provider') provider: string) {
-    return this.oauth.getAuthorizationUrl(tenant, provider);
+  authorize(@Tenant() tenant: TenantContext, @Param('provider') provider: string, @Query('environment') environment?: string) {
+    return this.oauth.getAuthorizationUrl(tenant, provider, { environment });
   }
 
   /**

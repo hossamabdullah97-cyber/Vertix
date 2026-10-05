@@ -200,6 +200,8 @@ export const AR_MESSAGES: Record<string, string> = {
   'Paste the API key.': 'الصق مفتاح API.',
   'Choose one of the account’s lists.': 'اختر إحدى قوائم الحساب.',
   'Choose the Mailchimp audience leads join.': 'اختر جمهور Mailchimp الذي ينضم إليه العملاء.',
+  'Enter your Dynamics 365 address, like https://yourorg.crm4.dynamics.com.': 'أدخل عنوان Dynamics 365 الخاص بكم، مثل \u2068https://yourorg.crm4.dynamics.com\u2069.',
+  'Dynamics 365 did not say which environment to use. Connect it again.': 'لم يحدد Dynamics 365 البيئة المطلوبة. اربطه مجدداً.',
   'Salesforce did not say where this org’s API is. Connect it again.': 'لم يحدد Salesforce عنوان API لهذه المؤسسة. اربطه مجدداً.',
   'Mailchimp did not say which data centre this account is in. Connect it again.': 'لم يحدد Mailchimp مركز البيانات لهذا الحساب. اربطه مجدداً.',
 };

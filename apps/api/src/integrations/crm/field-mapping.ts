@@ -58,6 +58,15 @@ export const DEFAULT_MAILCHIMP_MAPPING: FieldMapping = {
   phone: 'PHONE',
 };
 
+/** Vertex → Dynamics 365 Lead columns. */
+export const DEFAULT_DYNAMICS_MAPPING: FieldMapping = {
+  firstName: 'firstname',
+  lastName: 'lastname',
+  email: 'emailaddress1',
+  phone: 'mobilephone',
+  company: 'companyname',
+};
+
 /** The Vertex fields that can be mapped, with how each is derived from a lead. */
 export function vertexFieldValue(lead: SyncableLead, field: string): string | undefined {
   switch (field) {
