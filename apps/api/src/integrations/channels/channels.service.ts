@@ -308,7 +308,7 @@ export class ChannelsService {
     for (const conn of connections) {
       const config = (conn.config ?? {}) as unknown as ChannelConfig;
       if (!conn.credentials || !wants(config.events ?? DEFAULT_CHANNEL_EVENTS, event)) continue;
-      const m = channelMessage(event, (data ?? {}) as Record<string, unknown>, { lang: config.lang ?? 'en', appUrl: this.appUrl, timeZone: this.timeZone });
+      const m = channelMessage(event, (data ?? {}) as Record<string, unknown>, { lang: config.lang ?? 'en', appUrl: this.appUrl, timeZone: this.timeZone, workspace: orgId });
       if (!m) continue;
       const provider = conn.provider as ChannelProvider;
       let creds: TelegramCredentials | TeamsCredentials;

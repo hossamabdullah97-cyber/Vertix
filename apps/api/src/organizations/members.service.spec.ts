@@ -61,7 +61,7 @@ function makeService(d: Deps = {}) {
 
   const mail = {
     sendInvite: jest.fn().mockResolvedValue(true),
-    sendAddedNotice: jest.fn().mockResolvedValue(true),
+    sendJoinInvite: jest.fn().mockResolvedValue(true),
   } as unknown as MailService;
 
   // A seat-consuming write runs inside LimitsService.guard, which hands the
@@ -227,25 +227,49 @@ describe('MembersService.invite — an account that was never activated', () => 
 
 describe('MembersService.invite — an already-activated account', () => {
   const activeUser = {
-    user: { findFirst: jest.fn().mockResolvedValue({ id: 'u_real', passwordHash: '$2a$hash' }) },
+    user: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'u_real', passwordHash: '$2a$hash' }),
+      // The inviter: confirmed, and named in what the invitee is sent.
+      findUnique: jest.fn().mockResolvedValue({ emailVerified: new Date(), name: 'Mona Adel', email: 'owner@acme.test' }),
+    },
   };
 
-  it('is added straight away, with no invitation link needed', async () => {
-    const { service, prisma, mail, tokens } = makeService(activeUser);
+  it('is asked, not added: the place waits for their answer', async () => {
+    const { service, prisma, mail, tokens, notifications } = makeService(activeUser);
 
     await expect(service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' })).resolves.toEqual(
-      { status: 'added', email: 'a@b.co', emailSent: true },
+      { status: 'invited', email: 'a@b.co', emailSent: true },
     );
 
-    expect(membershipWrites(prisma)[0]).toMatchObject({ status: 'ACTIVE' });
-    expect(mail.sendAddedNotice).toHaveBeenCalledWith('a@b.co', 'Acme');
+    expect(membershipWrites(prisma)[0]).toMatchObject({ status: 'INVITED' });
+    expect(mail.sendJoinInvite).toHaveBeenCalledWith('a@b.co', expect.stringMatching(/\/invitations$/), 'Acme', 'EMPLOYEE', 'Mona Adel');
+    // No link that sets a password: they already have one.
     expect(tokens.create).not.toHaveBeenCalled();
+    // Told in the app too, as theirs rather than the workspace's.
+    expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ userId: 'u_real', orgId: null, type: 'member.invited', metadata: expect.objectContaining({ orgId: 'org_acme' }) }));
+  });
+
+  it('counts an account made with Google as an account', async () => {
+    const { service, prisma, tokens } = makeService({ user: { ...activeUser.user, findFirst: jest.fn().mockResolvedValue({ id: 'u_g', passwordHash: null, googleId: 'g-1' }) } });
+    await service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' });
+    expect(membershipWrites(prisma)[0]).toMatchObject({ status: 'INVITED' });
+    expect(tokens.create).not.toHaveBeenCalled();
+  });
+
+  it('asks again on a second invitation, in the same seat', async () => {
+    const { service, prisma, limits } = makeService({
+      ...activeUser,
+      membership: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', status: 'INVITED' }) },
+    });
+    await service.invite(TENANT, { email: 'a@b.co', role: 'MANAGER' });
+    expect(limits.assertWithin).toHaveBeenCalledWith('org_acme', 'members', 0);
+    expect((prisma.client.membership.update as jest.Mock).mock.calls[0][0]).toMatchObject({ where: { id: 'm1' }, data: { role: 'MANAGER', status: 'INVITED' } });
   });
 
   it('is rejected when they already belong to the organization', async () => {
     const { service } = makeService({
       ...activeUser,
-      membership: { findFirst: jest.fn().mockResolvedValue({ id: 'm1' }) },
+      membership: { findFirst: jest.fn().mockResolvedValue({ id: 'm1', status: 'ACTIVE' }) },
     });
 
     await expect(
@@ -285,15 +309,15 @@ describe('MembersService.invite — the email fails to send', () => {
     );
   });
 
-  it('reports the same outcome when an existing user is added directly', async () => {
+  it('reports the same outcome when an existing account is asked to join', async () => {
     const activeUser = {
       user: { findFirst: jest.fn().mockResolvedValue({ id: 'u_real', passwordHash: '$2a$hash' }) },
     };
     const { service, mail } = makeService(activeUser);
-    (mail.sendAddedNotice as unknown as jest.Mock).mockResolvedValue(false);
+    (mail.sendJoinInvite as unknown as jest.Mock).mockResolvedValue(false);
 
     const result = await service.invite(TENANT, { email: 'a@b.co', role: 'EMPLOYEE' });
 
-    expect(result).toEqual({ status: 'added', email: 'a@b.co', emailSent: false });
+    expect(result).toEqual({ status: 'invited', email: 'a@b.co', emailSent: false });
   });
 });

@@ -18,6 +18,7 @@ export function requiresTwoStep(settings: unknown): boolean {
   return !!settings && typeof settings === 'object' && (settings as Record<string, unknown>).require2fa === true;
 }
 import { PrismaService } from '../../prisma/prisma.service';
+import { PERSON_ROUTE_KEY } from '../decorators/person-route.decorator';
 
 /**
  * Resolves the active organization for the request and verifies the user's
@@ -111,10 +112,11 @@ export class TenantGuard implements CanActivate {
         user: { select: { totpEnabledAt: true } },
       },
     });
-    if (!membership) {
-      throw new ForbiddenException('You do not have access to this organization');
-    }
-    if (!membership.org.isActive || membership.org.deletedAt) {
+    if (!membership || !membership.org.isActive || membership.org.deletedAt) {
+      // A route about the person goes on without a workspace (see PersonRoute).
+      const personRoute = this.reflector.getAllAndOverride<boolean>(PERSON_ROUTE_KEY, [context.getHandler(), context.getClass()]);
+      if (personRoute) return true;
+      if (!membership) throw new ForbiddenException('You do not have access to this organization');
       throw new ForbiddenException('This organization is currently suspended or deleted');
     }
     // A workspace that requires two-step verification is closed to a member

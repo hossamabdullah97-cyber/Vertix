@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { AuthService, SUSPENDED_MESSAGE } from './auth.service';
+import { AuthService, SUSPENDED_MESSAGE, ACCOUNT_ACCEPTS_SIGNED_IN } from './auth.service';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { TokensService } from '../mail/tokens.service';
 import type { MailService } from '../mail/mail.service';
@@ -465,6 +465,19 @@ describe('AuthService.acceptInvite', () => {
     await expect(service.acceptInvite('t', PASSWORD)).rejects.toThrow(
       UnauthorizedException,
     );
+  });
+
+  it('is not for someone who already has an account: their password stays theirs', async () => {
+    for (const holder of [{ passwordHash: '$2a$hash', googleId: null }, { passwordHash: null, googleId: 'g-1' }]) {
+      const userUpdate = jest.fn().mockResolvedValue({});
+      const membershipUpdate = jest.fn().mockResolvedValue({});
+      const { service, tokens } = makeService({ user: { findUnique: jest.fn().mockResolvedValue(holder), update: userUpdate }, membership: { update: membershipUpdate } });
+      (tokens.verify as unknown as jest.Mock).mockResolvedValue({ id: 't1', userId: 'u1', orgId: 'org_acme', email: 'a@b.co' });
+      await expect(service.acceptInvite('t', PASSWORD)).rejects.toThrow(ACCOUNT_ACCEPTS_SIGNED_IN);
+      expect(userUpdate).not.toHaveBeenCalled();
+      expect(membershipUpdate).not.toHaveBeenCalled();
+      expect(tokens.consume).not.toHaveBeenCalled();
+    }
   });
 
   it('activates the membership, verifies the email and burns the token', async () => {

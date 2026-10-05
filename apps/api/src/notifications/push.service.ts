@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import webpush from 'web-push';
 import { PrismaService } from '../prisma/prisma.service';
 import type { NotifyInput } from './notifications.service';
+import { workspaceLink } from '../common/workspace-link';
 
 export type PushLang = 'en' | 'ar';
 
@@ -23,7 +24,13 @@ export interface PushPayload {
  * itself, so its words are chosen here. Kinds not listed keep the English
  * title and body.
  */
-export function pushPayload(n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata'>, lang: PushLang, id?: string): PushPayload {
+export function pushPayload(n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata' | 'orgId'>, lang: PushLang, id?: string): PushPayload {
+  const p = describe(n, lang, id);
+  // A tap opens the workspace the notification came from, whichever is open.
+  return { ...p, url: workspaceLink(p.url, n.orgId) };
+}
+
+function describe(n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata'>, lang: PushLang, id?: string): PushPayload {
   const m = (n.metadata ?? {}) as Record<string, unknown>;
   const ar = lang === 'ar';
   const who = n.body ?? '';
@@ -67,6 +74,15 @@ export function pushPayload(n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'me
         url: '/notifications',
         tag: 'push-test',
       };
+    case 'member.invited': {
+      const org = s(m.orgName);
+      return {
+        title: ar ? (org ? `دعوة للانضمام إلى ${org}` : 'دعوة للانضمام إلى مساحة عمل') : org ? `You're invited to join ${org}` : "You're invited to a workspace",
+        body: who,
+        url: '/invitations',
+        tag: `invite-${s(m.orgId)}`,
+      };
+    }
     case 'automation.failed':
       return { title: ar ? 'تعذّر تشغيل أتمتة' : 'An automation failed', body: who, url: '/integrations?tab=automations', tag: n.type };
     case 'webhook.failed':

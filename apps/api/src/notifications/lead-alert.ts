@@ -8,6 +8,8 @@ export type LeadIntent = 'CONTACT' | 'MEETING' | 'QUOTE';
 
 export interface LeadAlert {
   leadId: string;
+  /** The workspace the lead is in, so its link opens there. */
+  orgId?: string | null;
   intent: LeadIntent;
   name: string;
   email?: string | null;

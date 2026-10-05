@@ -56,6 +56,8 @@ function emailIs(email: string) {
 export const SUSPENDED_MESSAGE =
   'This account has been suspended. Ask your workspace owner to restore it.';
 
+export const ACCOUNT_ACCEPTS_SIGNED_IN = 'You already have an account. Sign in to accept the invitation.';
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -206,6 +208,12 @@ export class AuthService {
     const rec = await this.tokens.verify('INVITE', token);
     if (!rec.userId || !rec.orgId) {
       throw new UnauthorizedException('Invalid invitation');
+    }
+    // The link sets a password, so it is only for someone who has no account
+    // yet. An account holder accepts from the app, signed in, and keeps theirs.
+    const holder = await this.prisma.client.user.findUnique({ where: { id: rec.userId }, select: { passwordHash: true, googleId: true } });
+    if (holder?.passwordHash || holder?.googleId) {
+      throw new BadRequestException(ACCOUNT_ACCEPTS_SIGNED_IN);
     }
     const passwordHash = await bcrypt.hash(password, 10);
 

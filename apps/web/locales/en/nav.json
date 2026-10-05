@@ -110,5 +110,28 @@
     "title": "You are not in any workspace",
     "body": "You left your company’s workspace, or it was removed. Create your own to make your card and keep your leads, or ask your company to invite you again.",
     "create": "Create my personal workspace"
+  },
+  "invitations": {
+    "title": "Invitations",
+    "subtitle": "Workspaces that asked you to join. Nothing changes until you answer: you join only when you accept.",
+    "menuTitle": "Invitations",
+    "badge": "Invitation",
+    "pending_one": "{{count}} invitation waiting",
+    "pending_other": "{{count}} invitations waiting",
+    "as": "As {{role}}",
+    "accept": "Join",
+    "joining": "Joining…",
+    "decline": "Decline",
+    "declining": "Declining…",
+    "failed": "That did not work. Try again.",
+    "emptyTitle": "No invitations",
+    "emptyBody": "When a company or team asks you to join, it shows here, and you choose whether to join.",
+    "home": "Back to the home page"
+  },
+  "noAccess": {
+    "title": "You are not in this workspace",
+    "body": "This link is for a workspace you are not a member of. Ask whoever sent it to invite you.",
+    "invited": "{{name}} invited you. Join to open the link.",
+    "back": "Go to {{name}}"
   }
 }

@@ -24,6 +24,8 @@ import { VerifyEmailBanner } from '@/components/ui/VerifyEmailBanner';
 import { TwoStepPanel } from '@/components/account/TwoStepPanel';
 import { registerServiceWorker, syncPush } from '@/lib/pwa';
 import { Shortcuts, SHOW_SHORTCUTS } from '@/components/ui/Shortcuts';
+import { InvitationList, useInvitations } from '@/components/invitations/Invitations';
+import { dropWorkspaceFromAddress, matchWorkspace, rememberWorkspaces, requestedWorkspace, wasKnown, withWorkspace, WORKSPACE_PARAM } from '@/lib/workspaces';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
@@ -162,6 +164,9 @@ export default function AppShell({
     setOrgsLoaded(true);
   };
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(shellCache?.orgId ?? null);
+  // Invitations waiting on this person, and a link to a workspace they are not in.
+  const { invites } = useInvitations();
+  const [noAccess, setNoAccess] = useState<string | null>(null);
   // Whether the active workspace is known yet: it is read from storage after mount.
   const [ready, setReady] = useState(!!shellCache);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -215,11 +220,34 @@ export default function AppShell({
     void registerServiceWorker();
 
     authFetch<any[]>('/orgs')
-      .then((list) => {
+      .then((list: OrgRow[]) => {
+        // A link names its workspace: open it there, or say this person has no
+        // access to it (a workspace this browser had not seen before is only
+        // known once the list arrives).
+        const asked = requestedWorkspace();
+        const hit = asked ? matchWorkspace(list.map((m) => m.org), asked) : null;
+        // One they were in when this browser last looked, and are not now:
+        // they were removed, and simply carry on elsewhere.
+        const removed = !!asked && !hit && wasKnown(asked);
         setOrgs(list);
+        rememberWorkspaces(list.map((m) => m.org));
+        if (removed) {
+          dropWorkspaceFromAddress();
+          return;
+        }
+        if (asked) {
+          if (!hit) {
+            setNoAccess(asked);
+            return;
+          }
+          if (hit.id !== getActiveOrgId()) {
+            handleSwitchOrg(hit.id, hit.slug, true);
+            return;
+          }
+        }
         // If user has organization workspace but no active workspace set, auto-switch to first org
         if (!activeId && list.length > 0) {
-          handleSwitchOrg(list[0].org.id);
+          handleSwitchOrg(list[0].org.id, list[0].org.slug);
         }
       })
       .catch(() => {});
@@ -279,7 +307,12 @@ export default function AppShell({
     loadSearchIndex();
   }, [paletteOpen]);
 
-  const handleSwitchOrg = (id: string | null) => {
+  /**
+   * Opens another workspace. From a link, the page asked for stays; from the
+   * switcher, the same section opens at its start, since what was open (a
+   * card, a lead) belongs to the workspace being left.
+   */
+  const handleSwitchOrg = (id: string | null, slug?: string | null, fromLink = false) => {
     setActiveOrgId(id);
     setSelectedOrgId(id);
     setSwitcherOpen(false);
@@ -291,7 +324,13 @@ export default function AppShell({
     setRecents(nextRecents);
     localStorage.setItem('vertex_recents', JSON.stringify(nextRecents));
 
-    window.location.reload();
+    const w = slug ?? orgs.find((o) => o.org.id === id)?.org.slug ?? id;
+    if (fromLink) {
+      window.location.reload();
+      return;
+    }
+    const section = '/' + (window.location.pathname.split('/')[1] || 'dashboard');
+    window.location.href = withWorkspace(section, w);
   };
 
   // A personal workspace of one's own, for someone who has only a company's.
@@ -299,8 +338,8 @@ export default function AppShell({
   const createPersonal = async () => {
     setCreatingPersonal(true);
     try {
-      const org = await authFetch<{ id: string }>('/orgs/personal', { method: 'POST' });
-      handleSwitchOrg(org.id);
+      const org = await authFetch<{ id: string; slug: string }>('/orgs/personal', { method: 'POST' });
+      handleSwitchOrg(org.id, org.slug);
     } catch {
       setCreatingPersonal(false);
     }
@@ -579,10 +618,37 @@ export default function AppShell({
   // Someone who only has their company's can make one of their own.
   const ownsPersonal = orgs.some((o) => o.org.kind === 'PERSONAL' && o.role === 'OWNER');
   // One workspace of one's own and nothing else: nothing to switch to or make.
-  const switcherNeeded = orgs.length > 1 || !ownsPersonal;
+  const switcherNeeded = orgs.length > 1 || !ownsPersonal || invites.length > 0;
   // Removed from their only workspace: the one thing to do is make their own,
   // so the menus and actions that need a workspace stay out of the way.
   const noWorkspace = orgsLoaded && orgs.length === 0 && !me?.isSuperAdmin;
+  const invitedThere = noAccess ? invites.find((i) => i.org.id === noAccess || i.org.slug === noAccess) ?? null : null;
+  // With no workspace at all, the way on is making one, unless the link is an
+  // invitation's.
+  const blocked = !!noAccess && !me?.isSuperAdmin && (orgs.length > 0 || !!invitedThere);
+
+  // Removed from the workspace this browser had open: carry on in another of
+  // theirs, or in none (the screen above then says what to do).
+  useEffect(() => {
+    if (!orgsLoaded || !me || me.isSuperAdmin || noAccess || !selectedOrgId) return;
+    if (orgs.some((o) => o.org.id === selectedOrgId)) return;
+    if (orgs.length) handleSwitchOrg(orgs[0]!.org.id, orgs[0]!.org.slug);
+    else {
+      setActiveOrgId(null);
+      setSelectedOrgId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgsLoaded, orgs, me, selectedOrgId, noAccess]);
+
+  // The address says which workspace it shows, so it can be copied and sent
+  // and open in the same place for whoever opens it.
+  useEffect(() => {
+    if (blocked || !activeOrg?.slug) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get(WORKSPACE_PARAM) === activeOrg.slug) return;
+    url.searchParams.set(WORKSPACE_PARAM, activeOrg.slug);
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  }, [pathname, activeOrg?.slug, blocked]);
 
   const totalWorkspacesCount = allWorkspaceItems.length;
 
@@ -727,6 +793,7 @@ export default function AppShell({
                 {activeOrg && <span className="block truncate text-2xs text-faint">{t(personalWorkspace ? 'switcher.kindPersonal' : 'switcher.kindTeam')}</span>}
               </span>
             )}
+            {invites.length > 0 && <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-label={t('invitations.pending', { count: invites.length })} />}
             {switcherNeeded && (
               <span className="text-faint">
                 <Icon name="chevron-down" size={14} />
@@ -861,6 +928,23 @@ export default function AppShell({
                     </div>
                   </div>
                 </>
+              )}
+              {invites.length > 0 && (
+                <div className="border-t border-line pt-1">
+                  <p className="px-2.5 pb-1 pt-1.5 text-2xs font-medium text-faint">{t('invitations.menuTitle')}</p>
+                  {invites.map((inv) => (
+                    <Link
+                      key={inv.org.id}
+                      href="/invitations"
+                      onClick={() => setSwitcherOpen(false)}
+                      className="flex h-9 items-center gap-2 rounded-md px-2.5 text-sm text-ink transition-colors hover:bg-elevated"
+                    >
+                      <OrgMark name={inv.org.name} branding={inv.org.branding} size={20} />
+                      <span className="min-w-0 flex-1 truncate">{inv.org.name}</span>
+                      <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-2xs font-medium text-accent">{t('invitations.badge')}</span>
+                    </Link>
+                  ))}
+                </div>
               )}
               {!ownsPersonal && (
                 <button
@@ -1026,7 +1110,7 @@ export default function AppShell({
             <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold text-ink">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
               <NotificationBell />
-              {!noWorkspace && action}
+              {!noWorkspace && !blocked && action}
             </div>
           </header>
           </div>
@@ -1036,7 +1120,7 @@ export default function AppShell({
           {mobileTitle && (title || action) && (
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 md:hidden">
               <h1 className="flex min-w-0 items-center gap-2 text-2xl font-semibold tracking-tight text-ink">{title}</h1>
-              {!noWorkspace && action}
+              {!noWorkspace && !blocked && action}
             </div>
           )}
 
@@ -1052,6 +1136,37 @@ export default function AppShell({
                   <TwoStepPanel onChange={(on) => on && setMe((m) => (m ? { ...m, twoFactorEnabled: true } : m))} />
                 </div>
               </div>
+            ) : blocked ? (
+              // A link to a workspace this person is not in: say so, with an
+              // invitation to answer if that is why the link was sent.
+              <div className="mx-auto max-w-[520px] py-12 text-center">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-elevated text-muted ring-1 ring-inset ring-line">
+                  <Icon name="lock" size={20} />
+                </span>
+                <h2 className="mt-4 text-xl font-semibold text-ink">{t('noAccess.title')}</h2>
+                {(() => {
+                  const invited = invites.find((i) => i.org.id === noAccess || i.org.slug === noAccess);
+                  return invited ? (
+                    <>
+                      <p className="mt-2 text-sm leading-relaxed text-muted">{t('noAccess.invited', { name: invited.org.name })}</p>
+                      <div className="mt-6">
+                        <InvitationList invites={[invited]} />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="mt-2 text-sm leading-relaxed text-muted">{t('noAccess.body')}</p>
+                  );
+                })()}
+                {orgs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => (window.location.href = '/dashboard')}
+                    className="v-btn v-btn-ghost mt-6"
+                  >
+                    {t('noAccess.back', { name: activeOrgName || orgs[0]!.org.name })}
+                  </button>
+                )}
+              </div>
             ) : noWorkspace ? (
               // In no workspace at all (left or removed from the only one):
               // nothing here would work, so the way on is said instead.
@@ -1061,7 +1176,13 @@ export default function AppShell({
                 </span>
                 <h2 className="mt-4 text-xl font-semibold text-ink">{t('noWorkspace.title')}</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{t('noWorkspace.body')}</p>
-                <button onClick={createPersonal} disabled={creatingPersonal} className="v-btn mt-6 disabled:opacity-60">
+                {invites.length > 0 && (
+                  <div className="mt-6">
+                    <p className="mb-2 text-start text-xs font-medium text-faint">{t('invitations.menuTitle')}</p>
+                    <InvitationList invites={invites} />
+                  </div>
+                )}
+                <button onClick={createPersonal} disabled={creatingPersonal} className={`mt-6 disabled:opacity-60 ${invites.length ? 'v-btn v-btn-ghost' : 'v-btn'}`}>
                   {creatingPersonal ? t('switcher.creatingPersonal') : t('noWorkspace.create')}
                 </button>
               </div>
@@ -1176,6 +1297,23 @@ export default function AppShell({
                     );
                   })}
                 </ul>
+              </div>
+            )}
+            {invites.length > 0 && (
+              <div className="border-t border-line px-4 pt-2">
+                <p className="px-2 pb-1 text-xs font-medium text-faint">{t('invitations.menuTitle')}</p>
+                {invites.map((inv) => (
+                  <Link
+                    key={inv.org.id}
+                    href="/invitations"
+                    onClick={() => setMoreOpen(false)}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-lg px-2 text-start text-base text-ink hover:bg-elevated"
+                  >
+                    <OrgMark name={inv.org.name} branding={inv.org.branding} size={26} />
+                    <span className="min-w-0 flex-1 truncate">{inv.org.name}</span>
+                    <span className="shrink-0 rounded bg-accent/10 px-1.5 py-0.5 text-xs font-medium text-accent">{t('invitations.badge')}</span>
+                  </Link>
+                ))}
               </div>
             )}
             {!ownsPersonal && orgsLoaded && (

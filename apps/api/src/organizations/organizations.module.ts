@@ -18,6 +18,8 @@ import { ApprovalsController } from './approvals.controller';
 import { ApprovalsService } from './approvals.service';
 import { OccasionsController } from './occasions.controller';
 import { OccasionsService } from './occasions.service';
+import { InvitationsController } from './invitations.controller';
+import { InvitationsService } from './invitations.service';
 
 @Module({
   imports: [BillingModule, IntegrationsModule, CardsModule],
@@ -29,9 +31,11 @@ import { OccasionsService } from './occasions.service';
     DepartmentsController,
     ApprovalsController,
     OccasionsController,
+    InvitationsController,
   ],
   providers: [
     OrganizationsService,
+    InvitationsService,
     MembersService,
     MembersImportService,
     TeamsService,

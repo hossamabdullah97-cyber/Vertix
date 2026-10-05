@@ -84,7 +84,10 @@ export default function WorkspaceSettingsPage() {
   function choose(next: Section) {
     setSection(next);
     const url = new URL(window.location.href);
+    const w = url.searchParams.get('w');
     url.search = next === 'general' ? '' : `?section=${next}`;
+    // The workspace the address names stays in it.
+    if (w) url.searchParams.set('w', w);
     window.history.replaceState(null, '', url);
   }
 

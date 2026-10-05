@@ -5,6 +5,7 @@ import { TenantGuard } from './tenant.guard';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PLATFORM_SCOPE_KEY } from '../decorators/platform-scope.decorator';
 import { TWO_STEP_EXEMPT_KEY } from '../decorators/two-step-exempt.decorator';
+import { PERSON_ROUTE_KEY } from '../decorators/person-route.decorator';
 import type { PrismaService } from '../../prisma/prisma.service';
 
 /**
@@ -39,6 +40,7 @@ function makeGuard(
   // other test reading as it did before that check existed.
   org: OrgRow = liveOrg(),
   twoStepExempt = false,
+  personRoute = false,
 ) {
   const findFirst = jest.fn().mockResolvedValue(membership);
   const findUnique = jest.fn().mockResolvedValue(org);
@@ -53,6 +55,7 @@ function makeGuard(
       if (key === IS_PUBLIC_KEY) return isPublic;
       if (key === PLATFORM_SCOPE_KEY) return platformScope;
       if (key === TWO_STEP_EXEMPT_KEY) return twoStepExempt;
+      if (key === PERSON_ROUTE_KEY) return personRoute;
       return undefined;
     },
   } as unknown as Reflector;
@@ -319,5 +322,35 @@ describe('TenantGuard — a workspace that requires two-step verification', () =
     const { ctx, req } = request(member, 'org_acme');
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
     expect(req.tenant).toMatchObject({ orgId: 'org_acme' });
+  });
+});
+
+describe('TenantGuard — a workspace the person is no longer in', () => {
+  it('still shuts every workspace route', async () => {
+    const { guard } = makeGuard(null);
+    const { req, ctx } = request(member, 'org_acme');
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    expect(req.tenant).toBeUndefined();
+  });
+
+  it('leaves the routes about the person open, with no workspace at all', async () => {
+    // Removed while signed in: their list, invitations, account and
+    // notifications must still answer, or there is no way on.
+    for (const header of ['org_acme', undefined]) {
+      const { guard } = makeGuard(null, false, false, liveOrg(), false, true);
+      const { req, ctx } = request(member, header);
+      await expect(guard.canActivate(ctx)).resolves.toBe(true);
+      expect(req.tenant).toBeUndefined();
+    }
+  });
+
+  it('treats a deleted workspace the same way', async () => {
+    const gone: Membership = { role: 'OWNER', org: { isActive: true, deletedAt: new Date() }, user: { totpEnabledAt: null } };
+    const { guard } = makeGuard(gone, false, false, liveOrg(), false, true);
+    const { req, ctx } = request(member, 'org_acme');
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(req.tenant).toBeUndefined();
+    const { guard: strict } = makeGuard(gone);
+    await expect(strict.canActivate(request(member, 'org_acme').ctx)).rejects.toThrow('suspended or deleted');
   });
 });

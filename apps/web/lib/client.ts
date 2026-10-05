@@ -6,6 +6,7 @@ import enCommon from '@/locales/en/common.json';
 import arCommon from '@/locales/ar/common.json';
 import { ApiError } from './apiErrors';
 import { clearOutbox, hold, isOffline, isUnreachable, startOutbox } from './outbox';
+import { forgetWorkspaces, knownRequestedId } from './workspaces';
 
 export { ApiError, apiMessageOf } from './apiErrors';
 
@@ -40,6 +41,7 @@ export function logout() {
   // Otherwise the next account to sign in on this browser inherits a
   // "selected organization" that belongs to whoever was signed in before.
   localStorage.removeItem(ACTIVE_ORG_KEY);
+  forgetWorkspaces();
   // The cards "Met someone" keeps for showing without a signal.
   localStorage.removeItem('vertex_meet_cards');
   localStorage.removeItem('vertex_meet_card');
@@ -50,6 +52,10 @@ export function logout() {
 
 export function getActiveOrgId(): string | null {
   if (typeof window === 'undefined') return null;
+  // A link that names one of this person's workspaces opens there, before
+  // the page asks for anything (lib/workspaces.ts).
+  const asked = knownRequestedId();
+  if (asked && asked !== localStorage.getItem(ACTIVE_ORG_KEY)) localStorage.setItem(ACTIVE_ORG_KEY, asked);
   return localStorage.getItem(ACTIVE_ORG_KEY);
 }
 

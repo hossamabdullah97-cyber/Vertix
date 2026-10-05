@@ -228,7 +228,8 @@ describe('BillingService.createCheckout', () => {
       amountCents: 49900,
       customer: { firstName: 'Mariam', lastName: 'Khaled', email: 'owner@acme.test', phone: '+201001234567' },
       notificationUrl: 'https://api.test/api/billing/paymob/webhook',
-      redirectionUrl: 'https://app.vertex.test/billing?checkout=done',
+      // Back in the workspace that paid, whichever was open last.
+      redirectionUrl: 'https://app.vertex.test/billing?checkout=done&w=org1',
     });
     expect(parseReference(arg.reference)).toEqual({ orgId: 'org1', plan: 'PRO' });
   });
