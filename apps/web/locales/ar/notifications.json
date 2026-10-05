@@ -117,7 +117,7 @@
     "goalYou": "حققت هدفك",
     "goalMember": "حقق {{name}} هدفه",
     "goalBody": "{{metric}} {{period}}: {{value}} من {{target}}",
-    "integrationFailed": "توقف {{name}} عن استقبال الرسائل",
+    "integrationFailed": "توقف ربط {{name}} عن العمل",
     "integrationFailedBody": "اربطوه مجدداً من صفحة التكاملات."
   },
   "push": {

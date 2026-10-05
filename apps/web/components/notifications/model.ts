@@ -93,7 +93,8 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
     case 'webhook.failed':
       return { title: t('notifications:types.webhookFailed'), body: t('notifications:types.webhookFailedBody', { event: event(m.event) }) };
     case 'integration.failed': {
-      const name = str(m.provider) === 'telegram' ? 'Telegram' : str(m.provider) === 'ms_teams' ? 'Microsoft Teams' : str(m.provider);
+      const names: Record<string, string> = { telegram: 'Telegram', ms_teams: 'Microsoft Teams', brevo: 'Brevo', activecampaign: 'ActiveCampaign', klaviyo: 'Klaviyo' };
+      const name = names[str(m.provider)] ?? str(m.provider);
       return { title: t('notifications:types.integrationFailed', { name: iso(name) }), body: t('notifications:types.integrationFailedBody') };
     }
     case 'member.added':

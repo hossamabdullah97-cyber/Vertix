@@ -73,9 +73,9 @@ export const INTEGRATION_REGISTRY: IntegrationProviderDef[] = [
 
   // --- Marketing ---
   { key: 'mailchimp', name: 'Mailchimp', category: 'marketing', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Add captured contacts to Mailchimp audiences.', scopes: ['Audiences', 'Contacts'] },
-  { key: 'brevo', name: 'Brevo', category: 'marketing', auth: 'api_key', status: 'coming_soon', description: 'Sync contacts into Brevo (Sendinblue) lists.', scopes: ['Contacts', 'Lists'] },
-  { key: 'klaviyo', name: 'Klaviyo', category: 'marketing', auth: 'api_key', status: 'coming_soon', description: 'Push profiles and events to Klaviyo.', scopes: ['Profiles', 'Events'] },
-  { key: 'activecampaign', name: 'ActiveCampaign', category: 'marketing', auth: 'api_key', status: 'coming_soon', description: 'Sync contacts into ActiveCampaign automations.', scopes: ['Contacts', 'Lists'] },
+  { key: 'brevo', name: 'Brevo', category: 'marketing', auth: 'api_key', status: 'available', description: 'Add new leads to a Brevo contact list.', scopes: ['Contacts', 'Lists'] },
+  { key: 'klaviyo', name: 'Klaviyo', category: 'marketing', auth: 'api_key', status: 'available', description: 'Add new leads as profiles on a Klaviyo list.', scopes: ['Profiles', 'Lists'] },
+  { key: 'activecampaign', name: 'ActiveCampaign', category: 'marketing', auth: 'api_key', status: 'available', description: 'Add new leads as contacts on an ActiveCampaign list.', scopes: ['Contacts', 'Lists'] },
 
   // --- Communication ---
   { key: 'slack', name: 'Slack', category: 'communication', auth: 'webhook_url', status: 'coming_soon', popular: true, description: 'Send lead and event notifications to a Slack channel.', scopes: ['Post messages'] },

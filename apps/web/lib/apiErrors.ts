@@ -193,6 +193,12 @@ export const AR_MESSAGES: Record<string, string> = {
   'Choose the chat to post to.': 'اختر المحادثة التي يُنشر فيها.',
   'Paste the link from a Teams workflow ("When a Teams webhook request is received").': 'الصق الرابط من سير عمل في Teams («\u2068When a Teams webhook request is received\u2069»).',
   'Connect it again: its details were removed.': 'اربطه مجدداً: حُذفت بياناته.',
+
+  // Brevo, ActiveCampaign and Klaviyo (integrations/audience)
+  'Paste the API URL from ActiveCampaign (Settings → Developer), like https://youraccount.api-us1.com.':
+    'الصق رابط API من ActiveCampaign (Settings ثم Developer)، مثل \u2068https://youraccount.api-us1.com\u2069.',
+  'Paste the API key.': 'الصق مفتاح API.',
+  'Choose one of the account’s lists.': 'اختر إحدى قوائم الحساب.',
 };
 
 /** Messages with a value in them. The capture groups carry that value across. */
@@ -217,6 +223,9 @@ export const AR_PATTERNS: [RegExp, (...m: string[]) => string][] = [
   [/^Unknown action type: (.+)$/, (a) => `نوع إجراء غير معروف: ${a}`],
   [/^Unknown event\(s\): (.+)$/, (e) => `أحداث غير معروفة: ${e}`],
   [/^(\S+) is not a chat or channel integration\.$/, (p) => `${p} ليس تكامل محادثات أو قنوات.`],
+  [/^(\S+) is not an email-marketing integration\.$/, (p) => `${p} ليس تكامل تسويق بالبريد.`],
+  [/^(\S+) did not accept this key\. Copy it again, with access to contacts and lists\.$/, (p) => `لم يقبل ${p} هذا المفتاح. انسخه مجدداً بصلاحية على جهات الاتصال والقوائم.`],
+  [/^(\S+) could not be reached or refused the request \((.*)\)\.$/, (p, d) => `تعذّر الوصول إلى ${p} أو رفض الطلب (${d}).`],
   [/^The bot cannot post in that chat \((.*)\)\. Add it to the group, or make it an admin of the channel\.$/, (d) => `لا يستطيع البوت النشر في هذه المحادثة (${d}). أضفه إلى المجموعة، أو اجعله مشرفاً في القناة.`],
   [/^Teams refused the message \((.*)\)\. Check that the workflow is turned on and the link is copied whole\.$/, (d) => `رفض Teams الرسالة (${d}). تأكد أن سير العمل مفعّل وأن الرابط منسوخ كاملاً.`],
   [/^The message did not arrive \((.*)\)\. Try again in a moment\.$/, (d) => `لم تصل الرسالة (${d}). حاول مرة أخرى بعد قليل.`],

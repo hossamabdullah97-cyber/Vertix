@@ -14,6 +14,8 @@ import { CrmSyncService } from './crm/crm-sync.service';
 import { AuditService } from '../organizations/audit.service';
 import { ChannelsService } from './channels/channels.service';
 import { ChannelsController } from './channels/channels.controller';
+import { AudienceService } from './audience/audience.service';
+import { AudienceController } from './audience/audience.controller';
 
 /**
  * The Enterprise Integration Hub. Exports WebhookService so other modules can
@@ -22,7 +24,7 @@ import { ChannelsController } from './channels/channels.controller';
  * NotificationsService (used by the automation engine) is available globally.
  */
 @Module({
-  controllers: [WebhooksController, IntegrationsController, AutomationsController, ChannelsController],
+  controllers: [WebhooksController, IntegrationsController, AutomationsController, ChannelsController, AudienceController],
   providers: [
     CredentialVault,
     WebhookService,
@@ -34,6 +36,7 @@ import { ChannelsController } from './channels/channels.controller';
     OAuthAppsService,
     CrmSyncService,
     ChannelsService,
+    AudienceService,
     AuditService,
   ],
   exports: [WebhookService, CredentialVault, OAuthService],

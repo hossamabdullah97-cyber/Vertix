@@ -103,9 +103,9 @@
       "pipedrive": "مزامنة الصفقات والأشخاص مع Pipedrive.",
       "dynamics": "ربط العملاء المحتملين بـ Dynamics 365 Sales.",
       "mailchimp": "إضافة جهات الاتصال الملتقطة إلى جماهير Mailchimp.",
-      "brevo": "مزامنة جهات الاتصال مع قوائم Brevo (Sendinblue).",
-      "klaviyo": "إرسال الملفات الشخصية والأحداث إلى Klaviyo.",
-      "activecampaign": "مزامنة جهات الاتصال مع أتمتة ActiveCampaign.",
+      "brevo": "إضافة العملاء الجدد إلى قائمة جهات اتصال في Brevo.",
+      "klaviyo": "إضافة العملاء الجدد كملفات شخصية في قائمة على Klaviyo.",
+      "activecampaign": "إضافة العملاء الجدد كجهات اتصال في قائمة على ActiveCampaign.",
       "slack": "إرسال تنبيهات العملاء المحتملين والأحداث إلى قناة Slack.",
       "ms_teams": "نشر العملاء الجدد وأحداث مساحة العمل في قناة Microsoft Teams.",
       "whatsapp_business": "تنبيه جهات الاتصال ومراسلتها عبر WhatsApp Business.",
@@ -199,6 +199,40 @@
       },
       "postsTo": "ينشر في: {{account}}",
       "lastSent": "آخر رسالة {{time}}"
+    },
+    "audience": {
+      "setUp": "ربط {{name}}",
+      "where": {
+        "brevo": "في Brevo، افتحوا SMTP & API ثم API keys، وأنشئوا مفتاحاً والصقوه هنا.",
+        "activecampaign": "في ActiveCampaign، افتحوا Settings ثم Developer. انسخوا رابط API والمفتاح، والصقوهما هنا.",
+        "klaviyo": "في Klaviyo، افتحوا Settings ثم API keys وأنشئوا مفتاحاً خاصاً بصلاحية كاملة على Profiles وLists، والصقوه هنا."
+      },
+      "openKeys": "فتح {{name}}",
+      "accountUrl": "رابط API",
+      "key": "مفتاح API",
+      "keyHint": "يُحفظ مشفراً، ولا يُستخدم إلا لإضافة عملائكم.",
+      "check": "التحقق من المفتاح",
+      "recheck": "التحقق مجدداً",
+      "checking": "جارٍ التحقق…",
+      "account": "متصل بحساب {{account}}",
+      "list": "إضافة العملاء إلى",
+      "noLists": "لا توجد قوائم في هذا الحساب بعد. أنشئوا قائمة في الأداة، ثم تحققوا مجدداً.",
+      "autoSync": "إضافة كل عميل جديد فور وصوله",
+      "consent": "يُضاف العملاء إلى القائمة دون اشتراكهم في حملاتكم. لا ترسلوا رسائل تسويقية إلا لمن وافق على ذلك.",
+      "connect": "ربط",
+      "connecting": "جارٍ الربط…",
+      "settings": "عملاؤكم في هذه الأداة",
+      "addsTo": "يضيف العملاء إلى {{list}}",
+      "change": "تغيير القائمة",
+      "counts": {
+        "synced": "أُضيف",
+        "skipped": "تُخطّي",
+        "failed": "فشل"
+      },
+      "skippedWhy": "يُتخطّى العملاء الذين ليس لديهم بريد إلكتروني: هذه الأداة تحتاجه.",
+      "syncRecent": "إضافة أحدث العملاء الآن",
+      "syncing": "جارٍ الإضافة…",
+      "synced": "أُضيف {{synced}}، وتُخطّي {{skipped}}، وفشل {{failed}}."
     }
   },
   "events": {
