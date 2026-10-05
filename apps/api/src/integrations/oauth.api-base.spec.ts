@@ -2,7 +2,7 @@ import { createServer, type Server } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { CredentialVault } from './credential-vault.service';
 import { OAuthService } from './oauth.service';
-import { signState } from './oauth-state';
+import { signState, verifyState } from './oauth-state';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { ConfigService } from '@nestjs/config';
 import type { AuditService } from '../organizations/audit.service';
@@ -67,6 +67,9 @@ describe('OAuth: where the account’s API lives', () => {
       OAUTH_MAILCHIMP_CLIENT_SECRET: 'cs',
       OAUTH_MAILCHIMP_TOKEN_URL: `${base}/token`,
       OAUTH_MAILCHIMP_METADATA_URL: `${base}/metadata`,
+      OAUTH_DYNAMICS_CLIENT_ID: 'azure-app',
+      OAUTH_DYNAMICS_CLIENT_SECRET: 'cs',
+      OAUTH_DYNAMICS_TOKEN_URL: `${base}/token`,
     };
     const config = { get: (k: string) => env[k], getOrThrow: (k: string) => env[k] } as unknown as ConfigService;
     vault = new CredentialVault(config);
@@ -106,5 +109,22 @@ describe('OAuth: where the account’s API lives', () => {
     await oauth.handleCallback('mc-code', state('mailchimp'));
     expect(store!.externalAccountName).toBe('Nile Co');
     await expect(oauth.getAuth('org1', 'mailchimp')).resolves.toEqual({ token: 'mc-access', apiBase: 'https://us21.api.mailchimp.com' });
+  });
+
+  it('asks Dynamics for access to the environment entered, carried signed to the callback', async () => {
+    const tenant = { orgId: 'org1', userId: 'u1', role: 'OWNER' } as never;
+    await expect(oauth.getAuthorizationUrl(tenant, 'dynamics', { environment: 'https://evil.example' })).rejects.toThrow(/Dynamics 365 address/);
+    await expect(oauth.getAuthorizationUrl(tenant, 'dynamics')).rejects.toThrow(/Dynamics 365 address/);
+
+    const { url } = await oauth.getAuthorizationUrl(tenant, 'dynamics', { environment: 'https://NileCo.crm4.dynamics.com/main.aspx?appid=1' });
+    const u = new URL(url);
+    expect(u.origin + u.pathname).toBe('https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize');
+    expect(u.searchParams.get('scope')).toBe('https://nileco.crm4.dynamics.com/user_impersonation offline_access');
+    const state = verifyState(u.searchParams.get('state')!, JWT_SECRET);
+    expect(state).toMatchObject({ provider: 'dynamics', site: 'https://nileco.crm4.dynamics.com' });
+
+    await oauth.handleCallback('dyn-code', u.searchParams.get('state')!);
+    expect(store!.externalAccountName).toBe('nileco');
+    await expect(oauth.getAuth('org1', 'dynamics')).resolves.toEqual({ token: 'sf-access-1', apiBase: 'https://nileco.crm4.dynamics.com' });
   });
 });

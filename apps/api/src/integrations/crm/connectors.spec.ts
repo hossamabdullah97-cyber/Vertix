@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
-import { ConnectorError, MailchimpConnector, PipedriveConnector, SalesforceConnector, ZohoConnector } from './connectors';
+import { ConnectorError, DynamicsConnector, MailchimpConnector, PipedriveConnector, SalesforceConnector, ZohoConnector } from './connectors';
 import { apiBaseFor } from '../oauth-providers';
-import { applyMapping, DEFAULT_MAILCHIMP_MAPPING, DEFAULT_PIPEDRIVE_MAPPING, DEFAULT_SALESFORCE_MAPPING, DEFAULT_ZOHO_MAPPING } from './field-mapping';
+import { applyMapping, DEFAULT_DYNAMICS_MAPPING, DEFAULT_MAILCHIMP_MAPPING, DEFAULT_PIPEDRIVE_MAPPING, DEFAULT_SALESFORCE_MAPPING, DEFAULT_ZOHO_MAPPING } from './field-mapping';
 
 /** A stand-in for fetch: answers in order, keeps what was sent. */
 function fakeFetch(...answers: { status: number; body?: unknown }[]) {
@@ -124,5 +124,33 @@ describe('Mailchimp', () => {
   it('lists the account’s audiences', async () => {
     fakeFetch({ status: 200, body: { lists: [{ id: 'abc123', name: 'Expo' }] } });
     await expect(new MailchimpConnector().lists(auth)).resolves.toEqual([{ id: 'abc123', name: 'Expo' }]);
+  });
+});
+
+describe('Dynamics 365', () => {
+  const auth = { token: 'd', apiBase: 'https://nileco.crm4.dynamics.com' };
+
+  it('creates a Lead in the environment and gets its id back', async () => {
+    const sent = fakeFetch({ status: 201, body: { leadid: 'b5a1c2d3-0000-4000-8000-000000000001' } });
+    await expect(new DynamicsConnector().createContact(auth, applyMapping(lead, DEFAULT_DYNAMICS_MAPPING))).resolves.toEqual({ externalId: 'b5a1c2d3-0000-4000-8000-000000000001' });
+    expect(sent[0]).toMatchObject({
+      url: 'https://nileco.crm4.dynamics.com/api/data/v9.2/leads?$select=leadid',
+      method: 'POST',
+      headers: { authorization: 'Bearer d', 'OData-Version': '4.0', Prefer: 'return=representation' },
+      body: { subject: 'Vertex Connect', firstname: 'Laila', lastname: 'Hassan', emailaddress1: 'laila@example.com', mobilephone: '+201007776655', companyname: 'Nile Co' },
+    });
+  });
+
+  it('updates the same Lead, and gives it a last name when there is none', async () => {
+    const sent = fakeFetch({ status: 204 });
+    await new DynamicsConnector().updateContact(auth, 'abc', { firstname: 'Omar' });
+    expect(sent[0]).toMatchObject({ url: 'https://nileco.crm4.dynamics.com/api/data/v9.2/leads(abc)', method: 'PATCH', body: { subject: 'Vertex Connect', firstname: 'Omar', lastname: 'Omar' } });
+  });
+
+  it('only takes Dynamics hosts as an environment', () => {
+    expect(apiBaseFor('dynamics', 'https://nileco.crm4.dynamics.com/main.aspx', env)).toBe('https://nileco.crm4.dynamics.com');
+    expect(apiBaseFor('dynamics', 'https://nileco.crm.dynamics.com', env)).toBe('https://nileco.crm.dynamics.com');
+    expect(apiBaseFor('dynamics', 'https://dynamics.com.evil.example', env)).toBeNull();
+    expect(apiBaseFor('dynamics', 'https://nileco.crm4.dynamics.com.evil.example', env)).toBeNull();
   });
 });

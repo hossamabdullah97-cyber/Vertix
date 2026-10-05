@@ -59,6 +59,13 @@ export const OAUTH_ENDPOINTS: Record<string, OAuthEndpoints> = {
     tokenUrl: 'https://login.mailchimp.com/oauth2/token',
     scopes: [],
   },
+  // Microsoft Dynamics 365: the scope names the environment, so it is built
+  // per connection (dynamicsScopes) rather than listed here.
+  dynamics: {
+    authUrl: 'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize',
+    tokenUrl: 'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
+    scopes: [],
+  },
   slack: {
     authUrl: 'https://slack.com/oauth/v2/authorize',
     tokenUrl: 'https://slack.com/api/oauth.v2.access',
@@ -172,7 +179,13 @@ const API_HOSTS: Record<string, RegExp> = {
   zoho_crm: /^(www\.)?zohoapis\.(com|eu|in|com\.au|jp|com\.cn|ca|sa)$/i,
   pipedrive: /^[a-z0-9-]+\.pipedrive\.com$/i,
   mailchimp: /^[a-z]{2,4}\d{1,3}\.api\.mailchimp\.com$/i,
+  dynamics: /^[a-z0-9-]+\.crm\d{0,2}\.dynamics\.com$/i,
 };
+
+/** What a Dynamics connection asks for: access to that environment, and to keep it. */
+export function dynamicsScopes(environment: string): string[] {
+  return [`${environment}/user_impersonation`, 'offline_access'];
+}
 
 /**
  * Where an account's API lives: OAUTH_<KEY>_API_URL when set (sandboxes,

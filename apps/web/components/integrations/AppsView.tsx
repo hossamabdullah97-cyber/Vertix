@@ -281,11 +281,14 @@ function AppSheet({
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [confirm, setConfirm] = useState<'disconnect' | 'removeApp' | null>(null);
+  // Dynamics asks for the environment's address before signing in.
+  const [environment, setEnvironment] = useState('');
 
   useEffect(() => {
     setBusy('');
     setError('');
     setConfirm(null);
+    setEnvironment('');
   }, [p?.key]);
 
   // Keep the last app while the sheet animates closed.
@@ -308,7 +311,8 @@ function AppSheet({
     setError('');
     setBusy('connect');
     try {
-      const { url } = await authFetch<{ url: string }>(`/integrations/${app!.key}/authorize`);
+      const query = app!.key === 'dynamics' ? `?environment=${encodeURIComponent(environment.trim())}` : '';
+      const { url } = await authFetch<{ url: string }>(`/integrations/${app!.key}/authorize${query}`);
       window.location.href = url;
     } catch (e) {
       setError((e as Error).message);
@@ -325,7 +329,7 @@ function AppSheet({
           </button>
         )}
         {state !== 'connected' && !keyed && (
-          <button onClick={connect} disabled={!!busy} className="v-btn disabled:opacity-60">
+          <button onClick={connect} disabled={!!busy || (app.key === 'dynamics' && !environment.trim())} className="v-btn disabled:opacity-60">
             {busy === 'connect' ? t('apps.connecting') : state === 'attention' ? t('apps.reconnect') : t('apps.connect')}
           </button>
         )}
@@ -405,6 +409,26 @@ function AppSheet({
 
           {app.supportsOAuth && canManage && state !== 'connected' && (
             <OwnApp app={app} onSaved={onChanged} onRemove={() => setConfirm('removeApp')} />
+          )}
+
+          {app.key === 'dynamics' && canManage && state === 'ownApp' && <Notice icon="info">{t('apps.dynamics.azure')}</Notice>}
+
+          {app.key === 'dynamics' && canManage && (state === 'ready' || state === 'attention') && (
+            <SheetSection title={t('apps.dynamics.title')} hint={t('apps.dynamics.hint')}>
+              <Field label={t('apps.dynamics.address')} htmlFor="dyn-env">
+                <input
+                  id="dyn-env"
+                  dir="ltr"
+                  type="url"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={environment}
+                  onChange={(e) => setEnvironment(e.target.value)}
+                  placeholder="https://yourorg.crm4.dynamics.com"
+                  className="v-field w-full font-mono text-sm"
+                />
+              </Field>
+            </SheetSection>
           )}
 
           {app.crmSyncable && state === 'connected' && <CrmSync app={app} canManage={canManage} />}

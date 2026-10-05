@@ -211,3 +211,36 @@ export class MailchimpConnector implements CrmConnector {
     return this.upsert(auth, props, opts);
   }
 }
+
+// ------------------------------------------------------- Microsoft Dynamics 365
+
+/**
+ * A Lead in the environment the workspace connected (its Web API, OData v4).
+ * A lead needs a last name; the topic says where it came from.
+ */
+export class DynamicsConnector implements CrmConnector {
+  private base(auth: ConnectorAuth) {
+    if (!auth.apiBase) throw new ConnectorError('Dynamics 365 did not say which environment to use. Connect it again.', 400);
+    return `${auth.apiBase}/api/data/v9.2/leads`;
+  }
+
+  private headers(auth: ConnectorAuth) {
+    return { authorization: `Bearer ${auth.token}`, 'OData-MaxVersion': '4.0', 'OData-Version': '4.0', Prefer: 'return=representation' };
+  }
+
+  private shape(props: Record<string, string>) {
+    return { subject: 'Vertex Connect', ...props, lastname: props.lastname || props.firstname || PLACEHOLDER };
+  }
+
+  async createContact(auth: ConnectorAuth, props: Record<string, string>) {
+    const { json } = await request('Dynamics 365', `${this.base(auth)}?$select=leadid`, { method: 'POST', headers: this.headers(auth), body: this.shape(props) });
+    const id = (json as { leadid?: string }).leadid;
+    if (!id) throw new ConnectorError('Dynamics 365 did not return the lead', 502);
+    return { externalId: id };
+  }
+
+  async updateContact(auth: ConnectorAuth, externalId: string, props: Record<string, string>) {
+    await request('Dynamics 365', `${this.base(auth)}(${encodeURIComponent(externalId)})`, { method: 'PATCH', headers: this.headers(auth), body: this.shape(props) });
+    return { externalId };
+  }
+}
