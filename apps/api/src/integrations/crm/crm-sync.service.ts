@@ -6,22 +6,45 @@ import { OAuthService } from '../oauth.service';
 import { AuditService } from '../../organizations/audit.service';
 import { HubSpotConnector } from './hubspot.connector';
 import {
+  ConnectorError,
+  MailchimpConnector,
+  PipedriveConnector,
+  SalesforceConnector,
+  ZohoConnector,
+  type ConnectorAuth,
+  type CrmConnector,
+} from './connectors';
+import {
   applyMapping,
   DEFAULT_HUBSPOT_MAPPING,
+  DEFAULT_MAILCHIMP_MAPPING,
+  DEFAULT_PIPEDRIVE_MAPPING,
+  DEFAULT_SALESFORCE_MAPPING,
+  DEFAULT_ZOHO_MAPPING,
   MAPPABLE_VERTEX_FIELDS,
   type FieldMapping,
   type SyncableLead,
 } from './field-mapping';
 
-/** Providers that support CRM lead sync, and their default field mapping. */
-const CRM_PROVIDERS: Record<string, { defaultMapping: FieldMapping }> = {
+/**
+ * Providers that support lead sync, and their default field mapping. An
+ * audience (Mailchimp) needs a list chosen, and an email for every lead.
+ */
+const CRM_PROVIDERS: Record<string, { defaultMapping: FieldMapping; audience?: true }> = {
   hubspot: { defaultMapping: DEFAULT_HUBSPOT_MAPPING },
+  salesforce: { defaultMapping: DEFAULT_SALESFORCE_MAPPING },
+  zoho_crm: { defaultMapping: DEFAULT_ZOHO_MAPPING },
+  pipedrive: { defaultMapping: DEFAULT_PIPEDRIVE_MAPPING },
+  mailchimp: { defaultMapping: DEFAULT_MAILCHIMP_MAPPING, audience: true },
 };
 
 export interface CrmSyncConfig {
   syncEnabled: boolean;
   direction: 'push'; // Vertex → External (one-way) for now
   fieldMapping: FieldMapping;
+  /** Mailchimp: the audience leads join. */
+  listId?: string | null;
+  listName?: string | null;
 }
 
 /**
@@ -50,13 +73,33 @@ export class CrmSyncService {
     return provider in CRM_PROVIDERS;
   }
 
-  private connectorFor(provider: string) {
-    if (provider === 'hubspot') {
-      const base =
-        this.config.get<string>('OAUTH_HUBSPOT_API_URL') || 'https://api.hubapi.com';
-      return new HubSpotConnector(base);
+  private connectorFor(provider: string): CrmConnector {
+    switch (provider) {
+      case 'hubspot':
+        return new HubSpotConnector(this.config.get<string>('OAUTH_HUBSPOT_API_URL') || 'https://api.hubapi.com');
+      case 'salesforce':
+        return new SalesforceConnector();
+      case 'zoho_crm':
+        return new ZohoConnector();
+      case 'pipedrive':
+        return new PipedriveConnector();
+      case 'mailchimp':
+        return new MailchimpConnector();
+      default:
+        throw new BadRequestException(`${provider} is not a supported CRM connector.`);
     }
-    throw new BadRequestException(`${provider} is not a supported CRM connector.`);
+  }
+
+  /** Whether the provider puts leads on a list the workspace chooses (Mailchimp). */
+  isAudience(provider: string): boolean {
+    return !!CRM_PROVIDERS[provider]?.audience;
+  }
+
+  /** The audiences of a connected Mailchimp account, to choose one. */
+  async lists(tenant: TenantContext, provider: string) {
+    if (!this.isAudience(provider)) throw new BadRequestException(`${provider} does not support CRM sync.`);
+    const auth = await this.oauth.getAuth(tenant.orgId, provider);
+    return (this.connectorFor(provider) as MailchimpConnector).lists(auth);
   }
 
   // ------------------------------------------------------------------- config
@@ -72,6 +115,7 @@ export class CrmSyncService {
       syncEnabled: crm.syncEnabled ?? false,
       direction: 'push',
       fieldMapping: crm.fieldMapping ?? CRM_PROVIDERS[provider]?.defaultMapping ?? {},
+      ...(this.isAudience(provider) ? { listId: crm.listId ?? null, listName: crm.listName ?? null } : {}),
     };
   }
 
@@ -86,7 +130,7 @@ export class CrmSyncService {
   async saveConfig(
     tenant: TenantContext,
     provider: string,
-    input: { syncEnabled?: boolean; fieldMapping?: FieldMapping },
+    input: { syncEnabled?: boolean; fieldMapping?: FieldMapping; listId?: string },
   ): Promise<CrmSyncConfig> {
     if (!this.isCrmProvider(provider)) {
       throw new BadRequestException(`${provider} does not support CRM sync.`);
@@ -101,7 +145,17 @@ export class CrmSyncService {
       direction: 'push',
       fieldMapping:
         input.fieldMapping ?? currentCrm.fieldMapping ?? CRM_PROVIDERS[provider].defaultMapping,
+      ...(this.isAudience(provider) ? { listId: currentCrm.listId ?? null, listName: currentCrm.listName ?? null } : {}),
     };
+    if (input.listId !== undefined && this.isAudience(provider)) {
+      const list = (await this.lists(tenant, provider)).find((l) => l.id === input.listId);
+      if (!list) throw new BadRequestException('Choose one of the account’s lists.');
+      nextCrm.listId = list.id;
+      nextCrm.listName = list.name;
+    }
+    if (nextCrm.syncEnabled && this.isAudience(provider) && !nextCrm.listId) {
+      throw new BadRequestException('Choose the Mailchimp audience leads join.');
+    }
     await this.db.integrationConnection.update({
       where: { id: conn.id },
       data: { config: { ...current, crm: nextCrm } as never },
@@ -161,12 +215,25 @@ export class CrmSyncService {
       select: { id: true, externalId: true },
     });
 
+    // An audience keeps people by their email: without one there is nothing to add.
+    if (this.isAudience(provider) && !lead.email?.trim()) {
+      const record = await this.recordResult(orgId, provider, leadId, { externalId: null, status: 'SKIPPED', error: 'No email address' });
+      return { ok: true as const, skipped: true as const, externalId: null, created: false, record };
+    }
+
     try {
-      const token = await this.oauth.getAccessToken(orgId, provider);
       const connector = this.connectorFor(provider);
-      const result = existing?.externalId
-        ? await connector.updateContact(token, existing.externalId, props)
-        : await connector.createContact(token, props);
+      const opts = { listId: cfg.listId ?? undefined };
+      const push = (auth: ConnectorAuth) =>
+        existing?.externalId ? connector.updateContact(auth, existing.externalId, props, opts) : connector.createContact(auth, props, opts);
+      let result: { externalId: string };
+      try {
+        result = await push(await this.oauth.getAuth(orgId, provider));
+      } catch (err) {
+        // A session that ended early (Salesforce gives no expiry): refresh once and try again.
+        if (!(err instanceof ConnectorError) || err.status !== 401) throw err;
+        result = await push(await this.oauth.getAuth(orgId, provider, true));
+      }
 
       const record = await this.recordResult(orgId, provider, leadId, {
         externalId: result.externalId,
@@ -197,7 +264,7 @@ export class CrmSyncService {
     orgId: string,
     provider: string,
     leadId: string,
-    data: { externalId: string | null; status: 'SYNCED' | 'FAILED'; error: string | null },
+    data: { externalId: string | null; status: 'SYNCED' | 'FAILED' | 'SKIPPED'; error: string | null },
   ) {
     const existing = await this.db.crmSyncRecord.findFirst({
       where: { orgId, provider, entityType: 'lead', entityId: leadId },
@@ -228,18 +295,20 @@ export class CrmSyncService {
     });
     let synced = 0;
     let failed = 0;
+    let skipped = 0;
     for (const l of leads) {
       try {
-        await this.syncLead(tenant.orgId, provider, l.id);
-        synced += 1;
+        const r = await this.syncLead(tenant.orgId, provider, l.id);
+        if ('skipped' in r) skipped += 1;
+        else synced += 1;
       } catch {
         failed += 1;
       }
     }
     await this.audit.log(tenant, 'crm.sync_now', {
-      targetType: 'integration', targetId: provider, metadata: { synced, failed },
+      targetType: 'integration', targetId: provider, metadata: { synced, failed, skipped },
     });
-    return { synced, failed, total: leads.length };
+    return { synced, failed, skipped, total: leads.length };
   }
 
   /** The sync log for a provider (org-scoped). */

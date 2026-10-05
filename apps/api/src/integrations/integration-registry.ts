@@ -65,14 +65,14 @@ export const CATEGORY_LABELS: Record<IntegrationCategory, string> = {
 /** The catalog. Every provider from the spec, grouped by category. */
 export const INTEGRATION_REGISTRY: IntegrationProviderDef[] = [
   // --- CRM ---
-  { key: 'hubspot', name: 'HubSpot', category: 'crm', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Sync leads and contacts with HubSpot CRM.', scopes: ['Contacts', 'Companies', 'Deals'] },
-  { key: 'salesforce', name: 'Salesforce', category: 'crm', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Push leads and meetings into Salesforce.', scopes: ['Leads', 'Contacts', 'Events'] },
-  { key: 'zoho_crm', name: 'Zoho CRM', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Two-way contact and lead sync with Zoho CRM.', scopes: ['Contacts', 'Leads'] },
-  { key: 'pipedrive', name: 'Pipedrive', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Sync deals and people with Pipedrive.', scopes: ['Persons', 'Deals'] },
+  { key: 'hubspot', name: 'HubSpot', category: 'crm', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Send new leads to HubSpot as contacts.', scopes: ['Contacts'] },
+  { key: 'salesforce', name: 'Salesforce', category: 'crm', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Send new leads to Salesforce as Leads.', scopes: ['Leads'] },
+  { key: 'zoho_crm', name: 'Zoho CRM', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Send new leads to Zoho CRM as Leads.', scopes: ['Leads'] },
+  { key: 'pipedrive', name: 'Pipedrive', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Send new leads to Pipedrive as people, under their organization.', scopes: ['Persons', 'Organizations'] },
   { key: 'dynamics', name: 'Microsoft Dynamics', category: 'crm', auth: 'oauth2', status: 'coming_soon', description: 'Connect leads to Dynamics 365 Sales.', scopes: ['Leads', 'Contacts'] },
 
   // --- Marketing ---
-  { key: 'mailchimp', name: 'Mailchimp', category: 'marketing', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Add captured contacts to Mailchimp audiences.', scopes: ['Audiences', 'Contacts'] },
+  { key: 'mailchimp', name: 'Mailchimp', category: 'marketing', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Add new leads to a Mailchimp audience.', scopes: ['Audiences'] },
   { key: 'brevo', name: 'Brevo', category: 'marketing', auth: 'api_key', status: 'available', description: 'Add new leads to a Brevo contact list.', scopes: ['Contacts', 'Lists'] },
   { key: 'klaviyo', name: 'Klaviyo', category: 'marketing', auth: 'api_key', status: 'available', description: 'Add new leads as profiles on a Klaviyo list.', scopes: ['Profiles', 'Lists'] },
   { key: 'activecampaign', name: 'ActiveCampaign', category: 'marketing', auth: 'api_key', status: 'available', description: 'Add new leads as contacts on an ActiveCampaign list.', scopes: ['Contacts', 'Lists'] },

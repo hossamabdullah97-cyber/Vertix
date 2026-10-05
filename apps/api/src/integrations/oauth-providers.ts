@@ -161,3 +161,32 @@ export function buildAuthorizationUrl(cfg: ResolvedOAuthConfig, state: string): 
   if (cfg.scopes.length) params.set('scope', cfg.scopes.join(' '));
   return `${cfg.authUrl}?${params.toString()}`;
 }
+
+/**
+ * The hosts each provider serves an account's API from. An address a token
+ * response names is used only when it is one of these, so a response can
+ * never point the server somewhere else.
+ */
+const API_HOSTS: Record<string, RegExp> = {
+  salesforce: /^[a-z0-9-]+(\.[a-z0-9-]+)*\.(my\.salesforce\.com|salesforce\.com|force\.com)$/i,
+  zoho_crm: /^(www\.)?zohoapis\.(com|eu|in|com\.au|jp|com\.cn|ca|sa)$/i,
+  pipedrive: /^[a-z0-9-]+\.pipedrive\.com$/i,
+  mailchimp: /^[a-z]{2,4}\d{1,3}\.api\.mailchimp\.com$/i,
+};
+
+/**
+ * Where an account's API lives: OAUTH_<KEY>_API_URL when set (sandboxes,
+ * tests), else the address the provider named, when it is one of its hosts.
+ */
+export function apiBaseFor(provider: string, named: string | undefined | null, env: Env): string | null {
+  const override = env.get(`OAUTH_${envKey(provider)}_API_URL`);
+  if (override) return override.replace(/\/$/, '');
+  const hosts = API_HOSTS[provider];
+  if (!hosts || !named) return null;
+  try {
+    const u = new URL(named);
+    return u.protocol === 'https:' && !u.username && hosts.test(u.hostname) ? `https://${u.hostname.toLowerCase()}` : null;
+  } catch {
+    return null;
+  }
+}

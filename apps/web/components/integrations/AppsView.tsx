@@ -249,6 +249,9 @@ interface OAuthApp {
 interface SyncConfig {
   syncEnabled: boolean;
   fieldMapping: Record<string, string>;
+  /** Mailchimp: the audience leads join. */
+  listId?: string | null;
+  listName?: string | null;
 }
 interface SyncRecord {
   id: string;
@@ -525,6 +528,10 @@ function CrmSync({ app, canManage }: { app: Provider; canManage: boolean }) {
   const [records, setRecords] = useState<SyncRecord[]>([]);
   const [busy, setBusy] = useState('');
   const [result, setResult] = useState('');
+  const [error, setError] = useState('');
+  const [lists, setLists] = useState<{ id: string; name: string }[] | null>(null);
+  // An audience (Mailchimp) needs one chosen before leads can go there.
+  const audience = cfg ? 'listId' in cfg : false;
 
   const load = useCallback(() => {
     authFetch<{ config: SyncConfig; meta: { vertexFields: string[] } }>(`/integrations/${app.key}/sync-config`)
@@ -538,17 +545,66 @@ function CrmSync({ app, canManage }: { app: Provider; canManage: boolean }) {
   useEffect(load, [load]);
 
   async function put(body: Partial<SyncConfig>) {
-    const next = await authFetch<SyncConfig>(`/integrations/${app.key}/sync-config`, { method: 'PUT', body: JSON.stringify(body) }).catch(() => null);
-    if (next) setCfg(next);
+    setError('');
+    try {
+      setCfg(await authFetch<SyncConfig>(`/integrations/${app.key}/sync-config`, { method: 'PUT', body: JSON.stringify(body) }));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function showLists() {
+    setError('');
+    setBusy('lists');
+    try {
+      setLists(await authFetch<{ id: string; name: string }[]>(`/integrations/${app.key}/sync-lists`));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy('');
+    }
   }
 
   if (!cfg) return null;
 
   return (
     <SheetSection title={t('apps.sync.title', { name: app.name })}>
+      {error && <Notice tone="danger" icon="x" onDismiss={() => setError('')}>{error}</Notice>}
+      {audience && (
+        <div className="mb-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className={cfg.listName ? 'text-ink' : 'text-muted'}>{cfg.listName ? t('apps.audience.addsTo', { list: iso(cfg.listName) }) : t('apps.sync.chooseAudience')}</span>
+            {canManage && lists === null && (
+              <button onClick={showLists} disabled={!!busy} className="text-sm font-medium text-accent hover:underline disabled:opacity-60">
+                {busy === 'lists' ? t('apps.audience.checking') : cfg.listName ? t('apps.audience.change') : t('apps.sync.choose')}
+              </button>
+            )}
+          </div>
+          {lists !== null && (
+            <div className="mt-3 max-h-64 space-y-1.5 overflow-y-auto">
+              {lists.length === 0 && <p className="text-sm text-muted">{t('apps.audience.noLists')}</p>}
+              {lists.map((l) => (
+                <label key={l.id} className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 ring-1 ring-inset ${cfg.listId === l.id ? 'ring-accent' : 'ring-line'}`}>
+                  <input
+                    type="radio"
+                    name="sync-list"
+                    checked={cfg.listId === l.id}
+                    onChange={() => {
+                      void put({ listId: l.id } as Partial<SyncConfig>);
+                      setLists(null);
+                    }}
+                    className="accent-[hsl(var(--v-accent))]"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm text-ink">{l.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <label className="flex items-center justify-between gap-3 text-sm text-ink">
         {t('apps.sync.auto')}
-        <Toggle on={cfg.syncEnabled} disabled={!canManage} label={t('apps.sync.auto')} onChange={() => put({ syncEnabled: !cfg.syncEnabled })} />
+        <Toggle on={cfg.syncEnabled} disabled={!canManage || (audience && !cfg.listId)} label={t('apps.sync.auto')} onChange={() => put({ syncEnabled: !cfg.syncEnabled })} />
       </label>
 
       <div className="mt-5">
@@ -587,12 +643,17 @@ function CrmSync({ app, canManage }: { app: Provider; canManage: boolean }) {
             onClick={async () => {
               setBusy('sync');
               setResult('');
-              const r = await authFetch<{ synced: number; failed: number }>(`/integrations/${app.key}/sync`, { method: 'POST' }).catch(() => null);
-              if (r) setResult(t('apps.sync.result', { synced: r.synced, failed: r.failed }));
+              setError('');
+              try {
+                const r = await authFetch<{ synced: number; failed: number; skipped?: number }>(`/integrations/${app.key}/sync`, { method: 'POST' });
+                setResult(r.skipped ? t('apps.sync.resultSkipped', { synced: r.synced, failed: r.failed, skipped: r.skipped }) : t('apps.sync.result', { synced: r.synced, failed: r.failed }));
+              } catch (e) {
+                setError((e as Error).message);
+              }
               setBusy('');
               load();
             }}
-            disabled={!!busy}
+            disabled={!!busy || (audience && !cfg.listId)}
             className="v-btn v-btn-ghost disabled:opacity-60"
           >
             <Icon name="refresh" size={14} />
@@ -609,10 +670,14 @@ function CrmSync({ app, canManage }: { app: Provider; canManage: boolean }) {
         <ul className="mt-2 space-y-1.5">
           {records.slice(0, 8).map((r) => (
             <li key={r.id} className="flex items-center gap-2 text-xs">
-              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${r.status === 'SYNCED' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-              <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-muted rtl:text-right">
-                {r.externalId ?? r.error ?? '—'}
-              </span>
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${r.status === 'SYNCED' ? 'bg-emerald-500' : r.status === 'SKIPPED' ? 'bg-amber-500' : 'bg-red-500'}`} />
+              {r.status === 'SKIPPED' ? (
+                <span className="min-w-0 flex-1 truncate text-muted">{t('apps.sync.noEmail')}</span>
+              ) : (
+                <span dir="ltr" className="min-w-0 flex-1 truncate font-mono text-muted rtl:text-right">
+                  {r.externalId ?? r.error ?? '—'}
+                </span>
+              )}
               <span className="shrink-0 text-faint">{formatRelativeTime(r.syncedAt, locale)}</span>
             </li>
           ))}

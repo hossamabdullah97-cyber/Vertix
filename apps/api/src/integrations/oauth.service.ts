@@ -16,6 +16,7 @@ import {
   envClientCredentials,
   redirectUri,
   buildAuthorizationUrl,
+  apiBaseFor,
   type ResolvedOAuthConfig,
 } from './oauth-providers';
 import { signState, verifyState } from './oauth-state';
@@ -29,6 +30,10 @@ interface TokenResponse {
   expires_in?: number;
   scope?: string;
   token_type?: string;
+  /** Salesforce: the org's own API host. */
+  instance_url?: string;
+  /** Zoho, Pipedrive: the account's API host (region or company domain). */
+  api_domain?: string;
 }
 
 /** The encrypted credential blob stored on IntegrationConnection.credentials. */
@@ -37,6 +42,8 @@ interface StoredCredentials {
   refreshToken: string | null;
   scope: string | null;
   tokenType: string | null;
+  /** Where this account's API lives, when the provider has one per account. */
+  apiBase?: string | null;
 }
 
 /**
@@ -141,7 +148,8 @@ export class OAuthService {
 
     const cfg = await this.requireConfig(state.orgId, state.provider);
     const tokens = await this.exchangeCode(cfg, code);
-    await this.store(state.orgId, state.userId, state.provider, tokens);
+    const account = await this.accountOf(state.provider, tokens);
+    await this.store(state.orgId, state.userId, state.provider, tokens, account);
 
     await this.audit.log(
       { orgId: state.orgId, userId: state.userId, role: 'OWNER' },
@@ -183,17 +191,38 @@ export class OAuthService {
     return json;
   }
 
+  /**
+   * Where the account's API lives and what it is called. Salesforce, Zoho and
+   * Pipedrive say where in the token response; Mailchimp says so on a
+   * metadata endpoint. An address not on the provider's own hosts is dropped.
+   */
+  private async accountOf(provider: string, tokens: TokenResponse): Promise<{ apiBase: string | null; name: string | null }> {
+    if (provider === 'mailchimp') {
+      try {
+        const url = this.config.get<string>('OAUTH_MAILCHIMP_METADATA_URL') || 'https://login.mailchimp.com/oauth2/metadata';
+        const res = await fetch(url, { headers: { authorization: `OAuth ${tokens.access_token}`, accept: 'application/json' } });
+        const meta = (await res.json().catch(() => ({}))) as { api_endpoint?: string; accountname?: string; login?: { login_name?: string } };
+        return { apiBase: apiBaseFor(provider, meta.api_endpoint, this.config), name: meta.accountname || meta.login?.login_name || null };
+      } catch {
+        return { apiBase: null, name: null };
+      }
+    }
+    return { apiBase: apiBaseFor(provider, tokens.instance_url ?? tokens.api_domain, this.config), name: null };
+  }
+
   private async store(
     orgId: string,
     userId: string,
     provider: string,
     tokens: TokenResponse,
+    account: { apiBase: string | null; name: string | null } = { apiBase: null, name: null },
   ): Promise<void> {
     const creds: StoredCredentials = {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token ?? null,
       scope: tokens.scope ?? null,
       tokenType: tokens.token_type ?? null,
+      apiBase: account.apiBase,
     };
     const encrypted = this.vault.encryptJson(creds, this.aad(orgId, provider));
     const tokenExpiresAt = tokens.expires_in
@@ -211,6 +240,7 @@ export class OAuthService {
       credentials: encrypted,
       tokenExpiresAt,
       lastError: null,
+      ...(account.name ? { externalAccountName: account.name.slice(0, 120) } : {}),
     };
     if (existing) {
       await this.db.integrationConnection.update({ where: { id: existing.id }, data });
@@ -229,6 +259,15 @@ export class OAuthService {
    * REQUIRES_REAUTH) if refresh fails. This is what downstream sync code calls.
    */
   async getAccessToken(orgId: string, provider: string): Promise<string> {
+    return (await this.getAuth(orgId, provider)).token;
+  }
+
+  /**
+   * A valid token and where the account's API lives. `force` refreshes even
+   * when the token has no known expiry: Salesforce sessions end without
+   * saying when, so a 401 is the first sign.
+   */
+  async getAuth(orgId: string, provider: string, force = false): Promise<{ token: string; apiBase: string | null }> {
     const conn = await this.db.integrationConnection.findFirst({
       where: { orgId, provider, deletedAt: null },
     });
@@ -236,16 +275,17 @@ export class OAuthService {
       throw new BadRequestException(`${provider} is not connected.`);
     }
     const creds = this.vault.decryptJson<StoredCredentials>(conn.credentials, this.aad(orgId, provider));
+    const apiBase = apiBaseFor(provider, creds.apiBase ?? undefined, this.config);
 
     const expiring =
-      conn.tokenExpiresAt && conn.tokenExpiresAt.getTime() - REFRESH_SKEW_MS <= Date.now();
-    if (!expiring) return creds.accessToken;
+      force || (conn.tokenExpiresAt && conn.tokenExpiresAt.getTime() - REFRESH_SKEW_MS <= Date.now());
+    if (!expiring) return { token: creds.accessToken, apiBase };
 
     if (!creds.refreshToken) {
       await this.markReauth(conn.id, 'Access token expired and no refresh token is available.');
       throw new BadRequestException(`${provider} needs to be reconnected.`);
     }
-    return this.refresh(orgId, provider, conn.id, creds.refreshToken);
+    return this.refresh(orgId, provider, conn.id, creds.refreshToken, creds.apiBase ?? null);
   }
 
   private async refresh(
@@ -253,7 +293,8 @@ export class OAuthService {
     provider: string,
     connId: string,
     refreshToken: string,
-  ): Promise<string> {
+    apiBase: string | null,
+  ): Promise<{ token: string; apiBase: string | null }> {
     const cfg = await this.requireConfig(orgId, provider);
     let tokens: TokenResponse;
     try {
@@ -271,12 +312,14 @@ export class OAuthService {
       throw new BadRequestException(`${provider} needs to be reconnected.`);
     }
 
-    // Some providers omit a new refresh token on refresh — keep the old one.
+    // Some providers omit a new refresh token on refresh — keep the old one,
+    // and the API host the account was connected with unless they name a new one.
     const creds: StoredCredentials = {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token ?? refreshToken,
       scope: tokens.scope ?? null,
       tokenType: tokens.token_type ?? null,
+      apiBase: apiBaseFor(provider, tokens.instance_url ?? tokens.api_domain, this.config) ?? apiBase,
     };
     await this.db.integrationConnection.update({
       where: { id: connId },
@@ -288,7 +331,7 @@ export class OAuthService {
       },
     });
     this.logger.log(`Refreshed ${provider} token for org ${orgId}`);
-    return tokens.access_token;
+    return { token: tokens.access_token, apiBase: apiBaseFor(provider, creds.apiBase ?? undefined, this.config) };
   }
 
   private async markReauth(connId: string, error: string): Promise<void> {

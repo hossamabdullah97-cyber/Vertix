@@ -24,6 +24,40 @@ export const DEFAULT_HUBSPOT_MAPPING: FieldMapping = {
   company: 'company',
 };
 
+/** Vertex → Salesforce Lead fields (LastName and Company are filled in when missing). */
+export const DEFAULT_SALESFORCE_MAPPING: FieldMapping = {
+  firstName: 'FirstName',
+  lastName: 'LastName',
+  email: 'Email',
+  phone: 'Phone',
+  company: 'Company',
+};
+
+/** Vertex → Zoho CRM Lead fields. */
+export const DEFAULT_ZOHO_MAPPING: FieldMapping = {
+  firstName: 'First_Name',
+  lastName: 'Last_Name',
+  email: 'Email',
+  phone: 'Phone',
+  company: 'Company',
+};
+
+/** Vertex → Pipedrive Person (org_name becomes the person's organization). */
+export const DEFAULT_PIPEDRIVE_MAPPING: FieldMapping = {
+  fullName: 'name',
+  email: 'email',
+  phone: 'phone',
+  company: 'org_name',
+};
+
+/** Vertex → Mailchimp member (email_address, then the audience's merge tags). */
+export const DEFAULT_MAILCHIMP_MAPPING: FieldMapping = {
+  email: 'email_address',
+  firstName: 'FNAME',
+  lastName: 'LNAME',
+  phone: 'PHONE',
+};
+
 /** The Vertex fields that can be mapped, with how each is derived from a lead. */
 export function vertexFieldValue(lead: SyncableLead, field: string): string | undefined {
   switch (field) {

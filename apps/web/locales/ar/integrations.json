@@ -94,15 +94,19 @@
         "company": "الشركة",
         "source": "المصدر",
         "temperature": "درجة الاهتمام"
-      }
+      },
+      "chooseAudience": "اختر أولاً الجمهور الذي ينضم إليه العملاء.",
+      "choose": "اختيار",
+      "resultSkipped": "أُرسل {{synced}}، وتُخطّي {{skipped}} بلا بريد، وفشل {{failed}}.",
+      "noEmail": "تُخطّي: لا يوجد بريد إلكتروني"
     },
     "descriptions": {
-      "hubspot": "مزامنة العملاء المحتملين وجهات الاتصال مع HubSpot CRM.",
-      "salesforce": "إرسال العملاء المحتملين والاجتماعات إلى Salesforce.",
-      "zoho_crm": "مزامنة جهات الاتصال والعملاء المحتملين في الاتجاهين مع Zoho CRM.",
-      "pipedrive": "مزامنة الصفقات والأشخاص مع Pipedrive.",
+      "hubspot": "إرسال العملاء الجدد إلى HubSpot كجهات اتصال.",
+      "salesforce": "إرسال العملاء الجدد إلى Salesforce كعملاء محتملين (Leads).",
+      "zoho_crm": "إرسال العملاء الجدد إلى Zoho CRM كعملاء محتملين (Leads).",
+      "pipedrive": "إرسال العملاء الجدد إلى Pipedrive كأشخاص، تحت شركاتهم.",
       "dynamics": "ربط العملاء المحتملين بـ Dynamics 365 Sales.",
-      "mailchimp": "إضافة جهات الاتصال الملتقطة إلى جماهير Mailchimp.",
+      "mailchimp": "إضافة العملاء الجدد إلى جمهور في Mailchimp.",
       "brevo": "إضافة العملاء الجدد إلى قائمة جهات اتصال في Brevo.",
       "klaviyo": "إضافة العملاء الجدد كملفات شخصية في قائمة على Klaviyo.",
       "activecampaign": "إضافة العملاء الجدد كجهات اتصال في قائمة على ActiveCampaign.",
@@ -155,7 +159,8 @@
       "Files": "الملفات",
       "Receive events": "استقبال الأحداث",
       "Measurement": "القياس",
-      "Containers": "الحاويات"
+      "Containers": "الحاويات",
+      "Organizations": "الشركات"
     },
     "channel": {
       "setUp": "ربط {{name}}",
