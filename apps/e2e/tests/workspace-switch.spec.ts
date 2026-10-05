@@ -9,7 +9,7 @@ test('switching workspace happens in place, and says what waits in the others', 
   const personal = (await account.api<{ id: string; slug: string; name: string }>('/orgs/personal', { body: {} })).data;
   // Something new in the company's workspace: a lead from its card.
   const card = await publishedCard(account, 'Switch Owner');
-  expect((await call('/leads/capture', { body: { slug: card.slug, name: 'Laila Hassan', email: 'laila@example.com' } })).status).toBe(201);
+  expect((await call('/leads/capture', { body: { slug: card.slug, name: 'Laila Hassan', email: 'laila@example.com', visitorId: `e2e-${Date.now()}-${Math.random().toString(36).slice(2)}` } })).status).toBe(201);
 
   await signIn(page, account);
   await page.goto(`/leads?w=${company.slug}`);

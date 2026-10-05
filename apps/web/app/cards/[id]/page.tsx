@@ -36,6 +36,7 @@ import { PresenceBadge, useCardPresence } from '@/components/cards/Presence';
 import { Icon } from '@/components/Icon';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useLocale } from '@/components/i18n/LanguageProvider';
+import { MoveCard } from '@/components/cards/MoveCard';
 
 const SWATCHES = ['#2563eb', '#1d4ed8', '#06b6d4', '#0ea5e9', '#10b981', '#16a34a', '#ec4899', '#f97316', '#eab308', '#ffffff', '#09090b'];
 
@@ -1786,6 +1787,8 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
                     </div>
                   </div>
                 </StudioSection>
+
+                <MoveCard cardId={card.id} cardName={(card.vcardData as { fullName?: string } | null)?.fullName || card.slug} />
 
                 <section className="rounded-xl ring-1 ring-inset ring-red-500/25">
                   <div className="px-4 py-4">

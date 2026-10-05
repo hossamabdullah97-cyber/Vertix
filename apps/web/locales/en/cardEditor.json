@@ -621,5 +621,24 @@
     "more": "Share",
     "email": "Email",
     "done": "Done"
+  },
+  "move": {
+    "title": "Move to another workspace",
+    "hint": "Move this card to another workspace you are in, with the leads it brought in and its history.",
+    "to": "Move to",
+    "kindPersonal": "Your personal workspace",
+    "kindTeam": "Company or team",
+    "ownerNotIn": "The card's owner is not in this workspace",
+    "start": "Move to {{name}}…",
+    "confirmTitle": "Move {{card}} to {{name}}?",
+    "leads_one": "Its {{value}} lead goes with it, with its history and tasks.",
+    "leads_other": "Its {{value}} leads go with it, with their history and tasks.",
+    "history": "Its views and taps go with it.",
+    "chips_one": "Its NFC chip stays in this workspace and is unlinked.",
+    "chips_other": "Its {{value}} NFC chips stay in this workspace and are unlinked.",
+    "link": "Its link and QR code stay the same.",
+    "confirm": "Move the card",
+    "moving": "Moving…",
+    "cancel": "Cancel"
   }
 }

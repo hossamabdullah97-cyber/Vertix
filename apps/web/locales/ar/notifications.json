@@ -123,7 +123,14 @@
     "invitedBy": "دعوة من {{actor}} للانضمام إلى {{org}}",
     "invitedBody": "بدور {{role}}. افتحها للانضمام أو الرفض.",
     "memberJoined": "انضمام {{name}} إلى مساحة العمل",
-    "memberDeclined": "الدعوة لم تُقبل: {{name}}"
+    "memberDeclined": "الدعوة لم تُقبل: {{name}}",
+    "cardMovedIn": "نقل {{actor}} بطاقة {{name}} إلى مساحة العمل",
+    "cardMovedInBody_one": "مع عميل واحد من {{from}}",
+    "cardMovedInBody_other": "مع {{count}} عميل من {{from}}",
+    "cardMovedInBody_zero": "من {{from}}",
+    "cardMovedInBody_two": "مع عميلين من {{from}}",
+    "cardMovedInBody_few": "مع {{count}} عملاء من {{from}}",
+    "cardMovedInBody_many": "مع {{count}} عميلاً من {{from}}"
   },
   "push": {
     "title": "على هذا الجهاز",
