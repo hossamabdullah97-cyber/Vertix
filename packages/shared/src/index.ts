@@ -59,6 +59,10 @@ export interface UsageSummary {
   subscribed: boolean;
 }
 
+/** Moving a card to another workspace of its owner's. */
+export const moveCardSchema = z.object({ orgId: z.string().trim().min(1) });
+export type MoveCardInput = z.infer<typeof moveCardSchema>;
+
 export const checkoutSchema = z.object({
   plan: z.enum(PAID_PLANS),
   /** Paymob asks for the payer's mobile number. */

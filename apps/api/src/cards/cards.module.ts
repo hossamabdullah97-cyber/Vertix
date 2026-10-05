@@ -1,3 +1,5 @@
+import { AuditService } from '../organizations/audit.service';
+import { CardMoveService } from './card-move.service';
 import { Module } from '@nestjs/common';
 import { BillingModule } from '../billing/billing.module';
 import { UploadsModule } from '../uploads/uploads.module';
@@ -27,7 +29,7 @@ import { WalletService } from './wallet/wallet.service';
     PaymentLinksController,
     PublicCardsController,
   ],
-  providers: [CardsService, SectionsService, ActionsService, CardVariantsService, PaymentLinksService, CardPresenceService, WalletService],
+  providers: [CardsService, CardMoveService, AuditService, SectionsService, ActionsService, CardVariantsService, PaymentLinksService, CardPresenceService, WalletService],
   exports: [CardsService],
 })
 export class CardsModule {}

@@ -115,7 +115,10 @@
     "invitedBy": "{{actor}} invited you to join {{org}}",
     "invitedBody": "As {{role}}. Open to join or decline.",
     "memberJoined": "{{name}} joined the workspace",
-    "memberDeclined": "{{name}} declined the invitation"
+    "memberDeclined": "{{name}} declined the invitation",
+    "cardMovedIn": "{{actor}} moved {{name}}’s card into the workspace",
+    "cardMovedInBody_one": "With {{count}} lead from {{from}}",
+    "cardMovedInBody_other": "With {{count}} leads from {{from}}"
   },
   "push": {
     "title": "On this device",

@@ -119,6 +119,11 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
       return { title: t('notifications:types.memberJoined', { name: iso(n.body ?? '') }), body: role(m.role) ? t('notifications:types.memberAddedBody', { role: role(m.role) }) : '' };
     case 'member.declined':
       return { title: t('notifications:types.memberDeclined', { name: iso(n.body ?? '') }), body: '' };
+    case 'card.moved_in':
+      return {
+        title: t('notifications:types.cardMovedIn', { actor: iso(actor || '—'), name: iso(n.body ?? '') }),
+        body: str(m.from) ? t('notifications:types.cardMovedInBody', { count: typeof m.leads === 'number' ? m.leads : 0, from: iso(str(m.from)) }) : '',
+      };
     case 'member.added':
       return { title: t('notifications:types.memberAdded'), body: role(m.role) ? t('notifications:types.memberAddedBody', { role: role(m.role) }) : '' };
     case 'member.role_changed':
@@ -193,6 +198,8 @@ export function linkOf(n: Notif): string | null {
       return '/dashboard';
     case 'member.invited':
       return '/invitations';
+    case 'card.moved_in':
+      return str(m.cardId) ? `/cards/${encodeURIComponent(str(m.cardId))}` : '/cards';
     default:
       return n.type.startsWith('member.') ? '/team' : null;
   }
