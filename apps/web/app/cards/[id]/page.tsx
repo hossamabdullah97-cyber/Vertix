@@ -467,6 +467,14 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
     localStorage.setItem('vertex_recent_platforms', JSON.stringify(next));
   };
 
+  // Opened from the getting-started guide to share the card: go straight to the ways to share it.
+  const cardLoaded = !!card;
+  useEffect(() => {
+    if (!cardLoaded || new URLSearchParams(window.location.search).get('share') !== '1') return;
+    const t = setTimeout(() => document.getElementById('share-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    return () => clearTimeout(t);
+  }, [cardLoaded]);
+
   // Generate QR Code dynamically
   useEffect(() => {
     if (!slug) return;
@@ -1866,7 +1874,9 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
               slug={card.slug}
               qrUrl={qrUrl}
             />
-            <ShareCard slug={card.slug} />
+            <div id="share-card" className="scroll-mt-24">
+              <ShareCard slug={card.slug} />
+            </div>
           </div>
         </aside>
       </div>

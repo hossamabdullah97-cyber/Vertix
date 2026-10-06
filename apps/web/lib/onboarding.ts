@@ -1,57 +1,41 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import type { OnboardingUpdate, OnboardingView } from '@vertex/shared';
+import { authFetch } from './client';
+
 /**
- * The steps from a new account to a card that works: made, with a face,
- * reachable, live, heard from, and on a chip. Worked out from what the
- * person already has, so a step ticks itself off when it is done.
+ * The getting-started guide, as the API works it out for the person in the
+ * workspace open now (GET /account/onboarding). Shared by the sidebar and
+ * the home page, and looked at again on each page change, so a step done on
+ * one page is ticked off on the next.
  */
+export const ONBOARDING_CHANGED = 'vx:onboarding-changed';
 
-export type SetupStepId = 'createCard' | 'addPhoto' | 'addContact' | 'publishCard' | 'leadAlerts' | 'linkTag';
+export function useOnboarding(refreshKey?: unknown): { view: OnboardingView | null; update: (u: OnboardingUpdate) => Promise<void> } {
+  const [view, setView] = useState<OnboardingView | null>(null);
 
-export interface SetupStep {
-  id: SetupStepId;
-  done: boolean;
-  href: string;
+  const load = useCallback(() => authFetch<OnboardingView>('/account/onboarding').then(setView, () => undefined), []);
+
+  useEffect(() => {
+    void load();
+  }, [load, refreshKey]);
+
+  useEffect(() => {
+    const onChange = (e: Event) => setView((e as CustomEvent<OnboardingView>).detail);
+    window.addEventListener(ONBOARDING_CHANGED, onChange);
+    return () => window.removeEventListener(ONBOARDING_CHANGED, onChange);
+  }, []);
+
+  const update = useCallback(async (u: OnboardingUpdate) => {
+    const next = await authFetch<OnboardingView>('/account/onboarding', { method: 'PATCH', body: JSON.stringify(u) });
+    window.dispatchEvent(new CustomEvent(ONBOARDING_CHANGED, { detail: next }));
+  }, []);
+
+  return { view, update };
 }
 
-interface CardLike {
-  id: string;
-  ownerId: string;
-  isPublished: boolean;
-  vcardData: Record<string, unknown> | null;
-  actions?: { isActive: boolean }[];
-  sections?: { type: string; isVisible: boolean; content: Record<string, unknown> }[];
-}
-
-const filled = (v: unknown) => typeof v === 'string' && v.trim() !== '';
-
-/** The card the steps are about: the person's own, else the newest they can see. */
-export function setupCard<C extends CardLike>(cards: C[], userId: string | null | undefined): C | null {
-  return cards.find((c) => c.ownerId === userId) ?? cards[0] ?? null;
-}
-
-function hasLinks(card: CardLike): boolean {
-  if (card.actions?.some((a) => a.isActive)) return true;
-  return !!card.sections?.some((s) => {
-    if (s.type !== 'SOCIAL' || !s.isVisible) return false;
-    const links = (s.content as { links?: unknown }).links;
-    return Array.isArray(links) && links.length > 0;
-  });
-}
-
-export function setupSteps(input: {
-  cards: CardLike[];
-  userId: string | null | undefined;
-  tags: { cardId: string | null }[];
-  alertsChosen: boolean;
-}): SetupStep[] {
-  const card = setupCard(input.cards, input.userId);
-  const v = card?.vcardData ?? {};
-  const edit = card ? `/cards/${card.id}` : '/cards?new=1';
-  return [
-    { id: 'createCard', done: !!card, href: '/cards?new=1' },
-    { id: 'addPhoto', done: filled(v.avatar), href: edit },
-    { id: 'addContact', done: !!card && (filled(v.phone) || filled(v.email)) && hasLinks(card), href: edit },
-    { id: 'publishCard', done: !!card?.isPublished, href: edit },
-    { id: 'leadAlerts', done: input.alertsChosen, href: '/notifications?settings=1' },
-    { id: 'linkTag', done: input.tags.some((t) => t.cardId !== null), href: '/tags' },
-  ];
+/** Whether the guide still has something to offer: not finished, not hidden. */
+export function guideOpen(view: OnboardingView | null): boolean {
+  return !!view && !view.completedAt && !view.dismissed && view.done < view.total;
 }

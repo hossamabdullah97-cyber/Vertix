@@ -1187,3 +1187,46 @@ export function coerceFieldValue(field: Pick<CustomFieldDef, 'type' | 'options'>
     }
   }
 }
+
+// ===========================================================================
+//  Getting started
+// ===========================================================================
+
+export type OnboardingStepId =
+  | 'createCard'
+  | 'addPhoto'
+  | 'addContact'
+  | 'publishCard'
+  | 'shareCard'
+  | 'firstLead'
+  | 'leadAlerts'
+  | 'inviteTeam'
+  | 'linkTag';
+
+export interface OnboardingStep {
+  id: OnboardingStepId;
+  done: boolean;
+  /** Where to go to do it. */
+  href: string;
+}
+
+export interface OnboardingView {
+  steps: OnboardingStep[];
+  done: number;
+  total: number;
+  /** The welcome was shown (it is shown once). */
+  welcomed: boolean;
+  /** The guide was hidden by the person; it can be brought back. */
+  dismissed: boolean;
+  /** When every step was first done; the guide then makes way. */
+  completedAt: string | null;
+  /** Finished just now, by this request: say so once. */
+  justCompleted: boolean;
+  workspaceKind: 'PERSONAL' | 'TEAM' | null;
+}
+
+export const onboardingUpdateSchema = z.object({
+  welcomed: z.literal(true).optional(),
+  dismissed: z.boolean().optional(),
+});
+export type OnboardingUpdate = z.infer<typeof onboardingUpdateSchema>;

@@ -28,6 +28,8 @@ import { InvitationList, useInvitations } from '@/components/invitations/Invitat
 import { dropWorkspaceFromAddress, matchWorkspace, rememberWorkspaces, requestedWorkspace, wasKnown, withWorkspace, WORKSPACE_PARAM } from '@/lib/workspaces';
 import { openWorkspace, WORKSPACE_SWITCH, type WorkspaceSwitch } from '@/lib/switch';
 import { lastUnreadByWorkspace, UNREAD_BY_WORKSPACE } from '@/components/notifications/model';
+import { GettingStarted, WelcomeDialog } from '@/components/GettingStarted';
+import { useOnboarding } from '@/lib/onboarding';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
@@ -173,6 +175,9 @@ export default function AppShell({
   const { locale, setLocale } = useLocale();
   const { theme, pref: themePref, setPref: chooseTheme } = useTheme();
   const [me, setMe] = useState<Me | null>(shellCache?.me ?? null);
+  // The getting-started guide, looked at again on each page so a step done is ticked off.
+  const onboarding = useOnboarding(pathname);
+  const [welcomeClosed, setWelcomeClosed] = useState(false);
   const [usage, setUsage] = useState<UsageSummary | null>(shellCache?.usage ?? null);
 
   // Workspace switcher
@@ -1089,6 +1094,7 @@ export default function AppShell({
         </nav>
 
         <div className="mt-auto flex flex-col gap-2 pt-4">
+          <GettingStarted view={onboarding.view} onHide={() => void onboarding.update({ dismissed: true })} />
           {usage && (
             <Link
               href="/billing"
@@ -1511,6 +1517,21 @@ export default function AppShell({
         </div>
       )}
       <UndoToast />
+      {/* Once, for a new account in a workspace: what the app is for, and the first step. */}
+      {onboarding.view && !onboarding.view.welcomed && !welcomeClosed && onboarding.view.workspaceKind && onboarding.view.done < onboarding.view.total && (
+        <WelcomeDialog
+          view={onboarding.view}
+          name={me?.name?.split(' ')[0] ?? ''}
+          onStart={() => {
+            setWelcomeClosed(true);
+            void onboarding.update({ welcomed: true });
+          }}
+          onClose={() => {
+            setWelcomeClosed(true);
+            void onboarding.update({ welcomed: true });
+          }}
+        />
+      )}
       <Shortcuts onSearch={openSearch} />
     </div>
   );

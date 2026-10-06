@@ -3,10 +3,11 @@ import { AuthModule } from '../auth/auth.module';
 import { BillingModule } from '../billing/billing.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
+import { OnboardingService } from './onboarding.service';
 
 @Module({
   imports: [AuthModule, BillingModule],
   controllers: [AccountController],
-  providers: [AccountService],
+  providers: [AccountService, OnboardingService],
 })
 export class AccountModule {}

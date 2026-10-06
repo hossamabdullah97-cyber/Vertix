@@ -143,10 +143,25 @@
         "desc": "Make the card live so its link and QR code work.",
         "link": "Open card"
       },
+      "shareCard": {
+        "label": "Share your card",
+        "desc": "Send its link or show its QR code; it's done when someone opens it.",
+        "link": "Share card"
+      },
+      "firstLead": {
+        "label": "Get your first lead",
+        "desc": "When someone leaves their details on your card, they land in Leads.",
+        "link": "Open leads"
+      },
       "leadAlerts": {
         "label": "Choose how you hear about leads",
         "desc": "Email, WhatsApp, or both, when someone leaves their details.",
         "link": "Choose alerts"
+      },
+      "inviteTeam": {
+        "label": "Invite your team",
+        "desc": "Each person gets their own card, and their leads come to the company.",
+        "link": "Invite people"
       },
       "linkTag": {
         "label": "Link an NFC chip",
@@ -317,5 +332,30 @@
     },
     "save": "Save",
     "remove": "Remove goal"
+  },
+  "guide": {
+    "title": "Getting started",
+    "next": "Next:",
+    "hide": "Hide the guide",
+    "doneTitle": "You're all set",
+    "doneBody": "Your card is live, shared and bringing in leads. The guide steps aside now.",
+    "doneClose": "Great"
+  },
+  "welcome": {
+    "title": "Welcome, {{name}}",
+    "titleNoName": "Welcome to Vertex Connect",
+    "bodyOwn": "Your digital business card, and every contact it brings in, in one place.",
+    "bodyTeam": "Your team's digital business cards, and every lead they bring in, in one place.",
+    "points": {
+      "own1": "A card people open with a tap, a QR code or a link",
+      "own2": "Their details land in your leads, with a nudge to follow up",
+      "own3": "See who opened your card and what they tapped",
+      "team1": "A card for everyone, in your company's brand",
+      "team2": "Every lead comes to the company, assigned and followed up",
+      "team3": "See what each person and each event brings in"
+    },
+    "steps": "{{total}} short steps get you there; the guide in the sidebar keeps track.",
+    "start": "Get started",
+    "later": "I'll look around first"
   }
 }
