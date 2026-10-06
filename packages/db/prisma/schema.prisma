@@ -1562,3 +1562,18 @@ model EngagementEmail {
   @@index([kind, sentAt])
   @@map("engagement_emails")
 }
+
+/// Someone used the product on a day: once per person, day and feature
+/// ("_" for any use at all), so active users, feature use and retention can
+/// be counted without keeping what they did.
+model ActivityDay {
+  userId  String
+  /// YYYY-MM-DD, UTC
+  day     String
+  /// _ | leads | cards | chips | analytics | team | integrations | billing | notifications | help
+  feature String
+
+  @@id([userId, day, feature])
+  @@index([day, feature])
+  @@map("activity_days")
+}

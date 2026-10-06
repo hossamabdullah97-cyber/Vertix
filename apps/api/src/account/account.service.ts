@@ -177,6 +177,9 @@ export class AccountService {
         await tx.leadAlertSettings.deleteMany({ where: { userId } });
         await tx.notificationPreference.deleteMany({ where: { userId } });
         await tx.notification.deleteMany({ where: { userId } });
+        // What they used and which tips went to them: about a person, so it goes with them.
+        await tx.activityDay.deleteMany({ where: { userId } });
+        await tx.engagementEmail.deleteMany({ where: { userId } });
         // The record stays (audit trails point at it) without anything that identifies the person.
         await tx.user.update({
           where: { id: userId },

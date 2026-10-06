@@ -16,7 +16,8 @@
     "errors": "Errors",
     "log": "Audit log",
     "support": "Support",
-    "status": "Status"
+    "status": "Status",
+    "usage": "Usage"
   },
   "overview": {
     "intro": "The whole platform at a glance, live from the database.",
@@ -413,5 +414,60 @@
     "delete": "Delete this post",
     "confirmDelete": "Delete “{{title}}” and its updates? Use this only for a post made by mistake.",
     "close": "Close"
+  },
+  "usage": {
+    "intro": "How the product is used. People count once a day when they use the app; nothing about what they did is kept, and API keys and the admin console don’t count.",
+    "since": "Counting since {{date}}.",
+    "range": "Period",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "tiles": {
+      "dau": "Active today",
+      "dauHint": "Used the app today",
+      "wau": "Active this week",
+      "wauHint": "In the last 7 days",
+      "mau": "Active this month",
+      "mauHint": "In the last 30 days",
+      "stickiness": "{{value}} come back daily",
+      "signups": "New sign-ups",
+      "signupsHint": "In the last {{days}} days",
+      "vsBefore": "{{change}} on the period before",
+      "workspaces": "Workspaces",
+      "activeWorkspaces_one": "{{count}} active in 30 days",
+      "activeWorkspaces_other": "{{count}} active in 30 days"
+    },
+    "activeTitle": "Active people per day",
+    "activePeople": "Active people",
+    "periodBefore": "Period before",
+    "funnelTitle": "How far new sign-ups get",
+    "funnelMeta": "Signed up in the last {{days}} days",
+    "steps": {
+      "signedUp": "Signed up",
+      "confirmed": "Confirmed their email",
+      "card": "Made a card",
+      "published": "Published it",
+      "viewed": "Had a visitor",
+      "lead": "Got a lead"
+    },
+    "adoptionTitle": "What people use",
+    "adoptionMeta": "Share of people active in 30 days",
+    "features": {
+      "leads": "Leads and tasks",
+      "cards": "Cards",
+      "chips": "NFC chips",
+      "analytics": "Analytics and reports",
+      "team": "Team and workspace",
+      "integrations": "Integrations",
+      "billing": "Billing",
+      "notifications": "Notifications",
+      "help": "Help center"
+    },
+    "retentionTitle": "Do people come back?",
+    "retentionMeta": "Share of each week’s sign-ups active in the weeks after",
+    "cohort": "Signed up week of",
+    "people": "People",
+    "weekN": "Week {{n}}",
+    "cellTitle": "Week {{week}}: {{share}} of those who signed up the week of {{cohort}}",
+    "plansTitle": "Workspaces by plan"
   }
 }
