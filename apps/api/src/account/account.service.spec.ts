@@ -21,6 +21,8 @@ function make(opts: { memberships: Mem[]; others: Record<string, number>; otherO
     leadAlertSettings: { deleteMany: rec('alerts.deleteMany') },
     notificationPreference: { deleteMany: rec('prefs.deleteMany') },
     notification: { deleteMany: rec('notif.deleteMany') },
+    activityDay: { deleteMany: rec('activity.deleteMany') },
+    engagementEmail: { deleteMany: rec('tips.deleteMany') },
     user: { update: rec('user.update') },
   };
   const prisma = {
@@ -81,6 +83,8 @@ describe('AccountService', () => {
     expect(calls['org.updateMany']![0]).toMatchObject({ where: { id: { in: ['o_solo'] } } });
     expect(calls['card.updateMany']![0]).toMatchObject({ where: { ownerId: 'u1', orgId: { notIn: ['o_solo'] } }, data: { isPublished: false } });
     expect(calls['lead.updateMany']![0]).toMatchObject({ data: { assignedTo: null } });
+    expect(calls['activity.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
+    expect(calls['tips.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
     const erased = (calls['user.update']![0] as { data: Record<string, unknown> }).data;
     expect(erased).toMatchObject({ email: 'deleted-u1@deleted.invalid', name: null, passwordHash: null, googleId: null });
     expect(erased.deletedAt).toBeInstanceOf(Date);

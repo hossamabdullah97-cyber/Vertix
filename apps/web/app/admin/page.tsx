@@ -14,10 +14,11 @@ import { AuditLog } from '@/components/admin/AuditLog';
 import { Errors } from '@/components/admin/Errors';
 import { Support } from '@/components/admin/Support';
 import { Status } from '@/components/admin/Status';
+import { Usage } from '@/components/admin/Usage';
 import type { AdminOrg } from '@/components/admin/shared';
 
-type Tab = 'overview' | 'workspaces' | 'people' | 'chips' | 'jobs' | 'errors' | 'support' | 'status' | 'log';
-const TABS: Tab[] = ['overview', 'workspaces', 'people', 'chips', 'jobs', 'errors', 'support', 'status', 'log'];
+type Tab = 'overview' | 'workspaces' | 'people' | 'chips' | 'jobs' | 'errors' | 'support' | 'status' | 'usage' | 'log';
+const TABS: Tab[] = ['overview', 'workspaces', 'people', 'chips', 'jobs', 'errors', 'support', 'status', 'usage', 'log'];
 
 /**
  * The platform's own console, for the people who run Vertex Connect: every
@@ -103,6 +104,7 @@ export default function AdminConsole() {
           {tab === 'errors' && <Errors />}
           {tab === 'support' && <Support />}
           {tab === 'status' && <Status />}
+          {tab === 'usage' && <Usage />}
           {tab === 'log' && <AuditLog />}
         </>
       )}

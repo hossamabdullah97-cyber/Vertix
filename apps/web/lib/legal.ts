@@ -14,7 +14,7 @@
 
 export type LegalDoc = 'privacy' | 'terms' | 'refunds' | 'contact';
 export const LEGAL_DOCS: LegalDoc[] = ['privacy', 'terms', 'refunds', 'contact'];
-export const LEGAL_UPDATED = '2026-10-03';
+export const LEGAL_UPDATED = '2026-10-06';
 
 export const COMPANY = {
   name: process.env.NEXT_PUBLIC_COMPANY_NAME || 'Vertex Connect',
@@ -82,6 +82,7 @@ const en: Strings = {
             'Leads: what a visitor chooses to send through a card form (for example name, email, phone, company and message), and the notes and activity your team adds.',
             'Visit and tap data: when a card is opened or a chip is tapped we record the time, the card or chip, the browser and device it reports, the IP address and the page that linked to it, and we give the browser a random identifier so repeat visits are counted once. We use this for the card owner\'s statistics and to prevent abuse, not for advertising.',
             'Payment data: payments are handled by Paymob. We receive the plan, status and dates of a subscription, never your full card number.',
+            'Use of the app: for each day you use it, which of its parts you used (for example leads, cards or analytics), so we can see what helps people and what doesn\'t. Not what you did in them. It is deleted with your account.',
           ],
         },
         {
@@ -270,6 +271,7 @@ const ar: Strings = {
             'العملاء المحتملون: ما يختار الزائر إرساله عبر نموذج البطاقة (مثل الاسم والبريد والهاتف والشركة والرسالة)، والملاحظات والأنشطة التي يضيفها فريقك.',
             'بيانات الزيارات واللمسات: عند فتح بطاقة أو لمس شريحة نسجّل الوقت والبطاقة أو الشريحة، والمتصفح والجهاز كما يعرّفان نفسيهما، وعنوان IP، والصفحة التي جاء منها الزائر، ونمنح المتصفح معرّفاً عشوائياً حتى تُحسب الزيارات المتكررة مرة واحدة. نستخدم ذلك لإحصاءات صاحب البطاقة ولمنع إساءة الاستخدام، لا للإعلانات.',
             'بيانات الدفع: تتم المدفوعات عبر Paymob. نتلقى الخطة وحالة الاشتراك وتواريخه، ولا نتلقى رقم بطاقتك كاملاً أبداً.',
+            'استخدام التطبيق: لكل يوم تستخدمه فيه، الأجزاء التي استخدمتها (مثل العملاء أو البطاقات أو التحليلات)، لنعرف ما يفيد الناس وما لا يفيد. لا ما فعلته فيها. وتُحذف مع حسابك.',
           ],
         },
         {

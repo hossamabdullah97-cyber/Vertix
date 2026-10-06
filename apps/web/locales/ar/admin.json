@@ -16,7 +16,8 @@
     "errors": "الأخطاء",
     "log": "سجل التدقيق",
     "support": "الدعم",
-    "status": "الحالة"
+    "status": "الحالة",
+    "usage": "الاستخدام"
   },
   "overview": {
     "intro": "المنصة كلها في لمحة، مباشرة من قاعدة البيانات.",
@@ -433,5 +434,68 @@
     "delete": "احذف هذا المنشور",
     "confirmDelete": "حذف «{{title}}» وتحديثاته؟ استخدم هذا فقط لمنشور نُشر بالخطأ.",
     "close": "إغلاق"
+  },
+  "usage": {
+    "intro": "كيف يُستخدم المنتج. يُحسب الشخص مرة واحدة في اليوم الذي يستخدم فيه التطبيق؛ ولا يُحفظ شيء عمّا فعله، ولا تُحسب مفاتيح الـ API ولا لوحة الإدارة.",
+    "since": "العدّ منذ {{date}}.",
+    "range": "الفترة",
+    "days_zero": "{{count}} يوم",
+    "days_one": "يوم واحد",
+    "days_two": "يومان",
+    "days_few": "{{count}} أيام",
+    "days_many": "{{count}} يومًا",
+    "days_other": "{{count}} يوم",
+    "tiles": {
+      "dau": "نشطون اليوم",
+      "dauHint": "استخدموا التطبيق اليوم",
+      "wau": "نشطون هذا الأسبوع",
+      "wauHint": "في آخر 7 أيام",
+      "mau": "نشطون هذا الشهر",
+      "mauHint": "في آخر 30 يومًا",
+      "stickiness": "{{value}} يعودون يوميًا",
+      "signups": "تسجيلات جديدة",
+      "signupsHint": "في آخر {{days}} يومًا",
+      "vsBefore": "{{change}} مقارنة بالفترة السابقة",
+      "workspaces": "مساحات العمل",
+      "activeWorkspaces_zero": "لا مساحات نشطة خلال 30 يومًا",
+      "activeWorkspaces_one": "مساحة واحدة نشطة خلال 30 يومًا",
+      "activeWorkspaces_two": "مساحتان نشطتان خلال 30 يومًا",
+      "activeWorkspaces_few": "{{count}} مساحات نشطة خلال 30 يومًا",
+      "activeWorkspaces_many": "{{count}} مساحة نشطة خلال 30 يومًا",
+      "activeWorkspaces_other": "{{count}} مساحة نشطة خلال 30 يومًا"
+    },
+    "activeTitle": "النشطون يوميًا",
+    "activePeople": "النشطون",
+    "periodBefore": "الفترة السابقة",
+    "funnelTitle": "إلى أين يصل المسجّلون الجدد",
+    "funnelMeta": "سجّلوا في آخر {{days}} يومًا",
+    "steps": {
+      "signedUp": "سجّلوا",
+      "confirmed": "أكّدوا بريدهم",
+      "card": "أنشأوا بطاقة",
+      "published": "نشروها",
+      "viewed": "زارها أحد",
+      "lead": "حصلوا على عميل"
+    },
+    "adoptionTitle": "ما الذي يستخدمه الناس",
+    "adoptionMeta": "نسبة النشطين خلال 30 يومًا",
+    "features": {
+      "leads": "العملاء والمهام",
+      "cards": "البطاقات",
+      "chips": "شرائح NFC",
+      "analytics": "التحليلات والتقارير",
+      "team": "الفريق ومساحة العمل",
+      "integrations": "التكاملات",
+      "billing": "الفوترة",
+      "notifications": "الإشعارات",
+      "help": "مركز المساعدة"
+    },
+    "retentionTitle": "هل يعود الناس؟",
+    "retentionMeta": "نسبة مسجّلي كل أسبوع النشطين في الأسابيع التالية",
+    "cohort": "أسبوع التسجيل",
+    "people": "الأشخاص",
+    "weekN": "الأسبوع {{n}}",
+    "cellTitle": "الأسبوع {{week}}: {{share}} ممن سجّلوا في أسبوع {{cohort}}",
+    "plansTitle": "مساحات العمل حسب الخطة"
   }
 }
