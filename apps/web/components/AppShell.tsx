@@ -1076,14 +1076,6 @@ export default function AppShell({
           )}
         </div>
 
-        {!noWorkspace && (
-          <button onClick={() => setPaletteOpen(true)} className="v-nav-item w-full text-faint">
-            <Icon name="search" size={16} />
-            <span className="flex-1 text-start">{t('search')}</span>
-            <kbd className="font-mono text-2xs text-faint">{shortcut}</kbd>
-          </button>
-        )}
-
         <nav className={`flex flex-col gap-0.5 ${noWorkspace ? 'hidden' : ''}`}>
           {groups.map((group) => (
             <div key={group.labelKey} className="flex flex-col gap-0.5">
@@ -1235,6 +1227,17 @@ export default function AppShell({
           <header className="hidden h-14 items-center gap-3 border-b border-line bg-surface/90 px-7 backdrop-blur-md md:flex">
             <h1 className="flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold text-ink">{title}</h1>
             <div className="flex shrink-0 items-center gap-2">
+              {/* Search lives in the title bar, beside the page's own actions. */}
+              {!noWorkspace && (
+                <button
+                  onClick={() => setPaletteOpen(true)}
+                  className="flex h-9 w-56 items-center gap-2 rounded-lg bg-elevated px-3 text-sm text-faint ring-1 ring-inset ring-line transition-colors hover:text-muted hover:ring-ink/20 lg:w-72"
+                >
+                  <Icon name="search" size={15} />
+                  <span className="flex-1 text-start">{t('search')}</span>
+                  <kbd className="rounded border border-line bg-surface px-1.5 py-0.5 font-mono text-2xs text-faint">{shortcut}</kbd>
+                </button>
+              )}
               <NotificationBell />
               {!noWorkspace && !blocked && action}
             </div>
