@@ -1,8 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { API_URL } from '@/lib/api';
+import { sendTrack } from '@/lib/track';
 import { VISITOR_COOKIE } from '@/lib/tap';
+
+// Once per card per page load. React runs effects twice in development, and a
+// remount must not count the same look again.
+const counted = new Set<string>();
 
 const readCookie = () => document.cookie.match(new RegExp(`(?:^|; )${VISITOR_COOKIE}=([^;]*)`))?.[1];
 
@@ -13,6 +17,8 @@ const readCookie = () => document.cookie.match(new RegExp(`(?:^|; )${VISITOR_COO
  */
 export default function TrackView({ slug }: { slug: string }) {
   useEffect(() => {
+    if (counted.has(slug)) return;
+    counted.add(slug);
     const key = VISITOR_COOKIE;
     let v: string | null | undefined;
     try {
@@ -32,13 +38,8 @@ export default function TrackView({ slug }: { slug: string }) {
       // private mode: the cookie still carries it
     }
     document.cookie = `${VISITOR_COOKIE}=${v}; path=/; max-age=31536000; samesite=lax${location.protocol === 'https:' ? '; secure' : ''}`;
-    fetch(`${API_URL}/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // ?via=qr: opened from the QR the owner showed in person ("Met someone").
-      body: JSON.stringify({ slug, type: 'VIEW', visitorId: v, ...(new URLSearchParams(location.search).get('via') === 'qr' ? { metadata: { via: 'qr' } } : {}) }),
-      keepalive: true,
-    }).catch(() => {});
+    // ?via=qr: opened from the QR the owner showed in person ("Met someone").
+    sendTrack({ slug, type: 'VIEW', visitorId: v, ...(new URLSearchParams(location.search).get('via') === 'qr' ? { metadata: { via: 'qr' } } : {}) });
   }, [slug]);
 
   return null;
