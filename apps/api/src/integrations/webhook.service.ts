@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomBytes, randomUUID } from 'node:crypto';
-import type { TenantContext } from '@vertex/db';
+import { WebhookDeliveryStatus, type TenantContext } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { CredentialVault } from './credential-vault.service';
 import { AutomationService } from './automation.service';
@@ -426,6 +426,9 @@ export class WebhookService {
     tenant: TenantContext,
     filter: { endpointId?: string; status?: string; limit?: number } = {},
   ) {
+    if (filter.status && !(Object.values(WebhookDeliveryStatus) as string[]).includes(filter.status)) {
+      throw new BadRequestException(`Status must be one of: ${Object.values(WebhookDeliveryStatus).join(', ')}`);
+    }
     return this.db.webhookDelivery.findMany({
       where: {
         orgId: tenant.orgId,

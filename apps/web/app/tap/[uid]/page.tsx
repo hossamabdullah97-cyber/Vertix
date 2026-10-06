@@ -24,8 +24,12 @@ interface Strings {
  *
  * Server-rendered and plain, like the 404, so it costs a phone almost nothing.
  */
-export default function TapPage({ params, searchParams }: { params: { uid: string }; searchParams: { s?: string } }) {
-  const locale = resolveLocale(cookies().get(LOCALE_COOKIE)?.value);
+export default async function TapPage(
+  props: { params: Promise<{ uid: string }>; searchParams: Promise<{ s?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const t = (resources[locale].common as unknown as { tap: Strings }).tap;
   const state: State = searchParams.s === 'unassigned' || searchParams.s === 'disabled' ? searchParams.s : 'unknown';
   const uid = decodeURIComponent(params.uid);

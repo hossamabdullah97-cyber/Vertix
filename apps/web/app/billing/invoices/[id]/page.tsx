@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,8 @@ import { Icon } from '@/components/Icon';
  * One invoice, laid out as a document: it prints, or saves as a PDF from the
  * browser's print dialog, on a single A4 page in the reader's language.
  */
-export default function InvoicePage({ params }: { params: { id: string } }) {
+export default function InvoicePage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const router = useRouter();
   const { t } = useTranslation('billing');
   const { locale } = useLocale();

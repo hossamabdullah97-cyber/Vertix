@@ -13,7 +13,8 @@ const YEAR = 60 * 60 * 24 * 365;
  * and its second tap within moments is not counted again. The browser goes to
  * the API itself, so the gateway sees the phone's own address and browser.
  */
-export function GET(req: NextRequest, { params }: { params: { uid: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ uid: string }> }) {
+  const params = await props.params;
   let visitor = req.cookies.get(VISITOR_COOKIE)?.value;
   if (!visitor || !/^[\w-]{8,64}$/.test(visitor)) visitor = crypto.randomUUID();
 

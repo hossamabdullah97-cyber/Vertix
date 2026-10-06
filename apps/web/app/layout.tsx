@@ -19,17 +19,19 @@ export const metadata: Metadata = {
 // viewport-fit=cover lets the phone's bottom bar sit clear of the home indicator (env(safe-area-inset-bottom)).
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout(
+  {
+    children,
+  }: {
+    children: React.ReactNode;
+  }
+) {
   // Resolve the initial locale from the cookie so SSR markup (lang/dir) matches
   // the client and there's no flash of the wrong language/direction.
-  const locale = resolveLocale(cookies().get(LOCALE_COOKIE)?.value);
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   // A public card carries its own few strings (lib/profileI18n), so it skips
   // the app's translations and i18next: a visitor's phone downloads neither.
-  const publicCard = headers().get(CARD_SURFACE_HEADER) === '1';
+  const publicCard = (await headers()).get(CARD_SURFACE_HEADER) === '1';
   // The server renders with every language at hand; the browser gets its one
   // from /i18n/<locale> (see lib/i18n/bundle.ts).
   globalThis.__VX_MESSAGES ??= resources;

@@ -10,8 +10,8 @@ import { resources } from '@/lib/i18n/resources';
  * <a>, not next/link, for the same reason: a server component's Link is
  * registered with another page's chunks, which every card then downloads.
  */
-export default function NotFound() {
-  const locale = resolveLocale(cookies().get(LOCALE_COOKIE)?.value);
+export default async function NotFound() {
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const t = (resources[locale].common as { notFound: Record<'title' | 'body' | 'home', string> }).notFound;
 
   return (

@@ -9,8 +9,8 @@ import { resources } from '@/lib/i18n/resources';
  * Rendered on the server, like the rest of a public card, so it ships no
  * translation code.
  */
-export default function CardNotFound() {
-  const locale = resolveLocale(cookies().get(LOCALE_COOKIE)?.value);
+export default async function CardNotFound() {
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const strings = (resources[locale].cards as { notFound: Record<'title' | 'body' | 'hint', string> }).notFound;
   const t = (key: string) => strings[key.replace('notFound.', '') as 'title' | 'body' | 'hint'];
 

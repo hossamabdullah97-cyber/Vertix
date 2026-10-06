@@ -11,8 +11,8 @@ import { STATE_TONE, STATUS_STRINGS, formatUptime } from '@/lib/status';
 
 export const dynamic = 'force-dynamic';
 
-export function generateMetadata(): Metadata {
-  return { title: `${STATUS_STRINGS[serverLocale()].title} · Vertex Connect` };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: `${STATUS_STRINGS[(await serverLocale())].title} · Vertex Connect` };
 }
 
 function Incident({ i, lang }: { i: StatusIncidentView; lang: 'en' | 'ar' }) {
@@ -57,7 +57,7 @@ function Incident({ i, lang }: { i: StatusIncidentView; lang: 'en' | 'ar' }) {
  * good"; if the API can't be reached, that is what it says.
  */
 export default async function StatusPage() {
-  const lang = serverLocale();
+  const lang = (await serverLocale());
   const s = STATUS_STRINGS[lang];
   const v = await apiGet<StatusView>('/status');
   const now = Date.now();

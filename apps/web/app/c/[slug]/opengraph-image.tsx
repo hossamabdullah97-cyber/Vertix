@@ -64,7 +64,7 @@ export default async function OpenGraphImage({ params }: { params: { slug: strin
     { name: 'Plex', data: regular, weight: 400 as const },
     { name: 'Plex', data: semibold, weight: 600 as const },
   ];
-  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}`, forwardedFor(headers()));
+  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}`, forwardedFor(await headers()));
 
   // A missing or private card still gets a tidy picture, with nothing about it.
   if (!result || ('locked' in result && result.locked)) {

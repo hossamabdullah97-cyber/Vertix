@@ -24,18 +24,18 @@ function variantQuery(searchParams: Search) {
  * The language a visitor sees: ?lang when the card has it, else the one their
  * browser prefers among the card's, else the card's own.
  */
-function viewLangOf(card: PublicCard, searchParams: Search) {
+async function viewLangOf(card: PublicCard, searchParams: Search) {
   const primary = card.theme?.lang === 'ar' ? 'ar' : 'en';
   const alt = altOf(card.vcardData, primary);
-  return pickViewLang(alt ? [primary, alt.lang] : [primary], searchParams.lang, headers().get('accept-language'));
+  return pickViewLang(alt ? [primary, alt.lang] : [primary], searchParams.lang, (await headers()).get('accept-language'));
 }
 
 /**
  * The site's own address, as the visitor reached it, so the preview picture's
  * link is absolute (messaging apps need that) behind any proxy.
  */
-function siteBase(): URL | undefined {
-  const h = headers();
+async function siteBase(): Promise<URL | undefined> {
+  const h = await headers();
   const host = h.get('x-forwarded-host') ?? h.get('host');
   if (!host) return undefined;
   const proto = h.get('x-forwarded-proto')?.split(',')[0]?.trim() ?? (host.startsWith('localhost') ? 'http' : 'https');
@@ -50,15 +50,19 @@ function siteBase(): URL | undefined {
  * Name, role and company for link previews in messaging apps. The picture is
  * drawn by opengraph-image.tsx next to this page.
  */
-export async function generateMetadata({ params, searchParams }: { params: { slug: string }; searchParams: Search }): Promise<Metadata> {
-  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`, forwardedFor(headers()));
+export async function generateMetadata(
+  props: { params: Promise<{ slug: string }>; searchParams: Promise<Search> }
+): Promise<Metadata> {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`, forwardedFor(await headers()));
   if (!result || ('locked' in result && result.locked)) return { title: 'Vertex Connect', robots: { index: false } };
   const card = result as PublicCard;
-  const p = buildProfile({ ...card, brand: card.brand ?? null, viewLang: viewLangOf(card, searchParams) });
+  const p = buildProfile({ ...card, brand: card.brand ?? null, viewLang: await viewLangOf(card, searchParams) });
   const role = [p.title, p.company || p.brand?.name].filter(Boolean).join(' · ');
   const description = role || p.about.slice(0, 160) || undefined;
   return {
-    metadataBase: siteBase(),
+    metadataBase: await siteBase(),
     title: p.name,
     description,
     openGraph: { title: p.name, description, type: 'profile', siteName: 'Vertex Connect' },
@@ -96,10 +100,14 @@ function personData(profile: ReturnType<typeof buildProfile>, card: PublicCard) 
   };
 }
 
-export default async function CardPage({ params, searchParams }: { params: { slug: string }; searchParams: Search }) {
+export default async function CardPage(
+  props: { params: Promise<{ slug: string }>; searchParams: Promise<Search> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   // ?p targets a profile variant, optionally with ?code for a passcode; ?t is
   // the chip a visitor tapped, carried into anything they send.
-  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`, forwardedFor(headers()));
+  const result = await apiGet<PublicCard | PublicCardLocked>(`/c/${params.slug}${variantQuery(searchParams)}`, forwardedFor(await headers()));
   if (!result) notFound();
 
   if ('locked' in result && result.locked) {
@@ -113,7 +121,7 @@ export default async function CardPage({ params, searchParams }: { params: { slu
 
   const card = result as PublicCard;
   const profile = buildProfile({
-    viewLang: viewLangOf(card, searchParams),
+    viewLang: await viewLangOf(card, searchParams),
     slug: card.slug,
     theme: card.theme,
     vcardData: card.vcardData,

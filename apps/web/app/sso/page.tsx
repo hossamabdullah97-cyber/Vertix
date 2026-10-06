@@ -3,6 +3,7 @@ import { SsoForm } from '@/components/auth/SsoForm';
 
 export const metadata: Metadata = { title: 'Sign in with your company · Vertex Connect' };
 
-export default function SsoPage({ searchParams }: { searchParams: { next?: string; email?: string } }) {
+export default async function SsoPage(props: { searchParams: Promise<{ next?: string; email?: string }> }) {
+  const searchParams = await props.searchParams;
   return <SsoForm next={typeof searchParams.next === 'string' ? searchParams.next : null} initialEmail={typeof searchParams.email === 'string' ? searchParams.email : ''} />;
 }

@@ -25,10 +25,16 @@ function setup(rows: Rows = {}, past: { userId: string; key: string; sentAt: Dat
         return data;
       }),
       groupBy: jest.fn(async () => [{ kind: 'finishCard', _count: { _all: 3 } }]),
+      // The claim's re-check: anything sent to this person within the gap, by this sweep or another.
+      findFirst: jest.fn(async ({ where }: { where: { userId: string; sentAt: { gt: Date } } }) =>
+        [...past, ...created.map((c) => ({ ...c, sentAt: new Date() }))].find((r) => r.userId === where.userId && r.sentAt > where.sentAt.gt) ?? null,
+      ),
     },
+    $executeRawUnsafe: jest.fn(async () => 0),
     user: { findUnique: jest.fn(async () => ({ id: 'u1', email: 'a@b.test', name: 'Mona' })) },
     leadAlertSettings: { upsert: jest.fn(async () => ({})), count: jest.fn(async () => 2) },
   };
+  (db as Record<string, unknown>).$transaction = jest.fn(async (fn: (tx: unknown) => unknown) => fn(db));
   const mail = { send: jest.fn(async () => true) };
   const auth = { resendVerification: jest.fn(async () => ({ ok: true, emailSent: true })) };
   const config = { get: (k: string) => ({ JWT_SECRET: 'test-secret', APP_PUBLIC_URL: 'https://app.test', DEFAULT_TIMEZONE: 'Africa/Cairo' })[k] };

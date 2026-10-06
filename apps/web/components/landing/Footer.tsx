@@ -3,8 +3,8 @@ import { getT, serverLocale } from '@/lib/i18n/server';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
 import { Brand, REGISTER, WRAP } from './shared';
 
-export function Footer() {
-  const t = getT(serverLocale(), 'landing');
+export async function Footer() {
+  const t = getT((await serverLocale()), 'landing');
   const link = 'inline-flex min-h-11 min-w-11 items-center text-sm text-muted sm:min-h-9 sm:min-w-0 transition-colors hover:text-ink';
 
   return (

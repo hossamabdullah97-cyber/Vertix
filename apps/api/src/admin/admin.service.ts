@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ConflictException, Optional } from '@nestjs/common';
 import { BillingService } from '../billing/billing.service';
 import { purgeDate, PURGE_AFTER_DAYS } from './org-purge.service';
-import { runWithTenant } from '@vertex/db';
+import { ChipStatus, runWithTenant } from '@vertex/db';
 import { planPrices } from '../billing/prices';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -758,7 +758,10 @@ export class AdminService {
     filters: { status?: string; search?: string; allocatedToOrgId?: string } = {},
   ) {
     const where: Record<string, unknown> = {};
-    if (filters.status && filters.status !== 'ALL') where.status = filters.status;
+    if (filters.status && filters.status !== 'ALL') {
+      if (!(Object.values(ChipStatus) as string[]).includes(filters.status)) throw new BadRequestException(`Status must be one of: ALL, ${Object.values(ChipStatus).join(', ')}`);
+      where.status = filters.status;
+    }
     if (filters.allocatedToOrgId === 'NONE') where.allocatedToOrgId = null;
     else if (filters.allocatedToOrgId) where.allocatedToOrgId = filters.allocatedToOrgId;
     if (filters.search) {

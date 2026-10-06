@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { renderTemplate, TEMPLATE_FIELDS, type TemplateField } from '@vertex/shared';
-import { authFetch, apiMessageOf, getActiveOrgId, peek, type ApiError, type Card, type Me } from '@/lib/client';
+import { authFetch, getActiveOrgId, peek, type Card, type Me } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Icon } from '@/components/Icon';
 import { whatsappHref, type Lead, type LeadActivity } from '@/lib/crm';
@@ -128,7 +128,7 @@ export function ComposeMessage({
         onSent(r);
         onClose();
       })
-      .catch((e) => setError(apiMessageOf(e as ApiError) || t('compose.logFailed')));
+      .catch((e) => setError((e as Error).message || t('compose.logFailed')));
   }
 
   const isManager = can(me, 'leads', 'basic');
@@ -284,7 +284,7 @@ function TemplatesEditor({ templates, onChange }: { templates: Template[]; onCha
       setDraft(null);
       await onChange();
     } catch (e) {
-      setError(apiMessageOf(e as ApiError) || t('compose.saveFailed'));
+      setError((e as Error).message || t('compose.saveFailed'));
     } finally {
       setBusy(false);
     }

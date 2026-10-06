@@ -18,12 +18,17 @@ test('tips and reminders go to the right people, once, in their language, and ca
     expect((await account.api('/account/language', { method: 'PUT', body: { lang: 'ar' } })).status).toBe(200);
     expect(sql(`SELECT locale FROM users WHERE id = '${safe(account.userId)}'`)).toBe('ar');
 
-    // Two days in with no card: "finish your card".
-    sql(`UPDATE users SET "createdAt" = now() - interval '2 days', "emailVerified" = now() WHERE id = '${safe(account.userId)}'`);
     // A week away with a lead nobody has reached: "leads are waiting" comes first.
     expect((await away.api('/leads', { body: { name: 'Hana Fathy', phone: '+201001112223' } })).status).toBe(201);
-    sql(`UPDATE users SET "createdAt" = now() - interval '2 days', "emailVerified" = now() WHERE id = '${safe(away.userId)}'`);
-    sql(`UPDATE auth_sessions SET "lastSeenAt" = now() - interval '8 days' WHERE "userId" = '${safe(away.userId)}'`);
+    // Two days in with no card: "finish your card". Both made due at once, in
+    // one transaction: the sweep is for everyone, and another test's sweep
+    // running meanwhile must find them either not yet due or fully so.
+    sql(
+      `BEGIN;` +
+        `UPDATE users SET "createdAt" = now() - interval '2 days', "emailVerified" = now() WHERE id IN ('${safe(account.userId)}', '${safe(away.userId)}');` +
+        `UPDATE auth_sessions SET "lastSeenAt" = now() - interval '8 days' WHERE "userId" = '${safe(away.userId)}';` +
+        `COMMIT;`,
+    );
 
     const first = await asAdmin<{ sent: number }>('/admin/engagement/sweep', { method: 'POST' });
     expect(first.status).toBe(201);
@@ -48,7 +53,8 @@ test('tips and reminders go to the right people, once, in their language, and ca
     await expect(tips).toHaveAttribute('aria-checked', 'true');
     await tips.click();
     await expect(tips).toHaveAttribute('aria-checked', 'false');
-    expect(sql(`SELECT tips FROM lead_alert_settings WHERE "userId" = '${safe(account.userId)}'`)).toBe('f');
+    // The switch turns at once and the change is saved behind it: wait for the save.
+    await expect.poll(() => sql(`SELECT tips FROM lead_alert_settings WHERE "userId" = '${safe(account.userId)}'`)).toBe('f');
 
     // A link not made for this person changes nothing.
     await page.goto(`/unsubscribe?u=${account.userId}&t=not-the-token`);

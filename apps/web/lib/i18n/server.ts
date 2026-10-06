@@ -12,8 +12,8 @@ import { DEFAULT_NAMESPACE, FALLBACK_LOCALE, LOCALE_COOKIE, NAMESPACES, resolveL
 const instances = new Map<Locale, I18nInstance>();
 
 /** The language the page is in, from the cookie the client keeps. */
-export function serverLocale(): Locale {
-  return resolveLocale(cookies().get(LOCALE_COOKIE)?.value);
+export async function serverLocale(): Promise<Locale> {
+  return resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value);
 }
 
 export function getT(locale: Locale, ns: Namespace | Namespace[]): TFunction {

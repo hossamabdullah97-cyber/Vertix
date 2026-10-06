@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { authFetch, uploadImage, type Me } from '@/lib/client';
@@ -22,6 +23,7 @@ export function ProfilePhotoCard({
   me: Me;
   onChange?: (me: Me) => void;
 }) {
+  const { t } = useTranslation('settings');
   const fileRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<Me>(me);
   const [name, setName] = useState(me.name ?? '');
@@ -50,11 +52,11 @@ export function ProfilePhotoCard({
 
     setError('');
     if (!file.type.startsWith('image/')) {
-      setError('Choose an image file.');
+      setError(t('profileCard.notImage'));
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError('That image is over 5 MB. Pick a smaller one.');
+      setError(t('profileCard.tooBig'));
       return;
     }
 
@@ -66,9 +68,9 @@ export function ProfilePhotoCard({
         body: JSON.stringify({ avatarUrl: url }),
       });
       apply(next);
-      flash('Photo updated');
+      flash(t('profileCard.photoUpdated'));
     } catch {
-      setError('Upload failed. Please try again.');
+      setError(t('profileCard.uploadFailed'));
     } finally {
       setBusy(null);
     }
@@ -83,9 +85,9 @@ export function ProfilePhotoCard({
         body: JSON.stringify({ avatarUrl: null }),
       });
       apply(next);
-      flash('Photo removed');
+      flash(t('profileCard.photoRemoved'));
     } catch {
-      setError('Could not remove the photo.');
+      setError(t('profileCard.removeFailed'));
     } finally {
       setBusy(null);
     }
@@ -101,9 +103,9 @@ export function ProfilePhotoCard({
         body: JSON.stringify({ name: name.trim() }),
       });
       apply(next);
-      flash('Name updated');
+      flash(t('profileCard.nameUpdated'));
     } catch {
-      setError('Could not save your name.');
+      setError(t('profileCard.nameFailed'));
     } finally {
       setBusy(null);
     }
@@ -113,9 +115,9 @@ export function ProfilePhotoCard({
     <div className="v-card p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold tracking-tight">Your profile</h3>
+          <h3 className="text-base font-semibold tracking-tight">{t('profileCard.title')}</h3>
           <p className="mt-0.5 text-2xs text-muted">
-            Shown next to your name across the workspace. Separate from your card artwork.
+            {t('profileCard.subtitle')}
           </p>
         </div>
         {saved && (
@@ -144,7 +146,7 @@ export function ProfilePhotoCard({
               className="v-btn h-9 px-3.5 text-xs disabled:opacity-60"
             >
               <Icon name="upload" size={13} />
-              {user.avatarUrl ? 'Change photo' : 'Upload photo'}
+              {user.avatarUrl ? t('profileCard.change') : t('profileCard.upload')}
             </button>
             {user.avatarUrl && (
               <button
@@ -153,11 +155,11 @@ export function ProfilePhotoCard({
                 disabled={busy === 'photo'}
                 className="v-btn v-btn-ghost h-9 px-3.5 text-xs disabled:opacity-60"
               >
-                Remove
+                {t('profileCard.remove')}
               </button>
             )}
           </div>
-          <p className="text-2xs text-faint">JPG, PNG, WebP, GIF or AVIF · up to 5 MB</p>
+          <p className="text-2xs text-faint">{t('profileCard.formats')}</p>
         </div>
       </div>
 
@@ -171,14 +173,15 @@ export function ProfilePhotoCard({
 
       <div className="v-divider my-5" />
 
-      <label className="v-section-label mb-1.5 block">Display name</label>
+      <label htmlFor="profile-name" className="v-section-label mb-1.5 block">{t('profileCard.name')}</label>
       <div className="flex flex-wrap gap-2">
         <input
+          id="profile-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={saveName}
           maxLength={120}
-          placeholder="Your full name"
+          placeholder={t('profileCard.namePlaceholder')}
           className="v-field h-9 min-w-[200px] flex-1 text-sm"
         />
         <button
@@ -187,7 +190,7 @@ export function ProfilePhotoCard({
           disabled={busy === 'name' || name.trim() === (user.name ?? '')}
           className="v-btn v-btn-ghost h-9 px-3.5 text-xs disabled:opacity-50"
         >
-          Save
+          {t('profileCard.save')}
         </button>
       </div>
       <p className="mt-1.5 text-2xs text-faint">{user.email}</p>

@@ -13,9 +13,9 @@ const PERSONAL_SIGNUP = `${REGISTER}&kind=personal`;
  * The same plans, prices and limits the Billing page sells, in the same
  * words. Prices are the server's settings, in Egyptian pounds.
  */
-export function Pricing({ prices }: { prices: Partial<Record<'PERSONAL' | 'PRO' | 'BUSINESS', number | null>> }) {
-  const t = getT(serverLocale(), ['landing', 'billing']);
-  const locale = serverLocale();
+export async function Pricing({ prices }: { prices: Partial<Record<'PERSONAL' | 'PRO' | 'BUSINESS', number | null>> }) {
+  const t = getT((await serverLocale()), ['landing', 'billing']);
+  const locale = (await serverLocale());
 
   return (
     <section id="pricing" aria-labelledby="pricing-title" className="scroll-mt-20 py-20 sm:py-28">
@@ -77,9 +77,9 @@ export function Pricing({ prices }: { prices: Partial<Record<'PERSONAL' | 'PRO' 
   );
 }
 
-function Personal({ price }: { price: number | null }) {
-  const t = getT(serverLocale(), ['landing', 'billing']);
-  const locale = serverLocale();
+async function Personal({ price }: { price: number | null }) {
+  const t = getT((await serverLocale()), ['landing', 'billing']);
+  const locale = (await serverLocale());
   const def = PLAN_LIMITS.PERSONAL;
   const features = [
     t('billing:features.cards', { count: def.cards as number }),

@@ -10,9 +10,10 @@ import { COMPANY, COMPANY_DETAILS_MISSING, LEGAL_DOCS, LEGAL_STRINGS, LEGAL_UPDA
 
 const isDoc = (d: string): d is LegalDoc => (LEGAL_DOCS as string[]).includes(d);
 
-export function generateMetadata({ params }: { params: { doc: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ doc: string }> }): Promise<Metadata> {
+  const params = await props.params;
   if (!isDoc(params.doc)) return {};
-  const s = LEGAL_STRINGS[serverLocale()];
+  const s = LEGAL_STRINGS[(await serverLocale())];
   const title = params.doc === 'contact' ? s.contact.title : s.docs[params.doc].title;
   return { title: `${title} · ${COMPANY.name}` };
 }
@@ -23,10 +24,11 @@ export function generateMetadata({ params }: { params: { doc: string } }): Metad
  * trusting the platform with their clients' details. Plain server-rendered
  * text in the reader's language (lib/legal.ts holds it).
  */
-export default function LegalPage({ params }: { params: { doc: string } }) {
+export default async function LegalPage(props: { params: Promise<{ doc: string }> }) {
+  const params = await props.params;
   if (!isDoc(params.doc)) notFound();
   const doc = params.doc;
-  const locale = serverLocale();
+  const locale = (await serverLocale());
   const s = LEGAL_STRINGS[locale];
   const updated = formatDate(LEGAL_UPDATED, locale);
 
