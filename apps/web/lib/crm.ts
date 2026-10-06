@@ -97,6 +97,8 @@ export interface LeadActivity {
   type: ActivityType;
   metadata: Record<string, unknown> | null;
   createdAt: string;
+  /** Who wrote the note or logged it, when known. */
+  author?: { id: string; name: string; avatarUrl: string | null } | null;
 }
 
 /** A lead with its full activity history (from GET /leads/:id). */

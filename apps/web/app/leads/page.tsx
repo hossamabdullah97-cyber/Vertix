@@ -481,7 +481,7 @@ export default function LeadsPage() {
               <TasksView leads={filtered} tasks={tasks} onAddTask={(input) => createTask(input)} onToggleTask={toggleTask} onOpenLead={setSelected} />
             )}
 
-            {view === 'notes' && <NotesView />}
+            {view === 'notes' && <NotesView onOpenLead={(id) => setSelected(id)} />}
 
             {view === 'reports' && <ReportsView leads={leads} stages={stages} />}
           </>

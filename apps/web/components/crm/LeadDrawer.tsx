@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch } from '@/lib/client';
+import { authFetch, type Me } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -31,6 +31,8 @@ import {
 import { Heat } from './LeadCard';
 import { MeetingRequest, meetingRequestOf } from './MeetingRequest';
 import { ComposeMessage, type Channel, type ContactResult } from './ComposeMessage';
+import { MentionInput, NoteText } from './MentionInput';
+import { keptMentions, type Mention } from '@/lib/mentions';
 
 const TEMPS: Temp[] = ['COLD', 'WARM', 'HOT'];
 
@@ -199,6 +201,13 @@ function DrawerBody({
   const [logType, setLogType] = useState<ActivityType>('NOTE');
   const [logText, setLogText] = useState('');
   const [logging, setLogging] = useState(false);
+  const [picked, setPicked] = useState<Mention[]>([]);
+  // Who is reading: their own notes can be changed, and an admin can delete any.
+  const [me, setMe] = useState<Me | null>(null);
+  useEffect(() => {
+    authFetch<Me>('/auth/me').then(setMe, () => undefined);
+  }, []);
+  const [editing, setEditing] = useState<{ id: string; text: string; picked: Mention[] } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -223,18 +232,50 @@ function DrawerBody({
     if (!note || logging) return;
     setLogging(true);
     try {
+      const mentions = logType === 'NOTE' ? keptMentions(note, picked).map((m) => m.id) : [];
       const created = await authFetch<LeadActivity>(`/leads/${lead.id}/activities`, {
         method: 'POST',
-        body: JSON.stringify({ type: logType, note }),
+        body: JSON.stringify({ type: logType, note, ...(mentions.length ? { mentions } : {}) }),
       });
       setActivities((a) => [created, ...a]);
       setLogText('');
+      setPicked([]);
     } catch {
       /* surfaced via the page-level error path on failure */
     } finally {
       setLogging(false);
     }
   }
+
+  async function saveEdit() {
+    if (!editing || !editing.text.trim()) return;
+    const mentions = keptMentions(editing.text, editing.picked).map((m) => m.id);
+    try {
+      const updated = await authFetch<LeadActivity>(`/leads/${lead.id}/notes/${editing.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ note: editing.text.trim(), mentions }),
+      });
+      setActivities((list) => list.map((a) => (a.id === updated.id ? updated : a)));
+      setEditing(null);
+    } catch {
+      /* the note stays as it was */
+    }
+  }
+
+  async function deleteNote(a: LeadActivity) {
+    if (!window.confirm(t('notes.confirmDelete'))) return;
+    try {
+      await authFetch(`/leads/${lead.id}/notes/${a.id}`, { method: 'DELETE' });
+      setActivities((list) => list.filter((x) => x.id !== a.id));
+    } catch {
+      /* still there */
+    }
+  }
+
+  const mentionsOf = (a: LeadActivity): Mention[] => {
+    const m = (a.metadata ?? {}) as Record<string, unknown>;
+    return Array.isArray(m.mentions) ? (m.mentions as Mention[]) : [];
+  };
 
   function activityText(a: LeadActivity): string {
     const meta = (a.metadata ?? {}) as Record<string, unknown>;
@@ -508,18 +549,31 @@ function DrawerBody({
                     );
                   })}
                 </div>
-                <textarea
-                  value={logText}
-                  onChange={(e) => setLogText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') logActivity();
-                  }}
-                  placeholder={t('drawer.addActivity', { type: t(`activity.types.${logType}`, ACTIVITY_META[logType].label).toLowerCase() })}
-                  rows={3}
-                  className="block w-full resize-none bg-transparent px-3 py-2.5 text-sm text-ink outline-none placeholder:text-faint"
-                />
+                {logType === 'NOTE' ? (
+                  <MentionInput
+                    leadId={lead.id}
+                    value={logText}
+                    onChange={setLogText}
+                    picked={picked}
+                    onPick={setPicked}
+                    onSubmit={logActivity}
+                    placeholder={t('notes.placeholder')}
+                    className="block w-full resize-none bg-transparent px-3 py-2.5 text-sm text-ink outline-none placeholder:text-faint"
+                  />
+                ) : (
+                  <textarea
+                    value={logText}
+                    onChange={(e) => setLogText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') logActivity();
+                    }}
+                    placeholder={t('drawer.addActivity', { type: t(`activity.types.${logType}`, ACTIVITY_META[logType].label).toLowerCase() })}
+                    rows={3}
+                    className="block w-full resize-none bg-transparent px-3 py-2.5 text-sm text-ink outline-none placeholder:text-faint"
+                  />
+                )}
                 <div className="flex items-center justify-between border-t border-line px-3 py-2">
-                  <span className="text-2xs text-faint">⌘/Ctrl + Enter</span>
+                  <span className="text-2xs text-faint">{logType === 'NOTE' ? t('notes.hint') : '⌘/Ctrl + Enter'}</span>
                   <button onClick={logActivity} disabled={!logText.trim() || logging} className="v-btn !h-11 !px-3 !text-xs sm:!h-7">
                     {logging ? t('drawer.saving') : t('drawer.log')}
                   </button>
@@ -538,20 +592,68 @@ function DrawerBody({
                   {activities.map((a) => {
                     const meta = ACTIVITY_META[a.type];
                     const body = activityText(a);
+                    const m = (a.metadata ?? {}) as Record<string, unknown>;
+                    const mine = !!me && m.by === me.sub;
+                    const isNote = a.type === 'NOTE' && m.manual === true;
+                    const canDelete = isNote && (mine || me?.role === 'OWNER' || me?.role === 'ADMIN');
                     return (
-                      <li key={a.id} className="relative flex items-start gap-3">
+                      <li key={a.id} className="group relative flex items-start gap-3" data-testid="activity">
                         <span className="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-muted ring-1 ring-line">
                           <Icon name={meta.icon} size={11} />
                         </span>
                         <div className="min-w-0 flex-1 pt-0.5">
                           <div className="flex items-baseline justify-between gap-2">
-                            <p className="text-sm font-medium text-ink">{t(`activity.types.${a.type}`, meta.label)}</p>
-                            <span className="shrink-0 text-xs text-faint">{formatRelativeTime(a.createdAt, locale, 'narrow')}</span>
-                          </div>
-                          {body && (
-                            <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-elevated px-3 py-2 text-xs leading-relaxed text-muted ring-1 ring-inset ring-line">
-                              {body}
+                            <p className="min-w-0 truncate text-sm font-medium text-ink">
+                              {t(`activity.types.${a.type}`, meta.label)}
+                              {a.author && <span className="font-normal text-muted"> · {mine ? t('notes.you') : a.author.name}</span>}
                             </p>
+                            <span className="shrink-0 text-xs text-faint">
+                              {typeof m.editedAt === 'string' && <span className="me-1">{t('notes.edited')} ·</span>}
+                              {formatRelativeTime(a.createdAt, locale, 'narrow')}
+                            </span>
+                          </div>
+                          {editing?.id === a.id ? (
+                            <div className="mt-1 rounded-lg ring-1 ring-inset ring-line">
+                              <MentionInput
+                                leadId={lead.id}
+                                value={editing.text}
+                                onChange={(text) => setEditing((e) => e && { ...e, text })}
+                                picked={editing.picked}
+                                onPick={(p) => setEditing((e) => e && { ...e, picked: p })}
+                                onSubmit={saveEdit}
+                                placeholder={t('notes.placeholder')}
+                                autoFocus
+                                className="block w-full resize-none bg-transparent px-3 py-2 text-xs leading-relaxed text-ink outline-none"
+                              />
+                              <div className="flex justify-end gap-2 border-t border-line px-2 py-1.5">
+                                <button type="button" onClick={() => setEditing(null)} className="v-btn v-btn-ghost !h-8 !px-2.5 !text-xs">
+                                  {t('notes.cancel')}
+                                </button>
+                                <button type="button" onClick={saveEdit} disabled={!editing.text.trim()} className="v-btn !h-8 !px-2.5 !text-xs">
+                                  {t('notes.save')}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            body && (
+                              <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-elevated px-3 py-2 text-xs leading-relaxed text-muted ring-1 ring-inset ring-line" dir="auto">
+                                <NoteText text={body} mentions={mentionsOf(a)} me={me?.sub} />
+                              </p>
+                            )
+                          )}
+                          {isNote && editing?.id !== a.id && (mine || canDelete) && (
+                            <div className="mt-1 flex gap-3 text-xs">
+                              {mine && (
+                                <button type="button" onClick={() => setEditing({ id: a.id, text: body, picked: mentionsOf(a) })} className="text-muted hover:text-ink">
+                                  {t('notes.edit')}
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button type="button" onClick={() => deleteNote(a)} className="text-muted hover:text-red-600">
+                                  {t('notes.delete')}
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </li>

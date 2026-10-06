@@ -142,7 +142,9 @@
     "leadsImportedBy_two": "أسند إليك {{actor}} عميلين مستوردين",
     "leadsImportedBy_few": "أسند إليك {{actor}} {{count}} عملاء مستوردين",
     "leadsImportedBy_many": "أسند إليك {{actor}} {{count}} عميلًا مستوردًا",
-    "leadsImportedBy_other": "أسند إليك {{actor}} {{count}} عميل مستورد"
+    "leadsImportedBy_other": "أسند إليك {{actor}} {{count}} عميل مستورد",
+    "mentioned": "ذكرك {{actor}} في ملاحظة على {{lead}}",
+    "aLead": "عميل"
   },
   "push": {
     "title": "على هذا الجهاز",

@@ -136,37 +136,33 @@
     }
   },
   "notes": {
-    "heading": "Notes",
-    "new": "New",
-    "newTitle": "Create new empty note",
-    "searchPlaceholder": "Search notes content…",
-    "untitled": "Untitled Note",
-    "emptyBody": "Empty body…",
-    "pinned": "Pinned Note",
-    "noNotes": "No notes found",
-    "unpin": "Unpin Note",
-    "pin": "Pin Note",
-    "editEditor": "Edit Editor",
-    "previewMd": "Preview MD",
-    "templates": "Templates:",
-    "delete": "Delete Note",
-    "noContent": "No content written yet.",
-    "titlePlaceholder": "Note Title…",
-    "contentPlaceholder": "Write anything in markdown (## Header, - [ ] Checklist, * bullet points)…",
-    "noneSelected": "No note selected",
-    "noneSelectedDesc": "Select an existing note from the sidebar panel or write a new one from templates.",
-    "categoryAll": "All",
-    "categoryTemplate": "Template",
-    "categoryDraft": "Draft",
-    "templateNames": {
-      "general": "general",
-      "discovery": "discovery",
-      "proposal": "proposal"
+    "heading": "Team notes",
+    "intro": "Notes the team wrote on its leads, newest first. Write one on a lead, and name a teammate with @ to tell them.",
+    "filters": {
+      "all": "All",
+      "mentions": "Mentioning me",
+      "mine": "Mine"
     },
-    "templateTitles": {
-      "general": "General Meeting Minutes",
-      "discovery": "Lead Discovery Call notes",
-      "proposal": "Proposal & Negotiation notes"
+    "empty": {
+      "all": "No notes yet. Open a lead and write one in its Activity tab.",
+      "mentions": "Nobody has mentioned you yet.",
+      "mine": "You haven't written any notes yet."
+    },
+    "placeholder": "Write a note… Type @ to mention a teammate",
+    "hint": "@ to mention · ⌘/Ctrl + Enter",
+    "you": "You",
+    "someone": "Someone",
+    "unnamedLead": "A lead",
+    "edited": "edited",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirmDelete": "Delete this note? This can't be undone.",
+    "local": {
+      "title": "Saved in this browser only",
+      "body": "These were written in the old Notes tab, which kept them on this device where your team couldn't see them. Copy what you need onto the lead it belongs to, then delete it here.",
+      "delete": "Delete"
     }
   },
   "tasks": {
@@ -530,5 +526,9 @@
     "mergedWith_one": "Merged with {{count}} other lead: {{names}}",
     "mergedWith_other": "Merged with {{count}} other leads: {{names}}",
     "alsoKnown": "Also had: {{values}}"
+  },
+  "mentions": {
+    "suggestions": "Teammates",
+    "none": "No teammate who can see this lead matches."
   }
 }

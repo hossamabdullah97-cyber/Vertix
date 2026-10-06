@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   HttpCode,
@@ -9,6 +10,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
   UploadedFile,
   UseInterceptors,
@@ -34,7 +36,10 @@ import {
   type DismissDuplicatesInput,
   importLeadsSchema,
   type ImportLeadsInput,
+  editNoteSchema,
+  type EditNoteInput,
 } from '@vertex/shared';
+import { LeadNotesService } from './lead-notes.service';
 import { LeadImportService } from './lead-import.service';
 import { LeadMergeService } from './lead-merge.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -52,6 +57,7 @@ export class LeadsController {
     private readonly leads: LeadsService,
     private readonly merges: LeadMergeService,
     private readonly imports: LeadImportService,
+    private readonly notes: LeadNotesService,
   ) {}
 
   /** Public: capture a lead from a card's engagement workflow. */
@@ -148,12 +154,24 @@ export class LeadsController {
     return this.leads.create(tenant, body);
   }
 
+  /** The team's notes on the leads the caller can see: all, naming them, or their own. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get('notes')
+  teamNotes(@Tenant() tenant: TenantContext, @Query('filter') filter?: string) {
+    return this.notes.feed(tenant, filter === 'mentions' || filter === 'mine' ? filter : 'all');
+  }
+
   // Note: this dynamic route must stay AFTER the static 'stages' route above.
   @RequireScopes('crm:read')
   @UseGuards(RequireTenantGuard)
   @Get(':id')
-  findOne(@Tenant() tenant: TenantContext, @Param('id') id: string) {
-    return this.leads.findOne(tenant, id);
+  async findOne(@Tenant() tenant: TenantContext, @Param('id') id: string) {
+    const lead = await this.leads.findOne(tenant, id);
+    // Who wrote each note or logged each call, by name.
+    const by = (m: unknown) => (m && typeof m === 'object' ? (m as { by?: unknown }).by : undefined);
+    const authors = await this.notes.authors(lead.activities.map((a) => by(a.metadata)));
+    return { ...lead, activities: lead.activities.map((a) => ({ ...a, author: authors.get(by(a.metadata) as string) ?? null })) };
   }
 
   @RequireScopes('crm:write')
@@ -164,7 +182,31 @@ export class LeadsController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(addLeadActivitySchema)) body: AddLeadActivityInput,
   ) {
+    // A note keeps who wrote it and who it names.
+    if (body.type === 'NOTE' && body.note?.trim()) return this.notes.add(tenant, id, body.note.trim(), body.mentions);
     return this.leads.addActivity(tenant, id, body);
+  }
+
+  /** The teammates a note on this lead can name with @. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get(':id/mentionable')
+  mentionable(@Tenant() tenant: TenantContext, @Param('id') id: string) {
+    return this.notes.mentionable(tenant, id);
+  }
+
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Patch(':id/notes/:noteId')
+  editNote(@Tenant() tenant: TenantContext, @Param('id') id: string, @Param('noteId') noteId: string, @Body(new ZodValidationPipe(editNoteSchema)) body: EditNoteInput) {
+    return this.notes.edit(tenant, id, noteId, body);
+  }
+
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Delete(':id/notes/:noteId')
+  deleteNote(@Tenant() tenant: TenantContext, @Param('id') id: string, @Param('noteId') noteId: string) {
+    return this.notes.remove(tenant, id, noteId);
   }
 
   /** A call, WhatsApp message or email sent from the app: logged, and counts as contact. */

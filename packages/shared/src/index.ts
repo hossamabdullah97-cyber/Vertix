@@ -705,8 +705,36 @@ export const addLeadActivitySchema = z.object({
   type: z.enum(['NOTE', 'CALL', 'EMAIL', 'WHATSAPP', 'MEETING']),
   note: z.string().max(2000).optional(),
   meetingAt: z.string().optional(), // ISO datetime for MEETING
+  /** Teammates a note names with @; each is told. Only those who can see the lead are kept. */
+  mentions: z.array(z.string().min(1).max(40)).max(20).optional(),
 });
 export type AddLeadActivityInput = z.infer<typeof addLeadActivitySchema>;
+
+/** Changing one's own note: its text, and who it names. */
+export const editNoteSchema = z.object({
+  note: z.string().trim().min(1).max(2000),
+  mentions: z.array(z.string().min(1).max(40)).max(20).optional(),
+});
+export type EditNoteInput = z.infer<typeof editNoteSchema>;
+
+/** Someone a note can name: a teammate who can see the lead. */
+export interface Mentionable {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+}
+
+/** A note on a lead, for the team's notes feed. */
+export interface TeamNote {
+  id: string;
+  note: string;
+  createdAt: string;
+  editedAt: string | null;
+  author: { id: string; name: string; avatarUrl: string | null } | null;
+  mentions: { id: string; name: string }[];
+  lead: { id: string; name: string | null; company: string | null };
+}
 
 /// Reaching out to a lead from the app: a call placed, or a WhatsApp message
 /// or email opened ready to send. Logged on the lead, and it counts as the
