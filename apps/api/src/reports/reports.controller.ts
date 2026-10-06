@@ -6,12 +6,14 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
 import { WeeklyReportService } from './weekly-report.service';
 import { OccasionReportService } from './occasion-report.service';
+import { Area } from '../auth/decorators/area.decorator';
 
 /** Previews a few times an hour: enough to see it, not to flood an inbox. */
 const PREVIEW_LIMIT = 3;
 const PREVIEW_WINDOW_MS = 60 * 60_000;
 
 @UseGuards(RequireTenantGuard)
+@Area('analytics')
 @Controller('reports')
 export class ReportsController {
   constructor(

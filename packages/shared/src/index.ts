@@ -1362,3 +1362,70 @@ export const unsubscribeSchema = z.object({ u: z.string().min(1).max(40), t: z.s
 export const uiLanguageSchema = z.object({ lang: z.enum(['en', 'ar']) });
 export const ENGAGEMENT_PREVIEW_KINDS = ['finishCard', 'shareCard', 'inviteTeam', 'leadsWaiting'] as const;
 export const engagementPreviewSchema = z.object({ kind: z.enum(ENGAGEMENT_PREVIEW_KINDS), lang: z.enum(['en', 'ar']) });
+
+// ── Custom roles ────────────────────────────────────────────────────────────
+/**
+ * The parts of a workspace a role can be given, and the levels each has:
+ * basic is what a manager can do there, full what an admin can. A custom
+ * role is a base role (which decides what data its holder sees, like all
+ * leads or their own) plus a level per area (which decides what they can
+ * change). Changing roles, ownership and deleting the workspace are never
+ * part of one.
+ */
+export const PERMISSION_AREAS = [
+  { id: 'people', levels: ['basic', 'full'] },
+  { id: 'teams', levels: ['basic', 'full'] },
+  { id: 'cards', levels: ['basic', 'full'] },
+  { id: 'leads', levels: ['basic', 'full'] },
+  { id: 'chips', levels: ['basic'] },
+  { id: 'analytics', levels: ['basic'] },
+  { id: 'workspace', levels: ['basic', 'full'] },
+  { id: 'integrations', levels: ['basic', 'full'] },
+  { id: 'billing', levels: ['full'] },
+] as const;
+export type PermissionArea = (typeof PERMISSION_AREAS)[number]['id'];
+export type PermissionLevel = 'basic' | 'full';
+export const CUSTOM_ROLE_BASES = ['ADMIN', 'MANAGER', 'EMPLOYEE'] as const;
+export type CustomRoleBase = (typeof CUSTOM_ROLE_BASES)[number];
+
+const ALL_CAPABILITIES = new Set<string>(PERMISSION_AREAS.flatMap((a) => a.levels.map((l) => `${a.id}:${l}`)));
+export const isCapability = (c: string) => ALL_CAPABILITIES.has(c);
+
+/** What a built-in role can do, as capabilities: admins everything, managers every basic level, employees none. */
+export function roleCapabilities(role: string): string[] {
+  if (role === 'OWNER' || role === 'ADMIN') return PERMISSION_AREAS.flatMap((a) => a.levels.map((l) => `${a.id}:${l}`));
+  if (role === 'MANAGER') return PERMISSION_AREAS.filter((a) => (a.levels as readonly string[]).includes('basic')).map((a) => `${a.id}:basic`);
+  return [];
+}
+
+/** Whether a set of capabilities reaches `level` in `area`; full includes basic. */
+export function hasCapability(caps: readonly string[], area: string, level: PermissionLevel): boolean {
+  return caps.includes(`${area}:${level}`) || (level === 'basic' && caps.includes(`${area}:full`));
+}
+
+/** What someone can do: their custom role's capabilities, or their built-in role's. */
+export function capabilitiesOf(role: string | undefined | null, customRole?: { capabilities: string[] } | null): string[] {
+  return customRole ? customRole.capabilities : role ? roleCapabilities(role) : [];
+}
+
+export const customRoleSchema = z.object({
+  name: z.string().trim().min(2).max(60),
+  description: z.string().trim().max(200).optional().or(z.literal('')),
+  base: z.enum(CUSTOM_ROLE_BASES),
+  capabilities: z
+    .array(z.string())
+    .max(40)
+    .refine((cs) => cs.every(isCapability), { message: 'Unknown permission' }),
+});
+export type CustomRoleInput = z.infer<typeof customRoleSchema>;
+export const assignCustomRoleSchema = z.object({ membershipId: z.string().min(1).max(40), customRoleId: z.string().min(1).max(40).nullable() });
+
+export interface CustomRoleView {
+  id: string;
+  name: string;
+  description: string | null;
+  base: CustomRoleBase;
+  capabilities: string[];
+  members: number;
+  createdAt: string;
+}

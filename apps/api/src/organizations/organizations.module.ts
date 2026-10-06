@@ -20,6 +20,8 @@ import { OccasionsController } from './occasions.controller';
 import { OccasionsService } from './occasions.service';
 import { InvitationsController } from './invitations.controller';
 import { InvitationsService } from './invitations.service';
+import { CustomRolesController } from './custom-roles.controller';
+import { CustomRolesService } from './custom-roles.service';
 
 @Module({
   imports: [BillingModule, IntegrationsModule, CardsModule],
@@ -32,10 +34,12 @@ import { InvitationsService } from './invitations.service';
     ApprovalsController,
     OccasionsController,
     InvitationsController,
+    CustomRolesController,
   ],
   providers: [
     OrganizationsService,
     InvitationsService,
+    CustomRolesService,
     MembersService,
     MembersImportService,
     TeamsService,

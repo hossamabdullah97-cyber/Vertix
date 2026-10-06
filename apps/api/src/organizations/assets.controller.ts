@@ -6,8 +6,10 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 @UseGuards(RequireTenantGuard)
+@Area('workspace')
 @Controller('orgs/assets')
 export class AssetsController {
   constructor(private readonly assets: AssetsService) {}

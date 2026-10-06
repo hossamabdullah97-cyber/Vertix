@@ -5,6 +5,8 @@ export interface TenantContext {
   orgId: string;
   userId: string;
   role: string;
+  /** A role the workspace made, on top of `role`: what it allows replaces the built-in role's on role-guarded routes. */
+  customRole?: { id: string; name: string; capabilities: string[] } | null;
 }
 
 /**

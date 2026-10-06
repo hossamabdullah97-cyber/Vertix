@@ -1,5 +1,6 @@
 'use client';
 
+import { can } from '@/lib/permissions';
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -130,7 +131,7 @@ export function ComposeMessage({
       .catch((e) => setError(apiMessageOf(e as ApiError) || t('compose.logFailed')));
   }
 
-  const isManager = !!me?.role && MANAGERS.has(me.role);
+  const isManager = can(me, 'leads', 'basic');
 
   return (
     <motion.div

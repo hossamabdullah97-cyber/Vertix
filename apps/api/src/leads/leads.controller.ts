@@ -60,7 +60,9 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { RequireScopes } from '../access/scopes.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
+@Area('leads')
 @Controller('leads')
 export class LeadsController {
   constructor(

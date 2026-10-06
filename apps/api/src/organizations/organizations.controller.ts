@@ -11,7 +11,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { TwoStepExempt } from '../auth/decorators/two-step-exempt.decorator';
 import { PersonRoute } from '../auth/decorators/person-route.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
+@Area('workspace')
 @Controller('orgs')
 export class OrganizationsController {
   constructor(

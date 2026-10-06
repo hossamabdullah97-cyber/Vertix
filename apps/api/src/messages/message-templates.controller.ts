@@ -12,9 +12,11 @@ import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RequireScopes } from '../access/scopes.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 /** Ready messages: everyone in the workspace uses them; managers and up shape them. */
 @UseGuards(RequireTenantGuard)
+@Area('leads')
 @Controller('message-templates')
 export class MessageTemplatesController {
   constructor(private readonly templates: MessageTemplatesService) {}

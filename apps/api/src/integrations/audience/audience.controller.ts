@@ -8,6 +8,7 @@ import { RequireScopes } from '../../access/scopes.decorator';
 import { Tenant } from '../../auth/decorators/tenant.decorator';
 import { AudienceService } from './audience.service';
 import { isAudienceProvider, type AudienceProvider } from './audience-connectors';
+import { Area } from '../../auth/decorators/area.decorator';
 
 const credsSchema = z.object({ apiKey: z.string().min(1).max(500), accountUrl: z.string().max(300).optional() });
 const connectSchema = credsSchema.extend({ listId: z.string().min(1).max(100), autoSync: z.boolean().optional() });
@@ -23,6 +24,7 @@ function audience(provider: string): AudienceProvider {
  * through the shared POST /integrations/:provider/disconnect.
  */
 @UseGuards(RequireTenantGuard)
+@Area('integrations')
 @Controller('integrations')
 export class AudienceController {
   constructor(private readonly audience: AudienceService) {}

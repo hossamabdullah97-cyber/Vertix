@@ -19,6 +19,7 @@ import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RequireScopes } from '../access/scopes.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 const conditionSchema = z.object({
   field: z.string().min(1),
@@ -46,6 +47,7 @@ const updateSchema = createSchema.partial().extend({ enabled: z.boolean().option
  * editing rules is restricted to workspace admins (section 18).
  */
 @UseGuards(RequireTenantGuard)
+@Area('integrations')
 @Controller('automations')
 export class AutomationsController {
   constructor(private readonly automations: AutomationService) {}

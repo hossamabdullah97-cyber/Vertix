@@ -48,6 +48,8 @@ export function runPageShortcut(key: string): boolean {
   return true;
 }
 
+const NONE: PageShortcut[] = [];
+
 export function usePageShortcuts(): PageShortcut[] {
   return useSyncExternalStore(
     (l) => {
@@ -55,7 +57,7 @@ export function usePageShortcuts(): PageShortcut[] {
       return () => listeners.delete(l);
     },
     () => list,
-    () => list,
+    () => NONE,
   );
 }
 

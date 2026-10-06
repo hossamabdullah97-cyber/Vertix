@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
+import { can, canChangeRoles } from '@/lib/permissions';
 import { authFetch, getActiveOrgId, getToken, inviteMember, PlanLimitError, type Card, type Me, type Member, type NfcTag, type Role, type Team, apiMessageOf, type ApiError, peek } from '@/lib/client';
 import { problemOf, useChecks } from '@/lib/validate';
 import { FieldError } from '@/components/ui/FieldError';
@@ -21,6 +22,8 @@ import { Sheet } from '@/components/ui/Sheet';
 import { TeamsView, type Department, type TeamRow } from '@/components/team/TeamsView';
 import { ImportPeople } from '@/components/team/ImportPeople';
 import { RolesView } from '@/components/team/RolesView';
+import { CustomRoles } from '@/components/team/CustomRoles';
+import type { CustomRoleView } from '@vertex/shared';
 import { ActivityView } from '@/components/team/ActivityView';
 import { useShortcut } from '@/lib/shortcuts';
 
@@ -61,15 +64,20 @@ export default function TeamPage() {
   const [focusTeam, setFocusTeam] = useState<string | null>(null);
   const [focusDepartment, setFocusDepartment] = useState<string | null>(null);
 
-  const canManage = me?.role === 'OWNER' || me?.role === 'ADMIN';
-  useShortcut('n', t('nav:shortcuts.invite'), () => setInviting(true), canManage);
+  // Inviting and removing go with the people area; roles and access only with a built-in owner or admin.
+  const canInvite = can(me, 'people', 'full');
+  const canRoles = canChangeRoles(me);
+  useShortcut('n', t('nav:shortcuts.invite'), () => setInviting(true), canInvite);
 
   function flash(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(''), 2200);
   }
 
+  const [customRoles, setCustomRoles] = useState<CustomRoleView[] | null>(null);
+  const loadRoles = useCallback(() => authFetch<CustomRoleView[]>('/orgs/roles').then(setCustomRoles).catch(() => setCustomRoles([])), []);
   const load = useCallback(async () => {
+    void loadRoles();
     const [mem, tm, dep, crd, tg] = await Promise.all([
       authFetch<MemberRow[]>('/orgs/members'),
       authFetch<TeamRow[]>('/orgs/teams').catch(() => []),
@@ -82,7 +90,7 @@ export default function TeamPage() {
     setDepartments(dep);
     setCards(crd);
     setTags(tg);
-  }, []);
+  }, [loadRoles]);
 
   // Where the page is linked from (search, Home, old team pages): a view and,
   // optionally, the person or team to open.
@@ -200,14 +208,14 @@ export default function TeamPage() {
   const menuFor = (m: MemberRow): ActionItem[] => {
     const self = m.user.id === me?.id;
     const items: ActionItem[] = [{ key: 'open', label: t('actions.details'), icon: 'user', onSelect: () => setSelectedId(m.id) }];
-    if (canManage && !self && m.role !== 'OWNER') {
+    if (canRoles && !self && m.role !== 'OWNER') {
       items.push(
         m.status === 'SUSPENDED'
           ? { key: 'reactivate', label: t('actions.reactivate'), icon: 'check', separated: true, onSelect: () => patchMember(m, { status: 'ACTIVE' }, t('toasts.reactivated')) }
           : { key: 'suspend', label: t('actions.suspend'), icon: 'lock', separated: true, onSelect: () => patchMember(m, { status: 'SUSPENDED' }, t('toasts.suspended')) },
       );
     }
-    if (canManage && !self && (m.role !== 'OWNER' || me?.role === 'OWNER')) {
+    if (canInvite && !self && (m.role !== 'OWNER' || me?.role === 'OWNER')) {
       items.push({ key: 'remove', label: t('actions.remove'), icon: 'trash', danger: true, separated: m.role === 'OWNER', onSelect: () => setRemoving(m) });
     }
     return items;
@@ -233,14 +241,14 @@ export default function TeamPage() {
     );
   }
 
-  const views = VIEWS.filter((v) => v !== 'activity' || canManage);
+  const views = VIEWS.filter((v) => v !== 'activity' || can(me, 'workspace', 'full'));
 
   return (
     <AppShell
       title={t('title')}
       fluid
       action={
-        canManage && (
+        canInvite && (
           <div className="flex gap-2">
             <button onClick={() => setImporting(true)} className="v-btn v-btn-ghost">
               <Icon name="upload" size={14} /> <span className="hidden sm:inline">{t('import.button')}</span>
@@ -365,7 +373,7 @@ export default function TeamPage() {
               </div>
 
               <div className="mt-4">
-                {members.length <= 1 && canManage && !filtersActive ? (
+                {members.length <= 1 && canInvite && !filtersActive ? (
                   <div className="mb-4 flex flex-col items-start gap-3 rounded-xl border border-dashed border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-muted">{t('empty.alone')}</p>
                     <button onClick={() => setInviting(true)} className="v-btn v-btn-ghost shrink-0">
@@ -421,7 +429,7 @@ export default function TeamPage() {
                                   </span>
                                 </span>
                               </td>
-                              <td className="whitespace-nowrap text-muted">{t(`roles.${m.role}.name`)}</td>
+                              <td className="whitespace-nowrap text-muted">{m.customRole?.name ?? t(`roles.${m.role}.name`)}</td>
                               <td className="hidden whitespace-nowrap md:table-cell">{m.team ? <span className="text-muted">{m.team.name}</span> : <span className="text-faint">—</span>}</td>
                               <td className="hidden sm:table-cell">
                                 <MemberStatus status={m.status} />
@@ -445,7 +453,7 @@ export default function TeamPage() {
               teams={teams}
               departments={departments}
               members={members}
-              canManage={canManage}
+              canManage={can(me, 'teams', 'full')}
               focusTeam={focusTeam}
               focusDepartment={focusDepartment}
               onFocusHandled={() => {
@@ -457,7 +465,17 @@ export default function TeamPage() {
               onOpenMember={(id) => setSelectedId(id)}
             />
           ) : view === 'roles' ? (
-            <RolesView myRole={me?.role} members={members} />
+            <div className="space-y-8">
+              <RolesView myRole={me?.role} members={members} />
+              <CustomRoles
+                roles={customRoles}
+                canEdit={canRoles}
+                onChanged={() => {
+                  void loadRoles();
+                  void load();
+                }}
+              />
+            </div>
           ) : (
             <ActivityView />
           )}
@@ -470,7 +488,14 @@ export default function TeamPage() {
         teams={teams}
         cards={selected ? cardsByOwner.get(selected.user.id) ?? [] : []}
         chips={selected ? chipsByHolder.get(selected.user.id) ?? 0 : 0}
-        canManage={canManage}
+        canManage={canRoles}
+        customRoles={customRoles ?? []}
+        onCustomRole={(id) =>
+          selected &&
+          authFetch('/orgs/roles/assign', { method: 'PUT', body: JSON.stringify({ membershipId: selected.id, customRoleId: id }) })
+            .then(() => load())
+            .catch((e) => setError((e as Error).message))
+        }
         error={selected ? error : ''}
         onClose={closeMember}
         onRole={(role) => selected && patchMember(selected, { role }, t('toasts.roleUpdated'))}
@@ -572,6 +597,8 @@ function MemberDetails({
   cards,
   chips,
   canManage,
+  customRoles,
+  onCustomRole,
   error,
   onClose,
   onRole,
@@ -585,6 +612,8 @@ function MemberDetails({
   cards: Card[];
   chips: number;
   canManage: boolean;
+  customRoles: CustomRoleView[];
+  onCustomRole: (id: string | null) => void;
   error: string;
   onClose: () => void;
   onRole: (r: Role) => void;
@@ -655,6 +684,21 @@ function MemberDetails({
             <p className="mb-1.5 text-xs text-muted">{t('details.role')}</p>
             <RolePicker value={member.role} onChange={onRole} allowOwner={me?.role === 'OWNER'} disabled={!editable} />
           </div>
+
+          {member.role !== 'OWNER' && (customRoles.length > 0 || member.customRole) && (
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-muted">{t('customRoles.assign')}</span>
+              <select className="v-field" value={member.customRole?.id ?? ''} onChange={(e) => onCustomRole(e.target.value || null)} disabled={!editable}>
+                <option value="">{t('customRoles.assignNone')}</option>
+                {customRoles.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-faint">{t('customRoles.assignHint')}</span>
+            </label>
+          )}
 
           <label className="block">
             <span className="mb-1.5 block text-xs text-muted">{t('details.team')}</span>

@@ -14,7 +14,9 @@ import { OrgId } from '../auth/decorators/tenant.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { assertEmailVerified } from '../auth/verified-email';
+import { Area } from '../auth/decorators/area.decorator';
 
+@Area('billing')
 @Controller('billing')
 export class BillingController {
   constructor(
