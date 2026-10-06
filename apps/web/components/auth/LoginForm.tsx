@@ -185,6 +185,15 @@ export function LoginForm({ initialMode, next, expired, initialKind = null }: { 
           label={isLogin ? t('login.submit') : t('register.submit')}
           busyLabel={isLogin ? t('login.submitting') : t('register.submitting')}
         />
+        {isLogin && (
+          <Link
+            href={`/sso${next || email ? `?${new URLSearchParams({ ...(next ? { next } : {}), ...(email.trim() ? { email: email.trim() } : {}) })}` : ''}`}
+            className="v-btn v-btn-ghost w-full !h-11 sm:!h-10"
+          >
+            <Icon name="briefcase" size={15} />
+            {t('sso.link')}
+          </Link>
+        )}
         {!isLogin && (
           <p className="text-xs leading-relaxed text-muted">
             {t('register.agreePrefix')}{' '}

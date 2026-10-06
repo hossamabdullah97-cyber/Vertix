@@ -1429,3 +1429,85 @@ export interface CustomRoleView {
   members: number;
   createdAt: string;
 }
+
+// ── Single sign-on ──────────────────────────────────────────────────────────
+
+export const SSO_PROVIDERS = ['GOOGLE', 'MICROSOFT', 'OIDC'] as const;
+export type SsoProvider = (typeof SSO_PROVIDERS)[number];
+
+/** Where a provider is found: fixed for Google, by directory for Microsoft, typed out for any other. */
+export function ssoIssuer(provider: SsoProvider, opts: { tenantId?: string; issuer?: string }): string {
+  if (provider === 'GOOGLE') return 'https://accounts.google.com';
+  if (provider === 'MICROSOFT') return `https://login.microsoftonline.com/${(opts.tenantId ?? '').trim()}/v2.0`;
+  return (opts.issuer ?? '').trim().replace(/\/$/, '');
+}
+
+const DOMAIN_RE = /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+// A Microsoft directory: its id, or one of its domains.
+const TENANT_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[a-z0-9.-]+\.[a-z]{2,})$/i;
+
+export const ssoConnectionSchema = z
+  .object({
+    provider: z.enum(SSO_PROVIDERS),
+    tenantId: z.string().trim().max(100).optional(),
+    issuer: z.string().trim().max(300).optional(),
+    clientId: z.string().trim().min(1).max(300),
+    /** Left out when editing keeps the stored one. */
+    clientSecret: z.string().trim().max(2000).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.provider === 'MICROSOFT' && !TENANT_RE.test(v.tenantId ?? '')) {
+      ctx.addIssue({ code: 'custom', path: ['tenantId'], message: 'Enter the directory (tenant) ID' });
+    }
+    if (v.provider === 'OIDC' && !/^https?:\/\/\S+$/.test(v.issuer ?? '')) {
+      ctx.addIssue({ code: 'custom', path: ['issuer'], message: 'Enter the issuer address' });
+    }
+  });
+export type SsoConnectionInput = z.infer<typeof ssoConnectionSchema>;
+
+export const ssoSettingsSchema = z.object({
+  enforced: z.boolean().optional(),
+  autoJoin: z.boolean().optional(),
+  joinRole: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE']).optional(),
+});
+export type SsoSettingsInput = z.infer<typeof ssoSettingsSchema>;
+
+export const ssoDomainSchema = z.object({
+  domain: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .transform((d) => d.replace(/^@/, ''))
+    .refine((d) => DOMAIN_RE.test(d), { message: 'Enter a domain like example.com' }),
+});
+export const ssoStartSchema = z.object({ email: z.string().trim().email().max(254) });
+export const ssoCallbackSchema = z.object({ code: z.string().min(1).max(4000), state: z.string().min(1).max(4000) });
+export type SsoCallbackInput = z.infer<typeof ssoCallbackSchema>;
+
+export interface SsoDomainView {
+  id: string;
+  domain: string;
+  /** The TXT record to add at the domain. */
+  record: string;
+  verifiedAt: string | null;
+}
+
+export interface SsoView {
+  connection: {
+    provider: SsoProvider;
+    issuer: string;
+    tenantId: string | null;
+    clientId: string;
+    testedAt: string | null;
+    enforced: boolean;
+    autoJoin: boolean;
+    joinRole: 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+    lastUsedAt: string | null;
+  } | null;
+  domains: SsoDomainView[];
+  /** What to give the provider as the app's redirect (reply) address. */
+  redirectUri: string;
+}
+
+/** What the callback page gets: a session, the code screen, or a test's result. */
+export type SsoCallbackResult = SignInResult | { tested: true; email: string };

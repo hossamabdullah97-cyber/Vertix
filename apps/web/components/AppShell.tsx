@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
-import { authFetch, logout, getActiveOrgId, setActiveOrgId, type Me } from '@/lib/client';
+import { authFetch, logout, getActiveOrgId, setActiveOrgId, ssoStart, type Me } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { useTheme } from '@/lib/useStoredTheme';
 import { Avatar } from '@/components/Avatar';
@@ -1252,7 +1252,24 @@ export default function AppShell({
           )}
 
           <main className={bleed ? '' : `mx-auto px-5 py-6 md:px-8 md:py-7 ${fluid ? 'w-full max-w-[1560px]' : 'max-w-[1240px]'}`}>
-            {me?.twoFactorRequired && !me.twoFactorEnabled ? (
+            {me?.ssoRequired ? (
+              // The workspace requires its single sign-on and this device came
+              // in another way: the API refuses everything else here.
+              <div className="mx-auto max-w-[520px] py-12 text-center" data-testid="sso-gate">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-elevated text-muted ring-1 ring-inset ring-line">
+                  <Icon name="briefcase" size={20} />
+                </span>
+                <h2 className="mt-4 text-xl font-semibold text-ink">{t('auth:sso.required')}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{t('auth:sso.requiredBody', { workspace: activeOrgName })}</p>
+                <button
+                  type="button"
+                  className="v-btn mt-6"
+                  onClick={() => void ssoStart(me.email, window.location.pathname + window.location.search).catch(() => undefined)}
+                >
+                  {t('auth:sso.requiredAction')}
+                </button>
+              </div>
+            ) : me?.twoFactorRequired && !me.twoFactorEnabled ? (
               // The workspace requires two-step verification and this account
               // has none yet: the API refuses everything else here, so the
               // page is the setup until it is on (or they switch workspace).

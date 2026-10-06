@@ -10,9 +10,10 @@ import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:cr
 export class SecretBox {
   private readonly key: Buffer;
 
-  constructor(dedicatedKey: string | undefined, jwtSecret: string) {
+  /** `purpose` keeps a key derived for one use from opening another's boxes. */
+  constructor(dedicatedKey: string | undefined, jwtSecret: string, purpose = 'totp-secret-v1') {
     const raw = dedicatedKey?.trim() ? Buffer.from(dedicatedKey.trim(), 'base64') : null;
-    this.key = raw && raw.length === 32 ? raw : Buffer.from(hkdfSync('sha256', jwtSecret, 'vertex', 'totp-secret-v1', 32));
+    this.key = raw && raw.length === 32 ? raw : Buffer.from(hkdfSync('sha256', jwtSecret, 'vertex', purpose, 32));
   }
 
   seal(plain: string): string {

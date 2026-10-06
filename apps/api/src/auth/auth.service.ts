@@ -36,7 +36,7 @@ import {
 import { GoogleIdTokenVerifier, GoogleTokenError } from './google-id-token';
 import { workspaceSlug } from '../common/workspace-slug';
 import { TwoFactorService } from './two-factor.service';
-import { requiresTwoStep } from './guards/tenant.guard';
+import { requiresTwoStep, ssoRequired } from './guards/tenant.guard';
 import { SessionsService, type ClientInfo } from './sessions.service';
 
 const VERIFY_TTL_MS = 3 * 24 * 60 * 60 * 1000;
@@ -356,10 +356,30 @@ export class AuthService {
   }
 
   /** Whether the active workspace requires two-step verification. */
-  async workspaceRequiresTwoStep(orgId?: string): Promise<boolean> {
-    if (!orgId) return false;
-    const org = await this.prisma.client.organization.findUnique({ where: { id: orgId }, select: { settings: true } });
-    return requiresTwoStep(org?.settings);
+  /**
+   * What the workspace open now asks of how this device signed in: its
+   * two-step verification (met by a sign-in through its own provider too),
+   * and its single sign-on.
+   */
+  async workspaceSignIn(orgId: string | undefined, role: string | undefined, email: string, sid?: string): Promise<{ twoFactorRequired: boolean; ssoRequired: boolean }> {
+    if (!orgId) return { twoFactorRequired: false, ssoRequired: false };
+    const [org, session] = await Promise.all([
+      this.prisma.client.organization.findUnique({
+        where: { id: orgId },
+        select: {
+          settings: true,
+          ssoConnection: { select: { enforced: true, testedAt: true } },
+          ssoDomains: { where: { verifiedAt: { not: null } }, select: { domain: true } },
+        },
+      }),
+      sid ? this.prisma.client.authSession.findUnique({ where: { id: sid }, select: { ssoOrgId: true } }) : null,
+    ]);
+    if (!org) return { twoFactorRequired: false, ssoRequired: false };
+    const viaSso = session?.ssoOrgId === orgId;
+    return {
+      twoFactorRequired: requiresTwoStep(org.settings) && !viaSso,
+      ssoRequired: ssoRequired(org, role ?? '', email) && !viaSso,
+    };
   }
 
   /**
@@ -515,6 +535,16 @@ export class AuthService {
       if (!user?.isSuperAdmin) throw new ForbiddenException(SUSPENDED_MESSAGE);
     }
     return null;
+  }
+
+  /**
+   * A session opened by a workspace's single sign-on, in that workspace. The
+   * company's provider asked for whatever second step it requires, so this
+   * app's own code screen is not shown again.
+   */
+  async ssoSession(user: { id: string; email: string }, orgId: string, role: Role, client: ClientInfo): Promise<AuthTokens> {
+    const sid = await this.sessions.start(user.id, client, { announce: true, ssoOrgId: orgId });
+    return this.issueTokens({ sub: user.id, email: user.email, orgId, role, sid });
   }
 
   /** A new signed-in device and its first tokens. */
