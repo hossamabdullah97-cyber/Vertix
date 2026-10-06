@@ -98,5 +98,47 @@
     "keep": "Keep subscription",
     "confirm": "Cancel subscription",
     "cancelling": "Cancelling…"
+  },
+  "invoices": {
+    "title": "Invoices",
+    "hint": "One for each payment, the first month and every renewal. Open one to print it or save it as a PDF.",
+    "empty": "No invoices yet. Each payment adds one here.",
+    "date": "Date",
+    "number": "Invoice",
+    "plan": "Plan",
+    "amount": "Amount",
+    "view": "View"
+  },
+  "details": {
+    "title": "Billing details",
+    "hint": "Who invoices are made out to. Changes apply to the next invoice; ones already issued keep theirs.",
+    "legalName": "Legal business name",
+    "taxId": "Tax registration number",
+    "address": "Billing address",
+    "email": "Email for invoices",
+    "save": "Save details",
+    "saving": "Saving…",
+    "saved": "Saved. The next invoice will use these details."
+  },
+  "invoice": {
+    "title": "Invoice",
+    "back": "Billing",
+    "print": "Print or save as PDF",
+    "paid": "Paid",
+    "billedTo": "Billed to",
+    "issued": "Issued",
+    "period": "Service period",
+    "paidWith": "Paid with",
+    "item": "Description",
+    "amount": "Amount",
+    "line": "Vertex Connect {{plan}} plan, monthly",
+    "subtotal": "Subtotal",
+    "vat": "VAT ({{percent}}%)",
+    "total": "Total",
+    "amountPaid": "Amount paid",
+    "taxId": "Tax ID",
+    "vatNote": "Prices include VAT at {{percent}}%.",
+    "noVatNote": "Amounts are in Egyptian pounds.",
+    "thanks": "Thank you for your business."
   }
 }

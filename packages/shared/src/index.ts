@@ -70,6 +70,40 @@ export const checkoutSchema = z.object({
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
+/** Who invoices are made out to: the business's own name and tax number, when it has them. */
+export const billingDetailsSchema = z.object({
+  legalName: z.string().trim().max(160).optional().or(z.literal('')),
+  taxId: z.string().trim().max(40).optional().or(z.literal('')),
+  address: z.string().trim().max(400).optional().or(z.literal('')),
+  /** Where receipts go, besides the owners. */
+  email: z.string().trim().toLowerCase().email().max(200).optional().or(z.literal('')),
+});
+export type BillingDetails = z.infer<typeof billingDetailsSchema>;
+
+export interface InvoiceParty {
+  name: string;
+  legalName?: string | null;
+  taxId?: string | null;
+  address?: string | null;
+  email?: string | null;
+}
+
+export interface InvoiceView {
+  id: string;
+  number: string;
+  plan: Plan;
+  amountCents: number;
+  taxCents: number;
+  taxPercent: number | null;
+  currency: string;
+  paymentMethod: string | null;
+  periodStart: string;
+  periodEnd: string;
+  paidAt: string;
+  billedTo: InvoiceParty;
+  seller: InvoiceParty;
+}
+
 export const Temperature = z.enum(['COLD', 'WARM', 'HOT']);
 export type Temperature = z.infer<typeof Temperature>;
 

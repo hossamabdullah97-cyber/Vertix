@@ -24,7 +24,7 @@ const ENV = {
 
 type Paymob = { [K in keyof PaymobClient]: jest.Mock };
 
-function makeService(env: Record<string, string | undefined> = ENV, stored: Record<string, unknown> | null = null, kind: 'PERSONAL' | 'TEAM' = 'TEAM') {
+function makeService(env: Record<string, string | undefined> = ENV, stored: Record<string, unknown> | null = null, kind: 'PERSONAL' | 'TEAM' = 'TEAM', invoices?: { record: jest.Mock }) {
   const orgUpdate = jest.fn().mockResolvedValue({});
   const subUpsert = jest.fn().mockResolvedValue({});
   const subUpdate = jest.fn().mockResolvedValue({});
@@ -38,7 +38,7 @@ function makeService(env: Record<string, string | undefined> = ENV, stored: Reco
     },
   };
   const config = { get: (k: string, dflt?: string) => env[k] ?? dflt };
-  const service = new BillingService(config as never, prisma as never);
+  const service = new BillingService(config as never, prisma as never, invoices as never);
 
   const paymob: Paymob = {
     createSubscriptionIntention: jest.fn().mockResolvedValue({ clientSecret: 'cs', checkoutUrl: 'https://accept.paymob.com/unifiedcheckout/?x' }),
@@ -285,5 +285,43 @@ describe('BillingService prices', () => {
     expect(service.sells('PRO')).toBe(true);
     expect(service.sells('BUSINESS')).toBe(false);
     expect(makeService({}).service.enabled).toBe(false);
+  });
+});
+
+describe('invoicing each payment', () => {
+  it('invoices a paid first month for the workspace and plan Paymob confirms', async () => {
+    const invoices = { record: jest.fn().mockResolvedValue({}) };
+    const { service, paymob } = makeService(ENV, null, 'TEAM', invoices);
+    const paid = tx({ order: { merchant_order_id: 'vc_org1_PRO_0a1b2c3d' } });
+    paymob.getTransaction.mockResolvedValue(paid);
+    paymob.subscriptionOfTransaction.mockResolvedValue(sub({ plan_id: 501 }));
+    await service.handleCallback({ type: 'TRANSACTION', obj: { id: 7001 } });
+    expect(invoices.record).toHaveBeenCalledWith('org1', 'PRO', paid, expect.objectContaining({ id: 900 }));
+  });
+
+  it('invoices each renewal, including the personal plan', async () => {
+    const invoices = { record: jest.fn().mockResolvedValue({}) };
+    const { service, paymob, orgUpdate } = makeService(ENV, { orgId: 'org9', paymobSubscriptionId: '900', status: 'ACTIVE' }, 'PERSONAL', invoices);
+    paymob.getTransaction.mockResolvedValue(tx({ id: 7100, order: { merchant_order_id: null } }));
+    paymob.subscriptionOfTransaction.mockResolvedValue(sub({ plan_id: 500 }));
+    await service.handleCallback({ type: 'TRANSACTION', obj: { id: 7100 } });
+    expect(orgUpdate).toHaveBeenCalledWith({ where: { id: 'org9' }, data: { plan: 'PERSONAL' } });
+    expect(invoices.record).toHaveBeenCalledWith('org9', 'PERSONAL', expect.objectContaining({ id: 7100 }), expect.anything());
+  });
+
+  it('invoices nothing for a payment that did not go through, or a subscription change alone', async () => {
+    const invoices = { record: jest.fn() };
+    const { service, paymob } = makeService(ENV, { orgId: 'org1', paymobSubscriptionId: '900', status: 'ACTIVE' }, 'TEAM', invoices);
+    paymob.getTransaction.mockResolvedValue(tx({ success: false }));
+    await service.handleCallback({ type: 'TRANSACTION', obj: { id: 7001 } });
+    paymob.getSubscription.mockResolvedValue(sub({ state: 'suspended' }));
+    await service.handleCallback({ subscription_data: { id: 900 } });
+    expect(invoices.record).not.toHaveBeenCalled();
+  });
+
+  it('closes a lapsed personal plan too', async () => {
+    const { service, findMany } = makeService();
+    await service.closeLapsed(new Date('2026-10-01'));
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ plan: { in: ['PERSONAL', 'PRO', 'BUSINESS'] } }) }));
   });
 });

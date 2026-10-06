@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  Optional,
   ServiceUnavailableException,
   type OnModuleDestroy,
   type OnModuleInit,
@@ -12,6 +13,7 @@ import type { Plan } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymobClient, PaymobError, type PaymobSubscription } from './paymob.client';
 import { planItemName, planPrices, toCents, type PaidPlan, type PlanPrices } from './prices';
+import { InvoicesService } from './invoices.service';
 import { plansFor } from '@vertex/shared';
 
 export const PERSONAL_PLAN_ONLY = 'The personal plan is for your own workspace. Choose a team plan for a company or team.';
@@ -73,6 +75,7 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    @Optional() private readonly invoices?: InvoicesService,
   ) {
     const get = (k: string) => config.get<string>(k)?.trim() || undefined;
     const planId = (k: string) => (get(k) && /^\d+$/.test(get(k)!) ? Number(get(k)) : null);
@@ -231,7 +234,9 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
       if (sub) {
         // The first payment names the workspace; a renewal is found by its subscription.
         const ref = parseReference(tx.order?.merchant_order_id);
-        await this.applySubscription(sub, ref?.orgId);
+        const paid = await this.applySubscription(sub, ref?.orgId);
+        // Every payment taken is invoiced, the first and each renewal.
+        if (paid && this.invoices) await this.invoices.record(paid.orgId, paid.plan, tx, sub);
       } else if (!tx.success) {
         this.logger.warn(`Paymob payment ${transactionId} did not go through`);
       }
@@ -245,18 +250,20 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
   private planOf(planId: number): PaidPlan | null {
     if (planId === this.plans.BUSINESS) return 'BUSINESS';
     if (planId === this.plans.PRO) return 'PRO';
+    if (planId === this.plans.PERSONAL) return 'PERSONAL';
     return null;
   }
 
   /**
    * Brings a workspace in line with its subscription at Paymob. `orgId` is
    * known for a first payment; otherwise the subscription must be on file.
+   * Says which workspace and plan it is for, when that is known.
    */
-  private async applySubscription(sub: PaymobSubscription, orgId?: string) {
+  private async applySubscription(sub: PaymobSubscription, orgId?: string): Promise<{ orgId: string; plan: PaidPlan } | null> {
     const plan = this.planOf(sub.plan_id);
     if (!plan) {
       this.logger.warn(`Paymob subscription ${sub.id} is on plan ${sub.plan_id}, which is not a Vertex plan`);
-      return;
+      return null;
     }
     const subId = String(sub.id);
     const stored = await this.db.subscription.findFirst({
@@ -266,13 +273,13 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
     const org = orgId ?? stored?.orgId;
     if (!org) {
       this.logger.warn(`Paymob subscription ${sub.id} is not tied to any workspace`);
-      return;
+      return null;
     }
     const status = subStatus(sub.state);
     const periodEnd = sub.next_billing ? endOfDay(sub.next_billing) : null;
 
     if (stored?.paymobSubscriptionId && stored.paymobSubscriptionId !== subId) {
-      if (status !== 'ACTIVE') return; // news about an older subscription changes nothing
+      if (status !== 'ACTIVE') return { orgId: org, plan }; // news about an older subscription changes nothing
       // A new plan was paid for: stop the old one, so it is not billed twice.
       if (LIVE.has(stored.status)) {
         await this.paymob!.cancelSubscription(Number(stored.paymobSubscriptionId)).catch((e) =>
@@ -293,6 +300,7 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
       }),
     ]);
     this.logger.log(`Applied ${orgPlan} (${status}) to org ${org} from Paymob subscription ${subId}`);
+    return { orgId: org, plan };
   }
 
   /**
@@ -305,7 +313,7 @@ export class BillingService implements OnModuleInit, OnModuleDestroy {
     const lapsed = await this.db.subscription.findMany({
       where: {
         deletedAt: null,
-        plan: { in: ['PRO', 'BUSINESS'] },
+        plan: { in: ['PERSONAL', 'PRO', 'BUSINESS'] },
         OR: [
           { status: 'CANCELED', currentPeriodEnd: { lt: now } },
           { status: 'PAST_DUE', currentPeriodEnd: { lt: grace } },
