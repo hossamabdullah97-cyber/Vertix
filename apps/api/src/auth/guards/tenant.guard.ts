@@ -12,6 +12,22 @@ import { PLATFORM_SCOPE_KEY } from '../decorators/platform-scope.decorator';
 import { TWO_STEP_EXEMPT_KEY } from '../decorators/two-step-exempt.decorator';
 
 export const TWO_STEP_REQUIRED_MESSAGE = 'Two-step verification is required in this workspace';
+export const SSO_REQUIRED_MESSAGE = 'This workspace signs in with single sign-on';
+
+/**
+ * Whether a member must have arrived through the workspace's single sign-on:
+ * it requires it, and their address is on one of its verified domains. Owners
+ * are not held to it, so a broken provider can always be fixed from inside.
+ */
+export function ssoRequired(
+  org: { ssoConnection: { enforced: boolean; testedAt: Date | null } | null; ssoDomains: { domain: string }[] },
+  role: string,
+  email: string,
+): boolean {
+  if (role === 'OWNER' || !org.ssoConnection?.enforced || !org.ssoConnection.testedAt) return false;
+  const domain = email.trim().toLowerCase().split('@')[1];
+  return !!domain && org.ssoDomains.some((d) => d.domain === domain);
+}
 
 /** Whether a workspace's settings require its members to use two-step verification. */
 export function requiresTwoStep(settings: unknown): boolean {
@@ -108,9 +124,11 @@ export class TenantGuard implements CanActivate {
             isActive: true,
             deletedAt: true,
             settings: true,
+            ssoConnection: { select: { enforced: true, testedAt: true } },
+            ssoDomains: { where: { verifiedAt: { not: null } }, select: { domain: true } },
           },
         },
-        user: { select: { totpEnabledAt: true } },
+        user: { select: { totpEnabledAt: true, email: true } },
       },
     });
     if (!membership || !membership.org.isActive || membership.org.deletedAt) {
@@ -121,11 +139,22 @@ export class TenantGuard implements CanActivate {
       throw new ForbiddenException('This organization is currently suspended or deleted');
     }
     // A workspace that requires two-step verification is closed to a member
-    // signed in without it, except for setting it up. Keys and personal
-    // tokens are not sign-ins and are not held to it.
-    if (!apiAuth && !membership.user.totpEnabledAt && requiresTwoStep(membership.org.settings)) {
-      const exempt = this.reflector.getAllAndOverride<boolean>(TWO_STEP_EXEMPT_KEY, [context.getHandler(), context.getClass()]);
-      if (!exempt) throw new ForbiddenException({ statusCode: 403, message: TWO_STEP_REQUIRED_MESSAGE, code: 'TWO_STEP_REQUIRED' });
+    // signed in without it, except for setting it up; one that requires its
+    // single sign-on, to a member who signed in some other way. Keys and
+    // personal tokens are not sign-ins and are held to neither. A sign-in
+    // through the workspace's own provider meets its two-step requirement:
+    // the company's provider asks for its own second step.
+    if (!apiAuth) {
+      const exempt = () => this.reflector.getAllAndOverride<boolean>(TWO_STEP_EXEMPT_KEY, [context.getHandler(), context.getClass()]);
+      let viaSso: boolean | undefined;
+      const signedInViaSso = async () =>
+        (viaSso ??= !!user.sid && (await this.prisma.client.authSession.findUnique({ where: { id: user.sid }, select: { ssoOrgId: true } }))?.ssoOrgId === orgId);
+      if (ssoRequired(membership.org, membership.role, membership.user.email) && !exempt() && !(await signedInViaSso())) {
+        throw new ForbiddenException({ statusCode: 403, message: SSO_REQUIRED_MESSAGE, code: 'SSO_REQUIRED' });
+      }
+      if (!membership.user.totpEnabledAt && requiresTwoStep(membership.org.settings) && !exempt() && !(await signedInViaSso())) {
+        throw new ForbiddenException({ statusCode: 403, message: TWO_STEP_REQUIRED_MESSAGE, code: 'TWO_STEP_REQUIRED' });
+      }
     }
 
     req.tenant = { orgId, userId: user.sub, role: membership.role, customRole: membership.customRole ?? null };

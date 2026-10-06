@@ -174,6 +174,8 @@ export class AccountService {
         // Every device it was signed in on, with the addresses they came from.
         await tx.authSession.deleteMany({ where: { userId } });
         await tx.personalAccessToken.deleteMany({ where: { userId } });
+        // Which account they were at their company's provider.
+        await tx.ssoIdentity.deleteMany({ where: { userId } });
         await tx.leadAlertSettings.deleteMany({ where: { userId } });
         await tx.notificationPreference.deleteMany({ where: { userId } });
         await tx.notification.deleteMany({ where: { userId } });

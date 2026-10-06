@@ -10,6 +10,7 @@ import { AccountModule } from './account/account.module';
 import { GoalsModule } from './goals/goals.module';
 import { HealthModule } from './health/health.module';
 import { OrganizationsModule } from './organizations/organizations.module';
+import { SsoModule } from './sso/sso.module';
 import { CardsModule } from './cards/cards.module';
 import { NfcModule } from './nfc/nfc.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -55,6 +56,7 @@ import { UsageModule } from './usage/usage.module';
     GoalsModule,
     HealthModule,
     OrganizationsModule,
+    SsoModule,
     CardsModule,
     NfcModule,
     AnalyticsModule,

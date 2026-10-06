@@ -18,6 +18,7 @@ function make(opts: { memberships: Mem[]; others: Record<string, number>; otherO
     pushSubscription: { deleteMany: rec('push.deleteMany') },
     authSession: { deleteMany: rec('sessions.deleteMany') },
     personalAccessToken: { deleteMany: rec('pat.deleteMany') },
+    ssoIdentity: { deleteMany: rec('sso.deleteMany') },
     leadAlertSettings: { deleteMany: rec('alerts.deleteMany') },
     notificationPreference: { deleteMany: rec('prefs.deleteMany') },
     notification: { deleteMany: rec('notif.deleteMany') },
@@ -85,6 +86,7 @@ describe('AccountService', () => {
     expect(calls['lead.updateMany']![0]).toMatchObject({ data: { assignedTo: null } });
     expect(calls['activity.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
     expect(calls['tips.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
+    expect(calls['sso.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
     const erased = (calls['user.update']![0] as { data: Record<string, unknown> }).data;
     expect(erased).toMatchObject({ email: 'deleted-u1@deleted.invalid', name: null, passwordHash: null, googleId: null });
     expect(erased.deletedAt).toBeInstanceOf(Date);

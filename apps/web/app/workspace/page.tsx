@@ -1,6 +1,7 @@
 'use client';
 
-import { can } from '@/lib/permissions';
+import { can, canChangeRoles } from '@/lib/permissions';
+import { SsoSettings } from '@/components/workspace/SsoSettings';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -18,8 +19,8 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { ActionMenu } from '@/components/ui/ActionMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
-type Section = 'general' | 'brand' | 'files' | 'security';
-const SECTIONS: Section[] = ['general', 'brand', 'files', 'security'];
+type Section = 'general' | 'brand' | 'files' | 'security' | 'sso';
+const SECTIONS: Section[] = ['general', 'brand', 'files', 'security', 'sso'];
 const SWATCHES = ['#2563eb', '#1d4ed8', '#0ea5e9', '#0d9488', '#16a34a', '#ca8a04', '#ea580c', '#dc2626', '#db2777', '#7c3aed', '#475569', '#0a0a0a'];
 
 interface Org {
@@ -134,7 +135,7 @@ export default function WorkspaceSettingsPage() {
   return (
     <AppShell title={title}>
       <nav role="tablist" aria-label={title} className="no-scrollbar -mx-5 flex gap-5 overflow-x-auto border-b border-line px-5 md:-mx-8 md:px-8">
-        {SECTIONS.filter((s) => s !== 'security' || (canEdit && !own)).map((s) => {
+        {SECTIONS.filter((s) => (s === 'security' ? canEdit && !own : s === 'sso' ? canChangeRoles(me) && !own : true)).map((s) => {
           const active = section === s;
           return (
             <button
@@ -151,7 +152,7 @@ export default function WorkspaceSettingsPage() {
         })}
       </nav>
 
-      {!canEdit && me && section !== 'files' && section !== 'security' && <p className="mt-4 rounded-lg bg-elevated px-4 py-3 text-sm text-muted ring-1 ring-inset ring-line">{t('readOnly')}</p>}
+      {!canEdit && me && section !== 'files' && section !== 'security' && section !== 'sso' && <p className="mt-4 rounded-lg bg-elevated px-4 py-3 text-sm text-muted ring-1 ring-inset ring-line">{t('readOnly')}</p>}
 
       {error && (
         <div role="alert" className="mt-4 flex items-start gap-3 rounded-lg bg-red-500/[0.06] px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-500/20 dark:text-red-300">
@@ -187,6 +188,8 @@ export default function WorkspaceSettingsPage() {
           <Brand org={org} canEdit={canEdit} onSave={save} />
         ) : section === 'security' ? (
           canEdit ? <Security me={me} onDone={flash} onError={setError} /> : null
+        ) : section === 'sso' ? (
+          canChangeRoles(me) && !own ? <SsoSettings onDone={flash} onError={setError} /> : null
         ) : (
           <Files canManage={canManageFiles} onDone={flash} onError={setError} />
         )}

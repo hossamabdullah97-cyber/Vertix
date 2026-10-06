@@ -1,6 +1,6 @@
 'use client';
 
-import type { Plan } from '@vertex/shared';
+import type { Plan, SsoCallbackResult, SsoConnectionInput, SsoSettingsInput, SsoView } from '@vertex/shared';
 import { API_URL } from './api';
 import enCommon from '@/locales/en/common.json';
 import arCommon from '@/locales/ar/common.json';
@@ -586,6 +586,58 @@ export const orgSecurity = {
   set: (require2fa: boolean) => authFetch<OrgSecurity>('/orgs/security', { method: 'PATCH', body: JSON.stringify({ require2fa }) }),
 };
 
+export const ssoSettings = {
+  get: () => authFetch<SsoView>('/orgs/sso'),
+  save: (body: SsoConnectionInput) => authFetch<SsoView>('/orgs/sso', { method: 'PUT', body: JSON.stringify(body) }),
+  set: (body: SsoSettingsInput) => authFetch<SsoView>('/orgs/sso', { method: 'PATCH', body: JSON.stringify(body) }),
+  remove: () => authFetch<SsoView>('/orgs/sso', { method: 'DELETE' }),
+  addDomain: (domain: string) => authFetch<SsoView>('/orgs/sso/domains', { method: 'POST', body: JSON.stringify({ domain }) }),
+  verifyDomain: (id: string) => authFetch<SsoView>(`/orgs/sso/domains/${id}/verify`, { method: 'POST' }),
+  removeDomain: (id: string) => authFetch<SsoView>(`/orgs/sso/domains/${id}`, { method: 'DELETE' }),
+  /** Sends the admin to the provider to try the setup; they come back to /sso/callback. */
+  test: async () => goToProvider((await authFetch<{ url: string }>('/orgs/sso/test', { method: 'POST' })).url, null, true),
+};
+
+// --- Single sign-on ---
+// The sign-in's state is kept in this tab while the person is at their
+// company's provider, and the one that comes back must be it: a link to the
+// callback that someone else started cannot sign this browser into their account.
+const SSO_KEY = 'vertex_sso';
+
+function goToProvider(url: string, next: string | null, test = false) {
+  const state = new URL(url).searchParams.get('state');
+  try {
+    sessionStorage.setItem(SSO_KEY, JSON.stringify({ state, next, test }));
+  } catch {
+    /* no storage: the callback will say this browser did not start it */
+  }
+  window.location.assign(url);
+}
+
+/** Sends someone who typed their work address to their company's provider. */
+export async function ssoStart(email: string, next: string | null) {
+  const { url } = await authPost<{ url: string }>('sso/start', { email: email.trim() });
+  goToProvider(url, next);
+}
+
+export class SsoNotStartedHere extends Error {}
+
+/** Back from the provider: signs in, or reports a test's result. */
+export async function ssoFinish(code: string, state: string): Promise<{ tested: string | null; next: string | null }> {
+  let kept: { state?: string; next?: string | null; test?: boolean } = {};
+  try {
+    kept = JSON.parse(sessionStorage.getItem(SSO_KEY) || '{}');
+    sessionStorage.removeItem(SSO_KEY);
+  } catch {
+    /* treated as not started here */
+  }
+  if (!kept.state || kept.state !== state) throw new SsoNotStartedHere();
+  const result = await authPost<SsoCallbackResult>('sso/callback', { code, state });
+  if ('tested' in result) return { tested: result.email, next: null };
+  startSession(result);
+  return { tested: null, next: kept.next ?? null };
+}
+
 // --- Resource types ---
 export interface Card {
   id: string;
@@ -679,8 +731,10 @@ export interface Me {
   emailVerified?: boolean;
   /** Whether the account signs in with a code from an authenticator app too. */
   twoFactorEnabled?: boolean;
-  /** Whether the active workspace requires that of its members. */
+  /** Whether the active workspace requires that of its members (met by signing in through its single sign-on too). */
   twoFactorRequired?: boolean;
+  /** Whether the active workspace requires its single sign-on of this person, and this device signed in otherwise. */
+  ssoRequired?: boolean;
   /** The active workspace: a person's own, or a company's or team's. */
   workspaceKind?: 'PERSONAL' | 'TEAM' | null;
 }

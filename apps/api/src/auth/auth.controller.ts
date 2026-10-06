@@ -175,10 +175,10 @@ export class AuthController {
   @PersonRoute()
   @Get('me')
   async me(@CurrentUser() user: JwtPayload, @OrgId() activeOrgId?: string, @Tenant() tenant?: TenantContext) {
-    const [profile, badge, twoFactorRequired, workspaceKind] = await Promise.all([
+    const [profile, badge, signIn, workspaceKind] = await Promise.all([
       this.auth.getProfile(user.sub),
       this.auth.getPlanBadge(activeOrgId),
-      this.auth.workspaceRequiresTwoStep(activeOrgId),
+      this.auth.workspaceSignIn(tenant?.orgId ?? activeOrgId, tenant?.role, user.email, user.sid),
       this.auth.workspaceKind(activeOrgId),
     ]);
     // The token names the workspace it was issued in; the role shown is the
@@ -190,7 +190,7 @@ export class AuthController {
       : user.isSuperAdmin
         ? {}
         : { orgId: undefined, role: undefined, customRole: null };
-    return { ...user, ...active, ...profile, ...badge, twoFactorRequired, workspaceKind, sub: user.sub };
+    return { ...user, ...active, ...profile, ...badge, ...signIn, workspaceKind, sub: user.sub };
   }
 
   /** Returns the same shape as GET /me so callers can swap their copy wholesale. */

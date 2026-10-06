@@ -53,7 +53,7 @@ export class SessionsService {
    * used before is told to its owner by email, so one they did not make is
    * noticed. Signing up, the very first device, is not news.
    */
-  async start(userId: string, client: ClientInfo = {}, opts: { announce?: boolean } = {}): Promise<string> {
+  async start(userId: string, client: ClientInfo = {}, opts: { announce?: boolean; ssoOrgId?: string } = {}): Promise<string> {
     const userAgent = clip(client.userAgent, 512);
     const ip = clip(client.ip, 64);
     const label = deviceLabel(userAgent);
@@ -63,7 +63,7 @@ export class SessionsService {
       isNew = before.length > 0 && !before.some((s) => deviceLabel(s.userAgent) === label);
     }
     const session = await this.db.authSession.create({
-      data: { userId, userAgent, ip, expiresAt: new Date(Date.now() + SESSION_IDLE_MS) },
+      data: { userId, userAgent, ip, expiresAt: new Date(Date.now() + SESSION_IDLE_MS), ssoOrgId: opts.ssoOrgId ?? null },
       select: { id: true },
     });
     if (isNew) await this.announce(userId, label, ip);

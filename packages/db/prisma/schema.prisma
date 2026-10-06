@@ -76,6 +76,7 @@ model User {
   pushSubscriptions  PushSubscription[]      @relation("PushSubscriptions")
   goals              Goal[]                  @relation("GoalMember")
   authSessions       AuthSession[]           @relation("AuthSessions")
+  ssoIdentities      SsoIdentity[]
 
   @@index([deletedAt])
   @@map("users")
@@ -128,6 +129,8 @@ model Organization {
   messageTemplates  MessageTemplate[]
   invoices          Invoice[]
   customFields      CustomField[]
+  ssoConnection     SsoConnection?
+  ssoDomains        SsoDomain[]
 
   @@index([deletedAt])
   @@map("organizations")
@@ -557,6 +560,8 @@ model AuthSession {
   /// Renewed with each refresh; a device left alone past it is signed out.
   expiresAt  DateTime
   revokedAt  DateTime?
+  /// The workspace whose single sign-on opened this session, if any.
+  ssoOrgId   String?
 
   user User @relation("AuthSessions", fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1599,4 +1604,70 @@ model CustomRole {
   @@unique([orgId, name])
   @@index([orgId])
   @@map("custom_roles")
+}
+
+enum SsoProvider {
+  GOOGLE
+  MICROSOFT
+  OIDC
+}
+
+/// A company workspace's single sign-on: its own app at an OpenID Connect
+/// provider (Google Workspace, Microsoft Entra ID, or any other).
+model SsoConnection {
+  id           String      @id @default(cuid())
+  orgId        String      @unique
+  provider     SsoProvider
+  issuer       String
+  clientId     String
+  /// Sealed with INTEGRATION_ENCRYPTION_KEY, bound to the workspace.
+  clientSecret String
+  /// Set by the first successful test sign-in; until then nobody can use it.
+  testedAt     DateTime?
+  /// Members whose address is on a verified domain must arrive through it.
+  enforced     Boolean     @default(false)
+  /// A person from a verified domain without a place here joins on first sign-in.
+  autoJoin     Boolean     @default(true)
+  joinRole     Role        @default(EMPLOYEE)
+  lastUsedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  org        Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  identities SsoIdentity[]
+
+  @@map("sso_connections")
+}
+
+/// An email domain a workspace claims, proven with a DNS TXT record. A domain
+/// is verified for one workspace at most (a partial unique index).
+model SsoDomain {
+  id         String    @id @default(cuid())
+  orgId      String
+  domain     String
+  token      String
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, domain])
+  @@index([domain])
+  @@map("sso_domains")
+}
+
+/// Which account a person at a provider is, by the provider's own id for them.
+model SsoIdentity {
+  id           String   @id @default(cuid())
+  connectionId String
+  subject      String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  connection SsoConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, subject])
+  @@index([userId])
+  @@map("sso_identities")
 }
