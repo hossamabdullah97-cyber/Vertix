@@ -122,7 +122,9 @@
     "leadsImported_one": "{{count}} imported lead was assigned to you",
     "leadsImported_other": "{{count}} imported leads were assigned to you",
     "leadsImportedBy_one": "{{actor}} assigned you {{count}} imported lead",
-    "leadsImportedBy_other": "{{actor}} assigned you {{count}} imported leads"
+    "leadsImportedBy_other": "{{actor}} assigned you {{count}} imported leads",
+    "mentioned": "{{actor}} mentioned you in a note on {{lead}}",
+    "aLead": "a lead"
   },
   "push": {
     "title": "On this device",

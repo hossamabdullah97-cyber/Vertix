@@ -377,7 +377,7 @@ export class LeadsService {
       data: {
         leadId: id,
         type: input.type,
-        metadata: { note: input.note ?? null, meetingAt: input.meetingAt ?? null, manual: true },
+        metadata: { note: input.note ?? null, meetingAt: input.meetingAt ?? null, manual: true, by: viewer.userId },
       },
       select: { id: true, type: true, metadata: true, createdAt: true },
     });

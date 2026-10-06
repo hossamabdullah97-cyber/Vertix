@@ -1,324 +1,172 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TeamNote } from '@vertex/shared';
+import { authFetch, type Me } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatRelativeTime } from '@/lib/format';
+import { avatarColor, initials } from '@/lib/crm';
+import { NoteText } from './MentionInput';
 
-interface Note {
+type Filter = 'all' | 'mentions' | 'mine';
+
+/** Notes this browser kept before notes were shared (the old Notes tab). */
+const LOCAL_KEY = 'vertex_crm_notes';
+interface LocalNote {
   id: string;
   title: string;
   content: string;
-  pinned: boolean;
-  createdAt: string;
   updatedAt: string;
-  category: string;
 }
 
-const NOTE_TEMPLATES = {
-  general: {
-    title: 'General Meeting Minutes',
-    content: `## General Discussion\n\n* Date: ${new Date().toLocaleDateString()}\n* Attendees:\n* Agenda:\n\n## Action Items\n\n- [ ] Follow up on pricing options\n- [ ] Schedule next demo call`,
-  },
-  discovery: {
-    title: 'Lead Discovery Call notes',
-    content: `## Discovery Interview\n\n* **Business Size:** \n* **Current NFC/QR setup:** None\n* **Primary Pain Points:** Cards are outdated, slow contact capture.\n* **Timeline to Buy:** Within 30 days.\n\n## Budget & Value\n\n* Estimated deal size: \n* Priority: HIGH`,
-  },
-  proposal: {
-    title: 'Proposal & Negotiation notes',
-    content: `## Proposal Review\n\n* **Offered plan:** Business Plan (Annual)\n* **Discounts discussed:** 10% volume discount\n* **Client Response:** Positive, reviewing details with legal.`,
-  },
-};
-
-const STORAGE_KEY = 'vertex_crm_notes';
-
-function loadNotes(): Note[] {
-  if (typeof window === 'undefined') return [];
+function readLocal(): LocalNote[] {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Note[]) : [];
+    const raw = localStorage.getItem(LOCAL_KEY);
+    return raw ? (JSON.parse(raw) as LocalNote[]).filter((n) => n.content?.trim() || n.title?.trim()) : [];
   } catch {
     return [];
   }
 }
 
-export function NotesView() {
+/**
+ * The team's notes on its leads, newest first: all of them, the ones naming
+ * you, or your own. Each opens its lead, where it can be answered or changed.
+ * Notes are written on a lead (its Activity tab), so they are never orphaned.
+ */
+export function NotesView({ onOpenLead }: { onOpenLead: (id: string) => void }) {
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedId, setSelectedId] = useState<string>('');
+  const [filter, setFilter] = useState<Filter>('all');
+  const [notes, setNotes] = useState<TeamNote[] | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
+  const [local, setLocal] = useState<LocalNote[]>([]);
+  const [error, setError] = useState('');
 
-  // Hydrate from localStorage on mount (client only) — notes are stored in this
-  // browser. There is no notes backend yet, so we persist locally rather than
-  // seed fabricated content.
   useEffect(() => {
-    const stored = loadNotes();
-    setNotes(stored);
-    setSelectedId(stored[0]?.id || '');
+    authFetch<Me>('/auth/me').then(setMe, () => undefined);
+    setLocal(readLocal());
   }, []);
 
-  // Persist every change back to localStorage.
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-    }
-  }, [notes]);
-  const [search, setSearch] = useState('');
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | 'ALL'>('ALL');
-  const [isPreview, setIsPreview] = useState(false);
-
-  const selectedNote = notes.find((n) => n.id === selectedId) || null;
-
-  // Load selected note into editor
-  useEffect(() => {
-    if (selectedNote) {
-      setEditTitle(selectedNote.title);
-      setEditContent(selectedNote.content);
-    }
-  }, [selectedId]);
-
-  function saveNote(updatedFields: Partial<Note>) {
-    if (!selectedId) return;
-    setNotes((prev) =>
-      prev.map((n) =>
-        n.id === selectedId
-          ? { ...n, ...updatedFields, updatedAt: new Date().toISOString() }
-          : n
-      )
-    );
-  }
-
-  function handleCreateNew(templateKey?: keyof typeof NOTE_TEMPLATES) {
-    const template = templateKey
-      ? { title: t(`notes.templateTitles.${templateKey}`), content: NOTE_TEMPLATES[templateKey].content }
-      : { title: t('notes.untitled'), content: '' };
-    const newNote: Note = {
-      id: `note-${Date.now()}`,
-      title: template.title,
-      content: template.content,
-      pinned: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      category: templateKey ? 'Template' : 'Draft',
-    };
-
-    setNotes((prev) => [newNote, ...prev]);
-    setSelectedId(newNote.id);
-    setIsPreview(false);
-  }
-
-  function handleDelete(id: string) {
-    const remaining = notes.filter((n) => n.id !== id);
-    setNotes(remaining);
-    if (selectedId === id && remaining.length > 0) {
-      setSelectedId(remaining[0].id);
-    }
-  }
-
-  const filteredNotes = useMemo(() => {
-    return notes.filter((n) => {
-      if (activeCategory !== 'ALL' && n.category !== activeCategory) return false;
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        return n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q);
-      }
-      return true;
-    }).sort((a, b) => {
-      // Pinned notes first
-      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-      return +new Date(b.updatedAt) - +new Date(a.updatedAt);
+    setNotes(null);
+    setError('');
+    authFetch<TeamNote[]>(`/leads/notes?filter=${filter}`).then(setNotes, (e) => {
+      setNotes([]);
+      setError((e as Error).message);
     });
-  }, [notes, activeCategory, search]);
+  }, [filter]);
 
-  const categories = useMemo(() => {
-    return ['ALL', ...Array.from(new Set(notes.map((n) => n.category)))];
-  }, [notes]);
+  function forgetLocal(id: string) {
+    const rest = local.filter((n) => n.id !== id);
+    setLocal(rest);
+    try {
+      if (rest.length) localStorage.setItem(LOCAL_KEY, JSON.stringify(rest));
+      else localStorage.removeItem(LOCAL_KEY);
+    } catch {
+      // nothing to forget
+    }
+  }
+
+  const filters: Filter[] = ['all', 'mentions', 'mine'];
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[280px_1fr] h-[calc(100vh-220px)]">
-      {/* Left Pane: Notes List */}
-      <div className="flex flex-col border border-line rounded-2xl bg-surface overflow-hidden">
-        {/* Search & Actions */}
-        <div className="p-3 border-b border-line space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-ink flex items-center gap-1.5">
-              <Icon name="file-text" size={14} className="text-accent" /> {t('notes.heading')}
-            </span>
-            <button
-              onClick={() => handleCreateNew()}
-              className="v-btn !h-7 !px-2.5 text-2xs font-semibold"
-              title={t('notes.newTitle')}
-            >
-              <Icon name="plus" size={12} /> {t('notes.new')}
-            </button>
-          </div>
-          
-          <div className="relative flex items-center">
-            <span className="absolute start-2.5 text-faint"><Icon name="search" size={13} /></span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('notes.searchPlaceholder')}
-              className="v-field !h-8 !ps-8 text-2xs"
-            />
-          </div>
+    <div className="mx-auto max-w-[760px]">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-md font-semibold text-ink">{t('notes.heading')}</h2>
+          <p className="mt-1 text-sm text-muted">{t('notes.intro')}</p>
         </div>
-
-        {/* Categories Bar */}
-        <div className="no-scrollbar flex gap-1 overflow-x-auto px-3 py-2 border-b border-line bg-canvas/30">
-          {categories.map((cat) => (
+        <div role="tablist" aria-label={t('notes.heading')} className="flex gap-1 rounded-lg bg-elevated p-1 ring-1 ring-inset ring-line">
+          {filters.map((f) => (
             <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className="h-11 shrink-0 rounded-md px-2.5 text-xs font-medium transition-colors sm:h-7"
-              style={{
-                backgroundColor: activeCategory === cat ? 'var(--v-accent)' : 'transparent',
-                color: activeCategory === cat ? 'var(--v-accent-contrast)' : 'hsl(var(--v-muted))',
-              }}
+              key={f}
+              role="tab"
+              aria-selected={filter === f}
+              onClick={() => setFilter(f)}
+              className={`min-h-9 rounded-md px-3 text-xs font-medium transition-colors ${filter === f ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'}`}
             >
-              {cat === 'ALL' ? t('notes.categoryAll') : cat === 'Template' ? t('notes.categoryTemplate') : cat === 'Draft' ? t('notes.categoryDraft') : cat}
+              {t(`notes.filters.${f}`)}
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Notes Items */}
-        <div className="flex-1 overflow-y-auto divide-y divide-line no-scrollbar">
-          {filteredNotes.map((n) => {
-            const isSelected = n.id === selectedId;
+      {error && (
+        <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
+
+      {!notes ? (
+        <div className="mt-5 space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="v-skeleton h-24 rounded-xl" />
+          ))}
+        </div>
+      ) : notes.length === 0 ? (
+        <div className="mt-5 rounded-xl px-6 py-12 text-center ring-1 ring-inset ring-line">
+          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-elevated text-muted ring-1 ring-inset ring-line">
+            <Icon name="message" size={17} />
+          </span>
+          <p className="mt-3 text-sm text-muted">{t(`notes.empty.${filter}`)}</p>
+        </div>
+      ) : (
+        <ul className="mt-5 space-y-3">
+          {notes.map((n) => {
+            const who = n.author?.name ?? t('notes.someone');
+            const mine = !!me && n.author?.id === me.sub;
             return (
-              <button
-                key={n.id}
-                onClick={() => setSelectedId(n.id)}
-                className="w-full text-left p-3.5 transition-colors focus:outline-none flex gap-2"
-                style={{ backgroundColor: isSelected ? 'var(--v-accent-soft)' : 'transparent' }}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-1.5">
-                    {n.pinned && (
-                      <span className="text-amber-500 shrink-0 mt-0.5" title={t('notes.pinned')}>
-                        <Icon name="sparkle" size={10} />
-                      </span>
-                    )}
-                    <h4 className={`truncate text-xs font-semibold leading-snug ${isSelected ? 'text-accent' : 'text-ink'}`}>
-                      {n.title || t('notes.untitled')}
-                    </h4>
-                  </div>
-                  <p className="truncate text-2xs text-muted mt-1">
-                    {n.content.replace(/[#*`_-]/g, '') || t('notes.emptyBody')}
-                  </p>
-                  <span className="text-3xs text-faint font-semibold block mt-1.5">
-                    {formatDate(n.updatedAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}
+              <li key={n.id} data-testid="team-note" className="rounded-xl p-4 ring-1 ring-inset ring-line">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    aria-hidden
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-2xs font-semibold text-white"
+                    style={{ background: avatarColor(who) }}
+                  >
+                    {initials(who)}
                   </span>
+                  <p className="min-w-0 flex-1 truncate text-sm">
+                    <span className="font-medium text-ink">{mine ? t('notes.you') : who}</span>
+                    <span className="text-muted"> · </span>
+                    <button type="button" onClick={() => onOpenLead(n.lead.id)} className="font-medium text-accent hover:underline">
+                      {n.lead.name || n.lead.company || t('notes.unnamedLead')}
+                    </button>
+                  </p>
+                  <time dateTime={n.createdAt} title={formatDate(n.createdAt, locale)} className="shrink-0 text-xs text-faint">
+                    {n.editedAt && `${t('notes.edited')} · `}
+                    {formatRelativeTime(n.createdAt, locale, 'narrow')}
+                  </time>
                 </div>
-              </button>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink" dir="auto">
+                  <NoteText text={n.note} mentions={n.mentions} me={me?.sub} />
+                </p>
+              </li>
             );
           })}
-          {filteredNotes.length === 0 && (
-            <div className="p-8 text-center text-faint">
-              <Icon name="inbox" size={20} className="mx-auto mb-1.5" />
-              <span className="text-2xs font-semibold">{t('notes.noNotes')}</span>
-            </div>
-          )}
-        </div>
-      </div>
+        </ul>
+      )}
 
-      {/* Right Pane: Editor / Previewer */}
-      <div className="flex flex-col border border-line rounded-2xl bg-surface overflow-hidden">
-        {selectedNote ? (
-          <>
-            {/* Editor Toolbar */}
-            <div className="px-4 py-2.5 border-b border-line bg-canvas/30 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => saveNote({ pinned: !selectedNote.pinned })}
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors border ${selectedNote.pinned ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' : 'text-muted border-line hover:text-ink'}`}
-                  title={selectedNote.pinned ? t('notes.unpin') : t('notes.pin')}
-                >
-                  <Icon name="sparkle" size={13} />
-                </button>
-                <button
-                  onClick={() => setIsPreview(!isPreview)}
-                  className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-2xs font-semibold text-muted hover:text-ink"
-                >
-                  <Icon name={isPreview ? 'file-text' : 'eye'} size={12} />
-                  {isPreview ? t('notes.editEditor') : t('notes.previewMd')}
-                </button>
-              </div>
-
-              {/* Template dropdown list */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-faint">{t('notes.templates')}</span>
-                <div className="flex gap-1">
-                  {(Object.keys(NOTE_TEMPLATES) as Array<keyof typeof NOTE_TEMPLATES>).map((key) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        saveNote({ title: t(`notes.templateTitles.${key}`), content: NOTE_TEMPLATES[key].content, category: 'Template' });
-                      }}
-                      className="px-2 py-1 rounded border border-line bg-surface hover:bg-canvas text-3xs font-semibold text-muted"
-                    >
-                      {t(`notes.templateNames.${key}`)}
-                    </button>
-                  ))}
+      {local.length > 0 && (
+        <section className="mt-8 rounded-xl bg-amber-500/[0.05] p-4 ring-1 ring-inset ring-amber-500/20">
+          <h3 className="text-sm font-semibold text-ink">{t('notes.local.title')}</h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted">{t('notes.local.body')}</p>
+          <ul className="mt-3 space-y-2">
+            {local.map((n) => (
+              <li key={n.id} className="rounded-lg bg-surface p-3 ring-1 ring-inset ring-line">
+                <div className="flex items-center gap-2">
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{n.title}</p>
+                  <button type="button" onClick={() => forgetLocal(n.id)} className="text-xs text-muted hover:text-red-600">
+                    {t('notes.local.delete')}
+                  </button>
                 </div>
-
-                <span className="h-5 w-px bg-line mx-1" />
-
-                <button
-                  onClick={() => handleDelete(selectedNote.id)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10"
-                  title={t('notes.delete')}
-                >
-                  <Icon name="trash" size={13} />
-                </button>
-              </div>
-            </div>
-
-            {/* Note Editor Area */}
-            <div className="flex-1 overflow-y-auto p-5 no-scrollbar">
-              {isPreview ? (
-                <div className="prose max-w-none text-sm text-muted space-y-4">
-                  <h1 className="text-xl font-semibold text-ink border-b border-line pb-2">{editTitle || t('notes.untitled')}</h1>
-                  <div className="whitespace-pre-wrap leading-relaxed">
-                    {editContent || <span className="text-faint italic">{t('notes.noContent')}</span>}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4 h-full flex flex-col">
-                  <input
-                    value={editTitle}
-                    onChange={(e) => {
-                      setEditTitle(e.target.value);
-                      saveNote({ title: e.target.value });
-                    }}
-                    placeholder={t('notes.titlePlaceholder')}
-                    className="w-full bg-transparent text-xl font-semibold text-ink outline-none placeholder:text-faint border-b border-line pb-2"
-                  />
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => {
-                      setEditContent(e.target.value);
-                      saveNote({ content: e.target.value });
-                    }}
-                    placeholder={t('notes.contentPlaceholder')}
-                    className="w-full flex-1 resize-none bg-transparent text-sm text-ink outline-none placeholder:text-faint leading-relaxed"
-                  />
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-            <Icon name="file-text" size={32} className="text-faint mb-3" />
-            <h3 className="text-base font-semibold text-ink">{t('notes.noneSelected')}</h3>
-            <p className="text-xs text-muted mt-1 max-w-xs">{t('notes.noneSelectedDesc')}</p>
-          </div>
-        )}
-      </div>
+                {n.content && <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted">{n.content}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

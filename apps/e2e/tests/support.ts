@@ -1,4 +1,5 @@
 import { createHmac, randomBytes } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { test as base, expect, type Page } from '@playwright/test';
 
 export const API = process.env.E2E_API_URL ?? 'http://localhost:4000/api';
@@ -48,6 +49,16 @@ export async function newAccount(name = 'E2E Owner'): Promise<Account> {
     api: (path, opts = {}) => call(path, { ...opts, token: account.token, orgId: account.orgId }),
   };
   return account;
+}
+
+/**
+ * Marks the account's email as confirmed, as opening the emailed link would
+ * (needed before inviting anyone). The link only reaches the API's log here,
+ * so the test database is told directly.
+ */
+export function confirmEmail(a: Pick<Account, 'userId'>) {
+  const url = (process.env.DATABASE_URL ?? 'postgresql://vertex:vertex@localhost:5432/vertex_connect').split('?')[0]!;
+  execFileSync('psql', [url, '-c', `UPDATE users SET "emailVerified" = now() WHERE id = '${a.userId.replace(/[^a-z0-9]/gi, '')}'`]);
 }
 
 /** Closes the account (and the workspace only it uses), as a person would. */
