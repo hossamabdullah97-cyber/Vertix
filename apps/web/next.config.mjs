@@ -11,6 +11,8 @@ const standalone = process.env.BUILD_STANDALONE === '1';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Which build a browser was running when it reported an error (lib/report-error.ts).
+  env: { NEXT_PUBLIC_RELEASE: process.env.RELEASE || new Date().toISOString().slice(0, 16).replace('T', ' ') },
   transpilePackages: ['@vertex/shared'],
   // Strip console.* (except error/warn) from production bundles.
   compiler: {

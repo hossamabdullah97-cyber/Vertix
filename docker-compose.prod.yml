@@ -89,6 +89,8 @@ services:
       GOOGLE_WALLET_ISSUER_ID: ${GOOGLE_WALLET_ISSUER_ID:-}
       GOOGLE_WALLET_SERVICE_ACCOUNT: ${GOOGLE_WALLET_SERVICE_ACCOUNT:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # Emailed when a new error shows up, or a fixed one comes back.
+      OPS_ALERT_EMAIL: ${OPS_ALERT_EMAIL:-}
       # Billing with Paymob; off until the keys and plans are set.
       PAYMOB_BASE_URL: ${PAYMOB_BASE_URL:-https://accept.paymob.com}
       PAYMOB_API_KEY: ${PAYMOB_API_KEY:-}

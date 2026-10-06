@@ -9,6 +9,7 @@ import Script from 'next/script';
 import { resources } from '@/lib/i18n/resources';
 import { messagesUrl } from '@/lib/i18n/bundle';
 import { CARD_SURFACE_HEADER } from '@/lib/surface';
+import { ErrorReporter } from '@/components/ErrorReporter';
 
 export const metadata: Metadata = {
   title: 'Vertex Connect',
@@ -62,6 +63,8 @@ export default function RootLayout({
         )}
       </head>
       <body suppressHydrationWarning>
+        {/* Errors no page caught, reported for the admin console; a visitor's card included. */}
+        <ErrorReporter />
         {publicCard ? (
           children
         ) : (

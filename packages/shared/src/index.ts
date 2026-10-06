@@ -1044,3 +1044,36 @@ export function deviceLabel(ua: string | null | undefined): string {
   if (browser && os) return `${browser} on ${os}`;
   return browser ?? os ?? 'Unknown device';
 }
+
+// ===========================================================================
+//  Errors seen in browsers
+// ===========================================================================
+
+/** What a browser reports about an error the page met (see apps/web/lib/report-error.ts). */
+export const clientErrorSchema = z.object({
+  kind: z.enum(['error', 'unhandledrejection', 'react']),
+  name: z.string().trim().max(120).default('Error'),
+  message: z.string().trim().max(1000),
+  stack: z.string().max(8000).optional(),
+  /** The page, without its query string or fragment. */
+  path: z.string().max(300).optional(),
+  release: z.string().max(80).optional(),
+});
+export type ClientErrorInput = z.infer<typeof clientErrorSchema>;
+
+export interface ErrorGroupView {
+  id: string;
+  source: 'BROWSER' | 'API';
+  kind: string;
+  name: string;
+  message: string;
+  stack: string | null;
+  path: string | null;
+  userAgent: string | null;
+  release: string | null;
+  count: number;
+  users: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  resolvedAt: string | null;
+}

@@ -1206,6 +1206,42 @@ model Invoice {
   @@map("invoices")
 }
 
+enum ErrorSource {
+  BROWSER
+  API
+}
+
+/// One kind of error, from the browser or the API, with how often and to how
+/// many people it happened. Platform-wide (no workspace), for the admin
+/// console; the latest occurrence is kept as the example.
+model ErrorGroup {
+  id          String      @id @default(cuid())
+  /// The same error is the same group: source, name, message with its
+  /// numbers and ids taken out, and where it was thrown.
+  fingerprint String      @unique
+  source      ErrorSource
+  /// error | unhandledrejection | react | server
+  kind        String
+  name        String
+  message     String
+  stack       String?
+  /// The page (browser) or route (API) it happened on, without its query.
+  path        String?
+  userAgent   String?
+  /// The build the browser was running.
+  release     String?
+  count       Int         @default(1)
+  /// Up to 50 of the people it happened to, to count them.
+  userIds     String[]    @default([])
+  firstSeenAt DateTime    @default(now())
+  lastSeenAt  DateTime    @default(now())
+  /// Marked fixed; happening again clears it.
+  resolvedAt  DateTime?
+
+  @@index([lastSeenAt])
+  @@map("error_groups")
+}
+
 model PaymentLink {
   id          String    @id @default(cuid())
   cardId      String
