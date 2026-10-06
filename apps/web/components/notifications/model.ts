@@ -98,6 +98,11 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
         body: [str(m.company), t('notifications:types.followUpBody', { count: days })].filter(Boolean).join(' · '),
       };
     }
+    case 'lead.imported':
+      return {
+        title: t(actor ? 'notifications:types.leadsImportedBy' : 'notifications:types.leadsImported', { count: typeof m.count === 'number' ? m.count : 0, actor: iso(actor) }),
+        body: '',
+      };
     case 'automation.failed':
       return { title: t('notifications:types.automationFailed'), body: t('notifications:types.automationFailedBody', { event: event(m.event) }) };
     case 'webhook.failed':
@@ -175,6 +180,8 @@ export function linkOf(n: Notif): string | null {
   const m = n.metadata ?? {};
   const data = (m.data ?? {}) as Record<string, unknown>;
   switch (n.type) {
+    case 'lead.imported':
+      return '/leads';
     case 'lead.captured':
     case 'lead.follow_up':
       return str(m.leadId) ? `/leads?lead=${encodeURIComponent(str(m.leadId))}` : '/leads';

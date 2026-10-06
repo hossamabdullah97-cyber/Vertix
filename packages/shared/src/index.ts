@@ -606,6 +606,66 @@ export const createLeadSchema = z
   .refine((d) => !!d.name || !!d.email || !!d.phone, { message: 'Give a name, an email or a phone number', path: ['name'] });
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 
+/** Rows sent in one request of a spreadsheet import; a bigger file goes in several. */
+export const LEAD_IMPORT_BATCH = 500;
+/** The most rows one file may bring in. */
+export const LEAD_IMPORT_MAX = 5000;
+
+const importText = (max: number) => z.string().trim().max(max).optional();
+
+/**
+ * One row of a spreadsheet of leads, as the page read it. The page matches
+ * the stage to the pipeline (it knows the names in both languages); the
+ * owner is an email the server matches to a member.
+ */
+export const importLeadRowSchema = z.object({
+  /** The row's line in the file, to say which row a problem is on. */
+  line: z.number().int().min(1),
+  name: importText(120),
+  email: importText(200),
+  phone: importText(40),
+  company: importText(120),
+  title: importText(120),
+  note: importText(2000),
+  stageId: z.string().trim().max(40).optional(),
+  value: z.number().min(0).max(1_000_000_000_000).optional(),
+  temperature: z.enum(['HOT', 'WARM', 'COLD']).optional(),
+  owner: importText(200),
+  /** When it really came in (YYYY-MM-DD), for history kept elsewhere until now. */
+  createdOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+export type ImportLeadRow = z.infer<typeof importLeadRowSchema>;
+
+export const importLeadsSchema = z.object({
+  rows: z.array(importLeadRowSchema).min(1).max(LEAD_IMPORT_BATCH),
+  /** A lead already here: left alone, or its empty fields filled from the file. */
+  duplicates: z.enum(['skip', 'fill']).default('skip'),
+  /** Only say what would happen. */
+  dryRun: z.boolean().default(false),
+});
+export type ImportLeadsInput = z.infer<typeof importLeadsSchema>;
+
+export type ImportOutcome = 'create' | 'fill' | 'duplicate' | 'invalid';
+export type ImportProblem = 'empty' | 'badEmail' | 'badDate';
+export type ImportNotice = 'unknownOwner' | 'unknownStage';
+
+export interface ImportRowResult {
+  line: number;
+  outcome: ImportOutcome;
+  problem?: ImportProblem;
+  notices?: ImportNotice[];
+  /** The lead created, or the one it duplicates. */
+  leadId?: string;
+}
+
+export interface ImportLeadsResult {
+  created: number;
+  filled: number;
+  duplicates: number;
+  invalid: number;
+  rows: ImportRowResult[];
+}
+
 // A user-logged CRM activity on a lead (note / call / email / meeting).
 export const addLeadActivitySchema = z.object({
   type: z.enum(['NOTE', 'CALL', 'EMAIL', 'WHATSAPP', 'MEETING']),

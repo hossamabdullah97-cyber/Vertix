@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Header,
+  HttpCode,
   Ip,
   Param,
   Patch,
@@ -31,7 +32,10 @@ import {
   type MergeLeadsInput,
   dismissDuplicatesSchema,
   type DismissDuplicatesInput,
+  importLeadsSchema,
+  type ImportLeadsInput,
 } from '@vertex/shared';
+import { LeadImportService } from './lead-import.service';
 import { LeadMergeService } from './lead-merge.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
@@ -47,6 +51,7 @@ export class LeadsController {
   constructor(
     private readonly leads: LeadsService,
     private readonly merges: LeadMergeService,
+    private readonly imports: LeadImportService,
   ) {}
 
   /** Public: capture a lead from a card's engagement workflow. */
@@ -124,6 +129,15 @@ export class LeadsController {
     const kind = sniffImage(file.buffer);
     if (!kind || !/^image\/(jpeg|png|webp)$/.test(kind.type)) throw new BadRequestException('Send a JPEG, PNG or WebP photo');
     return this.leads.scanCard(user.sub, { mediaType: kind.type, base64: file.buffer.toString('base64') });
+  }
+
+  /** Leads from a spreadsheet, in batches; with dryRun, only what would happen. */
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Post('import')
+  @HttpCode(200)
+  importLeads(@Tenant() tenant: TenantContext, @Body(new ZodValidationPipe(importLeadsSchema)) body: ImportLeadsInput) {
+    return this.imports.import(tenant, body);
   }
 
   /** Adds a lead by hand, or from what was read off a paper card. */

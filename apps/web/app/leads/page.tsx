@@ -16,6 +16,7 @@ import { LeadDrawer } from '@/components/crm/LeadDrawer';
 import { MergeDuplicates, useDuplicates } from '@/components/crm/MergeDuplicates';
 import { LeadList } from '@/components/crm/LeadList';
 import { AddLead } from '@/components/crm/AddLead';
+import { ImportLeads } from '@/components/crm/ImportLeads';
 import { downloadText, leadsCsv } from '@/lib/export-leads';
 import { SmartFilters } from '@/components/crm/SmartFilters';
 import nextDynamic from 'next/dynamic';
@@ -62,6 +63,7 @@ export default function LeadsPage() {
   const [patchBusy, setPatchBusy] = useState(false);
   const [toast, setToast] = useState('');
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [reviewing, setReviewing] = useState<{ focus: string | null } | null>(null);
   useShortcut('n', t('nav:shortcuts.newLead'), () => setAdding(true));
   // On a phone the pipeline is a list filtered by stage, not side-scrolling columns.
@@ -257,6 +259,9 @@ export default function LeadsPage() {
               <Icon name="download" size={14} /> <span className="hidden sm:inline">{t('export.button')}</span>
             </button>
           )}
+          <button type="button" onClick={() => setImporting(true)} className="v-btn v-btn-ghost" title={t('import.buttonHint')}>
+            <Icon name="upload" size={14} /> <span className="hidden sm:inline">{t('import.button')}</span>
+          </button>
           <Link href="/meet" className="v-btn v-btn-ghost" title={t('meet.title')}>
             <Icon name="users" size={14} /> <span className="hidden sm:inline">{t('meet.title')}</span>
           </Link>
@@ -483,6 +488,7 @@ export default function LeadsPage() {
         )}
       </div>
 
+      <ImportLeads open={importing} stages={stages} onClose={() => setImporting(false)} onImported={() => void load()} />
       <AddLead
         open={adding}
         onClose={() => setAdding(false)}

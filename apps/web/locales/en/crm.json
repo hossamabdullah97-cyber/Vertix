@@ -263,7 +263,8 @@
     "view": "Profile view",
     "card_scan": "Paper card",
     "manual": "Added by hand",
-    "in_person": "Met in person"
+    "in_person": "Met in person",
+    "import": "Imported"
   },
   "meeting": {
     "title": "Meeting request",
@@ -316,6 +317,73 @@
       "source": "Source",
       "card": "Card",
       "added": "Added"
+    }
+  },
+  "import": {
+    "button": "Import",
+    "buttonHint": "Bring leads in from Excel or CSV",
+    "title": "Import leads",
+    "subtitle": "From Excel or a CSV file, such as an export from another CRM or a list from an event.",
+    "close": "Close",
+    "pick": "Choose an Excel or CSV file",
+    "pickHint": "Or drop it here · up to {{max}} rows",
+    "columnsTitle": "What the file needs",
+    "columns": {
+      "who": "A header row, and for each lead a name, an email or a phone number.",
+      "others": "Optional: company, job title, stage, temperature, value, owner (a teammate's email), date added, notes. Column names can be in English or Arabic, in any order.",
+      "export": "A file exported from this page imports as it is."
+    },
+    "template": "Download a starter file",
+    "checking": "Checking {{file}}…",
+    "counts": {
+      "new": "To import",
+      "duplicates": "Already here",
+      "problems": "Can't import"
+    },
+    "tooMany": "Only the first {{max}} rows are taken. Split the file to import the rest.",
+    "duplicates": {
+      "title": "Leads already here (same email or phone)",
+      "skip": "Leave them as they are",
+      "skipHint": "Those rows are skipped.",
+      "fill": "Fill in what they're missing",
+      "fillHint": "Empty fields are filled from the file, and its notes are added. Nothing they already have changes."
+    },
+    "rows": "Rows in the file",
+    "outcome": {
+      "create": "New",
+      "fill": "Will fill in",
+      "duplicate": "Already here"
+    },
+    "problems": {
+      "empty": "No name, email or phone",
+      "badEmail": "Email isn't valid",
+      "badDate": "Date can't be read"
+    },
+    "notices": {
+      "unknownOwner": "Owner isn't a member here: assigned to you",
+      "unknownStage": "Stage isn't in your pipeline: put in the first stage"
+    },
+    "more_one": "And {{value}} more row",
+    "more_other": "And {{value}} more rows",
+    "back": "Choose another file",
+    "go_one": "Import {{value}} lead",
+    "go_other": "Import {{value}} leads",
+    "importing": "Importing… {{done}} of {{total}}",
+    "done": {
+      "title": "Import finished",
+      "created": "Added",
+      "filled": "Filled in",
+      "skipped": "Skipped",
+      "next": "Imported leads are marked “Imported” as their source, so you can filter them."
+    },
+    "finish": "Done",
+    "errors": {
+      "type": "Choose an Excel (.xlsx) or CSV file.",
+      "read": "That file can't be read. Save it again as .xlsx or CSV and try again.",
+      "noColumns": "No column for a name, email or phone was found. Check the file's first row.",
+      "empty": "The file has no rows under its header.",
+      "send": "The file couldn't be checked. Try again.",
+      "partway": "The import stopped partway ({{reason}}). Rows already imported are kept; importing again skips them."
     }
   },
   "add": {

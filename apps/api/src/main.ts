@@ -53,6 +53,9 @@ async function bootstrap() {
   mkdirSync(UPLOAD_DIR, { recursive: true });
   app.useStaticAssets(UPLOAD_DIR, { prefix: '/uploads' });
 
+  // A spreadsheet import sends up to 500 rows at a time; the default 100 KB is too little for that.
+  app.useBodyParser('json', { limit: '1mb' });
+
   app.setGlobalPrefix('api');
   // Input validation is handled per-route by ZodValidationPipe (schemas from @vertex/shared).
 

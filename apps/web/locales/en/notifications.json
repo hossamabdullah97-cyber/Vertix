@@ -118,7 +118,11 @@
     "memberDeclined": "{{name}} declined the invitation",
     "cardMovedIn": "{{actor}} moved {{name}}’s card into the workspace",
     "cardMovedInBody_one": "With {{count}} lead from {{from}}",
-    "cardMovedInBody_other": "With {{count}} leads from {{from}}"
+    "cardMovedInBody_other": "With {{count}} leads from {{from}}",
+    "leadsImported_one": "{{count}} imported lead was assigned to you",
+    "leadsImported_other": "{{count}} imported leads were assigned to you",
+    "leadsImportedBy_one": "{{actor}} assigned you {{count}} imported lead",
+    "leadsImportedBy_other": "{{actor}} assigned you {{count}} imported leads"
   },
   "push": {
     "title": "On this device",

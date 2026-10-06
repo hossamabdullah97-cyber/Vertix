@@ -130,7 +130,19 @@
     "cardMovedInBody_zero": "من {{from}}",
     "cardMovedInBody_two": "مع عميلين من {{from}}",
     "cardMovedInBody_few": "مع {{count}} عملاء من {{from}}",
-    "cardMovedInBody_many": "مع {{count}} عميلاً من {{from}}"
+    "cardMovedInBody_many": "مع {{count}} عميلاً من {{from}}",
+    "leadsImported_zero": "لم يُسند إليك أي عميل مستورد",
+    "leadsImported_one": "أُسند إليك عميل مستورد واحد",
+    "leadsImported_two": "أُسند إليك عميلان مستوردان",
+    "leadsImported_few": "أُسند إليك {{count}} عملاء مستوردين",
+    "leadsImported_many": "أُسند إليك {{count}} عميلًا مستوردًا",
+    "leadsImported_other": "أُسند إليك {{count}} عميل مستورد",
+    "leadsImportedBy_zero": "لم يُسند إليك {{actor}} أي عميل مستورد",
+    "leadsImportedBy_one": "أسند إليك {{actor}} عميلًا مستوردًا واحدًا",
+    "leadsImportedBy_two": "أسند إليك {{actor}} عميلين مستوردين",
+    "leadsImportedBy_few": "أسند إليك {{actor}} {{count}} عملاء مستوردين",
+    "leadsImportedBy_many": "أسند إليك {{actor}} {{count}} عميلًا مستوردًا",
+    "leadsImportedBy_other": "أسند إليك {{actor}} {{count}} عميل مستورد"
   },
   "push": {
     "title": "على هذا الجهاز",
