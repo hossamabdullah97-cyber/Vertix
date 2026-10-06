@@ -48,9 +48,9 @@ export class TenantGuard implements CanActivate {
     // A workspace API key already carries its one organization and has no
     // membership row, so its tenant is taken straight from the key. (A PAT
     // carries a real userId and falls through to the normal member path.)
-    const apiAuth = req.apiAuth as { kind: string } | undefined;
+    const apiAuth = req.apiAuth as { kind: string; id: string } | undefined;
     if (apiAuth?.kind === 'api_key' && user.orgId) {
-      req.tenant = { orgId: user.orgId, userId: user.sub, role: 'OWNER' };
+      req.tenant = { orgId: user.orgId, userId: await this.keyActor(apiAuth.id, user.orgId), role: 'OWNER' };
       return true;
     }
 
@@ -129,5 +129,22 @@ export class TenantGuard implements CanActivate {
 
     req.tenant = { orgId, userId: user.sub, role: membership.role };
     return true;
+  }
+
+  /**
+   * Who a workspace key acts as, for whatever it creates (a lead's owner, a
+   * card's owner, who wrote a task): the person who made the key while they
+   * are still an active member, else the workspace's longest-standing owner.
+   * Its scopes still bound what it may do.
+   */
+  private async keyActor(keyId: string, orgId: string): Promise<string> {
+    const key = await this.prisma.client.apiKey.findFirst({ where: { id: keyId, orgId }, select: { createdBy: true } });
+    const active = { orgId, status: 'ACTIVE' as const, user: { deletedAt: null } };
+    const creator = key?.createdBy
+      ? await this.prisma.client.membership.findFirst({ where: { ...active, userId: key.createdBy }, select: { userId: true } })
+      : null;
+    const actor = creator ?? (await this.prisma.client.membership.findFirst({ where: { ...active, role: 'OWNER' }, orderBy: { createdAt: 'asc' }, select: { userId: true } }));
+    if (!actor) throw new ForbiddenException('This key’s workspace has no active owner');
+    return actor.userId;
   }
 }

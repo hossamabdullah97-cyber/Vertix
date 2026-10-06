@@ -88,6 +88,7 @@ export function WebhooksView({ canManage, handoff, onHandled }: { canManage: boo
     <div>
       <Intro
         text={t('webhooks.intro')}
+        docs={{ href: '/developers#webhooks', label: t('webhooks.docs') }}
         action={
           canManage && items && items.length > 0 ? (
             <button onClick={() => setForm({ url: '', description: '', events: [] })} className="v-btn">

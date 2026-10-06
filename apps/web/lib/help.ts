@@ -535,6 +535,7 @@ const en: HelpStrings = {
       body: [
         { p: 'A webhook sends events (a new lead, a card opened…) to an address of yours as they happen. An API key lets your own systems read and write your workspace’s data.' },
         { p: 'Create both in Integrations. A key’s secret is shown once, so keep it somewhere safe; if it leaks, delete the key and make a new one.' },
+        { tip: 'Every endpoint, with examples, and how to check a webhook’s signature are in the API documentation at /developers.' },
       ],
       action: 'Open integrations',
       keywords: 'webhook api key developer token',
@@ -981,6 +982,7 @@ const ar: HelpStrings = {
       body: [
         { p: 'يرسل الـ Webhook الأحداث (عميل جديد، فتح بطاقة…) إلى عنوان لديك فور حدوثها. ويتيح مفتاح الـ API لأنظمتك قراءة بيانات مساحة عملك وكتابتها.' },
         { p: 'أنشئ الاثنين من التكاملات. يظهر سرّ المفتاح مرة واحدة، فاحفظه في مكان آمن؛ وإن تسرّب احذف المفتاح وأنشئ غيره.' },
+        { tip: 'كل نقاط الواجهة مع أمثلتها، وطريقة التحقق من توقيع الـ Webhook، في توثيق الـ API على ‎/developers.' },
       ],
       action: 'افتح التكاملات',
       keywords: 'webhook ويب هوك api مفتاح مطور توكن',

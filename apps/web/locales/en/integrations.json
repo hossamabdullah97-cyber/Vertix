@@ -449,7 +449,8 @@
     "verify": {
       "title": "Verifying requests",
       "body": "Each request carries an X-Vertex-Signature header of the form t=<time>,v1=<signature>. The signature is an HMAC-SHA256, made with your signing secret, of the time, a dot, and the raw body."
-    }
+    },
+    "docs": "How deliveries are signed"
   },
   "keys": {
     "intro": "Keys let your own software work with this workspace. Each key can only do what you allow it.",
@@ -507,7 +508,8 @@
     "use": {
       "title": "Using a key",
       "body": "Send it as a Bearer token in the Authorization header:"
-    }
+    },
+    "docs": "Read the API documentation"
   },
   "secretDialog": {
     "keyTitle": "Copy your new key",
