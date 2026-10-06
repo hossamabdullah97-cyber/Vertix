@@ -22,8 +22,8 @@ const nextConfig = {
   // Tree-shake large barrel imports (framer-motion) for smaller vendor chunks.
   experimental: {
     optimizePackageImports: ['framer-motion'],
-    ...(standalone ? { outputFileTracingRoot: path.join(dirname, '../../') } : {}),
   },
+  ...(standalone ? { outputFileTracingRoot: path.join(dirname, '../../') } : {}),
   ...(standalone ? { output: 'standalone' } : {}),
 };
 

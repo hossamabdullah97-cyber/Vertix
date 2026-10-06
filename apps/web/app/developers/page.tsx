@@ -7,8 +7,8 @@ import { Brand, WRAP } from '@/components/landing/shared';
 import { Icon } from '@/components/Icon';
 import { API_BASE, DEV_STRINGS, VERIFY_SNIPPET, curlFor } from '@/lib/developers';
 
-export function generateMetadata(): Metadata {
-  const s = DEV_STRINGS[serverLocale()];
+export async function generateMetadata(): Promise<Metadata> {
+  const s = DEV_STRINGS[(await serverLocale())];
   return { title: `${s.title} · Vertex Connect`, description: s.lead };
 }
 
@@ -123,8 +123,8 @@ function Endpoint({ e, lang }: { e: ApiEndpoint; lang: 'en' | 'ar' }) {
  * systems: how to authenticate, what fails how, webhooks and how to check
  * them, and every endpoint with an example. Server-rendered, open to anyone.
  */
-export default function DevelopersPage() {
-  const lang = serverLocale();
+export default async function DevelopersPage() {
+  const lang = (await serverLocale());
   const t = DEV_STRINGS[lang];
   const guide = [
     { id: 'start', title: t.sections.start.title },

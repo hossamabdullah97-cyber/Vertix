@@ -73,5 +73,24 @@
     "code": "Code from your authenticator app (or a recovery code)",
     "confirm": "Delete my account",
     "deleting": "Deleting…"
+  },
+  "profileCard": {
+    "title": "Your profile",
+    "subtitle": "Shown next to your name across the workspace. Separate from your card artwork.",
+    "upload": "Upload photo",
+    "change": "Change photo",
+    "remove": "Remove",
+    "formats": "JPG, PNG, WebP, GIF or AVIF · up to 5 MB",
+    "name": "Display name",
+    "namePlaceholder": "Your full name",
+    "save": "Save",
+    "notImage": "Choose an image file.",
+    "tooBig": "That image is over 5 MB. Pick a smaller one.",
+    "uploadFailed": "Upload failed. Please try again.",
+    "removeFailed": "Could not remove the photo.",
+    "nameFailed": "Could not save your name.",
+    "photoUpdated": "Photo updated",
+    "photoRemoved": "Photo removed",
+    "nameUpdated": "Name updated"
   }
 }

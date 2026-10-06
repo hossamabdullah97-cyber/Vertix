@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import type { TenantContext } from '@vertex/db';
@@ -9,6 +9,9 @@ import { RequireScopes } from '../access/scopes.decorator';
 function range(from?: string, to?: string) {
   const t = to ? new Date(to) : new Date();
   const f = from ? new Date(from) : new Date(t.getTime() - 30 * 86_400_000);
+  // A range from a hand-edited address is refused plainly, not passed on to the database.
+  if (Number.isNaN(t.getTime()) || Number.isNaN(f.getTime())) throw new BadRequestException('The start and end of the period must be dates');
+  if (f > t) throw new BadRequestException('The period must start before it ends');
   return { f, t };
 }
 
@@ -60,7 +63,10 @@ export class AnalyticsController {
     @Query('limit') limit?: string,
   ) {
     const { f, t } = range(from, to);
-    return this.analytics.tagPerformance(f, t, limit ? Number(limit) : undefined, AnalyticsService.ownerOf(tenant));
+    // A whole number between 1 and 500; anything else falls back to the default.
+    const n = Number(limit);
+    const take = limit && Number.isInteger(n) && n > 0 ? Math.min(n, 500) : undefined;
+    return this.analytics.tagPerformance(f, t, take, AnalyticsService.ownerOf(tenant));
   }
 
   /** Standings for the team members carrying the hardware. */

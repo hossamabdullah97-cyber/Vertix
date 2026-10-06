@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, use } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -196,7 +196,8 @@ const getActionBrandDetails = (a: { type: string; config: any }) => {
   return defaultDetails;
 };
 
-export default function CardBuilderStudio({ params }: { params: { id: string } }) {
+export default function CardBuilderStudio(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { t } = useTranslation('cardEditor');
   const { locale } = useLocale();
   const router = useRouter();
@@ -225,7 +226,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [paymentLinks, setPaymentLinks] = useState<PaymentLinkRow[]>([]);
   const [tags, setTags] = useState<NfcTag[]>([]);
   const [error, setError] = useState('');
-  
+
   // UX Enhancement States
   const [expandedActionId, setExpandedActionId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -235,7 +236,7 @@ export default function CardBuilderStudio({ params }: { params: { id: string } }
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [draggedActionId, setDraggedActionId] = useState<string | null>(null);
   const [dragOverActionId, setDragOverActionId] = useState<string | null>(null);
-  
+
   // Local changes editing states
   const [slug, setSlug] = useState('');
   const [templateId, setTemplateId] = useState('');

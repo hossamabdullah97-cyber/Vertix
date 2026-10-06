@@ -6,7 +6,8 @@ import { SERVER_API_URL, forwardedFor } from '@/lib/api';
  * phone that has since lost its connection. The API makes it; this passes it
  * on, with the query (a variant's key, a passcode, the language) untouched.
  */
-export async function GET(req: Request, { params }: { params: { slug: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const url = new URL(req.url);
   let res: Response;
   try {

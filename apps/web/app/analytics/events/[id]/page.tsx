@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
 import { useLocale } from '@/components/i18n/LanguageProvider';
-import { apiMessageOf, authFetch, type ApiError } from '@/lib/client';
+import { authFetch } from '@/lib/client';
 import { formatDate, formatNumber, formatRelativeTime } from '@/lib/format';
 import { csvCell, downloadText } from '@/lib/export-leads';
 import { formatMoney, stageKey, type Stage } from '@/lib/crm';
@@ -32,7 +32,8 @@ const HOUR = 3_600_000;
  * followed up; when the stand was busiest; and every lead it produced, to
  * export. The numbers a company takes to the meeting about its next stand.
  */
-export default function OccasionReportPage({ params }: { params: { id: string } }) {
+export default function OccasionReportPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { t } = useTranslation('dashboard');
   const { locale } = useLocale();
   const range = useOccasionRange();
@@ -43,7 +44,7 @@ export default function OccasionReportPage({ params }: { params: { id: string } 
   useEffect(() => {
     authFetch<Report>(`/reports/occasions/${params.id}`)
       .then(setR)
-      .catch((e) => setError(apiMessageOf(e as ApiError) || t('eventReport.failed')));
+      .catch((e) => setError((e as Error).message || t('eventReport.failed')));
     authFetch<(Stage & { isWon?: boolean })[]>('/leads/stages').then(setStages).catch(() => setStages([]));
   }, [params.id, t]);
 

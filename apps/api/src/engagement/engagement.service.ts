@@ -200,18 +200,31 @@ export class EngagementService implements OnModuleInit, OnModuleDestroy {
       if (sent >= PER_SWEEP) break;
       const who = d.c.userId;
       if (done.has(who) || recent.has(who) || had.has(`${who}|${d.key}`)) continue;
-      // Claimed before sending, so two servers can't both send it.
-      try {
-        await this.db.engagementEmail.create({ data: { userId: who, kind: d.kind, key: d.key, sentAt: now } });
-      } catch {
-        continue;
-      }
+      // Claimed before sending, so two sweeps at once (two servers, or the
+      // admin's "send now" beside the schedule) can't both send to this
+      // person: one at a time per person, the other sees what it sent.
+      if (!(await this.claim(who, d.kind, d.key, now))) continue;
       done.add(who);
       const ok = await this.send(d.kind, d.c).catch(() => false);
       if (ok) sent++;
     }
     if (sent) this.logger.log(`Sent ${sent} tip${sent === 1 ? '' : 's'} and reminders`);
     return sent;
+  }
+
+  private async claim(userId: string, kind: AnyKind, key: string, now: Date): Promise<boolean> {
+    try {
+      return await this.db.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe('SELECT pg_advisory_xact_lock(hashtext($1))', `engagement:${userId}`);
+        const recent = await tx.engagementEmail.findFirst({ where: { userId, sentAt: { gt: new Date(now.getTime() - GAP_MS) } }, select: { id: true } });
+        if (recent) return false;
+        await tx.engagementEmail.create({ data: { userId, kind, key, sentAt: now } });
+        return true;
+      });
+    } catch {
+      // Already had this one (the unique key): nothing to send.
+      return false;
+    }
   }
 
   private async send(kind: AnyKind, c: Candidate): Promise<boolean> {

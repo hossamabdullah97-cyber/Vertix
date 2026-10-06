@@ -17,7 +17,8 @@ function body(locale: Locale, encoding: 'br' | 'gzip' | null): Uint8Array | stri
 }
 
 /** A language's strings for the browser (see lib/i18n/bundle.ts). */
-export function GET(request: Request, { params }: { params: { locale: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   if (!(LOCALES as readonly string[]).includes(params.locale)) return new Response('Not found', { status: 404 });
   const locale = params.locale as Locale;
   const accepts = request.headers.get('accept-encoding') ?? '';

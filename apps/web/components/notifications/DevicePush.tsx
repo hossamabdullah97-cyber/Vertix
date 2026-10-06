@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Icon } from '@/components/Icon';
-import { apiMessageOf, type ApiError } from '@/lib/client';
 import { canPromptInstall, disablePush, enablePush, isStandalone, onInstallChange, promptInstall, pushState, sendTestPush, type PushState } from '@/lib/pwa';
 import { Switch } from './LeadAlerts';
 
@@ -40,7 +39,7 @@ export function DevicePush({ open }: { open: boolean }) {
       setState(next);
       if (next === 'blocked') setStatus({ kind: 'error', text: t('push.blocked') });
     } catch (e) {
-      setStatus({ kind: 'error', text: apiMessageOf(e as ApiError) || t('push.failed') });
+      setStatus({ kind: 'error', text: (e as Error).message || t('push.failed') });
     } finally {
       setBusy(null);
     }
@@ -53,7 +52,7 @@ export function DevicePush({ open }: { open: boolean }) {
       const r = await sendTestPush();
       setStatus(r.sent ? { kind: 'ok', text: t('push.testSent') } : { kind: 'error', text: t('push.failed') });
     } catch (e) {
-      setStatus({ kind: 'error', text: apiMessageOf(e as ApiError) || t('push.failed') });
+      setStatus({ kind: 'error', text: (e as Error).message || t('push.failed') });
     } finally {
       setBusy(null);
     }

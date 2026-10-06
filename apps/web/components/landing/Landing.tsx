@@ -35,8 +35,8 @@ export function Landing({ prices }: { prices: Partial<Record<'PERSONAL' | 'PRO' 
   );
 }
 
-function Hero() {
-  const t = getT(serverLocale(), 'landing');
+async function Hero() {
+  const t = getT((await serverLocale()), 'landing');
   return (
     <section aria-labelledby="hero-title">
       <div className={`${WRAP} grid items-center gap-8 pb-16 pt-10 sm:pt-16 lg:grid-cols-2 lg:gap-6 lg:pb-20 lg:pt-16`}>
@@ -73,8 +73,8 @@ function Hero() {
 
 const STEPS = ['create', 'share', 'follow'] as const;
 
-function How() {
-  const t = getT(serverLocale(), 'landing');
+async function How() {
+  const t = getT((await serverLocale()), 'landing');
   return (
     <section id="how" aria-labelledby="how-title" className="scroll-mt-16 border-y border-line bg-surface py-20 sm:py-28">
       <div className={WRAP}>
@@ -96,8 +96,8 @@ function How() {
   );
 }
 
-function Closing() {
-  const t = getT(serverLocale(), 'landing');
+async function Closing() {
+  const t = getT((await serverLocale()), 'landing');
   return (
     <section aria-labelledby="cta-title" className="pb-20 sm:pb-28">
       <div className={WRAP}>

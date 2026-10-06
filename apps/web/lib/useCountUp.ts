@@ -14,7 +14,7 @@ function prefersReducedMotion(): boolean {
  */
 export function useCountUp(target: number, duration = 1400): number {
   const [value, setValue] = useState(0);
-  const frame = useRef<number>();
+  const frame = useRef<number | undefined>(undefined);
   const start = useRef<number | null>(null);
 
   useEffect(() => {

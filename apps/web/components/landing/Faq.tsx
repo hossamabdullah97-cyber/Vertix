@@ -4,8 +4,8 @@ import { SectionHead, WRAP } from './shared';
 
 const QUESTIONS = ['app', 'phones', 'change', 'lost', 'leads', 'arabic'] as const;
 
-export function Faq() {
-  const t = getT(serverLocale(), 'landing');
+export async function Faq() {
+  const t = getT((await serverLocale()), 'landing');
   return (
     <section id="faq" aria-labelledby="faq-title" className="scroll-mt-20 py-20 sm:py-28">
       <div className={`${WRAP} grid gap-10 lg:grid-cols-[1fr_1.6fr] lg:gap-16`}>

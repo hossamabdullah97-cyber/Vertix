@@ -242,6 +242,8 @@ export const AR_MESSAGES: Record<string, string> = {
   'Dynamics 365 did not say which environment to use. Connect it again.': 'لم يحدد Dynamics 365 البيئة المطلوبة. اربطه مجدداً.',
   'Salesforce did not say where this org’s API is. Connect it again.': 'لم يحدد Salesforce عنوان API لهذه المؤسسة. اربطه مجدداً.',
   'Mailchimp did not say which data centre this account is in. Connect it again.': 'لم يحدد Mailchimp مركز البيانات لهذا الحساب. اربطه مجدداً.',
+  'The start and end of the period must be dates': 'يجب أن تكون بداية الفترة ونهايتها تواريخ',
+  'The period must start before it ends': 'يجب أن تبدأ الفترة قبل أن تنتهي',
   'Ask your workspace admin to invite you': 'اطلب من مسؤول مساحة العمل دعوتك',
   'Could not read the provider’s OpenID Connect settings at that address': 'تعذّرت قراءة إعدادات OpenID Connect من المزوّد على هذا العنوان',
   'Domain not found': 'النطاق غير موجود',

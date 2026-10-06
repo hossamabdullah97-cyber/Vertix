@@ -8,7 +8,7 @@ import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { ContactSupport, TOPIC_OF } from '@/components/help/ContactSupport';
-import { authFetch } from '@/lib/client';
+import { authFetch, getToken } from '@/lib/client';
 import { formatDate } from '@/lib/format';
 import { HELP, HELP_ARTICLES, HELP_CATEGORIES, article, articleCount, articlesIn, helpLocale, searchHelp, type HelpArticle, type HelpCategory } from '@/lib/help';
 
@@ -60,6 +60,8 @@ export default function HelpPage() {
   }, []);
 
   useEffect(() => {
+    // Help is open to visitors too; their own requests are only for someone signed in.
+    if (!getToken()) return;
     authFetch<{ email: string }>('/auth/me').then((m) => setEmail(m.email)).catch(() => {});
     authFetch<SupportRequestView[]>('/support/requests').then(setRequests).catch(() => setRequests([]));
   }, []);

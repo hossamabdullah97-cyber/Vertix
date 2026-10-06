@@ -3,6 +3,7 @@ import { InviteForm } from '@/components/auth/InviteForm';
 
 export const metadata: Metadata = { title: 'Join your team · Vertex Connect' };
 
-export default function AcceptInvitePage({ searchParams }: { searchParams: { token?: string } }) {
+export default async function AcceptInvitePage(props: { searchParams: Promise<{ token?: string }> }) {
+  const searchParams = await props.searchParams;
   return <InviteForm token={typeof searchParams.token === 'string' ? searchParams.token : ''} />;
 }
