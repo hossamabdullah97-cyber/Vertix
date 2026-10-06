@@ -29,11 +29,15 @@ import { dropWorkspaceFromAddress, matchWorkspace, rememberWorkspaces, requested
 import { openWorkspace, WORKSPACE_SWITCH, type WorkspaceSwitch } from '@/lib/switch';
 import { lastUnreadByWorkspace, UNREAD_BY_WORKSPACE } from '@/components/notifications/model';
 import { GettingStarted, WelcomeDialog } from '@/components/GettingStarted';
+import { rememberPage } from '@/lib/support';
 import { useOnboarding } from '@/lib/onboarding';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
 // heading — it is where every session starts.
+/** The help center: in the sidebar on its own, and in the palette and the phone's More. */
+const HELP_ITEM = { href: '/help', labelKey: 'items.help', icon: 'help' };
+
 const GROUPS: { labelKey: string; showLabel: boolean; items: { href: string; labelKey: string; icon: string }[] }[] = [
   {
     labelKey: 'groups.overview',
@@ -177,6 +181,8 @@ export default function AppShell({
   const [me, setMe] = useState<Me | null>(shellCache?.me ?? null);
   // The getting-started guide, looked at again on each page so a step done is ticked off.
   const onboarding = useOnboarding(pathname);
+  // The page someone was on before opening help, for support to see where they were stuck.
+  useEffect(() => rememberPage(pathname), [pathname]);
   const [welcomeClosed, setWelcomeClosed] = useState(false);
   const [usage, setUsage] = useState<UsageSummary | null>(shellCache?.usage ?? null);
 
@@ -474,7 +480,7 @@ export default function AppShell({
 
   const groups = useMemo(() => groupsFor(personalWorkspaceEarly(orgs, selectedOrgId)), [orgs, selectedOrgId]);
   const navItems = useMemo(() => {
-    const items = groups.flatMap((g) => g.items);
+    const items = [...groups.flatMap((g) => g.items), HELP_ITEM];
     return me?.isSuperAdmin
       ? [...items, { href: '/admin', labelKey: 'items.adminConsole', icon: 'shield' }]
       : items;
@@ -619,6 +625,8 @@ export default function AppShell({
         })),
     );
     items.push(...workspaceRows.slice(0, 4));
+    // Whatever was typed can also be asked of the help center.
+    items.push({ key: 'help-search', group: t('searchGroups.help'), icon: 'help', label: t('searchHelp', { q: searchQuery.trim() }), href: `/help?q=${encodeURIComponent(searchQuery.trim())}` });
     return items;
   }, [searchQuery, searchData, navItems, t, allWorkspaceItems, selectedOrgId]);
 
@@ -1091,6 +1099,15 @@ export default function AppShell({
               </Link>
             </div>
           )}
+
+          <div className="flex flex-col gap-0.5 pt-4">
+            <Link href="/help" className="v-nav-item" data-active={pathname.startsWith('/help')}>
+              <span className={pathname.startsWith('/help') ? 'text-accent' : 'text-faint'}>
+                <Icon name="help" size={16} />
+              </span>
+              {t('items.help')}
+            </Link>
+          </div>
         </nav>
 
         <div className="mt-auto flex flex-col gap-2 pt-4">

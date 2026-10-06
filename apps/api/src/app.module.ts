@@ -31,6 +31,7 @@ import { ScopesGuard } from './access/scopes.guard';
 import { TenantInterceptor } from './auth/interceptors/tenant.interceptor';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { TelemetryModule } from './telemetry/telemetry.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { TelemetryModule } from './telemetry/telemetry.module';
     AccessModule,
     NotificationsModule,
     TelemetryModule,
+    SupportModule,
   ],
   providers: [
     // Captures unhandled errors, reports 5xx to Sentry, returns clean JSON.

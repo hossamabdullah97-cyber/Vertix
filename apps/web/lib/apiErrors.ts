@@ -96,6 +96,7 @@ export const AR_MESSAGES: Record<string, string> = {
   'Card not found': 'البطاقة غير موجودة',
   'Invoice not found': 'الفاتورة غير موجودة',
   'Error not found': 'الخطأ غير موجود',
+  'Request not found': 'الرسالة غير موجودة',
   'Note not found': 'الملاحظة غير موجودة',
   'Field not found': 'الحقل غير موجود',
   'Unknown field': 'حقل غير معروف',

@@ -1230,3 +1230,35 @@ export const onboardingUpdateSchema = z.object({
   dismissed: z.boolean().optional(),
 });
 export type OnboardingUpdate = z.infer<typeof onboardingUpdateSchema>;
+
+// ── Help & support ──────────────────────────────────────────────────────────
+export const SUPPORT_TOPICS = ['account', 'billing', 'cards', 'leads', 'chips', 'team', 'integrations', 'bug', 'other'] as const;
+export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
+
+export const supportRequestSchema = z.object({
+  topic: z.enum(SUPPORT_TOPICS),
+  subject: z.string().trim().min(3).max(140),
+  message: z.string().trim().min(10).max(5000),
+  /** The page they were on, without its query. */
+  page: z.string().trim().max(300).optional(),
+  /** The language to confirm in. */
+  lang: z.enum(['en', 'ar']).optional(),
+});
+export type SupportRequestInput = z.infer<typeof supportRequestSchema>;
+
+export interface SupportRequestView {
+  id: string;
+  ref: string;
+  topic: SupportTopic;
+  subject: string;
+  message: string;
+  status: 'OPEN' | 'CLOSED';
+  createdAt: string;
+  closedAt: string | null;
+}
+
+export const helpFeedbackSchema = z.object({
+  article: z.string().trim().regex(/^[a-z0-9-]{2,60}$/),
+  helpful: z.boolean(),
+});
+export type HelpFeedbackInput = z.infer<typeof helpFeedbackSchema>;

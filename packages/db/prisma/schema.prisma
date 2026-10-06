@@ -1418,3 +1418,49 @@ model DuplicateDismissal {
   @@unique([orgId, key])
   @@map("duplicate_dismissals")
 }
+
+enum SupportStatus {
+  OPEN
+  CLOSED
+}
+
+/// A message to the people who run the platform, from the help page. The
+/// person's name and email are kept as they were when they wrote, so a
+/// reply reaches them even if they change them later.
+model SupportRequest {
+  id        String        @id @default(cuid())
+  /// Short and readable, said back to the person and in the email subject.
+  ref       String        @unique
+  userId    String
+  email     String
+  name      String?
+  /// The workspace they were in, if any (not a tenant scope: support sees all).
+  orgId     String?
+  orgName   String?
+  /// account | billing | cards | leads | chips | team | integrations | bug | other
+  topic     String
+  subject   String
+  message   String
+  /// The page they were on when they asked.
+  page      String?
+  userAgent String?
+  status    SupportStatus @default(OPEN)
+  closedAt  DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("support_requests")
+}
+
+/// "Was this helpful?" on a help article, one answer per person per article.
+model HelpFeedback {
+  id        String   @id @default(cuid())
+  article   String
+  userId    String
+  helpful   Boolean
+  updatedAt DateTime @updatedAt
+
+  @@unique([article, userId])
+  @@map("help_feedback")
+}

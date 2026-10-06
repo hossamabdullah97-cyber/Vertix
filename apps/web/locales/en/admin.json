@@ -14,7 +14,8 @@
     "chips": "NFC chips",
     "jobs": "Background jobs",
     "errors": "Errors",
-    "log": "Audit log"
+    "log": "Audit log",
+    "support": "Support"
   },
   "overview": {
     "intro": "The whole platform at a glance, live from the database.",
@@ -323,5 +324,34 @@
     "more": "Chip actions",
     "noMatch": "No chips match.",
     "statusCol": "Status"
+  },
+  "support": {
+    "intro": "What people wrote from the help page, newest first. Reply by email (it goes straight to them), then mark it answered. Articles shows which help articles people say didn't help.",
+    "viewLabel": "Show",
+    "views": {
+      "OPEN": "Open",
+      "CLOSED": "Answered",
+      "articles": "Articles"
+    },
+    "cols": {
+      "subject": "Subject",
+      "from": "From",
+      "topic": "Topic",
+      "received": "Received",
+      "article": "Article",
+      "helpful": "Helped",
+      "notHelpful": "Didn't help"
+    },
+    "from": "From",
+    "workspace": "Workspace",
+    "page": "Page they were on",
+    "browser": "Browser",
+    "reply": "Reply by email",
+    "markAnswered": "Mark answered",
+    "reopen": "Open again",
+    "close": "Close",
+    "emptyOpen": "No open messages. When someone writes from the help page, it shows here.",
+    "emptyClosed": "Nothing answered yet.",
+    "emptyArticles": "No one has rated an article yet."
   }
 }
