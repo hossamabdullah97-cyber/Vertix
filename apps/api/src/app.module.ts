@@ -33,6 +33,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { SupportModule } from './support/support.module';
 import { DocsModule } from './docs/docs.module';
+import { StatusModule } from './status/status.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { DocsModule } from './docs/docs.module';
     TelemetryModule,
     SupportModule,
     DocsModule,
+    StatusModule,
   ],
   providers: [
     // Captures unhandled errors, reports 5xx to Sentry, returns clean JSON.

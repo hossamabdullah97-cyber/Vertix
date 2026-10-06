@@ -8,7 +8,7 @@ import type { Config } from 'tailwindcss';
 // Tailwind defaults (rounded-2xl, shadow-lg) render in the house shape
 // without each one being rewritten.
 const config: Config = {
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './design-system/**/*.{ts,tsx}'],
+  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './design-system/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
   // `dark:` follows the app's own theme switch (data-theme on the shell and
   // on public cards), not the operating system's preference.
   darkMode: ['selector', '[data-theme="dark"]'],

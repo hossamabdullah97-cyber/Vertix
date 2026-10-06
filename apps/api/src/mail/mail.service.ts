@@ -17,8 +17,21 @@ interface SendArgs {
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
+  /** The last sends to the provider and whether each went through, for the status page. */
+  private readonly outcomes: { at: number; ok: boolean }[] = [];
 
   constructor(private readonly config: ConfigService) {}
+
+  private record(ok: boolean) {
+    this.outcomes.push({ at: Date.now(), ok });
+    if (this.outcomes.length > 200) this.outcomes.splice(0, this.outcomes.length - 200);
+  }
+
+  /** How sends to the provider went lately (none counted when no provider is set). */
+  recentOutcomes(sinceMs: number, now = Date.now()): { sent: number; failed: number } {
+    const recent = this.outcomes.filter((o) => o.at >= now - sinceMs);
+    return { sent: recent.length, failed: recent.filter((o) => !o.ok).length };
+  }
 
   private get from(): string {
     return this.config.get<string>(
@@ -67,6 +80,7 @@ export class MailService {
             : {}),
         }),
       });
+      this.record(res.ok);
       if (!res.ok) {
         this.logger.error(`Email send failed (${res.status}): ${await res.text()}`);
         this.logLink('UNDELIVERED EMAIL', to, html);
@@ -74,6 +88,7 @@ export class MailService {
       }
       return true;
     } catch (err) {
+      this.record(false);
       this.logger.error(`Email send threw for ${to}: ${this.describeFetchError(err)}`);
       this.logLink('UNDELIVERED EMAIL', to, html);
       return false;
