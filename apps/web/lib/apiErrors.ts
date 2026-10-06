@@ -97,6 +97,8 @@ export const AR_MESSAGES: Record<string, string> = {
   'Invoice not found': 'الفاتورة غير موجودة',
   'Error not found': 'الخطأ غير موجود',
   'Request not found': 'الرسالة غير موجودة',
+  'Unknown chip status': 'حالة الشريحة غير معروفة',
+  'This key’s workspace has no active owner': 'لا يوجد مالك نشط لمساحة العمل التي يتبعها هذا المفتاح',
   'Note not found': 'الملاحظة غير موجودة',
   'Field not found': 'الحقل غير موجود',
   'Unknown field': 'حقل غير معروف',

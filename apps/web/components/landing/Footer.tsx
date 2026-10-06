@@ -51,6 +51,11 @@ export function Footer() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/developers" className={link}>
+                {t('footer.legalLinks.developers')}
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>

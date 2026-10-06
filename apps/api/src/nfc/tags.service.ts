@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -16,6 +17,9 @@ import { LimitsService } from '../billing/limits.service';
  * NFC tag inventory management (org-scoped, manager+).
  * orgId is auto-injected on every query via the tenant context.
  */
+/** What `status` may filter by. */
+const TAG_STATUSES = ['UNASSIGNED', 'ACTIVE', 'DISABLED'] as const;
+
 @Injectable()
 export class TagsService {
   constructor(
@@ -173,7 +177,10 @@ export class TagsService {
   ) {
     const where: Prisma.NfcTagWhereInput = { ...this.holderFilter(tenant) };
     if (filters.batchId) where.batchId = filters.batchId;
-    if (filters.status) where.status = filters.status as never;
+    if (filters.status) {
+      if (!TAG_STATUSES.includes(filters.status as never)) throw new BadRequestException('Unknown chip status');
+      where.status = filters.status as never;
+    }
     // An explicit filter cannot widen an employee's own scope: theirs is spread
     // first only when they are not an employee.
     if (filters.assignedUserId && tenant.role !== 'EMPLOYEE') {

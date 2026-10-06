@@ -39,10 +39,21 @@ export type Handoff = { kind: 'webhook' } | { kind: 'automation'; template: stri
 export { Toggle } from '@/components/ui/Toggle';
 
 /** A section heading with a short explanation and an optional action beside it. */
-export function Intro({ text, action }: { text: string; action?: React.ReactNode }) {
+export function Intro({ text, action, docs }: { text: string; action?: React.ReactNode; docs?: { href: string; label: string } }) {
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <p className="max-w-[620px] text-sm leading-relaxed text-muted">{text}</p>
+      <p className="max-w-[620px] text-sm leading-relaxed text-muted">
+        {text}
+        {docs && (
+          <>
+            {' '}
+            <a href={docs.href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-accent hover:underline">
+              {docs.label}
+              <Icon name="external-link" size={12} />
+            </a>
+          </>
+        )}
+      </p>
       {action}
     </div>
   );

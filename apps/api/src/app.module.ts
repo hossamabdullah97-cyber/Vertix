@@ -32,6 +32,7 @@ import { TenantInterceptor } from './auth/interceptors/tenant.interceptor';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { SupportModule } from './support/support.module';
+import { DocsModule } from './docs/docs.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { SupportModule } from './support/support.module';
     NotificationsModule,
     TelemetryModule,
     SupportModule,
+    DocsModule,
   ],
   providers: [
     // Captures unhandled errors, reports 5xx to Sentry, returns clean JSON.

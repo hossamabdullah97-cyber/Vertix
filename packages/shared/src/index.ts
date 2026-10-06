@@ -640,6 +640,33 @@ export const createLeadSchema = z
   .refine((d) => !!d.name || !!d.email || !!d.phone, { message: 'Give a name, an email or a phone number', path: ['name'] });
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 
+/** "" and null both clear a text field on a lead. */
+const clearableText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .nullable()
+    .optional()
+    .transform((v) => (v === '' ? null : v));
+
+/** A change to a lead: only what is sent changes. */
+export const updateLeadSchema = z.object({
+  stageId: z.string().min(1).max(40).nullable().optional(),
+  temperature: z.enum(['COLD', 'WARM', 'HOT']).optional(),
+  value: z.number().finite().min(0).max(1e12).optional(),
+  name: clearableText(120),
+  email: z
+    .union([z.string().trim().toLowerCase().email().max(200), z.literal(''), z.null()])
+    .optional()
+    .transform((v) => (v === '' ? null : v)),
+  phone: clearableText(40),
+  company: clearableText(120),
+  /** The workspace's own fields, by field id; null clears one. */
+  customFields: z.record(z.unknown()).optional(),
+});
+export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
+
 /** Rows sent in one request of a spreadsheet import; a bigger file goes in several. */
 export const LEAD_IMPORT_BATCH = 500;
 /** The most rows one file may bring in. */

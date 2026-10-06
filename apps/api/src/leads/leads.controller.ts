@@ -44,6 +44,8 @@ import {
   updateCustomFieldSchema,
   type UpdateCustomFieldInput,
   reorderCustomFieldsSchema,
+  updateLeadSchema,
+  type UpdateLeadInput,
 } from '@vertex/shared';
 import { LeadNotesService } from './lead-notes.service';
 import { CustomFieldsService } from './custom-fields.service';
@@ -298,7 +300,7 @@ export class LeadsController {
   update(
     @Tenant() tenant: TenantContext,
     @Param('id') id: string,
-    @Body() body: { stageId?: string | null; temperature?: string; value?: number; name?: string | null; email?: string | null; phone?: string | null; company?: string | null; customFields?: Record<string, unknown> },
+    @Body(new ZodValidationPipe(updateLeadSchema)) body: UpdateLeadInput,
   ) {
     return this.leads.update(tenant, id, body);
   }

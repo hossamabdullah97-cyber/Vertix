@@ -354,3 +354,36 @@ describe('TenantGuard — a workspace the person is no longer in', () => {
     await expect(strict.canActivate(request(member, 'org_acme').ctx)).rejects.toThrow('suspended or deleted');
   });
 });
+
+describe('TenantGuard — a workspace API key', () => {
+  function keyGuard(createdBy: string | null, members: Record<string, { userId: string } | null>) {
+    const membershipFind = jest.fn(async ({ where }: { where: { userId?: string; role?: string } }) => members[where.userId ?? `role:${where.role}`] ?? null);
+    const prisma = {
+      client: { apiKey: { findFirst: jest.fn(async () => ({ createdBy })) }, membership: { findFirst: membershipFind } },
+    } as unknown as PrismaService;
+    const reflector = { getAllAndOverride: () => undefined } as unknown as Reflector;
+    return new TenantGuard(reflector, prisma);
+  }
+  const keyRequest = () => {
+    const { req, ctx } = request({ sub: 'apikey:k1', email: null, orgId: 'org_acme' });
+    req.apiAuth = { kind: 'api_key', id: 'k1', scopes: ['crm:write'] };
+    return { req, ctx };
+  };
+
+  it('acts as the person who made it, while they are in the workspace', async () => {
+    const { req, ctx } = keyRequest();
+    await keyGuard('u_maker', { u_maker: { userId: 'u_maker' }, 'role:OWNER': { userId: 'u_owner' } }).canActivate(ctx);
+    expect(req.tenant).toEqual({ orgId: 'org_acme', userId: 'u_maker', role: 'OWNER' });
+  });
+
+  it('acts as the owner once its maker has left, so what it creates has a real owner', async () => {
+    const { req, ctx } = keyRequest();
+    await keyGuard('u_gone', { 'role:OWNER': { userId: 'u_owner' } }).canActivate(ctx);
+    expect(req.tenant).toMatchObject({ userId: 'u_owner' });
+  });
+
+  it('is refused when the workspace has nobody to act as', async () => {
+    const { ctx } = keyRequest();
+    await expect(keyGuard(null, {}).canActivate(ctx)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});

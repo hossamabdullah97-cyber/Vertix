@@ -88,6 +88,7 @@ export function KeysView() {
     <div>
       <Intro
         text={t('keys.intro')}
+        docs={{ href: '/developers#auth', label: t('keys.docs') }}
         action={
           keys && keys.length > 0 ? (
             <button onClick={() => setCreating(true)} className="v-btn">
