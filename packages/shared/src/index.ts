@@ -837,6 +837,8 @@ export const trackEventSchema = z.object({
   // Non-financial click context only (e.g. { kind: 'payment', platform,
   // variantId }). Never carries amounts, balances, or credentials.
   metadata: z.record(z.unknown()).optional(),
+  /** The app session of a signed-in browser: the card's own people are not counted. */
+  viewer: z.string().max(4000).optional(),
 });
 export type TrackEventInput = z.infer<typeof trackEventSchema>;
 

@@ -6,6 +6,8 @@ import { WebhookService } from '../integrations/webhook.service';
 import { LIVE_ORG } from '../common/live-org';
 
 const EVENT_TYPES = ['VIEW', 'CLICK', 'SAVE', 'SHARE', 'NFC_SCAN'] as const;
+/** Opening a card again within this long is the same view. */
+const VIEW_WINDOW_MS = 30 * 60 * 1000;
 
 @Injectable()
 export class AnalyticsService {
@@ -27,14 +29,17 @@ export class AnalyticsService {
     slug: string,
     type: 'VIEW' | 'CLICK' | 'SAVE' | 'SHARE',
     visitorId: string | undefined,
-    ctx: { ip?: string; userAgent?: string; referrer?: string; metadata?: Record<string, unknown> },
+    ctx: { ip?: string; userAgent?: string; referrer?: string; metadata?: Record<string, unknown>; viewerId?: string },
   ): Promise<{ visitorId: string }> {
     const anonymousId = visitorId || randomUUID();
     const card = await this.db.card.findFirst({
       where: { slug, isPublished: true, ...LIVE_ORG },
-      select: { id: true, orgId: true },
+      select: { id: true, orgId: true, ownerId: true },
     });
     if (!card) return { visitorId: anonymousId };
+    // The card's own people are not its visitors: its owner opening it, or a
+    // colleague in the same workspace checking it, counts as nothing.
+    if (ctx.viewerId && (await this.isInsider(card, ctx.viewerId))) return { visitorId: anonymousId };
 
     try {
       const visitor = await this.db.visitor.upsert({
@@ -46,6 +51,15 @@ export class AnalyticsService {
         },
         select: { id: true },
       });
+      // A view is one look at the card: opening it again (a reload, the back
+      // button, the same link twice) within the half hour is the same look.
+      if (type === 'VIEW') {
+        const recent = await this.db.event.findFirst({
+          where: { cardId: card.id, visitorId: visitor.id, type: 'VIEW', createdAt: { gte: new Date(Date.now() - VIEW_WINDOW_MS) } },
+          select: { id: true },
+        });
+        if (recent) return { visitorId: anonymousId };
+      }
       await this.db.event.create({
         data: {
           orgId: card.orgId,
@@ -78,6 +92,12 @@ export class AnalyticsService {
       this.logger.warn(`track failed: ${(err as Error).message}`);
     }
     return { visitorId: anonymousId };
+  }
+
+  private async isInsider(card: { orgId: string; ownerId: string | null }, userId: string): Promise<boolean> {
+    if (card.ownerId === userId) return true;
+    const member = await this.db.membership.findFirst({ where: { orgId: card.orgId, userId }, select: { id: true } });
+    return !!member;
   }
 
   // -------- Reports (org-scoped; orgId passed explicitly for raw SQL safety) --------

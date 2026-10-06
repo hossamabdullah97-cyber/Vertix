@@ -17,6 +17,7 @@ import { Lightbox } from '@/components/Lightbox';
 import { Constellation } from '@/components/profile/Constellation';
 import { isEmail, useChecks } from '@/lib/validate';
 import { keepThisPage } from '@/lib/sw';
+import { sendTrack } from '@/lib/track';
 
 function visitorId(): string | undefined {
   try {
@@ -28,16 +29,7 @@ function visitorId(): string | undefined {
 
 /** Best-effort analytics; it must never block what the visitor asked for. */
 function track(slug: string, type: 'CLICK' | 'SAVE' | 'SHARE', metadata?: Record<string, unknown>) {
-  try {
-    fetch(`${API_URL}/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, type, visitorId: visitorId(), metadata }),
-      keepalive: true,
-    }).catch(() => {});
-  } catch {
-    // ignore
-  }
+  sendTrack({ slug, type, visitorId: visitorId(), metadata });
 }
 
 type MetaItem = { key: string; label: React.ReactNode; icon?: string; dot?: boolean };
