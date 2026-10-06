@@ -102,6 +102,7 @@ export class TenantGuard implements CanActivate {
       where: { userId: user.sub, orgId, status: 'ACTIVE' },
       select: {
         role: true,
+        customRole: { select: { id: true, name: true, capabilities: true } },
         org: {
           select: {
             isActive: true,
@@ -127,7 +128,7 @@ export class TenantGuard implements CanActivate {
       if (!exempt) throw new ForbiddenException({ statusCode: 403, message: TWO_STEP_REQUIRED_MESSAGE, code: 'TWO_STEP_REQUIRED' });
     }
 
-    req.tenant = { orgId, userId: user.sub, role: membership.role };
+    req.tenant = { orgId, userId: user.sub, role: membership.role, customRole: membership.customRole ?? null };
     return true;
   }
 

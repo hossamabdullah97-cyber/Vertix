@@ -50,6 +50,7 @@ export class MembersService {
         user: { select: { id: true, name: true, email: true, avatarUrl: true } },
         team: { select: { id: true, name: true } },
         department: { select: { id: true, name: true } },
+        customRole: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -232,7 +233,8 @@ export class MembersService {
     const updated = await this.db.membership.update({
       where: { id },
       data: {
-        ...(input.role ? { role: input.role } : {}),
+        // A built-in role chosen directly replaces any custom role on top of the old one.
+        ...(input.role ? { role: input.role, customRoleId: null } : {}),
         ...(input.teamId !== undefined ? { teamId: input.teamId } : {}),
         ...(input.departmentId !== undefined ? { departmentId: input.departmentId } : {}),
         ...(input.status ? { status: input.status } : {}),

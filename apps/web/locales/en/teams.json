@@ -246,7 +246,7 @@
     "people_other": "{{value}} people",
     "capability": "What they can do",
     "notAllowed": "Not allowed",
-    "note": "Roles are fixed for now and enforced by the server; custom roles may come later.",
+    "note": "These are the built-in roles, enforced by the server. Make your own below.",
     "groups": {
       "people": "People",
       "teams": "Teams",
@@ -346,5 +346,84 @@
       "occasion_deleted": "deleted the occasion",
       "members_imported": "imported people from a file"
     }
+  },
+  "customRoles": {
+    "title": "Your workspace’s roles",
+    "intro": "Make roles that fit how your company works: start from a built-in role, which decides what data people see (every lead, or their own), then choose what they can change in each part of the workspace.",
+    "new": "New role",
+    "newTitle": "New role",
+    "editTitle": "Edit role",
+    "sheetHint": "People with this role get exactly what you choose here, nothing more.",
+    "close": "Close",
+    "empty": "No roles of your own yet.",
+    "emptyEdit": "No roles of your own yet. Make one for a job the built-in roles don’t fit, like someone who handles billing only.",
+    "basedOn": "Based on {{role}}",
+    "edit": "Edit",
+    "deleteNamed": "Delete {{name}}",
+    "confirmDelete_one": "Delete “{{name}}”? The person holding it keeps its base role.",
+    "confirmDelete_other": "Delete “{{name}}”? The {{count}} people holding it keep its base role.",
+    "ownWorkOnly": "Their own cards and leads only",
+    "name": "Name",
+    "namePlaceholder": "e.g. Billing, Event staff, Sales lead",
+    "description": "What it’s for (optional)",
+    "base": "Based on",
+    "baseHint": "Decides what data they see: admins and managers see every lead and card; employees their own. Choosing one fills in its permissions, which you can then change.",
+    "permissions": "What they can do",
+    "noAccess": "No access beyond their own work.",
+    "never": "Changing roles and access, transferring ownership and deleting the workspace stay with built-in owners and admins.",
+    "save": "Save role",
+    "cancel": "Cancel",
+    "levels": {
+      "none": "None",
+      "basic": "Basic",
+      "full": "Full"
+    },
+    "areas": {
+      "people": {
+        "name": "People",
+        "basic": "See the members and their details.",
+        "full": "See members, invite people and remove them."
+      },
+      "teams": {
+        "name": "Teams and departments",
+        "basic": "See teams and departments.",
+        "full": "Also create, rename and delete them."
+      },
+      "cards": {
+        "name": "Card approvals",
+        "basic": "See cards waiting for approval.",
+        "full": "Also approve or turn them down."
+      },
+      "leads": {
+        "name": "Leads setup",
+        "basic": "Edit the ready messages everyone uses.",
+        "full": "Also add and change the workspace’s lead fields."
+      },
+      "chips": {
+        "name": "NFC chips",
+        "basic": "Add chips, link them to cards and hand them out."
+      },
+      "analytics": {
+        "name": "Reports",
+        "basic": "Event reports, the events calendar and the weekly report."
+      },
+      "workspace": {
+        "name": "Workspace",
+        "basic": "Upload and manage workspace files.",
+        "full": "Also settings, brand, security and the activity log."
+      },
+      "integrations": {
+        "name": "Integrations",
+        "basic": "See connected apps, automations and webhooks.",
+        "full": "Also connect apps, and manage automations, webhooks and API keys."
+      },
+      "billing": {
+        "name": "Billing",
+        "full": "Plan, payments, invoices and billing details."
+      }
+    },
+    "assign": "Custom role",
+    "assignNone": "None (built-in role only)",
+    "assignHint": "Their role becomes the custom role’s base."
   }
 }

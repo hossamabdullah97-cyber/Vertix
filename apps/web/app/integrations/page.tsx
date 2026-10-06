@@ -1,5 +1,6 @@
 'use client';
 
+import { can } from '@/lib/permissions';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
@@ -14,10 +15,10 @@ import { Notice, type Handoff, type Role } from '@/components/integrations/share
 type Tab = 'apps' | 'automations' | 'webhooks' | 'keys';
 const TABS: Tab[] = ['apps', 'automations', 'webhooks', 'keys'];
 
-/** Which tabs a role may open; the API refuses the rest anyway. */
-function tabsFor(role: Role | undefined): Tab[] {
-  if (role === 'OWNER' || role === 'ADMIN') return TABS;
-  if (role === 'MANAGER') return ['apps', 'automations', 'webhooks'];
+/** Which tabs someone may open, by their level in integrations; the API refuses the rest anyway. */
+function tabsFor(me: Me | null): Tab[] {
+  if (can(me, 'integrations', 'full')) return TABS;
+  if (can(me, 'integrations', 'basic')) return ['apps', 'automations', 'webhooks'];
   return ['apps'];
 }
 
@@ -51,14 +52,13 @@ export default function IntegrationsPage() {
     authFetch<Me>('/auth/me')
       .then((m) => {
         setMe(m);
-        if (asked && tabsFor(m.role as Role).includes(asked)) setTab(asked);
+        if (asked && tabsFor(m).includes(asked)) setTab(asked);
       })
       .catch(() => {});
   }, [router]);
 
-  const role = me?.role as Role | undefined;
-  const canManage = role === 'OWNER' || role === 'ADMIN';
-  const tabs = tabsFor(role);
+  const canManage = can(me, 'integrations', 'full');
+  const tabs = tabsFor(me);
 
   const choose = useCallback((next: Tab) => {
     setTab(next);

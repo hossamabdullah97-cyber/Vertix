@@ -23,8 +23,10 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 @UseGuards(RequireTenantGuard)
+@Area('people')
 @Controller('orgs/members')
 export class MembersController {
   constructor(
@@ -57,6 +59,8 @@ export class MembersController {
     return this.importer.importMany(tenant, body);
   }
 
+  // Changing someone's role or access is never part of a custom role.
+  @Area('roles')
   @Roles('OWNER', 'ADMIN')
   @Patch(':id')
   update(

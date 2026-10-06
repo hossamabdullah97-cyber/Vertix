@@ -647,6 +647,8 @@ export interface Member {
   teamId: string | null;
   user: { id: string; name: string | null; email: string; avatarUrl?: string | null };
   team: { id: string; name: string } | null;
+  /** A role the workspace made, if they hold one. */
+  customRole?: { id: string; name: string } | null;
 }
 
 export interface Team {
@@ -666,6 +668,8 @@ export interface Me {
   avatarUrl?: string | null;
   orgId?: string;
   role?: Role;
+  /** A role the workspace made, on top of `role`. */
+  customRole?: { id: string; name: string; capabilities: string[] } | null;
   isSuperAdmin?: boolean;
   /** Active workspace's plan. A personal workspace is always FREE. */
   plan?: Plan;

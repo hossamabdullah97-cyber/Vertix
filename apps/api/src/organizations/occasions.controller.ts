@@ -11,9 +11,11 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 /** Everyone in the workspace sees the occasions on its charts; managers and up keep them. */
 @UseGuards(RequireTenantGuard)
+@Area('analytics')
 @Controller('orgs/occasions')
 export class OccasionsController {
   constructor(private readonly occasions: OccasionsService) {}

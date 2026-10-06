@@ -1,5 +1,6 @@
 'use client';
 
+import { can } from '@/lib/permissions';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -218,7 +219,7 @@ function DrawerBody({
   }, []);
   const [editing, setEditing] = useState<{ id: string; text: string; picked: Mention[] } | null>(null);
   const fields = useCustomFields();
-  const canManageFields = me?.role === 'OWNER' || me?.role === 'ADMIN';
+  const canManageFields = can(me, 'leads', 'full');
 
   useEffect(() => {
     let alive = true;

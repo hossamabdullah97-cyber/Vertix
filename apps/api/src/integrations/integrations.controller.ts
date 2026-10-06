@@ -31,6 +31,7 @@ import { RequireScopes } from '../access/scopes.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { workspaceLink } from '../common/workspace-link';
+import { Area } from '../auth/decorators/area.decorator';
 
 const oauthAppSchema = z.object({
   clientId: z.string().min(1).max(500),
@@ -49,6 +50,7 @@ const syncConfigSchema = z.object({
  * the database per tenant — never hardcoded.
  */
 @UseGuards(RequireTenantGuard)
+@Area('integrations')
 @Controller('integrations')
 export class IntegrationsController {
   constructor(

@@ -140,6 +140,9 @@ model Membership {
   teamId       String?
   departmentId String?
   role         Role         @default(EMPLOYEE)
+  /// A role made in this workspace, on top of the base role above; null for the built-in one.
+  customRoleId String?
+  customRole   CustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
   status       MemberStatus @default(ACTIVE)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -1576,4 +1579,24 @@ model ActivityDay {
   @@id([userId, day, feature])
   @@index([day, feature])
   @@map("activity_days")
+}
+
+/// A role a workspace makes for itself: a base role (which decides what its
+/// holders see) and a level per area (which decides what they can change).
+model CustomRole {
+  id           String   @id @default(cuid())
+  orgId        String
+  name         String
+  description  String?
+  base         Role
+  /// "area:level", e.g. "billing:full", "teams:basic".
+  capabilities String[] @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+  @@map("custom_roles")
 }

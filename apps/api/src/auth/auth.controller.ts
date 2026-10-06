@@ -185,7 +185,11 @@ export class AuthController {
     // one held in the workspace open now (an owner of their own, a member of
     // the company's).
     // In no workspace (removed from the last one), there is no role to show.
-    const active = tenant ? { orgId: tenant.orgId, role: tenant.role } : user.isSuperAdmin ? {} : { orgId: undefined, role: undefined };
+    const active = tenant
+      ? { orgId: tenant.orgId, role: tenant.role, customRole: tenant.customRole ?? null }
+      : user.isSuperAdmin
+        ? {}
+        : { orgId: undefined, role: undefined, customRole: null };
     return { ...user, ...active, ...profile, ...badge, twoFactorRequired, workspaceKind, sub: user.sub };
   }
 

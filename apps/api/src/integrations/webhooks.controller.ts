@@ -17,6 +17,7 @@ import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { RequireScopes } from '../access/scopes.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 const createSchema = z.object({
   url: z.string().url(),
@@ -35,6 +36,7 @@ const updateSchema = z.object({
  * secrets and deleting are restricted to workspace admins (section 18).
  */
 @UseGuards(RequireTenantGuard)
+@Area('integrations')
 @Controller('webhooks')
 export class WebhooksController {
   constructor(private readonly webhooks: WebhookService) {}

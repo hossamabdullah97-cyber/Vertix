@@ -88,7 +88,7 @@ describe('TenantGuard — resolving the active organization', () => {
     const { guard } = makeGuard(activeMember('MANAGER'));
     const { req, ctx } = request(member, 'org_acme');
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
-    expect(req.tenant).toEqual({ orgId: 'org_acme', userId: 'u1', role: 'MANAGER' });
+    expect(req.tenant).toEqual({ orgId: 'org_acme', userId: 'u1', role: 'MANAGER', customRole: null });
   });
 
   it('falls back to the token org when no header is sent', async () => {

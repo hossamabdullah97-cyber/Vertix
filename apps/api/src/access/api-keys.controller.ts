@@ -15,6 +15,7 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 const createSchema = z.object({
   name: z.string().min(1).max(120),
@@ -27,6 +28,7 @@ const createSchema = z.object({
  * (section 18). The raw key is returned only on create/rotate.
  */
 @UseGuards(RequireTenantGuard)
+@Area('integrations')
 @Controller('api-keys')
 export class ApiKeysController {
   constructor(private readonly keys: ApiKeysService) {}

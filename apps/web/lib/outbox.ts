@@ -35,7 +35,10 @@ const waiters = new Map<string, Waiter>();
 const listeners = new Set<() => void>();
 let send: Send | null = null;
 let flushing = false;
-let state: { pending: number; failed: number; online: boolean; sending: boolean } = { pending: 0, failed: 0, online: true, sending: false };
+type State = { pending: number; failed: number; online: boolean; sending: boolean };
+/** What the server renders, and so what hydration must start from; this device's list shows right after. */
+const INITIAL: State = { pending: 0, failed: 0, online: true, sending: false };
+let state: State = INITIAL;
 
 function read(): Pending[] {
   try {
@@ -143,6 +146,6 @@ export function useConnection() {
       return () => listeners.delete(l);
     },
     () => state,
-    () => state,
+    () => INITIAL,
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { can } from '@/lib/permissions';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -110,7 +111,7 @@ export default function BillingPage() {
     }
   }, [router, loadUsage]);
 
-  const canChange = me?.role === 'OWNER' || me?.role === 'ADMIN';
+  const canChange = can(me, 'billing', 'full');
   const isOwner = me?.role === 'OWNER';
   const live = !!sub && sub.plan !== 'FREE' && LIVE.has(sub.status);
   const canCancel = enabled && !!sub?.subscribed && isOwner;

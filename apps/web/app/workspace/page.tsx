@@ -1,5 +1,6 @@
 'use client';
 
+import { can } from '@/lib/permissions';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -113,8 +114,8 @@ export default function WorkspaceSettingsPage() {
     [org],
   );
 
-  const canEdit = me?.role === 'OWNER' || me?.role === 'ADMIN';
-  const canManageFiles = canEdit || me?.role === 'MANAGER';
+  const canEdit = can(me, 'workspace', 'full');
+  const canManageFiles = can(me, 'workspace', 'basic');
 
   if (personal) {
     return (

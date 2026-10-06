@@ -20,8 +20,10 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequireTenantGuard } from '../auth/guards/require-tenant.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Tenant } from '../auth/decorators/tenant.decorator';
+import { Area } from '../auth/decorators/area.decorator';
 
 @UseGuards(RequireTenantGuard)
+@Area('teams')
 @Controller('orgs/departments')
 export class DepartmentsController {
   constructor(private readonly departments: DepartmentsService) {}

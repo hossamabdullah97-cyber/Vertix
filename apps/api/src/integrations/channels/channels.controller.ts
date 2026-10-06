@@ -7,6 +7,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { RequireScopes } from '../../access/scopes.decorator';
 import { Tenant } from '../../auth/decorators/tenant.decorator';
 import { ChannelsService, isChannelProvider, type ChannelProvider } from './channels.service';
+import { Area } from '../../auth/decorators/area.decorator';
 
 const lang = z.enum(['en', 'ar']);
 const events = z.array(z.string().max(40)).max(20);
@@ -32,6 +33,7 @@ function channel(provider: string): ChannelProvider {
  * shared POST /integrations/:provider/disconnect.
  */
 @UseGuards(RequireTenantGuard)
+@Area('integrations')
 @Controller('integrations')
 export class ChannelsController {
   constructor(private readonly channels: ChannelsService) {}

@@ -75,6 +75,7 @@ export const TENANT_MODELS = new Set<string>([
   'DuplicateDismissal',
   'Invoice',
   'CustomField',
+  'CustomRole',
 ]);
 
 /** Operations that take a where clause; orgId is injected (extendedWhereUnique is on in Prisma 6). */
