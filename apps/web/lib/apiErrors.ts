@@ -95,6 +95,8 @@ export const AR_MESSAGES: Record<string, string> = {
   // Cards
   'Card not found': 'البطاقة غير موجودة',
   'Invoice not found': 'الفاتورة غير موجودة',
+  'Error not found': 'الخطأ غير موجود',
+  Error: 'خطأ',
   'Could not generate a unique card link': 'تعذّر إنشاء رابط فريد للبطاقة. حاول مرة أخرى',
   'slug is already in use': 'رابط البطاقة هذا مستخدم بالفعل',
   'slug may contain lowercase letters, digits and dashes only': 'يمكن أن يحتوي رابط البطاقة على أحرف إنجليزية صغيرة وأرقام وشرطات فقط',

@@ -13,6 +13,7 @@
     "people": "People",
     "chips": "NFC chips",
     "jobs": "Background jobs",
+    "errors": "Errors",
     "log": "Audit log"
   },
   "overview": {
@@ -204,6 +205,36 @@
     "retry": "Retry",
     "retrying": "Retrying…",
     "empty": "Nothing has run yet."
+  },
+  "errors": {
+    "intro": "Errors people met, in their browser or in the API on our side, each bug once: how often, to how many people, and when last. Marking one fixed hides it until it happens again.",
+    "sourceLabel": "Where",
+    "source": {
+      "all": "All",
+      "BROWSER": "Browser",
+      "API": "API"
+    },
+    "statusLabel": "Status",
+    "status": {
+      "open": "Open",
+      "resolved": "Fixed"
+    },
+    "cols": {
+      "error": "Error",
+      "where": "Page or route",
+      "count": "Times",
+      "people": "People",
+      "last": "Last seen"
+    },
+    "first": "First seen",
+    "release": "Build",
+    "browser": "Browser",
+    "stack": "Stack trace (latest)",
+    "resolve": "Mark as fixed",
+    "reopen": "Open again",
+    "close": "Close",
+    "emptyOpen": "No open errors. When a page or the API fails, it shows here.",
+    "emptyResolved": "Nothing marked fixed yet."
   },
   "log": {
     "searchPlaceholder": "Search actions, people or workspaces",

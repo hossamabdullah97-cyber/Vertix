@@ -11,10 +11,11 @@ import { People } from '@/components/admin/People';
 import ChipRegistry from '@/components/admin/ChipRegistry';
 import { Jobs } from '@/components/admin/Jobs';
 import { AuditLog } from '@/components/admin/AuditLog';
+import { Errors } from '@/components/admin/Errors';
 import type { AdminOrg } from '@/components/admin/shared';
 
-type Tab = 'overview' | 'workspaces' | 'people' | 'chips' | 'jobs' | 'log';
-const TABS: Tab[] = ['overview', 'workspaces', 'people', 'chips', 'jobs', 'log'];
+type Tab = 'overview' | 'workspaces' | 'people' | 'chips' | 'jobs' | 'errors' | 'log';
+const TABS: Tab[] = ['overview', 'workspaces', 'people', 'chips', 'jobs', 'errors', 'log'];
 
 /**
  * The platform's own console, for the people who run Vertex Connect: every
@@ -97,6 +98,7 @@ export default function AdminConsole() {
           {tab === 'people' && <People onChanged={loadOrgs} />}
           {tab === 'chips' && <ChipRegistry orgs={orgs ?? []} />}
           {tab === 'jobs' && <Jobs />}
+          {tab === 'errors' && <Errors />}
           {tab === 'log' && <AuditLog />}
         </>
       )}
