@@ -17,6 +17,8 @@ import { MergeDuplicates, useDuplicates } from '@/components/crm/MergeDuplicates
 import { LeadList } from '@/components/crm/LeadList';
 import { AddLead } from '@/components/crm/AddLead';
 import { ImportLeads } from '@/components/crm/ImportLeads';
+import { FieldsManager } from '@/components/crm/FieldsManager';
+import { useCustomFields } from '@/lib/custom-fields';
 import { downloadText, leadsCsv } from '@/lib/export-leads';
 import { SmartFilters } from '@/components/crm/SmartFilters';
 import nextDynamic from 'next/dynamic';
@@ -64,6 +66,8 @@ export default function LeadsPage() {
   const [toast, setToast] = useState('');
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [managingFields, setManagingFields] = useState(false);
+  const customFields = useCustomFields();
   const [reviewing, setReviewing] = useState<{ focus: string | null } | null>(null);
   useShortcut('n', t('nav:shortcuts.newLead'), () => setAdding(true));
   // On a phone the pipeline is a list filtered by stage, not side-scrolling columns.
@@ -141,14 +145,34 @@ export default function LeadsPage() {
 
   async function patchLead(
     id: string,
-    patch: { stageId?: string | null; temperature?: Temp; value?: number; name?: string | null; email?: string | null; phone?: string | null; company?: string | null },
+    patch: {
+      stageId?: string | null;
+      temperature?: Temp;
+      value?: number;
+      name?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      company?: string | null;
+      customFields?: Record<string, string | number | boolean | null>;
+    },
     label: string,
   ) {
     const prev = leads;
-    setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+    // A field's value lays over the lead's others; an empty one takes it off.
+    const merged = (l: Lead) => {
+      if (!patch.customFields) return { ...l, ...patch, customFields: l.customFields };
+      const next = { ...(l.customFields ?? {}) };
+      for (const [k, v] of Object.entries(patch.customFields)) {
+        if (v === null) delete next[k];
+        else next[k] = v;
+      }
+      return { ...l, ...patch, customFields: next };
+    };
+    setLeads((ls) => ls.map((l) => (l.id === id ? merged(l) : l)));
     setPatchBusy(true);
     try {
-      await authFetch(`/leads/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+      const saved = await authFetch<{ customFields?: Lead['customFields'] }>(`/leads/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+      if (patch.customFields) setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, customFields: saved.customFields ?? null } : l)));
       flash(label);
     } catch (e) {
       setLeads(prev);
@@ -242,6 +266,8 @@ export default function LeadsPage() {
       stage: (st) => t(stageKey(st.name), st.name),
       temperature: (tp) => t(`temperature.${tp.toLowerCase()}`),
       source: (src) => t(`sources.${src}`, sourceMeta(src).label),
+      fields: customFields ?? [],
+      yesNo: [t('fields.yes'), t('fields.no')],
     });
     const d = new Date();
     const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -510,7 +536,10 @@ export default function LeadsPage() {
         onContacted={(id, times) => setLeads((list) => list.map((l) => (l.id === id ? { ...l, ...times } : l)))}
         duplicates={selectedLead ? dupes.of(selectedLead.id) : []}
         onReviewDuplicates={() => selectedLead && setReviewing({ focus: selectedLead.id })}
+        onManageFields={() => setManagingFields(true)}
       />
+      {/* After the lead's panel, so it opens over it. */}
+      <FieldsManager open={managingFields} onClose={() => setManagingFields(false)} />
 
       <MergeDuplicates
         open={!!reviewing}

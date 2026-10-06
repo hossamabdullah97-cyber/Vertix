@@ -97,6 +97,11 @@ export const AR_MESSAGES: Record<string, string> = {
   'Invoice not found': 'الفاتورة غير موجودة',
   'Error not found': 'الخطأ غير موجود',
   'Note not found': 'الملاحظة غير موجودة',
+  'Field not found': 'الحقل غير موجود',
+  'Unknown field': 'حقل غير معروف',
+  'There is already a field with this name.': 'يوجد حقل بهذا الاسم بالفعل.',
+  'A choice field needs at least one option': 'حقل الاختيار يحتاج اختيارًا واحدًا على الأقل',
+  'Each option once': 'كل اختيار مرة واحدة',
   'Only whoever wrote a note can change it': 'لا يعدّل الملاحظة إلا من كتبها',
   'Only whoever wrote a note, or an admin, can delete it': 'لا يحذف الملاحظة إلا من كتبها أو مسؤول',
   Error: 'خطأ',
@@ -228,6 +233,7 @@ export const AR_MESSAGES: Record<string, string> = {
 
 /** Messages with a value in them. The capture groups carry that value across. */
 export const AR_PATTERNS: [RegExp, (...m: string[]) => string][] = [
+  [/^"(.+)" can't take that value$/, (f) => `القيمة لا تناسب حقل «${f}»`],
   [/^(\S+) is not connected\.$/, (p) => `${p} غير متصل.`],
   [/^(\S+) is not connected yet — this organization has not registered its OAuth app credentials\.$/, (p) => `${p} غير متصل بعد — لم تسجّل مساحة العمل بيانات تطبيق OAuth الخاص بها.`],
   [/^(\S+) needs to be reconnected\.$/, (p) => `يجب إعادة ربط ${p}.`],

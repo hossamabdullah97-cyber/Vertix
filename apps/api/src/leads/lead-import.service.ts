@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import type { TenantContext } from '@vertex/db';
 import {
   emailKey,
@@ -14,10 +14,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../organizations/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { leadsVisibleTo } from './lead-visibility';
+import { CustomFieldsService } from './custom-fields.service';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Existing = { id: string; name: string | null; email: string | null; phone: string | null; company: string | null; value: number };
+type Existing = { id: string; name: string | null; email: string | null; phone: string | null; company: string | null; value: number; customFields?: unknown };
 
 /** The day a row says it came in, at noon UTC so no time zone moves it a day; null if not a real past date. */
 export function importedDay(day: string | undefined, now = new Date()): Date | null | undefined {
@@ -42,6 +43,7 @@ export class LeadImportService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    @Optional() private readonly fields?: CustomFieldsService,
   ) {}
 
   private get db() {
@@ -50,12 +52,13 @@ export class LeadImportService {
 
   async import(tenant: TenantContext, input: ImportLeadsInput): Promise<ImportLeadsResult> {
     const mayAssign = tenant.role !== 'EMPLOYEE';
+    const fieldDefs = this.fields && input.rows.some((r) => r.customFields) ? await this.fields.list() : [];
     const [stages, members, existing] = await Promise.all([
       this.db.pipelineStage.findMany({ orderBy: { order: 'asc' }, select: { id: true } }),
       mayAssign
         ? this.db.membership.findMany({ where: { status: 'ACTIVE' }, select: { userId: true, user: { select: { email: true } } } })
         : Promise.resolve([] as { userId: string; user: { email: string } }[]),
-      this.db.lead.findMany({ where: leadsVisibleTo(tenant), select: { id: true, name: true, email: true, phone: true, company: true, value: true } }),
+      this.db.lead.findMany({ where: leadsVisibleTo(tenant), select: { id: true, name: true, email: true, phone: true, company: true, value: true, customFields: true } }),
     ]);
     const stageIds = new Set(stages.map((s) => s.id));
     const firstStage = stages[0]?.id ?? null;
@@ -70,8 +73,8 @@ export class LeadImportService {
     }
 
     const results: ImportRowResult[] = [];
-    const creates: { row: ImportLeadRow; result: ImportRowResult; assignedTo: string; stageId: string | null; createdAt?: Date }[] = [];
-    const fills: { row: ImportLeadRow; lead: Existing; result: ImportRowResult }[] = [];
+    const creates: { row: ImportLeadRow; result: ImportRowResult; assignedTo: string; stageId: string | null; createdAt?: Date; custom: Record<string, unknown> }[] = [];
+    const fills: { row: ImportLeadRow; lead: Existing; result: ImportRowResult; custom: Record<string, unknown> }[] = [];
 
     for (const row of input.rows) {
       const email = row.email?.trim().toLowerCase().replace(/^mailto:/, '') || undefined;
@@ -86,15 +89,17 @@ export class LeadImportService {
         continue;
       }
 
+      // The workspace's own fields: what fits is kept; a value that does not is left out, and said.
+      const fitted = row.customFields && this.fields ? this.fields.tolerant(row.customFields, fieldDefs) : { values: {}, refused: false };
       const keys = [emailKey(email) && `e:${emailKey(email)}`, phoneKey(r.phone) && `p:${phoneKey(r.phone)}`].filter((k): k is string => !!k);
       const match = keys.map((k) => known.get(k)).find(Boolean);
       if (match) {
         result.outcome = 'duplicate';
         if ('id' in match) {
           result.leadId = match.id;
-          if (input.duplicates === 'fill' && this.fillable(match, r)) {
+          if (input.duplicates === 'fill' && (this.fillable(match, r) || this.fillsCustom(match, fitted.values))) {
             result.outcome = 'fill';
-            fills.push({ row: r, lead: match, result });
+            fills.push({ row: r, lead: match, result, custom: fitted.values });
           }
         }
         continue;
@@ -113,8 +118,9 @@ export class LeadImportService {
         if (stageIds.has(r.stageId)) stageId = r.stageId;
         else notices.push('unknownStage');
       }
+      if (fitted.refused) notices.push('badField');
       if (notices.length) result.notices = notices;
-      creates.push({ row: r, result, assignedTo, stageId, createdAt: importedDay(r.createdOn) ?? undefined });
+      creates.push({ row: r, result, assignedTo, stageId, createdAt: importedDay(r.createdOn) ?? undefined, custom: fitted.values });
     }
 
     const summary = (): ImportLeadsResult => ({
@@ -129,7 +135,7 @@ export class LeadImportService {
     await this.db.$transaction(async (tx) => {
       if (creates.length) {
         const made = await tx.lead.createManyAndReturn({
-          data: creates.map(({ row, assignedTo, stageId, createdAt }) => ({
+          data: creates.map(({ row, assignedTo, stageId, createdAt, custom }) => ({
             orgId: tenant.orgId,
             assignedTo,
             stageId,
@@ -141,6 +147,7 @@ export class LeadImportService {
             temperature: row.temperature ?? 'COLD',
             source: 'import',
             ...(createdAt ? { createdAt } : {}),
+            ...(Object.keys(custom).length ? { customFields: custom as never } : {}),
           })),
           select: { id: true },
         });
@@ -156,7 +163,9 @@ export class LeadImportService {
           });
         }
       }
-      for (const { row, lead } of fills) {
+      for (const { row, lead, custom } of fills) {
+        const had = (lead.customFields && typeof lead.customFields === 'object' ? lead.customFields : {}) as Record<string, unknown>;
+        const added = Object.fromEntries(Object.entries(custom).filter(([id]) => had[id] === undefined || had[id] === null || had[id] === ''));
         await tx.lead.update({
           where: { id: lead.id },
           data: {
@@ -165,6 +174,7 @@ export class LeadImportService {
             ...(!lead.phone && row.phone ? { phone: row.phone } : {}),
             ...(!lead.company && row.company ? { company: row.company } : {}),
             ...(!lead.value && row.value ? { value: Math.round(row.value) } : {}),
+            ...(Object.keys(added).length ? { customFields: { ...had, ...added } as never } : {}),
           },
         });
         if (row.title || row.note) {
@@ -194,6 +204,12 @@ export class LeadImportService {
       });
     }
     return out;
+  }
+
+  /** Whether the file has a value for one of the workspace's fields the lead has empty. */
+  private fillsCustom(lead: Existing, custom: Record<string, unknown>) {
+    const had = (lead.customFields && typeof lead.customFields === 'object' ? lead.customFields : {}) as Record<string, unknown>;
+    return Object.keys(custom).some((id) => had[id] === undefined || had[id] === null || had[id] === '');
   }
 
   /** Whether the row has anything the lead is missing. */

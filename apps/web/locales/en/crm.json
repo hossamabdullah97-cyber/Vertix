@@ -357,7 +357,8 @@
     },
     "notices": {
       "unknownOwner": "Owner isn't a member here: assigned to you",
-      "unknownStage": "Stage isn't in your pipeline: put in the first stage"
+      "unknownStage": "Stage isn't in your pipeline: put in the first stage",
+      "badField": "A value didn't fit its field and was left out"
     },
     "more_one": "And {{value}} more row",
     "more_other": "And {{value}} more rows",
@@ -530,5 +531,55 @@
   "mentions": {
     "suggestions": "Teammates",
     "none": "No teammate who can see this lead matches."
+  },
+  "fields": {
+    "title": "Fields",
+    "manage": "Manage fields",
+    "add": "Add field",
+    "emptyDrawer": "Add your own fields to every lead, like Budget, City or Industry.",
+    "manageTitle": "Lead fields",
+    "manageSubtitle": "Your own fields on every lead: what your team needs to know that the standard ones don't cover.",
+    "emptyManager": "No fields yet. Add the first one below.",
+    "newTitle": "New field",
+    "label": "Name",
+    "labelPlaceholder": "e.g. Budget, City, Industry",
+    "type": "Kind",
+    "types": {
+      "TEXT": "Text",
+      "NUMBER": "Number",
+      "DATE": "Date",
+      "SELECT": "Choice",
+      "CHECKBOX": "Yes / no",
+      "URL": "Link"
+    },
+    "options": "Choices",
+    "optionsPlaceholder": "Retail\nReal estate\nHealthcare",
+    "optionsHint": "One per line, or separated by commas.",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "up": "Move {{label}} up",
+    "down": "Move {{label}} down",
+    "deleteNamed": "Delete {{label}}",
+    "confirmDelete": "Delete the field “{{label}}”? Its value is removed from every lead.",
+    "full": "A workspace can have up to {{max}} fields.",
+    "none": "—",
+    "open": "Open link",
+    "yes": "Yes",
+    "no": "No",
+    "placeholders": {
+      "TEXT": "Add…",
+      "NUMBER": "0",
+      "URL": "https://…"
+    },
+    "invalid": {
+      "TEXT": "Too long.",
+      "NUMBER": "Enter a number.",
+      "URL": "Enter a web address, like nile.com.",
+      "DATE": "Pick a date.",
+      "SELECT": "Pick one of the choices.",
+      "CHECKBOX": ""
+    }
   }
 }

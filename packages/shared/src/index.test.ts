@@ -204,3 +204,31 @@ describe('describeDevice', () => {
     expect(deviceLabel('curl/8.0')).toBe('Unknown device');
   });
 });
+
+import { coerceFieldValue, customFieldSchema } from './index';
+
+describe('custom field values', () => {
+  const sel = { type: 'SELECT' as const, options: ['Retail', 'Real estate'] };
+  it('stores each kind of value in one shape', () => {
+    expect(coerceFieldValue({ type: 'TEXT', options: [] }, '  Cairo ')).toBe('Cairo');
+    expect(coerceFieldValue({ type: 'NUMBER', options: [] }, '25,000')).toBe(25000);
+    expect(coerceFieldValue({ type: 'DATE', options: [] }, '2025-03-01')).toBe('2025-03-01');
+    expect(coerceFieldValue({ type: 'CHECKBOX', options: [] }, 'نعم')).toBe(true);
+    expect(coerceFieldValue({ type: 'URL', options: [] }, 'nile.com/x')).toBe('https://nile.com/x');
+    expect(coerceFieldValue(sel, 'real ESTATE')).toBe('Real estate');
+  });
+
+  it('clears on empty, and refuses what does not fit', () => {
+    expect(coerceFieldValue(sel, '')).toBeNull();
+    expect(coerceFieldValue(sel, 'Banking')).toBeUndefined();
+    expect(coerceFieldValue({ type: 'NUMBER', options: [] }, 'a lot')).toBeUndefined();
+    expect(coerceFieldValue({ type: 'DATE', options: [] }, '2025-02-30')).toBeUndefined();
+    expect(coerceFieldValue({ type: 'URL', options: [] }, 'javascript:alert(1)')).toBeUndefined();
+  });
+
+  it('needs options for a choice field, each once', () => {
+    expect(customFieldSchema.safeParse({ label: 'Industry', type: 'SELECT', options: [] }).success).toBe(false);
+    expect(customFieldSchema.safeParse({ label: 'Industry', type: 'SELECT', options: ['A', 'a'] }).success).toBe(false);
+    expect(customFieldSchema.safeParse({ label: 'Budget', type: 'NUMBER' }).success).toBe(true);
+  });
+});

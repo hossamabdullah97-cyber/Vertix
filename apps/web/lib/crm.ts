@@ -18,6 +18,8 @@ export interface Lead {
   lastContactedAt?: string | null;
   createdAt: string;
   card: { slug: string } | null;
+  /** The workspace's own fields, by field id. */
+  customFields?: Record<string, string | number | boolean> | null;
 }
 
 const HOUR = 3_600_000;

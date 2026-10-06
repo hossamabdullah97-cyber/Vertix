@@ -1,3 +1,4 @@
+import type { CustomFieldDef } from '@vertex/shared';
 import type { Lead, Stage } from './crm';
 
 /**
@@ -11,6 +12,9 @@ export interface ExportLabels {
   stage: (s: Stage) => string;
   temperature: (t: Lead['temperature']) => string;
   source: (s: string) => string;
+  /** The workspace's own fields, a column each after the standard ones; a checkbox reads as these words. */
+  fields?: CustomFieldDef[];
+  yesNo?: [string, string];
 }
 
 /** Cells that start like a formula are made plain text, so opening the file runs nothing. */
@@ -31,7 +35,9 @@ const when = (iso: string) => {
 export function leadsCsv(leads: Lead[], stages: Stage[], l: ExportLabels): string {
   const byId = new Map(stages.map((s) => [s.id, s]));
   const h = l.headers;
-  const rows: (string | number | null)[][] = [[h.name, h.company, h.email, h.phone, h.stage, h.temperature, h.value, h.source, h.card, h.added]];
+  const fields = l.fields ?? [];
+  const yesNo = l.yesNo ?? ['Yes', 'No'];
+  const rows: (string | number | null)[][] = [[h.name, h.company, h.email, h.phone, h.stage, h.temperature, h.value, h.source, h.card, h.added, ...fields.map((f) => f.label)]];
   for (const lead of leads) {
     const stage = lead.stageId ? byId.get(lead.stageId) : undefined;
     rows.push([
@@ -45,6 +51,10 @@ export function leadsCsv(leads: Lead[], stages: Stage[], l: ExportLabels): strin
       lead.source ? l.source(lead.source) : '',
       lead.card ? `/c/${lead.card.slug}` : '',
       when(lead.createdAt),
+      ...fields.map((f) => {
+        const v = lead.customFields?.[f.id];
+        return v === undefined || v === null ? '' : f.type === 'CHECKBOX' ? (v ? yesNo[0] : yesNo[1]) : typeof v === 'number' ? v : String(v);
+      }),
     ]);
   }
   return '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';

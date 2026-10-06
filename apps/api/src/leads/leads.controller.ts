@@ -10,6 +10,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
   UploadedFile,
@@ -38,8 +39,15 @@ import {
   type ImportLeadsInput,
   editNoteSchema,
   type EditNoteInput,
+  customFieldSchema,
+  type CustomFieldInput,
+  updateCustomFieldSchema,
+  type UpdateCustomFieldInput,
+  reorderCustomFieldsSchema,
 } from '@vertex/shared';
 import { LeadNotesService } from './lead-notes.service';
+import { CustomFieldsService } from './custom-fields.service';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { LeadImportService } from './lead-import.service';
 import { LeadMergeService } from './lead-merge.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -58,6 +66,7 @@ export class LeadsController {
     private readonly merges: LeadMergeService,
     private readonly imports: LeadImportService,
     private readonly notes: LeadNotesService,
+    private readonly fields: CustomFieldsService,
   ) {}
 
   /** Public: capture a lead from a card's engagement workflow. */
@@ -75,6 +84,46 @@ export class LeadsController {
   @Get()
   list(@Tenant() tenant: TenantContext) {
     return this.leads.list(tenant);
+  }
+
+  /** The workspace's own lead fields, in order. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get('fields')
+  listFields() {
+    return this.fields.list();
+  }
+
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Roles('OWNER', 'ADMIN')
+  @Post('fields')
+  createField(@Tenant() tenant: TenantContext, @Body(new ZodValidationPipe(customFieldSchema)) body: CustomFieldInput) {
+    return this.fields.create(tenant, body);
+  }
+
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Roles('OWNER', 'ADMIN')
+  @Put('fields/order')
+  reorderFields(@Body(new ZodValidationPipe(reorderCustomFieldsSchema)) body: { ids: string[] }) {
+    return this.fields.reorder(body.ids);
+  }
+
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Roles('OWNER', 'ADMIN')
+  @Patch('fields/:fieldId')
+  updateField(@Param('fieldId') fieldId: string, @Body(new ZodValidationPipe(updateCustomFieldSchema)) body: UpdateCustomFieldInput) {
+    return this.fields.update(fieldId, body);
+  }
+
+  @RequireScopes('crm:write')
+  @UseGuards(RequireTenantGuard)
+  @Roles('OWNER', 'ADMIN')
+  @Delete('fields/:fieldId')
+  deleteField(@Tenant() tenant: TenantContext, @Param('fieldId') fieldId: string) {
+    return this.fields.remove(tenant, fieldId);
   }
 
   @RequireScopes('crm:read')
@@ -249,7 +298,7 @@ export class LeadsController {
   update(
     @Tenant() tenant: TenantContext,
     @Param('id') id: string,
-    @Body() body: { stageId?: string | null; temperature?: string; value?: number; name?: string | null; email?: string | null; phone?: string | null; company?: string | null },
+    @Body() body: { stageId?: string | null; temperature?: string; value?: number; name?: string | null; email?: string | null; phone?: string | null; company?: string | null; customFields?: Record<string, unknown> },
   ) {
     return this.leads.update(tenant, id, body);
   }

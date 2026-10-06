@@ -33,6 +33,8 @@ import { MeetingRequest, meetingRequestOf } from './MeetingRequest';
 import { ComposeMessage, type Channel, type ContactResult } from './ComposeMessage';
 import { MentionInput, NoteText } from './MentionInput';
 import { keptMentions, type Mention } from '@/lib/mentions';
+import { CustomFieldsPanel } from './CustomFieldsPanel';
+import { useCustomFields } from '@/lib/custom-fields';
 
 const TEMPS: Temp[] = ['COLD', 'WARM', 'HOT'];
 
@@ -44,6 +46,7 @@ type LeadPatch = {
   email?: string | null;
   phone?: string | null;
   company?: string | null;
+  customFields?: Record<string, string | number | boolean | null>;
 };
 
 /**
@@ -63,6 +66,7 @@ export function LeadDrawer({
   onContacted,
   duplicates = [],
   onReviewDuplicates,
+  onManageFields,
 }: {
   lead: Lead | null;
   stages: Stage[];
@@ -77,6 +81,8 @@ export function LeadDrawer({
   /** Other leads that look like the same person. */
   duplicates?: Lead[];
   onReviewDuplicates?: () => void;
+  /** Opens the workspace's field list, for those who may change it. */
+  onManageFields?: () => void;
 }) {
   const { t } = useTranslation('crm');
 
@@ -124,6 +130,7 @@ export function LeadDrawer({
               onContacted={onContacted}
               duplicates={duplicates}
               onReviewDuplicates={onReviewDuplicates}
+              onManageFields={onManageFields}
             />
           </motion.aside>
         </>
@@ -144,6 +151,7 @@ function DrawerBody({
   onContacted,
   duplicates,
   onReviewDuplicates,
+  onManageFields,
 }: {
   lead: Lead;
   stages: Stage[];
@@ -156,6 +164,7 @@ function DrawerBody({
   onContacted?: (id: string, times: { firstContactedAt: string | null; lastContactedAt: string | null }) => void;
   duplicates: Lead[];
   onReviewDuplicates?: () => void;
+  onManageFields?: () => void;
 }) {
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
@@ -208,6 +217,8 @@ function DrawerBody({
     authFetch<Me>('/auth/me').then(setMe, () => undefined);
   }, []);
   const [editing, setEditing] = useState<{ id: string; text: string; picked: Mention[] } | null>(null);
+  const fields = useCustomFields();
+  const canManageFields = me?.role === 'OWNER' || me?.role === 'ADMIN';
 
   useEffect(() => {
     let alive = true;
@@ -526,6 +537,15 @@ function DrawerBody({
               <dt className="text-faint">{t('drawer.leadScore')}</dt>
               <dd className="tabular text-ink">{lead.score}</dd>
             </dl>
+          )}
+          {activeTab === 'info' && fields && (
+            <CustomFieldsPanel
+              fields={fields}
+              values={lead.customFields}
+              busy={!!busy}
+              onChange={(id, value) => onPatch({ customFields: { [id]: value } })}
+              onManage={canManageFields && onManageFields ? onManageFields : undefined}
+            />
           )}
 
           {activeTab === 'timeline' && (

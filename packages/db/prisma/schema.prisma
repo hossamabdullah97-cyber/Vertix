@@ -122,6 +122,7 @@ model Organization {
   cardPresence      CardPresence[]
   messageTemplates  MessageTemplate[]
   invoices          Invoice[]
+  customFields      CustomField[]
 
   @@index([deletedAt])
   @@map("organizations")
@@ -407,6 +408,9 @@ model Lead {
   /// Follow-up reminders sent while nobody had reached out (at most two).
   followUpReminders  Int       @default(0)
   followUpRemindedAt DateTime?
+  /// The workspace's own fields (CustomField), by field id: text, a number,
+  /// a YYYY-MM-DD date, true/false, or one of a choice field's options.
+  customFields Json?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?   // Soft delete
@@ -1204,6 +1208,35 @@ model Invoice {
 
   @@index([orgId, paidAt])
   @@map("invoices")
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+  CHECKBOX
+  URL
+}
+
+/// A field a workspace adds to its leads ("Budget", "City", "Industry").
+/// Values live on each lead (Lead.customFields), keyed by this field's id,
+/// so renaming a field or reordering them never touches a lead.
+model CustomField {
+  id        String          @id @default(cuid())
+  orgId     String
+  label     String
+  type      CustomFieldType
+  /// A choice field's options, in the order shown.
+  options   String[]        @default([])
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, order])
+  @@map("custom_fields")
 }
 
 enum ErrorSource {
