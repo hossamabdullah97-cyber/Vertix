@@ -16,7 +16,8 @@
     "integrations": "التكاملات",
     "adminConsole": "وحدة تحكم الإدارة",
     "settings": "الإعدادات",
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "help": "المساعدة"
   },
   "searchWorkspace": "بحث في مساحة العمل…",
   "darkMode": "الوضع الداكن",
@@ -38,7 +39,8 @@
     "tags": "بطاقات NFC",
     "files": "الملفات",
     "notifications": "الإشعارات",
-    "workspaces": "مساحات العمل"
+    "workspaces": "مساحات العمل",
+    "help": "المساعدة"
   },
   "searchKeys": {
     "navigate": "تنقّل",
@@ -156,5 +158,6 @@
     "body": "هذا الرابط لمساحة عمل لست عضواً فيها. اطلب ممن أرسله أن يدعوك.",
     "invited": "لديك دعوة من {{name}}. انضم لفتح الرابط.",
     "back": "الذهاب إلى {{name}}"
-  }
+  },
+  "searchHelp": "ابحث في المساعدة عن «{{q}}»"
 }

@@ -16,7 +16,8 @@
     "integrations": "Integrations",
     "adminConsole": "Admin Console",
     "settings": "Settings",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "help": "Help"
   },
   "searchWorkspace": "Search workspace…",
   "darkMode": "Dark mode",
@@ -38,7 +39,8 @@
     "tags": "NFC tags",
     "files": "Files",
     "notifications": "Notifications",
-    "workspaces": "Workspaces"
+    "workspaces": "Workspaces",
+    "help": "Help"
   },
   "searchKeys": {
     "navigate": "Navigate",
@@ -142,5 +144,6 @@
     "body": "This link is for a workspace you are not a member of. Ask whoever sent it to invite you.",
     "invited": "{{name}} invited you. Join to open the link.",
     "back": "Go to {{name}}"
-  }
+  },
+  "searchHelp": "Search help for “{{q}}”"
 }

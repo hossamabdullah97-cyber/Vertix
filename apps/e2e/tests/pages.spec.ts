@@ -1,7 +1,7 @@
 import { expect, publishedCard, signIn, test, useArabic } from './support';
 
 /** Every main page of the app, opened by a signed-in owner. */
-const PAGES = ['/dashboard', '/leads', '/cards', '/analytics', '/team', '/workspace', '/account', '/notifications', '/meet', '/tags', '/integrations', '/billing'];
+const PAGES = ['/dashboard', '/leads', '/cards', '/analytics', '/team', '/workspace', '/account', '/notifications', '/meet', '/tags', '/integrations', '/billing', '/help', '/help/import-leads'];
 
 /** A line that is only a translation key ("goals.metric.LEADS") means a missing string. */
 const RAW_KEY = /^[a-z][a-zA-Z]*(\.[a-zA-Z_]+){1,4}$/;
