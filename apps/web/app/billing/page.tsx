@@ -11,6 +11,7 @@ import { formatCurrency, formatDate, formatNumber } from '@/lib/format';
 import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
 import { SALES_MAILTO } from '@/lib/contact';
+import { BillingDetailsForm, InvoiceList } from '@/components/billing/Invoices';
 
 type Plan = 'FREE' | 'PERSONAL' | 'PRO' | 'BUSINESS' | 'ENTERPRISE';
 /** The plans bought at checkout. */
@@ -281,6 +282,14 @@ export default function BillingPage() {
                 </p>
               )}
             </section>
+
+            {/* Invoices and who they are made out to: for whoever may pay. */}
+            {canChange && (
+              <>
+                <InvoiceList />
+                <BillingDetailsForm />
+              </>
+            )}
           </>
         )}
       </div>

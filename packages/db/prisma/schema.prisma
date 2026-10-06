@@ -121,6 +121,7 @@ model Organization {
   duplicateDismissals DuplicateDismissal[]
   cardPresence      CardPresence[]
   messageTemplates  MessageTemplate[]
+  invoices          Invoice[]
 
   @@index([deletedAt])
   @@map("organizations")
@@ -1170,6 +1171,41 @@ model CrmSyncRecord {
 /// financial credential; it stores the URL and display metadata, nothing more.
 /// Scoped by variantId to a Smart Identity like CardSection/CardAction, so one
 /// public link can show different payment options per resolved identity.
+/// A paid month: one for each payment Paymob took (the first and every
+/// renewal). Written once and never changed. Who it was billed to and who
+/// billed it are copied in at the time, and it outlives its workspace, since
+/// an invoice is a record the business keeps.
+model Invoice {
+  id                  String    @id @default(cuid())
+  /// Null once the workspace is purged; the invoice stays.
+  orgId               String?
+  /// VC-2026-00001: one sequence for the whole platform, never reused.
+  number              String    @unique
+  paymobTransactionId String    @unique
+  plan                Plan
+  /// What was charged, tax included, in piastres.
+  amountCents         Int
+  /// The VAT inside amountCents, when a rate is set (BILLING_VAT_PERCENT).
+  taxCents            Int       @default(0)
+  taxPercent          Float?
+  currency            String    @default("EGP")
+  /// "MasterCard •••• 2346", as Paymob reports the card.
+  paymentMethod       String?
+  periodStart         DateTime
+  periodEnd           DateTime
+  paidAt              DateTime
+  /// { workspace, legalName, taxId, address, email } at the time of payment.
+  billedTo            Json
+  /// { name, address, taxId, email } of the seller at the time of payment.
+  seller              Json
+  createdAt           DateTime  @default(now())
+
+  org Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, paidAt])
+  @@map("invoices")
+}
+
 model PaymentLink {
   id          String    @id @default(cuid())
   cardId      String

@@ -93,6 +93,11 @@ export function formatCurrency(
   }).format(value);
 }
 
+/** An exact amount, with its piastres, as on an invoice: "EGP 499.00" / "‏٤٩٩٫٠٠ ج.م.‏". */
+export function formatMoneyExact(cents: number, locale: Locale, currency = 'EGP'): string {
+  return new Intl.NumberFormat(localeTag[locale], { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);
+}
+
 /**
  * The correct `dir` for a single input based on the kind of data it holds.
  * URLs, emails, phones, API keys, and slugs are always LTR even in an RTL UI to
