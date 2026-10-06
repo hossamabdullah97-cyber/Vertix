@@ -145,5 +145,12 @@
     "invited": "{{name}} invited you. Join to open the link.",
     "back": "Go to {{name}}"
   },
-  "searchHelp": "Search help for “{{q}}”"
+  "searchHelp": "Search help for “{{q}}”",
+  "statusBanner": {
+    "incident": "We’re working on a problem:",
+    "maintenance": "Maintenance under way:",
+    "upcoming": "Planned maintenance:",
+    "details": "Details",
+    "dismiss": "Hide"
+  }
 }

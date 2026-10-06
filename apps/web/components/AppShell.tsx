@@ -21,6 +21,7 @@ import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
 import { VerifyEmailBanner } from '@/components/ui/VerifyEmailBanner';
+import { StatusBanner } from '@/components/ui/StatusBanner';
 import { TwoStepPanel } from '@/components/account/TwoStepPanel';
 import { registerServiceWorker, syncPush } from '@/lib/pwa';
 import { Shortcuts, SHOW_SHORTCUTS, WORKSPACE_KEY, type WorkspaceKey } from '@/components/ui/Shortcuts';
@@ -1225,6 +1226,7 @@ export default function AppShell({
           </header>
           </div>
 
+          <StatusBanner />
           <VerifyEmailBanner me={me} personal={personalWorkspace} />
 
           {mobileTitle && (title || action) && (

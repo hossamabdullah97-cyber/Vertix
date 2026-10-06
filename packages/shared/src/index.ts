@@ -1289,3 +1289,68 @@ export const helpFeedbackSchema = z.object({
   helpful: z.boolean(),
 });
 export type HelpFeedbackInput = z.infer<typeof helpFeedbackSchema>;
+
+// ── Status page ─────────────────────────────────────────────────────────────
+export const STATUS_COMPONENTS = ['app', 'cards', 'email', 'webhooks'] as const;
+export type StatusComponentId = (typeof STATUS_COMPONENTS)[number];
+export type ComponentState = 'OPERATIONAL' | 'DEGRADED' | 'OUTAGE' | 'MAINTENANCE';
+export const INCIDENT_IMPACTS = ['MINOR', 'MAJOR', 'MAINTENANCE'] as const;
+export const INCIDENT_STATUSES = ['SCHEDULED', 'INVESTIGATING', 'IDENTIFIED', 'MONITORING', 'RESOLVED'] as const;
+export type IncidentImpact = (typeof INCIDENT_IMPACTS)[number];
+export type IncidentStatus = (typeof INCIDENT_STATUSES)[number];
+
+export interface StatusIncidentView {
+  id: string;
+  title: string;
+  titleAr: string | null;
+  impact: IncidentImpact;
+  status: IncidentStatus;
+  components: StatusComponentId[];
+  startsAt: string | null;
+  endsAt: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updates: { id: string; status: IncidentStatus; message: string; messageAr: string | null; createdAt: string }[];
+}
+
+export interface StatusView {
+  /** The worst state of any part right now. */
+  overall: ComponentState;
+  components: {
+    id: StatusComponentId;
+    state: ComponentState;
+    /** Share of checks over the last 90 days that found it working; null before any check. */
+    uptime: number | null;
+    /** Oldest first, 90 days; null where there was no check that day. */
+    days: { day: string; uptime: number | null; worst: ComponentState | null }[];
+  }[];
+  /** Not yet resolved: going on now, or maintenance still to come. */
+  active: StatusIncidentView[];
+  /** Resolved in the last 14 days, newest first. */
+  recent: StatusIncidentView[];
+  checkedAt: string | null;
+}
+
+const statusText = z.string().trim().min(2).max(2000);
+export const createIncidentSchema = z
+  .object({
+    title: z.string().trim().min(3).max(160),
+    titleAr: z.string().trim().max(160).optional().or(z.literal('')),
+    impact: z.enum(INCIDENT_IMPACTS),
+    status: z.enum(INCIDENT_STATUSES).default('INVESTIGATING'),
+    components: z.array(z.enum(STATUS_COMPONENTS)).min(1),
+    message: statusText,
+    messageAr: z.string().trim().max(2000).optional().or(z.literal('')),
+    startsAt: z.string().datetime().optional(),
+    endsAt: z.string().datetime().optional(),
+  })
+  .refine((d) => d.impact !== 'MAINTENANCE' || (!!d.startsAt && !!d.endsAt), { message: 'Maintenance needs a start and an end', path: ['startsAt'] })
+  .refine((d) => !d.startsAt || !d.endsAt || d.endsAt > d.startsAt, { message: 'The end has to be after the start', path: ['endsAt'] });
+export type CreateIncidentInput = z.infer<typeof createIncidentSchema>;
+
+export const incidentUpdateSchema = z.object({
+  status: z.enum(INCIDENT_STATUSES),
+  message: statusText,
+  messageAr: z.string().trim().max(2000).optional().or(z.literal('')),
+});
+export type IncidentUpdateInput = z.infer<typeof incidentUpdateSchema>;

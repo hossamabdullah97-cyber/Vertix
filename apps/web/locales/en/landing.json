@@ -173,7 +173,8 @@
       "terms": "Terms",
       "refunds": "Refunds",
       "contact": "Contact",
-      "developers": "API for developers"
+      "developers": "API for developers",
+      "status": "System status"
     }
   }
 }

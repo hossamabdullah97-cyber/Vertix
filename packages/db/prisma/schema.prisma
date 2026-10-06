@@ -1464,3 +1464,79 @@ model HelpFeedback {
   @@unique([article, userId])
   @@map("help_feedback")
 }
+
+/// What a part of the platform looked like at its last automatic check.
+model StatusComponent {
+  /// app | cards | email | webhooks
+  id        String   @id
+  /// OPERATIONAL | DEGRADED | OUTAGE
+  status    String
+  latencyMs Int?
+  /// Why it isn't operational, in a few words, for the admin console.
+  detail    String?
+  checkedAt DateTime
+
+  @@map("status_components")
+}
+
+/// A part's checks on one (UTC) day, for its 90-day uptime bar.
+model StatusDay {
+  component String
+  /// YYYY-MM-DD, UTC
+  day       String
+  checks    Int    @default(0)
+  degraded  Int    @default(0)
+  down      Int    @default(0)
+
+  @@id([component, day])
+  @@map("status_days")
+}
+
+enum IncidentImpact {
+  MINOR
+  MAJOR
+  MAINTENANCE
+}
+
+enum IncidentStatus {
+  SCHEDULED
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+/// Something the people who run the platform tell everyone about: an
+/// outage, a slowdown, or planned maintenance, with its updates.
+model StatusIncident {
+  id         String         @id @default(cuid())
+  title      String
+  titleAr    String?
+  impact     IncidentImpact
+  status     IncidentStatus
+  /// The parts it touches (StatusComponent ids).
+  components String[]
+  /// For maintenance: when it is planned for.
+  startsAt   DateTime?
+  endsAt     DateTime?
+  resolvedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updates    StatusIncidentUpdate[]
+
+  @@index([createdAt])
+  @@map("status_incidents")
+}
+
+model StatusIncidentUpdate {
+  id         String         @id @default(cuid())
+  incidentId String
+  status     IncidentStatus
+  message    String
+  messageAr  String?
+  createdAt  DateTime       @default(now())
+
+  incident StatusIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, createdAt])
+  @@map("status_incident_updates")
+}

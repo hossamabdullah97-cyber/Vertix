@@ -15,7 +15,8 @@
     "jobs": "Background jobs",
     "errors": "Errors",
     "log": "Audit log",
-    "support": "Support"
+    "support": "Support",
+    "status": "Status"
   },
   "overview": {
     "intro": "The whole platform at a glance, live from the database.",
@@ -353,5 +354,31 @@
     "emptyOpen": "No open messages. When someone writes from the help page, it shows here.",
     "emptyClosed": "Nothing answered yet.",
     "emptyArticles": "No one has rated an article yet."
+  },
+  "status": {
+    "intro": "Every minute the platform checks its own parts; what they find, and anything you post here, is on the public status page and in a banner in the app.",
+    "checks": "Latest checks",
+    "openPage": "Open the status page",
+    "runChecks": "Check now",
+    "noChecks": "No checks yet. They run every minute, or check now.",
+    "incidents": "Posts",
+    "new": "Post an incident or maintenance",
+    "newHint": "It shows on the status page and in a banner in the app straight away. Write in English; Arabic is shown to Arabic readers when given.",
+    "noIncidents": "Nothing posted yet.",
+    "impact": "Impact",
+    "components": "Affects",
+    "title": "Title (English)",
+    "titleAr": "Title (Arabic, optional)",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "message": "What is happening (English)",
+    "messageAr": "What is happening (Arabic, optional)",
+    "publish": "Publish",
+    "postUpdate": "Post an update",
+    "newStatus": "New status",
+    "post": "Post update",
+    "delete": "Delete this post",
+    "confirmDelete": "Delete “{{title}}” and its updates? Use this only for a post made by mistake.",
+    "close": "Close"
   }
 }
