@@ -188,6 +188,7 @@ export const SOURCE_META: Record<string, { label: string; icon: string }> = {
   card_scan: { label: 'Paper card', icon: 'camera' },
   manual: { label: 'Added by hand', icon: 'user-plus' },
   in_person: { label: 'Met in person', icon: 'users' },
+  import: { label: 'Imported', icon: 'upload' },
 };
 
 export function sourceMeta(source: string) {
