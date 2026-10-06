@@ -30,7 +30,7 @@ test('leads come in from a spreadsheet, each row checked first, and those alread
   await expect(rows.filter({ hasText: 'Will fill in' })).toHaveCount(1);
   await page.getByRole('button', { name: 'Import 3 leads' }).click();
   await expect(page.getByText('Import finished')).toBeVisible();
-  await page.getByRole('button', { name: 'Done' }).click();
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
 
   const leads = (await account.api<any[]>('/leads')).data;
   expect(leads).toHaveLength(3);

@@ -33,6 +33,9 @@ test('a person signing up for themselves gets a workspace without team machinery
   expect(invite.status).toBe(400);
   expect(invite.data.message).toMatch(/personal workspace/);
 
+  // Past the welcome a new account sees once.
+  await a.api('/account/onboarding', { method: 'PATCH', body: { welcomed: true } });
+
   // The team page says how to get a team, and Settings does it.
   await page.goto('/team');
   await expect(page.getByText('This is your personal workspace')).toBeVisible();

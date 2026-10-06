@@ -47,6 +47,9 @@ model User {
   totpEnabledAt     DateTime?
   totpLastStep      Int?
   totpRecoveryCodes String[]  @default([])
+  /// The getting-started guide: when it welcomed this person, when they
+  /// hid it, and when they finished it ({ welcomedAt, dismissedAt, completedAt }).
+  onboarding        Json?
 
   memberships   Membership[]
   ownedCards    Card[]       @relation("CardOwner")

@@ -34,7 +34,7 @@ export interface Account {
 }
 
 /** A fresh person with a workspace of their own, made through the API. */
-export async function newAccount(name = 'E2E Owner'): Promise<Account> {
+export async function newAccount(name = 'E2E Owner', opts: { welcome?: boolean } = {}): Promise<Account> {
   const email = `e2e-${Date.now()}-${randomBytes(3).toString('hex')}@example.test`;
   const r = await call<{ accessToken: string }>('/auth/register', { body: { email, password: PASSWORD, name, organizationName: `${name} Co` } });
   expect(r.status, JSON.stringify(r.data)).toBe(201);
@@ -48,6 +48,8 @@ export async function newAccount(name = 'E2E Owner'): Promise<Account> {
     orgId: claims.orgId,
     api: (path, opts = {}) => call(path, { ...opts, token: account.token, orgId: account.orgId }),
   };
+  // The welcome a new account sees once; tests about it make their own account (newAccount(name, { welcome: true })).
+  if (!opts.welcome) await account.api('/account/onboarding', { method: 'PATCH', body: { welcomed: true } });
   return account;
 }
 

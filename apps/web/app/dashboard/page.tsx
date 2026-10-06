@@ -15,7 +15,7 @@ import { OccasionsSheet } from '@/components/occasions/OccasionsSheet';
 import { countDuring, markersFor, occasionOn, type Occasion } from '@/lib/occasions';
 import AppShell from '@/components/AppShell';
 import { GoalsPanel } from '@/components/goals/GoalsPanel';
-import { setupSteps } from '@/lib/onboarding';
+import { useOnboarding } from '@/lib/onboarding';
 import { CardThumb } from '@/components/cards/CardThumb';
 import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
 import { useShortcut } from '@/lib/shortcuts';
@@ -150,7 +150,8 @@ export default function HomePage() {
   const [showOccasions, setShowOccasions] = useState(false);
   const loadOccasions = useCallback(() => authFetch<Occasion[]>('/orgs/occasions').then(setOccasions).catch(() => setOccasions([])), []);
 
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  // The guide, worked out by the API; hiding it is kept on the account, for every device.
+  const guide = useOnboarding();
 
   const load = useCallback(async () => {
     // With something on screen already, refresh it in place rather than blanking the page.
@@ -217,8 +218,6 @@ export default function HomePage() {
       router.replace('/login');
       return;
     }
-    const savedOnboarding = localStorage.getItem('vertex_show_onboarding');
-    if (savedOnboarding !== null) setShowOnboarding(savedOnboarding === 'true');
     load().catch((e) => setError(e.message));
   }, [router, load]);
 
@@ -282,25 +281,23 @@ export default function HomePage() {
     }
   };
 
-  const toggleOnboarding = () => {
-    setShowOnboarding((prev) => {
-      const next = !prev;
-      localStorage.setItem('vertex_show_onboarding', String(next));
-      return next;
-    });
-  };
+  const showOnboarding = !guide.view?.dismissed;
+  const toggleOnboarding = () => void guide.update({ dismissed: showOnboarding });
 
   const onboardingSteps = useMemo(
     () =>
-      setupSteps({ cards, userId: me?.sub, tags, alertsChosen }).map((step) => ({
-        id: step.id,
-        label: t(`onboarding.steps.${step.id}.label`),
-        desc: t(`onboarding.steps.${step.id}.desc`),
-        completed: step.done,
-        link: step.href,
-        linkText: t(`onboarding.steps.${step.id}.link`),
-      })),
-    [cards, tags, alertsChosen, me?.sub, t],
+      // Finished once, it stays out of the way.
+      guide.view && !guide.view.completedAt
+        ? guide.view.steps.map((step) => ({
+            id: step.id,
+            label: t(`onboarding.steps.${step.id}.label`),
+            desc: t(`onboarding.steps.${step.id}.desc`),
+            completed: step.done,
+            link: step.href,
+            linkText: t(`onboarding.steps.${step.id}.link`),
+          }))
+        : [],
+    [guide.view, t],
   );
 
   // Leads still sitting in the first pipeline stage have not been picked up yet.
