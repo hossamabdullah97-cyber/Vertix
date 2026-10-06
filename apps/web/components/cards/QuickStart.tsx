@@ -98,13 +98,19 @@ export default function QuickStart({
   async function commit() {
     setSaving(true);
     setError('');
+    // The details typed here are the card's own too, not only its buttons: the
+    // studio's Phone and Email fields and the saved contact (vCard) read them.
+    const typed = (k: ChannelKey) => (values[k] ?? '').trim();
+    const contact = Object.fromEntries(
+      Object.entries({ phone: typed('call') || typed('whatsapp'), email: typed('email'), website: typed('website') }).filter(([, v]) => v),
+    );
     try {
       await authFetch(`/cards/${cardId}`, {
         method: 'PATCH',
         body: JSON.stringify({
           templateId: look.id,
           theme: { accent: look.accent, mode: look.mode, cover: 'gradient', lang },
-          vcardData: { ...existing, fullName: fullName.trim(), title: title.trim(), avatar },
+          vcardData: { ...existing, ...contact, fullName: fullName.trim(), title: title.trim(), avatar },
         }),
       });
 
