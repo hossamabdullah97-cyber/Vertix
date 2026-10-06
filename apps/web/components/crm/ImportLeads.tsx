@@ -11,6 +11,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { parseCsv } from '@/lib/import-members';
 import { identifies, leadsTemplateCsv, parseLeadRows, type ParsedLead } from '@/lib/import-leads';
 import { downloadText } from '@/lib/export-leads';
+import { useCustomFields } from '@/lib/custom-fields';
 import type { Stage } from '@/lib/crm';
 import enCrm from '@/locales/en/crm.json';
 import arCrm from '@/locales/ar/crm.json';
@@ -64,6 +65,7 @@ export function ImportLeads({ open, stages, onClose, onImported }: { open: boole
   const [duplicates, setDuplicates] = useState<Duplicates>('skip');
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const customFields = useCustomFields();
 
   // Every name a stage may have in a file: as stored, and as shown in either language.
   const stageNames = useMemo(
@@ -103,7 +105,7 @@ export function ImportLeads({ open, stages, onClose, onImported }: { open: boole
     if (!/\.(xlsx|csv)$/i.test(file.name)) return setError(t('import.errors.type'));
     let parsed;
     try {
-      parsed = parseLeadRows(await readTable(file), stageNames);
+      parsed = parseLeadRows(await readTable(file), stageNames, customFields ?? []);
     } catch {
       return setError(t('import.errors.read'));
     }

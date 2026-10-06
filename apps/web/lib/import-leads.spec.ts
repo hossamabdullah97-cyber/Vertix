@@ -86,3 +86,15 @@ describe('values in a file', () => {
     expect(parseDay('')).toBeUndefined();
   });
 });
+
+describe('the workspace’s own fields in a file', () => {
+  it('are read from the columns named like them, ahead of a standard column of the same name', () => {
+    const fields = [
+      { id: 'f_city', label: 'المدينة' },
+      { id: 'f_notes', label: 'Notes' },
+    ];
+    const { leads, fieldColumns } = parseLeadRows([['Name', 'المدينة', 'Notes'], ['Mona', 'الجيزة', 'VIP']], STAGES, fields);
+    expect(fieldColumns).toEqual({ f_city: 1, f_notes: 2 });
+    expect(leads[0]!.row).toEqual({ line: 2, name: 'Mona', customFields: { f_city: 'الجيزة', f_notes: 'VIP' } });
+  });
+});

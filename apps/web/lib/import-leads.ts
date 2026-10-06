@@ -1,4 +1,4 @@
-import { LEAD_IMPORT_MAX, type ImportLeadRow } from '@vertex/shared';
+import { LEAD_IMPORT_MAX, type CustomFieldDef, type ImportLeadRow } from '@vertex/shared';
 
 /**
  * Turns a spreadsheet of leads into rows the API can check and import.
@@ -136,10 +136,28 @@ export interface StageNames {
 const clip = (s: string, max: number) => (s ? s.slice(0, max) : undefined);
 
 /** The rows of a sheet (header first) as leads, each with its line in the file. */
-export function parseLeadRows(table: unknown[][], stages: StageNames[]): { leads: ParsedLead[]; columns: Partial<Record<LeadField, number>>; tooMany: boolean } {
+/** Columns named like one of the workspace's own fields, by field id. */
+export function mapFieldColumns(header: unknown[], fields: Pick<CustomFieldDef, 'id' | 'label'>[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  const byLabel = new Map(fields.map((f) => [norm(f.label), f.id]));
+  header.forEach((h, i) => {
+    const id = byLabel.get(norm(h));
+    if (id && out[id] === undefined) out[id] = i;
+  });
+  return out;
+}
+
+export function parseLeadRows(
+  table: unknown[][],
+  stages: StageNames[],
+  fields: Pick<CustomFieldDef, 'id' | 'label'>[] = [],
+): { leads: ParsedLead[]; columns: Partial<Record<LeadField, number>>; fieldColumns: Record<string, number>; tooMany: boolean } {
   const headerAt = table.findIndex((r) => r.some((c) => text(c) !== ''));
-  if (headerAt < 0) return { leads: [], columns: {}, tooMany: false };
-  const columns = mapLeadColumns(table[headerAt]!);
+  if (headerAt < 0) return { leads: [], columns: {}, fieldColumns: {}, tooMany: false };
+  // A workspace field named like a standard column ("Notes") is the workspace's.
+  const fieldColumns = mapFieldColumns(table[headerAt]!, fields);
+  const taken = new Set(Object.values(fieldColumns));
+  const columns = Object.fromEntries(Object.entries(mapLeadColumns(table[headerAt]!)).filter(([, i]) => !taken.has(i as number))) as Partial<Record<LeadField, number>>;
   const cell = (r: unknown[], f: LeadField) => (columns[f] === undefined ? undefined : r[columns[f]!]);
   const stageByName = new Map<string, string>();
   for (const s of stages) for (const n of s.names) if (n) stageByName.set(norm(n), s.id);
@@ -165,10 +183,17 @@ export function parseLeadRows(table: unknown[][], stages: StageNames[]): { leads
       owner: clip(text(cell(r, 'owner')), 200),
       createdOn: day ?? undefined,
     };
+    const custom: Record<string, string | number | boolean> = {};
+    for (const [id, i] of Object.entries(fieldColumns)) {
+      const v = r[i];
+      if (v === null || v === undefined || v === '') continue;
+      custom[id] = v instanceof Date ? parseDay(v) ?? '' : typeof v === 'number' || typeof v === 'boolean' ? v : String(v).trim().slice(0, 500);
+    }
+    if (Object.keys(custom).length) row.customFields = custom;
     for (const k of Object.keys(row) as (keyof ImportLeadRow)[]) if (row[k] === undefined || row[k] === '') delete row[k];
     leads.push(day === null ? { row, problem: 'badDate' } : { row });
   });
-  return { leads: leads.slice(0, LEAD_IMPORT_MAX), columns, tooMany: leads.length > LEAD_IMPORT_MAX };
+  return { leads: leads.slice(0, LEAD_IMPORT_MAX), columns, fieldColumns, tooMany: leads.length > LEAD_IMPORT_MAX };
 }
 
 /** A starter file, with headers people will recognise in their language. */

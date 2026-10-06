@@ -667,6 +667,8 @@ export const importLeadRowSchema = z.object({
   owner: importText(200),
   /** When it really came in (YYYY-MM-DD), for history kept elsewhere until now. */
   createdOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** The workspace's own fields the file has columns for, by field id. */
+  customFields: z.record(z.string().max(40), z.union([z.string().max(500), z.number(), z.boolean()])).optional(),
 });
 export type ImportLeadRow = z.infer<typeof importLeadRowSchema>;
 
@@ -681,7 +683,7 @@ export type ImportLeadsInput = z.infer<typeof importLeadsSchema>;
 
 export type ImportOutcome = 'create' | 'fill' | 'duplicate' | 'invalid';
 export type ImportProblem = 'empty' | 'badEmail' | 'badDate';
-export type ImportNotice = 'unknownOwner' | 'unknownStage';
+export type ImportNotice = 'unknownOwner' | 'unknownStage' | 'badField';
 
 export interface ImportRowResult {
   line: number;
@@ -1104,4 +1106,84 @@ export interface ErrorGroupView {
   firstSeenAt: string;
   lastSeenAt: string;
   resolvedAt: string | null;
+}
+
+// ===========================================================================
+//  Custom fields on leads
+// ===========================================================================
+
+export const CUSTOM_FIELD_TYPES = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'CHECKBOX', 'URL'] as const;
+export type CustomFieldType = (typeof CUSTOM_FIELD_TYPES)[number];
+/** Fields a workspace may add to its leads. */
+export const MAX_CUSTOM_FIELDS = 30;
+
+export interface CustomFieldDef {
+  id: string;
+  label: string;
+  type: CustomFieldType;
+  options: string[];
+  order: number;
+}
+
+export const customFieldSchema = z
+  .object({
+    label: z.string().trim().min(1).max(60),
+    type: z.enum(CUSTOM_FIELD_TYPES),
+    options: z.array(z.string().trim().min(1).max(60)).max(50).default([]),
+  })
+  .refine((f) => f.type !== 'SELECT' || f.options.length > 0, { message: 'A choice field needs at least one option', path: ['options'] })
+  .refine((f) => new Set(f.options.map((o) => o.toLowerCase())).size === f.options.length, { message: 'Each option once', path: ['options'] });
+export type CustomFieldInput = z.infer<typeof customFieldSchema>;
+
+export const updateCustomFieldSchema = z.object({
+  label: z.string().trim().min(1).max(60).optional(),
+  options: z.array(z.string().trim().min(1).max(60)).max(50).optional(),
+});
+export type UpdateCustomFieldInput = z.infer<typeof updateCustomFieldSchema>;
+
+export const reorderCustomFieldsSchema = z.object({ ids: z.array(z.string().min(1)).max(MAX_CUSTOM_FIELDS) });
+
+export type CustomFieldValue = string | number | boolean;
+
+/**
+ * A value for a field, as it is stored: text and links trimmed (a link must
+ * be http(s)), numbers as numbers, dates as YYYY-MM-DD, a choice exactly as
+ * one of its options (matched without case), a checkbox as true/false.
+ * Empty clears the field (null); anything that does not fit is undefined.
+ */
+export function coerceFieldValue(field: Pick<CustomFieldDef, 'type' | 'options'>, raw: unknown): CustomFieldValue | null | undefined {
+  if (raw === null || raw === undefined || (typeof raw === 'string' && !raw.trim())) return null;
+  switch (field.type) {
+    case 'TEXT': {
+      const v = String(raw).trim();
+      return v.length <= 500 ? v : undefined;
+    }
+    case 'URL': {
+      let v = String(raw).trim();
+      if (!/^https?:\/\//i.test(v)) v = `https://${v}`;
+      // A web address: http(s), a host with a dot, no spaces.
+      return /^https?:\/\/[^\s/:?#]+\.[^\s/:?#]+(:\d+)?([/?#]\S*)?$/i.test(v) && v.length <= 500 ? v : undefined;
+    }
+    case 'NUMBER': {
+      const n = typeof raw === 'number' ? raw : Number(String(raw).replace(/[\s,]/g, ''));
+      return Number.isFinite(n) && Math.abs(n) < 1e15 ? n : undefined;
+    }
+    case 'DATE': {
+      const v = raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw).trim().slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined;
+      const d = new Date(`${v}T00:00:00Z`);
+      return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : undefined;
+    }
+    case 'CHECKBOX': {
+      if (typeof raw === 'boolean') return raw;
+      const v = String(raw).trim().toLowerCase();
+      if (['true', 'yes', 'y', '1', 'نعم', 'أيوه', 'ايوه', '✓'].includes(v)) return true;
+      if (['false', 'no', 'n', '0', 'لا'].includes(v)) return false;
+      return undefined;
+    }
+    case 'SELECT': {
+      const v = String(raw).trim().toLowerCase();
+      return field.options.find((o) => o.toLowerCase() === v);
+    }
+  }
 }

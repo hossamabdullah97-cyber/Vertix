@@ -35,3 +35,17 @@ describe('csvCell', () => {
     expect(csvCell('a\nb')).toBe('"a\nb"');
   });
 });
+
+describe('leadsCsv with the workspace’s own fields', () => {
+  it('adds a column for each, a checkbox as words', () => {
+    const fields = [
+      { id: 'f_b', label: 'Budget', type: 'NUMBER' as const, options: [], order: 0 },
+      { id: 'f_v', label: 'VIP', type: 'CHECKBOX' as const, options: [], order: 1 },
+    ];
+    const csv = leadsCsv([lead({ customFields: { f_b: 5000, f_v: true } }), lead({ customFields: null })], stages, { ...labels, fields, yesNo: ['نعم', 'لا'] });
+    const lines = csv.trimEnd().split('\r\n');
+    expect(lines[0]!.endsWith(',Added,Budget,VIP')).toBe(true);
+    expect(lines[1]!.endsWith(',5000,نعم')).toBe(true);
+    expect(lines[2]!.endsWith(',,')).toBe(true);
+  });
+});

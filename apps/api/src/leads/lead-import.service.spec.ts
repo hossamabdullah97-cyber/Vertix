@@ -31,7 +31,11 @@ function setup(role: 'OWNER' | 'MANAGER' | 'EMPLOYEE' = 'OWNER') {
   };
   const audit = { log: jest.fn(async () => undefined) };
   const notifications = { notify: jest.fn(async () => undefined) };
-  const service = new LeadImportService({ client: db } as never, audit as never, notifications as never);
+  const fields = {
+    list: jest.fn(async () => [{ id: 'f_city', label: 'City', type: 'TEXT', options: [], order: 0 }, { id: 'f_size', label: 'Size', type: 'NUMBER', options: [], order: 1 }]),
+    tolerant: jest.requireActual('./custom-fields.service').CustomFieldsService.prototype.tolerant,
+  };
+  const service = new LeadImportService({ client: db } as never, audit as never, notifications as never, fields as never);
   const tenant = { orgId: 'org1', userId: 'u_me', role } as const;
   const run = (rows: Partial<ImportLeadRow>[], opts: { duplicates?: 'skip' | 'fill'; dryRun?: boolean } = {}) =>
     service.import(tenant, { rows: rows.map((r, i) => ({ line: i + 2, ...r })), duplicates: opts.duplicates ?? 'skip', dryRun: opts.dryRun ?? false });
@@ -120,6 +124,15 @@ describe('importing leads from a spreadsheet', () => {
     expect(out).toMatchObject({ created: 1, duplicates: 1 });
     expect(db.$transaction).not.toHaveBeenCalled();
     expect(audit.log).not.toHaveBeenCalled();
+  });
+});
+
+describe('the workspace’s own fields in a file', () => {
+  it('are kept on new leads, a value that does not fit left out and said', async () => {
+    const { run, created } = setup();
+    const out = await run([{ name: 'A', customFields: { f_city: 'Giza', f_size: 'big' } }]);
+    expect(created[0]).toMatchObject({ customFields: { f_city: 'Giza' } });
+    expect(out.rows[0]!.notices).toEqual(['badField']);
   });
 });
 

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, ServiceUnavailableException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, Optional, NotFoundException, ServiceUnavailableException, UnprocessableEntityException } from '@nestjs/common';
 import { MailService } from '../mail/mail.service';
 import { buildIcs, googleCalendarLink, type CalendarEvent } from './ics';
 import { meetingReplyEmail } from './meeting-mail';
@@ -16,6 +16,7 @@ import { availabilityOf, isOpen } from '../cards/availability';
 import { bookedMeetings } from '../cards/booked-meetings';
 import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
 import { LIVE_ORG } from '../common/live-org';
+import { CustomFieldsService } from './custom-fields.service';
 
 /**
  * How many times an hour the public form may be sent: by one visitor to one
@@ -53,6 +54,7 @@ export class LeadsService {
     private readonly throttle: AuthThrottleService,
     private readonly alerts: LeadAlertsService,
     private readonly mail: MailService,
+    @Optional() private readonly fields?: CustomFieldsService,
   ) {}
 
   private get db() {
@@ -334,6 +336,7 @@ export class LeadsService {
         firstContactedAt: true,
         lastContactedAt: true,
         createdAt: true,
+        customFields: true,
         card: { select: { slug: true } },
       },
     });
@@ -358,6 +361,7 @@ export class LeadsService {
         firstContactedAt: true,
         lastContactedAt: true,
         createdAt: true,
+        customFields: true,
         card: { select: { slug: true } },
         activities: {
           orderBy: { createdAt: 'desc' },
@@ -632,10 +636,24 @@ export class LeadsService {
   async update(
     viewer: TenantContext,
     id: string,
-    input: { stageId?: string | null; temperature?: string; value?: number; name?: string | null; email?: string | null; phone?: string | null; company?: string | null },
+    input: {
+      stageId?: string | null;
+      temperature?: string;
+      value?: number;
+      name?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      company?: string | null;
+      /** The workspace's own fields, by field id; an empty value clears one. */
+      customFields?: Record<string, unknown>;
+    },
   ) {
-    const lead = await this.db.lead.findFirst({ where: { id, ...this.visibleTo(viewer) }, select: { id: true, stageId: true, orgId: true } });
+    const lead = await this.db.lead.findFirst({ where: { id, ...this.visibleTo(viewer) }, select: { id: true, stageId: true, orgId: true, customFields: true } });
     if (!lead) throw new NotFoundException('Lead not found');
+    const customFields =
+      input.customFields && typeof input.customFields === 'object' && !Array.isArray(input.customFields) && this.fields
+        ? await this.fields.apply(lead.customFields, input.customFields)
+        : undefined;
 
     // A caller-supplied stageId must belong to the active org's pipeline —
     // otherwise a lead could be parked in another tenant's stage.
@@ -657,8 +675,9 @@ export class LeadsService {
         ...(input.email !== undefined ? { email: input.email } : {}),
         ...(input.phone !== undefined ? { phone: input.phone } : {}),
         ...(input.company !== undefined ? { company: input.company } : {}),
+        ...(customFields !== undefined ? { customFields } : {}),
       },
-      select: { id: true, stageId: true, temperature: true, value: true, name: true, email: true, phone: true, company: true },
+      select: { id: true, stageId: true, temperature: true, value: true, name: true, email: true, phone: true, company: true, customFields: true },
     });
 
     // Record a STAGE_CHANGE activity so the timeline reflects real movement.
