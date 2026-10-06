@@ -97,6 +97,7 @@ export const AR_MESSAGES: Record<string, string> = {
   'Invoice not found': 'الفاتورة غير موجودة',
   'Error not found': 'الخطأ غير موجود',
   'Request not found': 'الرسالة غير موجودة',
+  'This link isn’t valid': 'هذا الرابط غير صالح',
   'Incident not found': 'المنشور غير موجود',
   'Maintenance needs a start and an end': 'الصيانة تحتاج إلى موعد بداية ونهاية',
   'The end has to be after the start': 'يجب أن تكون النهاية بعد البداية',

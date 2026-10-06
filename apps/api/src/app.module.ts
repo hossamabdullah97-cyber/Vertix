@@ -34,6 +34,7 @@ import { TelemetryModule } from './telemetry/telemetry.module';
 import { SupportModule } from './support/support.module';
 import { DocsModule } from './docs/docs.module';
 import { StatusModule } from './status/status.module';
+import { EngagementModule } from './engagement/engagement.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { StatusModule } from './status/status.module';
     SupportModule,
     DocsModule,
     StatusModule,
+    EngagementModule,
   ],
   providers: [
     // Captures unhandled errors, reports 5xx to Sentry, returns clean JSON.

@@ -238,6 +238,21 @@ export default function AppShell({
     void syncPush(locale === 'ar' ? 'ar' : 'en');
   }, [locale]);
 
+  // And so are emails sent unasked (tips, reminders): told once per session and language.
+  useEffect(() => {
+    const lang = locale === 'ar' ? 'ar' : 'en';
+    try {
+      if (sessionStorage.getItem('vx:ui-lang') === lang) return;
+    } catch {}
+    authFetch('/account/language', { method: 'PUT', body: JSON.stringify({ lang }) })
+      .then(() => {
+        try {
+          sessionStorage.setItem('vx:ui-lang', lang);
+        } catch {}
+      })
+      .catch(() => {});
+  }, [locale]);
+
   useEffect(() => {
     if (/Mac|iPhone|iPad/.test(navigator.platform)) setShortcut('⌘K');
 

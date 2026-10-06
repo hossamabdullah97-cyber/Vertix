@@ -332,7 +332,8 @@
     "views": {
       "OPEN": "Open",
       "CLOSED": "Answered",
-      "articles": "Articles"
+      "articles": "Articles",
+      "emails": "Emails"
     },
     "cols": {
       "subject": "Subject",
@@ -353,7 +354,39 @@
     "close": "Close",
     "emptyOpen": "No open messages. When someone writes from the help page, it shows here.",
     "emptyClosed": "Nothing answered yet.",
-    "emptyArticles": "No one has rated an article yet."
+    "emptyArticles": "No one has rated an article yet.",
+    "emails": {
+      "intro": "Tips and reminders emailed to people while they set up, and when leads wait on them. Each goes once, never more than one in two days, only in the working day, in the person’s language.",
+      "sent_one": "{{count}} sent in 30 days",
+      "sent_other": "{{count}} sent in 30 days",
+      "preview_en": "Send me a sample",
+      "preview_ar": "Sample in Arabic",
+      "previewSent": "Sent to you",
+      "optedOut_one": "{{count}} person turned them off.",
+      "optedOut_other": "{{count}} people turned them off.",
+      "kinds": {
+        "verifyEmail": {
+          "name": "Confirm your email",
+          "when": "A day after sign-up, still unconfirmed: the confirmation again."
+        },
+        "finishCard": {
+          "name": "Finish your card",
+          "when": "A day after sign-up, no published card."
+        },
+        "shareCard": {
+          "name": "Share your card",
+          "when": "Two days after publishing, nobody has opened it."
+        },
+        "inviteTeam": {
+          "name": "Invite your team",
+          "when": "A company workspace five days old with only its owner."
+        },
+        "leadsWaiting": {
+          "name": "Leads are waiting",
+          "when": "Away a week, with new leads nobody has reached. At most every two weeks."
+        }
+      }
+    }
   },
   "status": {
     "intro": "Every minute the platform checks its own parts; what they find, and anything you post here, is on the public status page and in a banner in the app.",
