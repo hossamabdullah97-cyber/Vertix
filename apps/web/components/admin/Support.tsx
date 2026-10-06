@@ -12,7 +12,9 @@ import { Sheet } from '@/components/ui/Sheet';
 import { Notice, Pills } from './shared';
 
 type Request = SupportRequestView & { email: string; name: string | null; orgName: string | null; page: string | null; userAgent: string | null };
-type View = 'OPEN' | 'CLOSED' | 'articles';
+type View = 'OPEN' | 'CLOSED' | 'articles' | 'emails';
+type EmailStats = { sent: Record<string, number>; optedOut: number };
+const EMAIL_KINDS = ['verifyEmail', 'finishCard', 'shareCard', 'inviteTeam', 'leadsWaiting'] as const;
 
 /**
  * What people wrote from the help page, newest first: answer by email (the
@@ -26,11 +28,14 @@ export function Support() {
   const [view, setView] = useState<View>('OPEN');
   const [list, setList] = useState<Request[] | null>(null);
   const [feedback, setFeedback] = useState<{ article: string; helpful: number; notHelpful: number }[] | null>(null);
+  const [emails, setEmails] = useState<EmailStats | null>(null);
+  const [previewed, setPreviewed] = useState('');
   const [open, setOpen] = useState<Request | null>(null);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
 
   const load = useCallback(() => {
+    if (view === 'emails') return authFetch<EmailStats>('/admin/engagement').then(setEmails);
     if (view === 'articles') return authFetch<typeof feedback>('/admin/support/feedback').then(setFeedback);
     return authFetch<Request[]>(`/admin/support?status=${view}`).then(setList);
   }, [view]);
@@ -74,6 +79,7 @@ export function Support() {
             { key: 'OPEN', label: t('support.views.OPEN') },
             { key: 'CLOSED', label: t('support.views.CLOSED') },
             { key: 'articles', label: t('support.views.articles') },
+            { key: 'emails', label: t('support.views.emails') },
           ]}
         />
       </div>
@@ -83,7 +89,52 @@ export function Support() {
         </Notice>
       )}
 
-      {view === 'articles' ? (
+      {view === 'emails' ? (
+        !emails ? (
+          <div className="v-skeleton h-72 rounded-xl" />
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-muted">{t('support.emails.intro')}</p>
+            <ul className="divide-y divide-line rounded-xl ring-1 ring-inset ring-line" data-testid="engagement-stats">
+              {EMAIL_KINDS.map((k) => (
+                <li key={k} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
+                  <span className="min-w-[200px] flex-1">
+                    <span className="block font-medium text-ink">{t(`support.emails.kinds.${k}.name`)}</span>
+                    <span className="block text-xs text-muted">{t(`support.emails.kinds.${k}.when`)}</span>
+                  </span>
+                  <span className="tabular text-xs text-muted">{t('support.emails.sent', { count: emails.sent[k] ?? 0 })}</span>
+                  {k !== 'verifyEmail' &&
+                    (['en', 'ar'] as const).map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        disabled={!!busy}
+                        onClick={() =>
+                          void (async () => {
+                            setBusy(`${k}-${lang}`);
+                            setError('');
+                            try {
+                              await authFetch('/admin/engagement/preview', { method: 'POST', body: JSON.stringify({ kind: k, lang }) });
+                              setPreviewed(`${k}-${lang}`);
+                            } catch (e) {
+                              setError((e as Error).message);
+                            } finally {
+                              setBusy('');
+                            }
+                          })()
+                        }
+                        className="text-xs font-medium text-accent hover:underline disabled:opacity-50"
+                      >
+                        {previewed === `${k}-${lang}` ? t('support.emails.previewSent') : t(`support.emails.preview_${lang}`)}
+                      </button>
+                    ))}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-faint">{t('support.emails.optedOut', { count: emails.optedOut })}</p>
+          </div>
+        )
+      ) : view === 'articles' ? (
         !feedback ? (
           <div className="v-skeleton h-72 rounded-xl" />
         ) : feedback.length === 0 ? (

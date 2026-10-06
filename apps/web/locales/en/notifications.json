@@ -66,7 +66,9 @@
     "weeklyHint": "Every Sunday morning by email: the week's leads, taps and meetings against the week before, who is waiting for a reply, and the team's best.",
     "weeklyNow": "Send me this week's report now",
     "reportSent": "Sent to {{address}}.",
-    "reportQuiet": "Sent to {{address}}. It was a quiet week, so there's little in it."
+    "reportQuiet": "Sent to {{address}}. It was a quiet week, so there's little in it.",
+    "tips": "Tips and reminders",
+    "tipsHint": "An occasional email to help you set up (finishing and sharing your card, inviting your team) and when leads have been waiting while you were away. Never more than one in two days."
   },
   "prefs": {
     "intro": "Choose what shows up here. Turning a type off stops new ones; the ones you have stay.",
@@ -144,5 +146,14 @@
     "promptBody": "Turn on notifications on this device, and new leads and meeting requests reach you even with the app closed.",
     "promptYes": "Turn on",
     "promptNo": "Not now"
+  },
+  "unsubscribe": {
+    "title": "Tips and reminders",
+    "working": "Turning them off…",
+    "done": "You won’t get tips and reminders by email any more.",
+    "doneHint": "Lead alerts and the weekly report are separate; change them in your notification settings.",
+    "bad": "This link isn’t valid. Turn tips off in your notification settings instead.",
+    "settings": "Notification settings",
+    "home": "Go to Vertex Connect"
   }
 }

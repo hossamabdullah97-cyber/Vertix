@@ -15,6 +15,8 @@ interface Settings {
   whatsappReady: boolean;
   /** Null until chosen: then on for owners and admins, off for managers. */
   weeklyReport: boolean | null;
+  /** Tips and reminders by email: on unless turned off. */
+  tips: boolean;
 }
 
 /** Same rule as the API: digits with the country code; Egyptian 01… is understood. */
@@ -88,7 +90,7 @@ export function LeadAlerts({ open }: { open: boolean }) {
     }
   }
 
-  async function save(patch: Partial<Pick<Settings, 'email' | 'whatsapp' | 'phone' | 'weeklyReport'>>, done?: string) {
+  async function save(patch: Partial<Pick<Settings, 'email' | 'whatsapp' | 'phone' | 'weeklyReport' | 'tips'>>, done?: string) {
     const before = s;
     if (s) setS({ ...s, ...patch });
     try {
@@ -181,6 +183,17 @@ export function LeadAlerts({ open }: { open: boolean }) {
             <Switch on={weeklyOn} disabled={!s} label={t('alerts.weekly')} onClick={() => s && save({ weeklyReport: !weeklyOn })} />
           </li>
         )}
+
+        <li className="flex items-start gap-3 px-5 py-4">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated text-muted ring-1 ring-inset ring-line">
+            <Icon name="sparkle" size={15} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-ink">{t('alerts.tips')}</span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t('alerts.tipsHint')}</span>
+          </span>
+          <Switch on={s?.tips ?? true} disabled={!s} label={t('alerts.tips')} onClick={() => s && save({ tips: !s.tips })} />
+        </li>
 
         <li className="px-5 py-4">
           <div className="flex items-start gap-3">

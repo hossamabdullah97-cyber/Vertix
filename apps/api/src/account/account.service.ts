@@ -212,6 +212,11 @@ export class AccountService {
     this.logger.log(`Account ${userId} deleted (${solo.length} workspace(s) with it)`);
     return { ok: true, workspacesDeleted: solo.length };
   }
+
+  /** The language the app is used in, for emails sent unasked. */
+  async setLanguage(userId: string, lang: 'en' | 'ar') {
+    await this.prisma.client.user.update({ where: { id: userId }, data: { locale: lang } });
+  }
 }
 
 function escapeHtml(s: string): string {

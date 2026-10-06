@@ -603,6 +603,8 @@ export const leadAlertSettingsSchema = z
     phone: z.string().trim().max(32).nullable(),
     lang: z.enum(['en', 'ar']),
     weeklyReport: z.boolean(),
+    /** Tips and reminders by email (finish your card, leads waiting…). */
+    tips: z.boolean(),
   })
   .partial();
 export type LeadAlertSettingsInput = z.infer<typeof leadAlertSettingsSchema>;
@@ -1354,3 +1356,9 @@ export const incidentUpdateSchema = z.object({
   messageAr: z.string().trim().max(2000).optional().or(z.literal('')),
 });
 export type IncidentUpdateInput = z.infer<typeof incidentUpdateSchema>;
+
+// ── Tips and reminders by email ─────────────────────────────────────────────
+export const unsubscribeSchema = z.object({ u: z.string().min(1).max(40), t: z.string().min(1).max(64) });
+export const uiLanguageSchema = z.object({ lang: z.enum(['en', 'ar']) });
+export const ENGAGEMENT_PREVIEW_KINDS = ['finishCard', 'shareCard', 'inviteTeam', 'leadsWaiting'] as const;
+export const engagementPreviewSchema = z.object({ kind: z.enum(ENGAGEMENT_PREVIEW_KINDS), lang: z.enum(['en', 'ar']) });

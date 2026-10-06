@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Header, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Header, Patch, Post, Put } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { deleteAccountSchema, onboardingUpdateSchema, type DeleteAccountInput, type JwtPayload, type OnboardingUpdate } from '@vertex/shared';
+import { deleteAccountSchema, onboardingUpdateSchema, uiLanguageSchema, type DeleteAccountInput, type JwtPayload, type OnboardingUpdate } from '@vertex/shared';
 import type { TenantContext } from '@vertex/db';
 import { Tenant } from '../auth/decorators/tenant.decorator';
 import { OnboardingService } from './onboarding.service';
@@ -30,6 +30,13 @@ export class AccountController {
   @Patch('onboarding')
   onboardingUpdate(@CurrentUser() user: JwtPayload, @Body(new ZodValidationPipe(onboardingUpdateSchema)) body: OnboardingUpdate, @Tenant() tenant?: TenantContext) {
     return this.onboarding.update(user.sub, body, tenant);
+  }
+
+  /** The language the app is used in, so emails sent unasked are written in it. */
+  @Put('language')
+  async language(@CurrentUser() user: JwtPayload, @Body(new ZodValidationPipe(uiLanguageSchema)) body: { lang: 'en' | 'ar' }) {
+    await this.account.setLanguage(user.sub, body.lang);
+    return { ok: true };
   }
 
   @Throttle({ default: { limit: 5, ttl: 60_000 } })

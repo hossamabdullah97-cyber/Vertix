@@ -47,6 +47,8 @@ model User {
   totpEnabledAt     DateTime?
   totpLastStep      Int?
   totpRecoveryCodes String[]  @default([])
+  /// The language this person uses the app in (en | ar), for emails sent to them unasked.
+  locale            String?
   /// The getting-started guide: when it welcomed this person, when they
   /// hid it, and when they finished it ({ welcomedAt, dismissedAt, completedAt }).
   onboarding        Json?
@@ -615,6 +617,9 @@ model LeadAlertSettings {
   /// The Sunday-morning email about the workspace's week. Null means the
   /// default for the person's role: on for owners and admins, off for managers.
   weeklyReport Boolean?
+  /// Tips and reminders by email: finishing the card, sharing it, inviting
+  /// the team, and leads left waiting. On unless turned off.
+  tips      Boolean  @default(true)
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1539,4 +1544,21 @@ model StatusIncidentUpdate {
 
   @@index([incidentId, createdAt])
   @@map("status_incident_updates")
+}
+
+/// A tip or reminder emailed to someone, once per key (a kind, or a kind and
+/// a period for the ones that can come back), so a sweep never sends it twice.
+model EngagementEmail {
+  id     String   @id @default(cuid())
+  userId String
+  /// finishCard | shareCard | inviteTeam | verifyEmail | leadsWaiting
+  kind   String
+  /// The kind, plus the period for one that may repeat (leadsWaiting:1450).
+  key    String
+  sentAt DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([userId, sentAt])
+  @@index([kind, sentAt])
+  @@map("engagement_emails")
 }
