@@ -5,6 +5,8 @@ import {
   loginSchema,
   refreshSchema,
   googleSignInSchema,
+  appleSignInSchema,
+  type AppleSignInInput,
   mfaLoginSchema,
   type MfaLoginInput,
   type GoogleSignInInput,
@@ -84,6 +86,13 @@ export class AuthController {
   @Post('google')
   google(@Body(new ZodValidationPipe(googleSignInSchema)) body: GoogleSignInInput, @Client() client: ClientInfo) {
     return this.auth.google(body.credential, client);
+  }
+
+  @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
+  @Post('apple')
+  apple(@Body(new ZodValidationPipe(appleSignInSchema)) body: AppleSignInInput, @Client() client: ClientInfo) {
+    return this.auth.apple(body.identityToken, body.nonce, body.name, client);
   }
 
   @Public()

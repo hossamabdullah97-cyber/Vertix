@@ -33,6 +33,8 @@ model User {
   passwordHash  String?   // null for OAuth-only sign-in
   /// The Google account ("sub") this person signs in with, once linked.
   googleId      String?   @unique
+  /// The Apple account ("sub") this person signs in with, once linked.
+  appleId       String?   @unique
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -74,6 +76,7 @@ model User {
   userIntegrations   IntegrationConnection[] @relation("IntegrationConnector")
   heldTags           NfcTag[]                @relation("TagHolder")
   pushSubscriptions  PushSubscription[]      @relation("PushSubscriptions")
+  appPushTokens      AppPushToken[]
   goals              Goal[]                  @relation("GoalMember")
   authSessions       AuthSession[]           @relation("AuthSessions")
   ssoIdentities      SsoIdentity[]
@@ -594,6 +597,25 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+/// A phone with the Vertex app, for notifications on its lock screen
+/// (an Expo push token, which reaches Apple's and Google's push services).
+model AppPushToken {
+  id         String    @id @default(cuid())
+  userId     String
+  token      String    @unique
+  /// ios | android
+  platform   String
+  /// The language the notifications on this phone are written in: en | ar.
+  lang       String    @default("en")
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("app_push_tokens")
 }
 
 /// A ready message a team sends leads (WhatsApp or email), with {{name}}-style

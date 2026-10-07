@@ -7,15 +7,17 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, Loading, Notice, Screen, Text } from '@/components/ui';
 import { cardName, cardUrl, type CardRow } from '@/lib/cards';
 import { useApi } from '@/lib/use-api';
+import { useWorkspaceFromLink } from '@/lib/session';
 
 /** One card: its QR code to show across a table, its link to send, and a chip to program. */
 export default function CardScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, org } = useLocalSearchParams<{ id: string; org?: string }>();
+  const inWorkspace = useWorkspaceFromLink(org);
   const { t } = useTranslation();
   const { data: card, error, loading } = useApi<CardRow>(`/cards/${id}`);
   const [copied, setCopied] = useState(false);
 
-  if (loading && !card) return <Loading />;
+  if (!inWorkspace || (loading && !card)) return <Loading />;
   if (!card) return <Notice tone="danger">{error ?? t('card.notFound')}</Notice>;
   const url = cardUrl(card.slug);
   const name = cardName(card);

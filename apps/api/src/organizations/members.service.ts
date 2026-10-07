@@ -81,13 +81,13 @@ export class MembersService {
 
     const existingUser = await this.db.user.findFirst({
       where: { email: input.email },
-      select: { id: true, passwordHash: true, googleId: true },
+      select: { id: true, passwordHash: true, googleId: true, appleId: true },
     });
 
     // An account only counts as real once its owner can sign in: a password,
-    // or a linked Google account. Anything else is a placeholder from an
+    // or a linked Google or Apple account. Anything else is a placeholder from an
     // earlier invitation, invited again through the emailed link.
-    const hasAccount = !!(existingUser?.passwordHash || existingUser?.googleId);
+    const hasAccount = !!(existingUser?.passwordHash || existingUser?.googleId || existingUser?.appleId);
     // Their place here, if any (the tenant scope keeps this to this workspace).
     const current = existingUser
       ? await this.db.membership.findFirst({

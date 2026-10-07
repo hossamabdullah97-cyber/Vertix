@@ -29,7 +29,8 @@
       "tooMany": "Too many tries. Wait a few minutes and try again.",
       "verify": "Confirm your email first: we sent you a link.",
       "code": "That code is not right. Try the latest one.",
-      "network": "Could not reach Vertex. Check your connection."
+      "network": "Could not reach Vertex. Check your connection.",
+      "apple": "Could not sign in with Apple. Try again, or use your email."
     }
   },
   "home": {
@@ -218,7 +219,16 @@
     "signOut": "Sign out",
     "signOutTitle": "Sign out of this phone?",
     "signOutBody": "You can sign in again any time.",
-    "deleteAccount": "Delete account"
+    "deleteAccount": "Delete account",
+    "push": {
+      "title": "Notifications on this phone",
+      "on": "On",
+      "off": "Off",
+      "denied": "Blocked in the phone settings",
+      "unavailable": "Not available on this device",
+      "turnOn": "Turn on",
+      "openSettings": "Settings"
+    }
   },
   "sources": {
     "card_form": "Card form",

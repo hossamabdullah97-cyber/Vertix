@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { activeOrg, api, hasSession, logout, onSignedOut, setActiveOrg } from './api';
+import { disablePush, enablePushAfterSignIn } from './push';
 
 export type Role = 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 
@@ -77,6 +78,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
   }, [refresh]);
 
+  // Signed in on this phone: its notifications on (asked once), with a token that may have changed.
+  useEffect(() => {
+    if (status === 'signedIn') void enablePushAfterSignIn();
+  }, [status]);
+
+  const signOut = useCallback(async () => {
+    await disablePush();
+    await logout();
+  }, []);
+
   const switchTo = useCallback(async (id: string) => {
     await setActiveOrg(id);
     setOrgId(id);
@@ -91,9 +102,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       workspace: workspaces.find((w) => w.org.id === orgId) ?? null,
       refresh,
       switchTo,
-      signOut: logout,
+      signOut,
     }),
-    [status, me, workspaces, orgId, refresh, switchTo],
+    [status, me, workspaces, orgId, refresh, switchTo, signOut],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -102,6 +113,23 @@ export function useSession(): SessionState {
   const s = useContext(Ctx);
   if (!s) throw new Error('useSession outside SessionProvider');
   return s;
+}
+
+/**
+ * A screen opened from a link or a notification about another of the
+ * person's workspaces (?org=) opens in that workspace.
+ */
+export function useWorkspaceFromLink(org: string | undefined) {
+  const { workspace, workspaces, switchTo } = useSession();
+  const [ready, setReady] = useState(!org);
+  useEffect(() => {
+    if (!org || org === workspace?.org.id || !workspaces.some((w) => w.org.id === org)) {
+      setReady(true);
+      return;
+    }
+    void switchTo(org).finally(() => setReady(true));
+  }, [org, workspace?.org.id, workspaces, switchTo]);
+  return ready;
 }
 
 /** The roles that see the whole workspace (a member sees their own leads). */
