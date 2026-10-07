@@ -10,7 +10,7 @@ import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/ui/Sheet';
 import { Notice, Pills } from './shared';
 
-type Source = 'all' | 'BROWSER' | 'API';
+type Source = 'all' | 'BROWSER' | 'APP' | 'API';
 type Status = 'open' | 'resolved';
 
 /**
@@ -68,6 +68,7 @@ export function Errors() {
           options={[
             { key: 'all', label: t('errors.source.all') },
             { key: 'BROWSER', label: t('errors.source.BROWSER') },
+            { key: 'APP', label: t('errors.source.APP') },
             { key: 'API', label: t('errors.source.API') },
           ]}
         />

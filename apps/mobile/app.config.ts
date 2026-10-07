@@ -46,5 +46,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.extra,
       ...(projectId ? { eas: { projectId } } : {}),
     },
+    // Fixes reach phones without a store review (eas update), for builds of
+    // the same version (runtimeVersion); a new version needs a new build.
+    updates: projectId ? { url: `https://u.expo.dev/${projectId}`, checkAutomatically: 'ON_LOAD', fallbackToCacheTimeout: 0 } : { enabled: false },
   };
 };

@@ -7,6 +7,10 @@ import {
   googleSignInSchema,
   appleSignInSchema,
   type AppleSignInInput,
+  appHandoffSchema,
+  type AppHandoffInput,
+  appHandoffRedeemSchema,
+  type AppHandoffRedeemInput,
   mfaLoginSchema,
   type MfaLoginInput,
   type GoogleSignInInput,
@@ -93,6 +97,22 @@ export class AuthController {
   @Post('apple')
   apple(@Body(new ZodValidationPipe(appleSignInSchema)) body: AppleSignInInput, @Client() client: ClientInfo) {
     return this.auth.apple(body.identityToken, body.nonce, body.name, client);
+  }
+
+  /** The website, signed in, hands the phone app a one-time code (any sign-in method the website has). */
+  @PersonRoute()
+  @Throttle(AUTH_PAGE_LIMIT)
+  @Post('app-handoff')
+  appHandoff(@CurrentUser() user: JwtPayload, @Body(new ZodValidationPipe(appHandoffSchema)) body: AppHandoffInput) {
+    return this.auth.startAppHandoff(user, body.challenge);
+  }
+
+  /** The phone app trades the code, with its PKCE verifier, for a session of its own. */
+  @Public()
+  @Throttle(AUTH_PAGE_LIMIT)
+  @Post('app-handoff/redeem')
+  redeemAppHandoff(@Body(new ZodValidationPipe(appHandoffRedeemSchema)) body: AppHandoffRedeemInput, @Client() client: ClientInfo) {
+    return this.auth.redeemAppHandoff(body.code, body.verifier, client);
   }
 
   @Public()

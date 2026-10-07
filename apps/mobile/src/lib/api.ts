@@ -184,6 +184,13 @@ export async function appleLogin(identityToken: string, nonce: string, name?: st
   return null;
 }
 
+/** The website's one-time code (signed in there by any method), with this app's PKCE verifier. */
+export async function redeemWebSignIn(code: string, verifier: string) {
+  const data = await publicApi<AuthTokens>('/auth/app-handoff/redeem', { method: 'POST', json: { code, verifier } });
+  await saveTokens(data);
+  await setActiveOrg(null);
+}
+
 export async function completeTwoStep(mfaToken: string, code: string) {
   const data = await publicApi<AuthTokens>('/auth/login/2fa', { method: 'POST', json: { mfaToken, code: code.trim() } });
   await saveTokens(data);

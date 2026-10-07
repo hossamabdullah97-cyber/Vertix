@@ -30,8 +30,10 @@
       "verify": "Confirm your email first: we sent you a link.",
       "code": "That code is not right. Try the latest one.",
       "network": "Could not reach Vertex. Check your connection.",
-      "apple": "Could not sign in with Apple. Try again, or use your email."
-    }
+      "apple": "Could not sign in with Apple. Try again, or use your email.",
+      "website": "That sign-in did not go through. Try again."
+    },
+    "otherWays": "Google or company sign-in"
   },
   "home": {
     "morning": "Good morning, {{name}}",
@@ -262,5 +264,10 @@
     "negotiation": "Negotiation",
     "won": "Won",
     "lost": "Lost"
+  },
+  "crash": {
+    "title": "Something went wrong here",
+    "body": "We have been told about it. Try again, and if it keeps happening, reopen the app.",
+    "retry": "Try again"
   }
 }

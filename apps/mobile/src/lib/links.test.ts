@@ -30,4 +30,8 @@ describe('appRoute', () => {
     expect(appRoute('vertexconnect://lead/L1')).toBe('/lead/L1');
     expect(appRoute('vertexconnect://notifications')).toBe('/notifications');
   });
+
+  it('leaves a sign-in handed back by the website to the sign-in screen', () => {
+    expect(appRoute('vertexconnect://auth?code=abc')).toBeNull();
+  });
 });

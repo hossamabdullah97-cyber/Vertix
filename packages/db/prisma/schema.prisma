@@ -77,6 +77,7 @@ model User {
   heldTags           NfcTag[]                @relation("TagHolder")
   pushSubscriptions  PushSubscription[]      @relation("PushSubscriptions")
   appPushTokens      AppPushToken[]
+  appSignInCodes     AppSignInCode[]
   goals              Goal[]                  @relation("GoalMember")
   authSessions       AuthSession[]           @relation("AuthSessions")
   ssoIdentities      SsoIdentity[]
@@ -579,6 +580,31 @@ model AuthSession {
 
   @@index([userId, revokedAt])
   @@map("auth_sessions")
+}
+
+/// Signing in to the phone app through the website (any way the website
+/// offers: password, Google, a company's single sign-on). The website, signed
+/// in, asks for a one-time code bound to the app's PKCE challenge; the app
+/// trades it, with the verifier only it holds, for a session of its own.
+model AppSignInCode {
+  id        String    @id @default(cuid())
+  /// SHA-256 of the code; the code itself is only ever in the redirect to the app.
+  codeHash  String    @unique
+  /// base64url SHA-256 of the app's verifier (PKCE, S256).
+  challenge String
+  userId    String
+  /// The workspace the website had open.
+  orgId     String?
+  /// Carried over when the website's session came from that workspace's single sign-on.
+  ssoOrgId  String?
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("app_sign_in_codes")
 }
 
 model PushSubscription {
@@ -1290,6 +1316,8 @@ model CustomField {
 enum ErrorSource {
   BROWSER
   API
+  /// The phone app (apps/mobile).
+  APP
 }
 
 /// One kind of error, from the browser or the API, with how often and to how

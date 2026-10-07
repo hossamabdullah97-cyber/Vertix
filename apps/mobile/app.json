@@ -18,7 +18,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "remote-notification"
-        ]
+        ],
+        "CFBundleAllowMixedLocalizations": true
       },
       "buildNumber": "1",
       "usesAppleSignIn": true
@@ -94,6 +95,10 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "locales": {
+      "en": "./native-locales/en.json",
+      "ar": "./native-locales/ar.json"
     }
   }
 }

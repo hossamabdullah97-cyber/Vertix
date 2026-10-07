@@ -210,11 +210,12 @@
     "empty": "Nothing has run yet."
   },
   "errors": {
-    "intro": "Errors people met, in their browser or in the API on our side, each bug once: how often, to how many people, and when last. Marking one fixed hides it until it happens again.",
+    "intro": "Errors people met, in their browser, in the phone app, or in the API on our side, each bug once: how often, to how many people, and when last. Marking one fixed hides it until it happens again.",
     "sourceLabel": "Where",
     "source": {
       "all": "All",
       "BROWSER": "Browser",
+      "APP": "Phone app",
       "API": "API"
     },
     "statusLabel": "Status",

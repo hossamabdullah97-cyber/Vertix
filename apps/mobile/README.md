@@ -42,7 +42,21 @@ email or a message: `/leads?lead=…`, `/notifications`, `/cards/…`) opens the
 app on that screen when it is installed. Cards and chips (`/c/…`, `/t/…`)
 always open in the browser: they are for the people they are shared with.
 
-**Sign in with Apple** on iPhones, when the server has it on.
+**Every way to sign in.** Email and password in the app; Sign in with Apple
+on iPhones, when the server has it on; and "Google or company sign-in", which
+opens the website's sign-in in the phone's browser sheet (Google, a company's
+single sign-on, or any way the website adds later) and comes back signed in.
+The website hands the app a one-time code that only this app can use (PKCE):
+`/app-login` on the website, `POST /auth/app-handoff` and
+`/auth/app-handoff/redeem` on the API.
+
+**Errors are reported.** A screen that fails to draw, or an error nothing
+caught, goes to the admin console's Errors tab (source "Phone app") and to
+the platform's alert email, as the website's do. The screen offers to try
+again instead of going blank.
+
+**Fixes without a store review.** Builds check for an update when they open
+(`eas update`), for the same app version.
 
 ## Setup
 
@@ -126,7 +140,13 @@ eas build --profile preview --platform android     # an APK to try on a phone
 eas build --profile production --platform all
 eas submit --profile production --platform ios     # to App Store Connect (TestFlight)
 eas submit --profile production --platform android # to Play's internal testing track
+
+# A fix to the app's code (no new native module, same version) to phones already installed:
+eas update --channel production --message "What changed"
 ```
+
+A new native module, permission or app.json change needs a new build (and a
+new `version` in app.json, which is what `runtimeVersion` follows).
 
 What the stores need beyond the build (accounts, listing texts in Arabic and
 English, privacy answers, review notes): [STORE.md](STORE.md).
@@ -146,6 +166,6 @@ CI runs all three (the `mobile` job).
 ```
 src/app/            screens (Expo Router): login, (tabs)/…, lead/[id], card/[id], chip, notifications, workspaces, web
 src/components/     ui.tsx (the design system's pieces), WebPage (the website inside the app)
-src/lib/            api + session, push, links, i18n, theme, format, crm rules (as on the web), cards, chips, nfc
+src/lib/            api + session, web-sign-in, push, links, errors, i18n, theme, format, crm rules (as on the web), cards, chips, nfc
 src/locales/        en.json, ar.json
 ```

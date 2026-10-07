@@ -47,6 +47,8 @@ export const AR_MESSAGES: Record<string, string> = {
   'Apple has not shared a verified email address': 'لم تشارك Apple بريدًا إلكترونيًا مؤكدًا',
   'This account is linked to a different Apple account': 'هذا الحساب مرتبط بحساب Apple آخر',
   'Not an Expo push token': 'رمز إشعارات التطبيق غير صالح',
+  'Not a PKCE value': 'رمز التحقق من التطبيق غير صالح',
+  'This sign-in link is not valid any more. Sign in again.': 'رابط تسجيل الدخول هذا لم يعد صالحًا. سجّل الدخول مرة أخرى.',
   'The email could not be sent. Try again in a moment.': 'تعذّر إرسال البريد. حاول مرة أخرى بعد لحظات.',
   'User not found': 'المستخدم غير موجود',
   'Template not found': 'الرسالة الجاهزة غير موجودة',
