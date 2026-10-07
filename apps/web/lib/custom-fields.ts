@@ -13,6 +13,11 @@ function load(force = false) {
   return pending;
 }
 
+/** The fields now, for code that cannot wait for the hook (a file picked before they arrived). */
+export function loadCustomFields(): Promise<CustomFieldDef[]> {
+  return load();
+}
+
 /** The workspace's own lead fields, in order (shared by every component that asks). */
 export function useCustomFields(): CustomFieldDef[] | null {
   const [fields, setFields] = useState<CustomFieldDef[] | null>(null);
