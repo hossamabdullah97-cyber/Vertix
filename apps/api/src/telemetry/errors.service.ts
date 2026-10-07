@@ -53,7 +53,7 @@ export function topFrame(stack: string | undefined): string {
   return '';
 }
 
-export function fingerprint(source: 'BROWSER' | 'API', name: string, message: string, where: string): string {
+export function fingerprint(source: 'BROWSER' | 'API' | 'APP', name: string, message: string, where: string): string {
   return createHash('sha1').update([source, name, normalizeMessage(message), where].join('|')).digest('hex');
 }
 
@@ -80,7 +80,7 @@ function escapeHtml(s: string): string {
 }
 
 type Occurrence = {
-  source: 'BROWSER' | 'API';
+  source: 'BROWSER' | 'API' | 'APP';
   kind: string;
   name: string;
   message: string;
@@ -123,12 +123,13 @@ export class ErrorsService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.client;
   }
 
-  /** An error a browser reported. */
+  /** An error a browser, or the phone app (platform ios / android), reported. */
   async fromBrowser(input: ClientErrorInput, ctx: { userAgent?: string | null; userId?: string | null }): Promise<void> {
     if (isNoise(input)) return;
+    const source = input.platform === 'ios' || input.platform === 'android' ? 'APP' : 'BROWSER';
     if (this.config.get<string>('SENTRY_DSN')) {
       Sentry.withScope((scope) => {
-        scope.setTag('source', 'browser');
+        scope.setTag('source', source === 'APP' ? `app-${input.platform}` : 'browser');
         scope.setTag('kind', input.kind);
         if (input.release) scope.setTag('release', input.release);
         if (ctx.userId) scope.setUser({ id: ctx.userId });
@@ -136,7 +137,7 @@ export class ErrorsService implements OnModuleInit, OnModuleDestroy {
         Sentry.captureMessage(`${input.name}: ${input.message}`, 'error');
       });
     }
-    await this.record({ source: 'BROWSER', kind: input.kind, name: input.name, message: input.message, stack: input.stack, path: input.path, release: input.release, ...ctx });
+    await this.record({ source, kind: input.kind, name: input.name, message: input.message, stack: input.stack, path: input.path, release: input.release, ...ctx });
   }
 
   /** An API request that failed on our side (5xx). Best-effort: never adds to the failure. */
@@ -185,7 +186,7 @@ export class ErrorsService implements OnModuleInit, OnModuleDestroy {
   async list(filter: { source?: string; status?: string } = {}): Promise<ErrorGroupView[]> {
     const rows = await this.db.errorGroup.findMany({
       where: {
-        ...(filter.source === 'BROWSER' || filter.source === 'API' ? { source: filter.source } : {}),
+        ...(filter.source === 'BROWSER' || filter.source === 'API' || filter.source === 'APP' ? { source: filter.source } : {}),
         ...(filter.status === 'resolved' ? { resolvedAt: { not: null } } : filter.status === 'all' ? {} : { resolvedAt: null }),
       },
       orderBy: { lastSeenAt: 'desc' },
@@ -230,7 +231,7 @@ export class ErrorsService implements OnModuleInit, OnModuleDestroy {
     this.alerted.set(fp, Date.now());
     if (this.alerted.size > 2000) this.alerted.clear();
     const appUrl = (this.config.get<string>('APP_PUBLIC_URL') || 'http://localhost:3000').replace(/\/$/, '');
-    const where = o.source === 'API' ? 'API' : 'browser';
+    const where = o.source === 'API' ? 'API' : o.source === 'APP' ? 'phone app' : 'browser';
     await this.mail
       .send({
         to,

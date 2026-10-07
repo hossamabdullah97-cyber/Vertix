@@ -65,6 +65,14 @@ describe('recording an error', () => {
     expect(mail.send).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the phone app’s errors apart from the browser’s, and says where in the alert', async () => {
+    const { service, db, mail } = setup(null, 0, { OPS_ALERT_EMAIL: 'ops@vertex.test' });
+    await service.fromBrowser({ ...report, platform: 'ios', path: '/lead/[id]' }, { userAgent: 'VertexConnectApp/1.0 (iPhone; iOS 19.0; Mobile)' });
+    expect(db.errorGroup.create).toHaveBeenCalledWith({ data: expect.objectContaining({ source: 'APP', path: '/lead/[id]' }) });
+    expect(mail.send).toHaveBeenCalledWith(expect.objectContaining({ subject: expect.stringContaining('[Vertex phone app]') }));
+    expect(fingerprint('APP', 'TypeError', 'x', 'f')).not.toBe(fingerprint('BROWSER', 'TypeError', 'x', 'f'));
+  });
+
   it('counts a known one, and the people it reached', async () => {
     const { service, db, mail } = setup({ id: 'g1', resolvedAt: null, userIds: ['u1'] });
     await service.fromBrowser(report, { userId: 'u2' });

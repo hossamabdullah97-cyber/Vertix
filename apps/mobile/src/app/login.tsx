@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Field, Icon, Notice, Screen, Text } from '@/components/ui';
 import { AppleSignIn, type AppleCredential } from '@/components/AppleSignIn';
 import { ApiError, appleLogin, completeTwoStep, login } from '@/lib/api';
+import { signInOnWebsite } from '@/lib/web-sign-in';
 import { WEB_BASE } from '@/lib/config';
 import { currentLang, setLang } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
@@ -57,6 +58,18 @@ export default function Login() {
       else await refresh();
     } catch (e) {
       setError(e instanceof ApiError && e.status === 401 ? t('login.errors.apple') : explain(e, t));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function withWebsite() {
+    setBusy(true);
+    setError(null);
+    try {
+      if (await signInOnWebsite()) await refresh();
+    } catch (e) {
+      setError(e instanceof ApiError && e.status === 401 ? t('login.errors.website') : explain(e, t));
     } finally {
       setBusy(false);
     }
@@ -155,6 +168,9 @@ export default function Login() {
             />
             <Button label={t('login.submit')} onPress={signIn} busy={busy} disabled={!email.trim() || !password} testID="login-submit" />
             <AppleSignIn onCredential={withApple} onError={() => setError(t('login.errors.apple'))} />
+            {Platform.OS !== 'web' && (
+              <Button label={t('login.otherWays')} kind="secondary" icon="globe" onPress={withWebsite} disabled={busy} testID="login-website" />
+            )}
             <Pressable accessibilityRole="link" onPress={() => void WebBrowser.openBrowserAsync(`${WEB_BASE}/forgot-password`)} style={{ alignSelf: 'center', padding: 8 }}>
               <Text size="sm" tone="accent">
                 {t('login.forgot')}

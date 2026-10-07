@@ -1038,6 +1038,71 @@ describe('AuthService.apple', () => {
   });
 });
 
+describe('AuthService app handoff (signing in to the phone app through the website)', () => {
+  const { createHash } = jest.requireActual('node:crypto') as typeof import('node:crypto');
+  const VERIFIER = 'v'.repeat(43) + 'erifier-only-the-app-knows';
+  const CHALLENGE = createHash('sha256').update(VERIFIER).digest('base64url');
+  const hash = (code: string) => createHash('sha256').update(code).digest('hex');
+
+  function handoff(row: Record<string, unknown> | null, d: Deps = {}) {
+    const ctx = makeService({
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', email: 'mona@example.com', deletedAt: null, isSuperAdmin: false }) },
+      membership: { findFirst: jest.fn().mockResolvedValue({ orgId: 'org_web', role: 'MANAGER' }) },
+      ...d,
+    });
+    const codes = {
+      create: jest.fn().mockResolvedValue({}),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+      findUnique: jest.fn().mockResolvedValue(row),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    };
+    const client = ctx.prisma.client as unknown as Record<string, unknown>;
+    client.appSignInCode = codes;
+    client.authSession = { findUnique: jest.fn().mockResolvedValue({ ssoOrgId: 'org_web' }) };
+    return { ...ctx, codes };
+  }
+  const fresh = { id: 'h1', challenge: CHALLENGE, userId: 'u1', orgId: 'org_web', ssoOrgId: 'org_web', usedAt: null, expiresAt: new Date(Date.now() + 60_000) };
+
+  it('gives the signed-in website a one-time code, keeping only its hash, for two minutes', async () => {
+    const { service, codes } = handoff(null);
+    const { code } = await service.startAppHandoff({ sub: 'u1', email: 'mona@example.com', orgId: 'org_web', sid: 's_web' }, CHALLENGE);
+    expect(code).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    const data = codes.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({ codeHash: hash(code), challenge: CHALLENGE, userId: 'u1', orgId: 'org_web', ssoOrgId: 'org_web' });
+    expect(JSON.stringify(data)).not.toContain(code);
+    expect(data.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(2 * 60_000);
+  });
+
+  it('trades the code and the verifier for a new device of the phone’s own, in the workspace the website had open', async () => {
+    const { service, codes, sessions, signed } = handoff(fresh);
+    await expect(service.redeemAppHandoff('the-code-from-the-redirect', VERIFIER, { userAgent: 'VertexConnectApp/1.0' })).resolves.toEqual({ accessToken: 'tok_1', refreshToken: 'tok_2' });
+    expect(codes.findUnique).toHaveBeenCalledWith({ where: { codeHash: hash('the-code-from-the-redirect') } });
+    expect(codes.updateMany).toHaveBeenCalledWith({ where: { id: 'h1', usedAt: null }, data: { usedAt: expect.any(Date) } });
+    // Single sign-on on the website counts for the phone, in that workspace.
+    expect(sessions.start).toHaveBeenCalledWith('u1', { userAgent: 'VertexConnectApp/1.0' }, { announce: true, ssoOrgId: 'org_web' });
+    expect(access(signed)).toMatchObject({ sub: 'u1', orgId: 'org_web', role: 'MANAGER', sid: 'sess_1' });
+  });
+
+  it.each([
+    ['without the verifier only the app holds', fresh, 'w'.repeat(50)],
+    ['a second time', { ...fresh, usedAt: new Date() }, VERIFIER],
+    ['once expired', { ...fresh, expiresAt: new Date(Date.now() - 1) }, VERIFIER],
+    ['that does not exist', null, VERIFIER],
+  ])('refuses a code %s', async (_why, row, verifier) => {
+    const { service, codes, sessions } = handoff(row);
+    await expect(service.redeemAppHandoff('a-code-of-some-length', verifier)).rejects.toThrow('This sign-in link is not valid any more');
+    expect(codes.updateMany).not.toHaveBeenCalled();
+    expect(sessions.start).not.toHaveBeenCalled();
+  });
+
+  it('lets only one of two redemptions at once through', async () => {
+    const { service, codes, sessions } = handoff(fresh);
+    codes.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.redeemAppHandoff('a-code-of-some-length', VERIFIER)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(sessions.start).not.toHaveBeenCalled();
+  });
+});
+
 describe('AuthService email confirmation', () => {
   it('mails a confirmation link on sign-up, without making the sign-up wait on it', async () => {
     const create = jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co' });

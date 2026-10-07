@@ -1,19 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
-import { useColorScheme } from 'react-native';
-import { router, Stack, type Href } from 'expo-router';
+import { useColorScheme, View } from 'react-native';
+import { router, Stack, usePathname, type ErrorBoundaryProps, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useFonts, IBMPlexSansArabic_400Regular, IBMPlexSansArabic_500Medium, IBMPlexSansArabic_600SemiBold, IBMPlexSansArabic_700Bold } from '@expo-google-fonts/ibm-plex-sans-arabic';
 import { api } from '@/lib/api';
+import { catchUnhandled, reportError, setScreen } from '@/lib/errors';
 import { startI18n } from '@/lib/i18n';
 import { appRoute } from '@/lib/links';
 import { notificationUrl, useLastNotificationResponse } from '@/lib/push';
 import { SessionProvider, useSession } from '@/lib/session';
 import { fonts, palettes } from '@/lib/theme';
+import { Button, Text } from '@/components/ui';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+catchUnhandled();
+
+/** A screen that failed to draw: reported, and a way to try again instead of a blank app. */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation();
+  const scheme = useColorScheme();
+  const c = scheme === 'dark' ? palettes.dark : palettes.light;
+  useEffect(() => {
+    void reportError(error, 'react');
+  }, [error]);
+  return (
+    <View style={{ flex: 1, backgroundColor: c.canvas, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 }}>
+      <Text size="lg" weight="semibold" style={{ textAlign: 'center' }}>
+        {t('crash.title')}
+      </Text>
+      <Text tone="muted" style={{ textAlign: 'center' }}>
+        {t('crash.body')}
+      </Text>
+      <Button label={t('crash.retry')} onPress={retry} />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const [loaded] = useFonts({ IBMPlexSansArabic_400Regular, IBMPlexSansArabic_500Medium, IBMPlexSansArabic_600SemiBold, IBMPlexSansArabic_700Bold });
@@ -37,6 +61,8 @@ function Navigator() {
   const { t } = useTranslation();
   const scheme = useColorScheme();
   const c = scheme === 'dark' ? palettes.dark : palettes.light;
+  const pathname = usePathname();
+  useEffect(() => setScreen(pathname), [pathname]);
 
   useEffect(() => {
     if (status !== 'loading') void SplashScreen.hideAsync().catch(() => undefined);

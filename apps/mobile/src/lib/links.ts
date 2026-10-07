@@ -14,6 +14,8 @@ export function appRoute(input: string, web: string = WEB_BASE): string | null {
   } catch {
     return null;
   }
+  // The website handing back a sign-in (lib/web-sign-in.ts reads it): no screen of its own.
+  if (url.protocol === 'vertexconnect:' && url.host === 'auth') return null;
   // The app's own scheme already names a screen.
   if (url.protocol === 'vertexconnect:') return `/${url.host}${url.pathname}`.replace(/\/+$/, '') + url.search || '/';
   if (url.origin !== new URL(web).origin) return null;

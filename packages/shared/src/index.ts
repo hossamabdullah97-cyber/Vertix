@@ -209,6 +209,17 @@ export const appleSignInSchema = z.object({
 });
 export type AppleSignInInput = z.infer<typeof appleSignInSchema>;
 
+/** PKCE (RFC 7636): the S256 challenge, and the verifier it was made from. */
+const pkce = z.string().regex(/^[A-Za-z0-9_~.-]{43,128}$/, 'Not a PKCE value');
+
+/** The website, signed in, asks for a one-time code for the phone app. */
+export const appHandoffSchema = z.object({ challenge: pkce });
+export type AppHandoffInput = z.infer<typeof appHandoffSchema>;
+
+/** The phone app trades that code, with its verifier, for a session of its own. */
+export const appHandoffRedeemSchema = z.object({ code: z.string().min(20).max(200), verifier: pkce });
+export type AppHandoffRedeemInput = z.infer<typeof appHandoffRedeemSchema>;
+
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
@@ -1139,12 +1150,14 @@ export const clientErrorSchema = z.object({
   /** The page, without its query string or fragment. */
   path: z.string().max(300).optional(),
   release: z.string().max(80).optional(),
+  /** Where it ran: the website, or the phone app on iOS or Android. */
+  platform: z.enum(['web', 'ios', 'android']).optional(),
 });
 export type ClientErrorInput = z.infer<typeof clientErrorSchema>;
 
 export interface ErrorGroupView {
   id: string;
-  source: 'BROWSER' | 'API';
+  source: 'BROWSER' | 'API' | 'APP';
   kind: string;
   name: string;
   message: string;

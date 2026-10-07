@@ -10,6 +10,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcryptjs';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import {
   defaultStageRows,
   isPaidPlan,
@@ -41,6 +42,9 @@ import { requiresTwoStep, ssoRequired } from './guards/tenant.guard';
 import { SessionsService, type ClientInfo } from './sessions.service';
 
 const VERIFY_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+/** How long the website's one-time code for the phone app lasts. */
+const APP_HANDOFF_TTL_MS = 2 * 60 * 1000;
+const sha256hex = (s: string) => createHash('sha256').update(s).digest('hex');
 const VERIFY_RESEND_LIMIT = 5;
 const VERIFY_RESEND_WINDOW_MS = 60 * 60 * 1000;
 
@@ -558,6 +562,61 @@ export class AuthService {
     const display = given ?? email.split('@')[0]!;
     const created = await this.createAccount({ email, name: display, appleId: who.sub, emailVerified: new Date() }, display, 'PERSONAL');
     return this.openSession({ sub: created.user.id, email: created.user.email, orgId: created.orgId, role: 'OWNER' }, client);
+  }
+
+  /**
+   * Signing in to the phone app through the website: the website, signed in
+   * as this person, gets a one-time code for the app's PKCE challenge, good
+   * for two minutes. The code alone is worthless to whoever sees the
+   * redirect: only the app holds the verifier.
+   */
+  async startAppHandoff(user: JwtPayload, challenge: string): Promise<{ code: string }> {
+    const code = randomBytes(32).toString('base64url');
+    // Old codes go as new ones are made.
+    await this.prisma.client.appSignInCode.deleteMany({ where: { expiresAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } } });
+    const session = user.sid ? await this.prisma.client.authSession.findUnique({ where: { id: user.sid }, select: { ssoOrgId: true } }) : null;
+    await this.prisma.client.appSignInCode.create({
+      data: {
+        codeHash: sha256hex(code),
+        challenge,
+        userId: user.sub,
+        orgId: user.orgId ?? null,
+        ssoOrgId: session?.ssoOrgId ?? null,
+        expiresAt: new Date(Date.now() + APP_HANDOFF_TTL_MS),
+      },
+    });
+    return { code };
+  }
+
+  /**
+   * The app's side: the code and the verifier make a new session for the
+   * phone (a device of its own, in the workspace the website had open). A
+   * code is good once; any mismatch says only that it is not valid.
+   */
+  async redeemAppHandoff(code: string, verifier: string, client: ClientInfo = {}): Promise<AuthTokens> {
+    const refused = () => new UnauthorizedException('This sign-in link is not valid any more. Sign in again.');
+    const rec = await this.prisma.client.appSignInCode.findUnique({ where: { codeHash: sha256hex(code) } });
+    if (!rec || rec.usedAt || rec.expiresAt <= new Date()) throw refused();
+    const expected = Buffer.from(rec.challenge);
+    const got = Buffer.from(createHash('sha256').update(verifier).digest('base64url'));
+    if (expected.length !== got.length || !timingSafeEqual(expected, got)) throw refused();
+    // Two redemptions at once: one wins.
+    const claimed = await this.prisma.client.appSignInCode.updateMany({ where: { id: rec.id, usedAt: null }, data: { usedAt: new Date() } });
+    if (!claimed.count) throw refused();
+
+    const user = await this.prisma.client.user.findUnique({ where: { id: rec.userId }, select: { id: true, email: true, deletedAt: true } });
+    if (!user || user.deletedAt) throw refused();
+    const open = rec.orgId
+      ? await this.prisma.client.membership.findFirst({ where: { userId: user.id, orgId: rec.orgId, status: 'ACTIVE' } })
+      : null;
+    const membership = open ?? (await this.defaultMembership(user.id));
+    const orgId = membership?.orgId;
+    const sid = await this.sessions.start(user.id, client, {
+      announce: true,
+      // Single sign-on counts for the phone too, in the workspace it was for.
+      ...(rec.ssoOrgId && rec.ssoOrgId === orgId ? { ssoOrgId: rec.ssoOrgId } : {}),
+    });
+    return this.issueTokens({ sub: user.id, email: user.email, orgId, role: membership?.role as Role | undefined, sid });
   }
 
   /** A new person with a workspace they own (their own, or a team's), its sales pipeline ready. */

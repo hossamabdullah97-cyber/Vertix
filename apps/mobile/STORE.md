@@ -32,6 +32,8 @@ the stores ask for, in the order it is needed.
 In the production `.env` (see `.env.example`):
 
 ```
+# Required for the iOS release: the app offers Google sign-in (through the
+# website), so App Store guideline 4.8 asks for Sign in with Apple too.
 APPLE_CLIENT_IDS=dev.vertex.connect
 APPLE_APP_IDS=<Team ID>.dev.vertex.connect
 ANDROID_CERT_FINGERPRINTS=<SHA-256 of the app signing key, from Play Console › App integrity>
@@ -133,8 +135,8 @@ leads and a task), and write in the review notes:
 > Card scanning uses the camera on a paper business card. Accounts are
 > created on the website (the app links to it); the app has no purchases.
 
-The usage texts for the camera, photos and NFC are in app.json, in English;
-they are shown when the app first asks.
+The texts iOS shows when the app asks for the camera, photos and NFC are in
+`native-locales/` in Arabic and English, picked by the phone's language.
 
 ## 7. Releasing
 
@@ -144,6 +146,9 @@ they are shown when the app first asks.
 3. `eas submit --profile production --platform android` (internal testing
    track, as a draft), then promote to closed testing and production in Play
    Console.
-4. After release: try a link from an email on a phone with the app (it should
+4. A later fix to the app's code only: `eas update --channel production`
+   (phones get it the next time they open the app). Anything native needs a
+   new version and build.
+5. After release: try a link from an email on a phone with the app (it should
    open the lead), and leave your details on one of your cards from another
    phone (the notification should reach yours, and a tap open the lead).
