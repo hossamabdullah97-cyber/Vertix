@@ -16,6 +16,8 @@ export interface StatePayload {
   exp: number;
   /** Where the account's API lives, when it is chosen before consent (Dynamics: the environment). */
   site?: string;
+  /** The app page to come back to, when the flow did not start on the integrations page. */
+  returnTo?: string;
 }
 
 function b64url(buf: Buffer): string {

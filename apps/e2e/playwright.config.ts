@@ -38,6 +38,12 @@ export default defineConfig({
       // A fixed test key, so webhooks (which are signed with stored secrets) can be added.
       env: {
         INTEGRATION_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+        // Google Calendar, played by tests/calendar.spec.ts on its own port.
+        OAUTH_GOOGLE_CALENDAR_CLIENT_ID: 'e2e-calendar',
+        OAUTH_GOOGLE_CALENDAR_CLIENT_SECRET: 'e2e-calendar-secret',
+        OAUTH_GOOGLE_CALENDAR_AUTH_URL: 'http://localhost:4106/authorize',
+        OAUTH_GOOGLE_CALENDAR_TOKEN_URL: 'http://localhost:4106/token',
+        GOOGLE_CALENDAR_API_URL: 'http://localhost:4106',
         ...(process.env as Record<string, string>),
         NODE_ENV: 'test',
         AUTH_RATE_LIMIT: '500',

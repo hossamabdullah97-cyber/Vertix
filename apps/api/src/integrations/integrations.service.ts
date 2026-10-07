@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { TenantContext } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { INTEGRATION_REGISTRY } from './integration-registry';
-import { getEndpoints, envClientCredentials } from './oauth-providers';
+import { getEndpoints, envClientCredentials, USER_SCOPED_PROVIDERS } from './oauth-providers';
 import { OAuthAppsService } from './oauth-apps.service';
 import { CrmSyncService } from './crm/crm-sync.service';
 
@@ -28,13 +28,17 @@ export class IntegrationsService {
         provider: true,
         status: true,
         scope: true,
+        userId: true,
         externalAccountName: true,
         lastSyncAt: true,
         lastError: true,
         updatedAt: true,
       },
     });
-    const byProvider = new Map(connections.map((c) => [c.provider, c]));
+    // One each connects for themselves shows as connected only to them.
+    const byProvider = new Map(
+      connections.filter((c) => !USER_SCOPED_PROVIDERS.has(c.provider) || c.userId === tenant.userId).map((c) => [c.provider, c]),
+    );
     // Which providers THIS org has registered its own OAuth app for.
     const orgApps = await this.oauthApps.configuredProviders(tenant.orgId);
 

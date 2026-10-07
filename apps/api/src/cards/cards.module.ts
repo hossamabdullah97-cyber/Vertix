@@ -17,9 +17,10 @@ import { CardVariantsController } from './card-variants.controller';
 import { PaymentLinksController } from './payment-links.controller';
 import { PublicCardsController } from './public-cards.controller';
 import { WalletService } from './wallet/wallet.service';
+import { IntegrationsModule } from '../integrations/integrations.module';
 
 @Module({
-  imports: [BillingModule, UploadsModule],
+  imports: [BillingModule, UploadsModule, IntegrationsModule],
   controllers: [
     CardsController,
     CardPresenceController,

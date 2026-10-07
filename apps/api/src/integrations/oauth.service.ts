@@ -18,6 +18,7 @@ import {
   buildAuthorizationUrl,
   apiBaseFor,
   dynamicsScopes,
+  USER_SCOPED_PROVIDERS,
   type ResolvedOAuthConfig,
 } from './oauth-providers';
 import { signState, verifyState } from './oauth-state';
@@ -35,6 +36,13 @@ interface TokenResponse {
   instance_url?: string;
   /** Zoho, Pipedrive: the account's API host (region or company domain). */
   api_domain?: string;
+  /** Google: who signed in, when the address was asked for. */
+  id_token?: string;
+}
+
+/** A page of this app to come back to: a path here, never another site. */
+export function safeReturnPath(v: unknown): string | undefined {
+  return typeof v === 'string' && /^\/(?![\/\\])[\w\-./?=&%]*$/.test(v) && v.length <= 300 ? v : undefined;
 }
 
 /** The encrypted credential blob stored on IntegrationConnection.credentials. */
@@ -121,7 +129,7 @@ export class OAuthService {
   // ---------------------------------------------------------------- authorize
 
   /** Builds the provider consent URL to redirect the user to. */
-  async getAuthorizationUrl(tenant: TenantContext, provider: string, opts: { environment?: string } = {}): Promise<{ url: string }> {
+  async getAuthorizationUrl(tenant: TenantContext, provider: string, opts: { environment?: string; returnTo?: string } = {}): Promise<{ url: string }> {
     const cfg = await this.requireConfig(tenant.orgId, provider);
     // Dynamics asks for access to one environment, so it is chosen first and
     // carried, signed, to the callback.
@@ -141,6 +149,7 @@ export class OAuthService {
         nonce: randomUUID(),
         exp: Math.floor(Date.now() / 1000) + STATE_TTL_SECONDS,
         ...(site ? { site } : {}),
+        ...(safeReturnPath(opts.returnTo) ? { returnTo: safeReturnPath(opts.returnTo) } : {}),
       },
       this.stateSecret(),
     );
@@ -154,7 +163,7 @@ export class OAuthService {
    * tokens, and stores them encrypted. Returns the connected provider key.
    * Throws on any invalid/expired state or a failed exchange.
    */
-  async handleCallback(code: string, stateToken: string): Promise<{ provider: string; orgId: string }> {
+  async handleCallback(code: string, stateToken: string): Promise<{ provider: string; orgId: string; returnTo?: string }> {
     const state = verifyState(stateToken, this.stateSecret());
     if (!state) throw new BadRequestException('Invalid or expired OAuth state.');
 
@@ -168,7 +177,7 @@ export class OAuthService {
       'integration.connected',
       { targetType: 'integration', targetId: state.provider },
     );
-    return { provider: state.provider, orgId: state.orgId };
+    return { provider: state.provider, orgId: state.orgId, returnTo: safeReturnPath(state.returnTo) };
   }
 
   private async exchangeCode(cfg: ResolvedOAuthConfig, code: string): Promise<TokenResponse> {
@@ -219,6 +228,15 @@ export class OAuthService {
         return { apiBase: null, name: null };
       }
     }
+    if (provider.startsWith('google_') && tokens.id_token) {
+      // Straight from Google's token endpoint over TLS: read, not verified again.
+      try {
+        const claims = JSON.parse(Buffer.from(tokens.id_token.split('.')[1] ?? '', 'base64url').toString()) as { email?: unknown };
+        return { apiBase: null, name: typeof claims.email === 'string' ? claims.email : null };
+      } catch {
+        return { apiBase: null, name: null };
+      }
+    }
     return { apiBase: apiBaseFor(provider, tokens.instance_url ?? tokens.api_domain, this.config), name: null };
   }
 
@@ -241,10 +259,12 @@ export class OAuthService {
       ? new Date(Date.now() + tokens.expires_in * 1000)
       : null;
 
-    // Upsert the connection for this org+provider. Runs with no tenant context
-    // (public callback), so orgId is set explicitly.
+    // Upsert the connection for this org+provider (and person, for one each
+    // connects for themselves). Runs with no tenant context (public callback),
+    // so orgId is set explicitly.
+    const owner = USER_SCOPED_PROVIDERS.has(provider) ? userId : null;
     const existing = await this.db.integrationConnection.findFirst({
-      where: { orgId, provider, userId: null },
+      where: { orgId, provider, userId: owner },
       select: { id: true },
     });
     const data = {
@@ -258,7 +278,7 @@ export class OAuthService {
       await this.db.integrationConnection.update({ where: { id: existing.id }, data });
     } else {
       await this.db.integrationConnection.create({
-        data: { orgId, provider, scope: 'ORG', userId: null, ...data },
+        data: { orgId, provider, scope: owner ? 'USER' : 'ORG', userId: owner, ...data },
       });
     }
   }
@@ -270,8 +290,8 @@ export class OAuthService {
    * expired or about to expire. Throws (and marks the connection
    * REQUIRES_REAUTH) if refresh fails. This is what downstream sync code calls.
    */
-  async getAccessToken(orgId: string, provider: string): Promise<string> {
-    return (await this.getAuth(orgId, provider)).token;
+  async getAccessToken(orgId: string, provider: string, userId?: string): Promise<string> {
+    return (await this.getAuth(orgId, provider, false, userId)).token;
   }
 
   /**
@@ -279,9 +299,11 @@ export class OAuthService {
    * when the token has no known expiry: Salesforce sessions end without
    * saying when, so a 401 is the first sign.
    */
-  async getAuth(orgId: string, provider: string, force = false): Promise<{ token: string; apiBase: string | null }> {
+  async getAuth(orgId: string, provider: string, force = false, userId?: string): Promise<{ token: string; apiBase: string | null }> {
+    // One person's calendar is theirs alone: without the person, nobody's.
+    const owner = USER_SCOPED_PROVIDERS.has(provider) ? userId ?? '' : undefined;
     const conn = await this.db.integrationConnection.findFirst({
-      where: { orgId, provider, deletedAt: null },
+      where: { orgId, provider, deletedAt: null, ...(owner !== undefined ? { userId: owner } : {}) },
     });
     if (!conn || !conn.credentials || conn.status === 'DISCONNECTED') {
       throw new BadRequestException(`${provider} is not connected.`);
@@ -357,7 +379,9 @@ export class OAuthService {
 
   /** Clears stored tokens and marks the connection disconnected. */
   async disconnect(tenant: TenantContext, provider: string): Promise<{ ok: true }> {
-    const conn = await this.db.integrationConnection.findFirst({ where: { provider } }); // orgId injected
+    const conn = await this.db.integrationConnection.findFirst({
+      where: { provider, ...(USER_SCOPED_PROVIDERS.has(provider) ? { userId: tenant.userId } : {}) },
+    }); // orgId injected
     if (!conn) throw new BadRequestException(`${provider} is not connected.`);
     await this.db.integrationConnection.update({
       where: { id: conn.id },

@@ -113,12 +113,18 @@ export interface OpenDay {
   slots: { time: string; at: string }[];
 }
 
+/** A stretch of time the owner is taken (from their own calendar). */
+export interface BusyTime {
+  start: Date;
+  end: Date;
+}
+
 /**
  * The open times over the next two weeks: on working days, inside working
- * hours, after the notice period, and not overlapping a meeting already asked
- * for.
+ * hours, after the notice period, not overlapping a meeting already asked
+ * for, and not when the owner's own calendar says they are busy.
  */
-export function openSlots(a: Availability, now: Date, booked: Date[], days = BOOKING_DAYS): OpenDay[] {
+export function openSlots(a: Availability, now: Date, booked: Date[], days = BOOKING_DAYS, busy: BusyTime[] = []): OpenDay[] {
   if (!a.enabled) return [];
   const earliest = now.getTime() + a.notice * 3_600_000;
   const taken = booked.map((b) => b.getTime());
@@ -134,6 +140,7 @@ export function openSlots(a: Availability, now: Date, booked: Date[], days = BOO
       const at = zonedToUtc(date, hhmm(t), a.timezone).getTime();
       if (at < earliest) continue;
       if (taken.some((b) => b < at + length && at < b + length)) continue;
+      if (busy.some((b) => b.start.getTime() < at + length && at < b.end.getTime())) continue;
       slots.push({ time: hhmm(t), at: new Date(at).toISOString() });
     }
     if (slots.length) out.push({ date, slots });
@@ -142,9 +149,9 @@ export function openSlots(a: Availability, now: Date, booked: Date[], days = BOO
 }
 
 /** Whether an instant is one of the open times (what a booking must be). */
-export function isOpen(a: Availability, now: Date, booked: Date[], at: string): boolean {
+export function isOpen(a: Availability, now: Date, booked: Date[], at: string, busy: BusyTime[] = []): boolean {
   const when = new Date(at);
   if (Number.isNaN(when.getTime())) return false;
   const iso = when.toISOString();
-  return openSlots(a, now, booked).some((d) => d.slots.some((s) => s.at === iso));
+  return openSlots(a, now, booked, BOOKING_DAYS, busy).some((d) => d.slots.some((s) => s.at === iso));
 }
