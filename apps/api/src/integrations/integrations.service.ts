@@ -6,6 +6,7 @@ import { INTEGRATION_REGISTRY } from './integration-registry';
 import { getEndpoints, envClientCredentials, USER_SCOPED_PROVIDERS } from './oauth-providers';
 import { OAuthAppsService } from './oauth-apps.service';
 import { CrmSyncService } from './crm/crm-sync.service';
+import { ZAPIER_LABEL } from './zapier/zapier.service';
 
 /**
  * Merges the static provider catalog with a workspace's real, per-tenant
@@ -36,6 +37,8 @@ export class IntegrationsService {
       },
     });
     // One each connects for themselves shows as connected only to them.
+    // Zapier is connected by the Zaps listening (webhooks it made), not by a token.
+    const zaps = await this.prisma.client.webhookEndpoint.count({ where: { deletedAt: null, enabled: true, description: { startsWith: ZAPIER_LABEL } } });
     const byProvider = new Map(
       connections.filter((c) => !USER_SCOPED_PROVIDERS.has(c.provider) || c.userId === tenant.userId).map((c) => [c.provider, c]),
     );
@@ -43,7 +46,10 @@ export class IntegrationsService {
     const orgApps = await this.oauthApps.configuredProviders(tenant.orgId);
 
     return INTEGRATION_REGISTRY.map((p) => {
-      const conn = byProvider.get(p.key);
+      const conn =
+        p.key === 'zapier' && zaps > 0
+          ? { status: 'CONNECTED' as const, scope: 'ORG' as const, userId: null, externalAccountName: null, lastSyncAt: null, lastError: null, updatedAt: new Date() }
+          : byProvider.get(p.key);
       const supportsOAuth = getEndpoints(p.key, this.config) !== null;
       // Connectable for THIS org when it registered its own app, or a platform
       // env app exists as a fallback. Availability is per-organization.

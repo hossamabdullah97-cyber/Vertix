@@ -637,7 +637,8 @@ export const createLeadSchema = z
     address: z.string().trim().max(240).optional(),
     note: z.string().trim().max(1000).optional(),
     // in_person: taken down on the spot, from the "Met someone" screen.
-    source: z.enum(['card_scan', 'manual', 'in_person']).default('manual'),
+    // zapier: sent by a Zap (the Vertex Connect app in Zapier).
+    source: z.enum(['card_scan', 'manual', 'in_person', 'zapier']).default('manual'),
   })
   .refine((d) => !!d.name || !!d.email || !!d.phone, { message: 'Give a name, an email or a phone number', path: ['name'] });
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;

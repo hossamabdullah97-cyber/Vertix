@@ -44,6 +44,8 @@ export default defineConfig({
         OAUTH_GOOGLE_CALENDAR_AUTH_URL: 'http://localhost:4106/authorize',
         OAUTH_GOOGLE_CALENDAR_TOKEN_URL: 'http://localhost:4106/token',
         GOOGLE_CALENDAR_API_URL: 'http://localhost:4106',
+        // Zapier's hooks, played by tests/zapier.spec.ts.
+        ZAPIER_TEST_HOOK_ORIGINS: 'http://localhost:4107/',
         ...(process.env as Record<string, string>),
         NODE_ENV: 'test',
         AUTH_RATE_LIMIT: '500',

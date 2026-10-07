@@ -149,6 +149,9 @@ export const AR_MESSAGES: Record<string, string> = {
   'Provide an email or a phone number': 'أدخل البريد الإلكتروني أو رقم الهاتف',
   'This card does not take meeting requests': 'هذه البطاقة لا تستقبل طلبات الاجتماعات',
   'before must be a date': 'يجب أن تكون قيمة before تاريخاً',
+  'Workspace not found': 'مساحة العمل غير موجودة',
+  'That is not a Zapier hook address': 'هذا ليس عنوان ربط من زابير (Zapier)',
+  'Zapier hook not found': 'ربط زابير (Zapier) غير موجود',
   'Choose a time for the meeting': 'اختر موعداً للاجتماع',
   'That time is no longer free': 'هذا الموعد لم يعد متاحاً',
   'Someone else has asked for this time since': 'طلب شخص آخر هذا الموعد في هذه الأثناء',
@@ -271,6 +274,7 @@ export const AR_MESSAGES: Record<string, string> = {
 export const AR_PATTERNS: [RegExp, (...m: string[]) => string][] = [
   [/^"(.+)" can't take that value$/, (f) => `القيمة لا تناسب حقل «${f}»`],
   [/^(\S+) is not connected\.$/, (p) => `${p} غير متصل.`],
+  [/^Zaps can start from: (.+)$/, (list) => `يمكن أن تبدأ الـ Zaps من: ${list}`],
   [/^(\S+) is not connected yet — this organization has not registered its OAuth app credentials\.$/, (p) => `${p} غير متصل بعد — لم تسجّل مساحة العمل بيانات تطبيق OAuth الخاص بها.`],
   [/^(\S+) needs to be reconnected\.$/, (p) => `يجب إعادة ربط ${p}.`],
   [/^(\S+) does not support OAuth\.$/, (p) => `${p} لا يدعم الربط عبر OAuth.`],

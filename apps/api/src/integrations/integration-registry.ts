@@ -102,7 +102,7 @@ export const INTEGRATION_REGISTRY: IntegrationProviderDef[] = [
   { key: 'dropbox', name: 'Dropbox', category: 'storage', auth: 'oauth2', status: 'coming_soon', description: 'Store exported assets in Dropbox.', scopes: ['Files'] },
 
   // --- Automation ---
-  { key: 'zapier', name: 'Zapier', category: 'automation', auth: 'webhook_url', status: 'coming_soon', popular: true, description: 'Trigger Zaps from Vertex Connect events via webhooks.', scopes: ['Receive events'] },
+  { key: 'zapier', name: 'Zapier', category: 'automation', auth: 'webhook_url', status: 'available', popular: true, description: 'Start Zaps from new leads, meeting and quote requests, saved contacts and card views, and connect Vertex Connect to thousands of apps.', scopes: ['Receive events'] },
   { key: 'make', name: 'Make', category: 'automation', auth: 'webhook_url', status: 'coming_soon', description: 'Trigger Make scenarios from workspace events.', scopes: ['Receive events'] },
   { key: 'n8n', name: 'n8n', category: 'automation', auth: 'webhook_url', status: 'coming_soon', description: 'Trigger n8n workflows from workspace events.', scopes: ['Receive events'] },
 

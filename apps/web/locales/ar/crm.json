@@ -269,7 +269,8 @@
     "card_scan": "كارت ورقي",
     "manual": "أُضيف يدوياً",
     "in_person": "قابلته شخصياً",
-    "import": "مستورد"
+    "import": "مستورد",
+    "zapier": "زابير (Zapier)"
   },
   "meeting": {
     "title": "طلب اجتماع",
