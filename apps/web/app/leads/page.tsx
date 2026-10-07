@@ -105,6 +105,9 @@ export default function LeadsPage() {
     } catch {}
     const linked = new URLSearchParams(window.location.search).get('lead');
     if (linked) setSelected(linked);
+    // A view named in the URL (the app's "Tasks" opens /leads?view=tasks).
+    const asked = new URLSearchParams(window.location.search).get('view');
+    if (asked && (['pipeline', 'contacts', 'companies', 'tasks', 'timeline', 'notes', 'reports'] as string[]).includes(asked)) setView(asked as View);
     load().catch((e) => {
       setError(e.message);
       setLoading(false);

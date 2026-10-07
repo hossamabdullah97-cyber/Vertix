@@ -1068,7 +1068,10 @@ export interface DeviceInfo {
  */
 export function describeDevice(ua: string | null | undefined): DeviceInfo {
   const s = ua ?? '';
-  const browser = /Edg(e|A|iOS)?\//.test(s)
+  // The Vertex Connect app names itself (apps/mobile/src/lib/api.ts).
+  const browser = /VertexConnectApp\//.test(s)
+    ? 'Vertex app'
+    : /Edg(e|A|iOS)?\//.test(s)
     ? 'Edge'
     : /OPR\/|Opera/.test(s)
       ? 'Opera'

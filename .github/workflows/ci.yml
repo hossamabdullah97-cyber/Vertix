@@ -44,6 +44,34 @@ jobs:
       - name: Test the Zapier app
         run: node --test apps/zapier/test/*.test.js
 
+  # The phone app (apps/mobile) sits outside the pnpm workspace and installs with npm.
+  # Types, unit tests, and a web bundle that proves every screen compiles.
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test -- --ci
+
+      - name: Bundle
+        run: npx expo export --platform web --output-dir /tmp/mobile-web
+
   # The whole product in a browser: a real Postgres, the API and the web app
   # from their production builds, driven by Playwright (apps/e2e). A failing
   # run keeps its report, screenshots and traces as an artifact.
