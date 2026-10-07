@@ -501,7 +501,7 @@ export default function LeadsPage() {
               />
             )}
 
-            {view === 'timeline' && <ActivitiesTimeline leads={filtered} stages={stages} onOpenLead={setSelected} />}
+            {view === 'timeline' && <ActivitiesTimeline leads={filtered} filtered={filtersActive} stages={stages} onOpenLead={setSelected} />}
 
             {view === 'tasks' && (
               <TasksView leads={filtered} tasks={tasks} onAddTask={(input) => createTask(input)} onToggleTask={toggleTask} onOpenLead={setSelected} />

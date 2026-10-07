@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { LeadTimelineService } from './lead-timeline.service';
+import { LeadFeedService } from './lead-feed.service';
 import { LeadsController } from './leads.controller';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { AuthThrottleService } from '../auth/auth-throttle.service';
@@ -14,6 +15,6 @@ import { AuditService } from '../organizations/audit.service';
 @Module({
   imports: [IntegrationsModule],
   controllers: [LeadsController],
-  providers: [LeadsService, AuthThrottleService, FollowUpService, LeadMergeService, LeadImportService, LeadNotesService, LeadTimelineService, CustomFieldsService, AuditService],
+  providers: [LeadsService, AuthThrottleService, FollowUpService, LeadMergeService, LeadImportService, LeadNotesService, LeadTimelineService, LeadFeedService, CustomFieldsService, AuditService],
 })
 export class LeadsModule {}

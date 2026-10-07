@@ -48,6 +48,7 @@ import {
   type UpdateLeadInput,
 } from '@vertex/shared';
 import { LeadTimelineService } from './lead-timeline.service';
+import { FEED_KINDS, LeadFeedService, type FeedKind } from './lead-feed.service';
 import { LeadNotesService } from './lead-notes.service';
 import { CustomFieldsService } from './custom-fields.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -73,6 +74,7 @@ export class LeadsController {
     private readonly notes: LeadNotesService,
     private readonly fields: CustomFieldsService,
     private readonly timelines: LeadTimelineService,
+    private readonly feeds: LeadFeedService,
   ) {}
 
   /** Public: capture a lead from a card's engagement workflow. */
@@ -215,6 +217,20 @@ export class LeadsController {
   @Get('notes')
   teamNotes(@Tenant() tenant: TenantContext, @Query('filter') filter?: string) {
     return this.notes.feed(tenant, filter === 'mentions' || filter === 'mine' ? filter : 'all');
+  }
+
+  /** What happened across the workspace's leads, newest first, a page at a time. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get('activity')
+  activity(@Tenant() tenant: TenantContext, @Query('before') before?: string, @Query('kind') kind?: string, @Query('limit') limit?: string) {
+    const at = before ? new Date(before) : undefined;
+    if (at && Number.isNaN(at.getTime())) throw new BadRequestException('before must be a date');
+    return this.feeds.feed(tenant, {
+      before: at,
+      kind: (FEED_KINDS as readonly string[]).includes(kind ?? '') ? (kind as FeedKind) : 'all',
+      limit: limit && /^\d+$/.test(limit) ? Number(limit) : undefined,
+    });
   }
 
   // Note: this dynamic route must stay AFTER the static 'stages' route above.

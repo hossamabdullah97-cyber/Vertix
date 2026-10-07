@@ -201,14 +201,11 @@
     }
   },
   "activity": {
-    "title": "Global Timeline",
-    "subtitle": "A live stream of engagement across all cards and digital profiles",
-    "all": "All Activities",
+    "title": "Activity",
+    "subtitle": "What happened across your leads, newest first.",
     "noMatch": "No matching activities",
     "noMatchDesc": "Try changing your activity filter or engage with your contacts.",
     "fallback": "Activity",
-    "capturedVia": "Captured via {{source}}",
-    "dealValue": " · deal value {{value}}",
     "types": {
       "NOTE": "Note",
       "CALL": "Call",
@@ -635,5 +632,13 @@
     "backOnCard": "Back on your card {{when}}",
     "viewedYours": "Viewed your card",
     "cameBackYours": "Came back to your card"
+  },
+  "feed": {
+    "moved": "Moved from {{from}} to {{to}}",
+    "noStage": "no stage",
+    "captured": "New lead via {{source}}",
+    "more": "Show earlier",
+    "loading": "Loading…",
+    "failed": "The activity could not be loaded. Try again in a moment."
   }
 }

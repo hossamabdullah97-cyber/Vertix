@@ -75,4 +75,18 @@ test('a lead’s whole story is in one place, and its owner hears when they come
   await drawer.getByRole('button', { name: 'Conversations' }).click();
   await expect(drawer.getByTestId('timeline-visit')).toHaveCount(0);
   await expect(drawer.getByTestId('activity')).toHaveCount(1);
+
+  // Across all leads, the Activity view tells the same story, newest first.
+  const feed = await account.api<{ items: { kind: string; lead: { id: string } }[] }>('/leads/activity');
+  expect(feed.data.items.filter((i) => i.lead.id === lead.id).map((i) => i.kind)).toEqual(['activity', 'returned', 'captured']);
+  await page.goto('/leads');
+  await page.getByRole('tab', { name: 'Activity' }).click();
+  const items = page.getByTestId('feed-item');
+  await expect(items.filter({ hasText: 'Laila Visitor' })).toHaveCount(3);
+  await expect(items.first()).toContainText('Call');
+  await expect(items.filter({ hasText: 'Came back to Hana Owner’s card' })).toHaveCount(1);
+  await page.getByRole('button', { name: 'Card visits' }).click();
+  await expect(items).toHaveCount(1);
+  await items.first().click();
+  await expect(page.getByRole('dialog')).toContainText('Laila Visitor');
 });
