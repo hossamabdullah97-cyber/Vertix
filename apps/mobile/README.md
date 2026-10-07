@@ -50,6 +50,20 @@ The website hands the app a one-time code that only this app can use (PKCE):
 `/app-login` on the website, `POST /auth/app-handoff` and
 `/auth/app-handoff/redeem` on the API.
 
+**Tasks and edits on the spot.** A task list (late, today, coming up, no
+date, done) with quick due dates; a lead's own tasks on its page; the lead's
+details (name, phone, email, company, deal value, how warm) edited in the app.
+
+**Works without a signal.** What was last loaded stays on screen when the
+phone is offline (saying from when). A new lead, a note, a stage, a task
+ticked off, made offline, waits on the phone and goes out in order when the
+connection is back, as on the website (src/lib/outbox.ts): a new record whose
+connection failed mid-way is not sent twice. Signing out warns about anything
+still waiting.
+
+**Face ID / fingerprint lock** (More), asked when the app opens and after a
+minute away.
+
 **Errors are reported.** A screen that fails to draw, or an error nothing
 caught, goes to the admin console's Errors tab (source "Phone app") and to
 the platform's alert email, as the website's do. The screen offers to try
@@ -166,6 +180,6 @@ CI runs all three (the `mobile` job).
 ```
 src/app/            screens (Expo Router): login, (tabs)/…, lead/[id], card/[id], chip, notifications, workspaces, web
 src/components/     ui.tsx (the design system's pieces), WebPage (the website inside the app)
-src/lib/            api + session, web-sign-in, push, links, errors, i18n, theme, format, crm rules (as on the web), cards, chips, nfc
+src/lib/            api + session, web-sign-in, push, links, errors, outbox + cache, lock, tasks, i18n, theme, format, crm rules (as on the web), cards, chips, nfc
 src/locales/        en.json, ar.json
 ```

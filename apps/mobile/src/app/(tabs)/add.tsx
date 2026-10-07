@@ -5,6 +5,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Field, Notice, Screen, Text } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useConnection, write } from '@/lib/outbox';
+import { ConnectionBar } from '@/components/ConnectionBar';
 import { useApi } from '@/lib/use-api';
 
 interface Scanned {
@@ -26,6 +28,9 @@ export default function AddLead() {
   const [busy, setBusy] = useState<'save' | 'scan' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [read, setRead] = useState(false);
+  /** The last lead was kept on the phone, to be sent once there is a connection. */
+  const [kept, setKept] = useState(false);
+  const { pending } = useConnection();
   const set = (k: keyof typeof EMPTY) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
   const enough = !!(form.name.trim() || form.phone.trim() || form.email.trim());
 
@@ -66,13 +71,16 @@ export default function AddLead() {
     if (!enough) return;
     setBusy('save');
     setError(null);
+    setKept(false);
     try {
       const body: Record<string, string> = { source: read ? 'card_scan' : 'in_person' };
       for (const [k, v] of Object.entries(form)) if (v.trim()) body[k] = v.trim();
-      const lead = await api<{ id: string }>('/leads', { method: 'POST', json: body });
+      const r = await write<{ id: string }>('/leads', { method: 'POST', json: body });
       setForm(EMPTY);
       setRead(false);
-      router.push(`/lead/${lead.id}`);
+      // No connection: ready for the next person, the lead goes out later.
+      if (r.queued) setKept(true);
+      else router.push(`/lead/${r.data.id}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -101,6 +109,8 @@ export default function AddLead() {
           </Card>
         )}
 
+        <ConnectionBar />
+        {kept ? <Notice tone="success">{pending ? t('offline.leadKept') : t('offline.leadSent')}</Notice> : null}
         {error ? <Notice tone="danger">{error}</Notice> : null}
 
         <View style={{ gap: 14 }}>

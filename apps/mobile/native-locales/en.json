@@ -2,5 +2,6 @@
   "CFBundleDisplayName": "Vertex Connect",
   "NSCameraUsageDescription": "Vertex Connect uses the camera to read paper business cards into new leads.",
   "NSPhotoLibraryUsageDescription": "Vertex Connect reads a photo of a business card you choose into a new lead.",
-  "NFCReaderUsageDescription": "Vertex Connect uses NFC to program and read your smart business cards."
+  "NFCReaderUsageDescription": "Vertex Connect uses NFC to program and read your smart business cards.",
+  "NSFaceIDUsageDescription": "Vertex Connect uses Face ID to unlock the app when you turn the lock on."
 }

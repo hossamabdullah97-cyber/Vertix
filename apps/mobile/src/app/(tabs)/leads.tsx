@@ -8,6 +8,7 @@ import { awaitsReply, filterLeads, returnedAt, search, waitingHours, type Lead, 
 import { relative } from '@/lib/format';
 import { fonts, radius, useColors } from '@/lib/theme';
 import { useApi } from '@/lib/use-api';
+import { ConnectionBar } from '@/components/ConnectionBar';
 
 /** Every lead the person may see, newest first: searched, and narrowed to who needs them. */
 export default function Leads() {
@@ -16,7 +17,7 @@ export default function Leads() {
   const params = useLocalSearchParams<{ filter?: LeadFilter }>();
   const [filter, setFilter] = useState<LeadFilter>(params.filter ?? 'all');
   const [q, setQ] = useState('');
-  const { data, error, loading, refreshing, reload } = useApi<Lead[]>('/leads');
+  const { data, error, loading, refreshing, reload, savedAt } = useApi<Lead[]>('/leads');
 
   useEffect(() => {
     if (params.filter) setFilter(params.filter);
@@ -30,6 +31,7 @@ export default function Leads() {
         <Text size="xl" weight="bold">
           {t('leads.title')}
         </Text>
+        <ConnectionBar savedAt={savedAt} />
         <Row gap={8} style={{ backgroundColor: c.surface, borderRadius: radius.md, borderWidth: 0.5, borderColor: c.lineStrong, paddingHorizontal: 12 }}>
           <Icon name="search" size={18} color={c.faint} />
           <TextInput

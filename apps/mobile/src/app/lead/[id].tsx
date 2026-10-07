@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Linking, Pressable, RefreshControl, TextInput, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Avatar, Badge, Button, Card, Divider, Icon, Loading, Notice, Row, Screen, SectionTitle, Text } from '@/components/ui';
-import { api } from '@/lib/api';
-import { returnedAt, waitingHours, whatsappHref, type Lead, type Stage } from '@/lib/crm';
+import { write } from '@/lib/outbox';
+import { ConnectionBar } from '@/components/ConnectionBar';
+import { returnedAt, waitingHours, whatsappHref, type Lead, type Stage, type Task } from '@/lib/crm';
+import { AddTask, setDone, TaskRow } from '@/components/Tasks';
 import { date, relative, time } from '@/lib/format';
 import { fonts, radius, useColors } from '@/lib/theme';
 import { useApi } from '@/lib/use-api';
@@ -32,9 +34,30 @@ export default function LeadScreen() {
   const lead = useApi<Lead & { stageId: string | null }>(`/leads/${id}`);
   const timeline = useApi<Timeline>(`/leads/${id}/timeline`);
   const stages = useApi<Stage[]>('/leads/stages');
+  const tasks = useApi<Task[]>(`/tasks?leadId=${encodeURIComponent(id)}`);
+  // Back from editing the lead: read it again.
+  const seen = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (seen.current) void lead.reload();
+      seen.current = true;
+    }, []),
+  );
+
+  async function toggleTask(task: Task) {
+    const completed = !task.completed;
+    tasks.setData((list) => list?.map((x) => (x.id === task.id ? { ...x, completed, completedAt: completed ? new Date().toISOString() : null } : x)) ?? null);
+    try {
+      if (!(await setDone(task, completed)).queued) void timeline.reload();
+    } catch {
+      tasks.setData((list) => list?.map((x) => (x.id === task.id ? task : x)) ?? null);
+    }
+  }
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Something written here waits on the phone for a connection. */
+  const [kept, setKept] = useState(false);
 
   const l = lead.data;
   const stageName = (sid: unknown) => stages.data?.find((s) => s.id === sid)?.name ?? '—';
@@ -44,8 +67,10 @@ export default function LeadScreen() {
     const url = channel === 'CALL' ? `tel:${l.phone}` : channel === 'EMAIL' ? `mailto:${l.email}` : whatsappHref(l.phone ?? '');
     if (!url) return;
     // Reaching out is logged on the lead: the follow-up reminders wait for it.
-    void api(`/leads/${id}/contact`, { method: 'POST', json: { channel } })
-      .then(() => timeline.reload())
+    void write(`/leads/${id}/contact`, { method: 'POST', json: { channel } })
+      .then((r) => {
+        if (!r.queued) void timeline.reload();
+      })
       .catch(() => undefined);
     await Linking.openURL(url).catch(() => setError(t('lead.cannotOpen')));
   }
@@ -55,9 +80,10 @@ export default function LeadScreen() {
     setSaving(true);
     setError(null);
     try {
-      await api(`/leads/${id}/activities`, { method: 'POST', json: { type: 'NOTE', note: note.trim() } });
+      const r = await write(`/leads/${id}/activities`, { method: 'POST', json: { type: 'NOTE', note: note.trim() } });
       setNote('');
-      await timeline.reload();
+      if (r.queued) setKept(true);
+      else await timeline.reload();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -69,8 +95,8 @@ export default function LeadScreen() {
     if (!l || stageId === l.stageId) return;
     lead.setData({ ...l, stageId });
     try {
-      await api(`/leads/${id}`, { method: 'PATCH', json: { stageId } });
-      void timeline.reload();
+      const r = await write(`/leads/${id}`, { method: 'PATCH', json: { stageId } });
+      if (!r.queued) void timeline.reload();
     } catch (e) {
       lead.setData(l);
       setError((e as Error).message);
@@ -88,7 +114,16 @@ export default function LeadScreen() {
 
   return (
     <Screen edges={[]} refreshControl={<RefreshControl refreshing={timeline.refreshing} onRefresh={() => (lead.reload(), timeline.reload())} tintColor={c.accent} />}>
-      <Stack.Screen options={{ title: l.name || t('lead.title') }} />
+      <Stack.Screen
+        options={{
+          title: l.name || t('lead.title'),
+          headerRight: () => (
+            <Pressable accessibilityRole="button" accessibilityLabel={t('edit.title')} hitSlop={10} onPress={() => router.push(`/lead/edit/${id}`)} testID="lead-edit">
+              <Icon name="edit" size={20} color={c.accentText} />
+            </Pressable>
+          ),
+        }}
+      />
       <Row gap={14}>
         <Avatar name={l.name || l.email} size={56} />
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -114,6 +149,8 @@ export default function LeadScreen() {
       ) : waiting !== null && waiting >= 24 ? (
         <Notice tone="warning">{t('lead.waiting', { count: Math.floor(waiting / 24) })}</Notice>
       ) : null}
+      <ConnectionBar savedAt={lead.savedAt} />
+      {kept ? <Notice>{t('offline.kept')}</Notice> : null}
       {error ? <Notice tone="danger">{error}</Notice> : null}
 
       {stages.data && stages.data.length > 0 && (
@@ -155,6 +192,30 @@ export default function LeadScreen() {
           <Button label={t('lead.addNote')} small onPress={addNote} busy={saving} disabled={!note.trim()} testID="lead-add-note" />
         </Row>
       </Card>
+
+      <View style={{ gap: 8 }}>
+        <SectionTitle>{t('tasks.title')}</SectionTitle>
+        <Card padded={false}>
+          {(tasks.data ?? [])
+            .filter((x) => !x.completed || Date.now() - new Date(x.completedAt ?? 0).getTime() < 86_400_000)
+            .map((task, i) => (
+              <View key={task.id}>
+                {i > 0 && <Divider />}
+                <TaskRow task={task} onToggle={toggleTask} showLead={false} />
+              </View>
+            ))}
+          <View style={{ padding: 16, paddingTop: tasks.data?.length ? 8 : 16 }}>
+            <AddTask
+              leadId={id}
+              onAdded={(task) => {
+                tasks.setData((list) => [...(list ?? []), task]);
+                void timeline.reload();
+              }}
+              onKept={() => setKept(true)}
+            />
+          </View>
+        </Card>
+      </View>
 
       {timeline.data && (
         <Row gap={10}>

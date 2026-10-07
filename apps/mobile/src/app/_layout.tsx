@@ -10,6 +10,9 @@ import { api } from '@/lib/api';
 import { catchUnhandled, reportError, setScreen } from '@/lib/errors';
 import { startI18n } from '@/lib/i18n';
 import { appRoute } from '@/lib/links';
+import { startOutbox } from '@/lib/outbox';
+import { useAppLock } from '@/lib/lock';
+import { LockScreen } from '@/components/LockScreen';
 import { notificationUrl, useLastNotificationResponse } from '@/lib/push';
 import { SessionProvider, useSession } from '@/lib/session';
 import { fonts, palettes } from '@/lib/theme';
@@ -17,6 +20,7 @@ import { Button, Text } from '@/components/ui';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 catchUnhandled();
+startOutbox();
 
 /** A screen that failed to draw: reported, and a way to try again instead of a blank app. */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -57,7 +61,8 @@ export default function RootLayout() {
 
 /** Signed in, the app; signed out, the sign-in screen. Nothing else is reachable without a session. */
 function Navigator() {
-  const { status } = useSession();
+  const { status, signOut } = useSession();
+  const lock = useAppLock(status === 'signedIn');
   const { t } = useTranslation();
   const scheme = useColorScheme();
   const c = scheme === 'dark' ? palettes.dark : palettes.light;
@@ -102,6 +107,8 @@ function Navigator() {
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="lead/[id]" options={{ title: t('lead.title') }} />
+          <Stack.Screen name="lead/edit/[id]" options={{ title: t('edit.title'), presentation: 'modal' }} />
+          <Stack.Screen name="tasks" options={{ title: t('tasks.title') }} />
           <Stack.Screen name="card/[id]" options={{ title: t('card.title') }} />
           <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
           <Stack.Screen name="workspaces" options={{ title: t('workspaces.title'), presentation: 'modal' }} />
@@ -112,6 +119,7 @@ function Navigator() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
+      {signedIn && lock.locked && <LockScreen onUnlocked={lock.unlocked} onSignOut={() => void signOut()} />}
     </>
   );
 }
