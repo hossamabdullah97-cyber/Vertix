@@ -73,7 +73,7 @@ describe('the switcher’s list', () => {
     const service = new OrganizationsService({ client: { membership: { findMany } } } as never);
     const list = await runWithTenant({ orgId: 'a', userId: 'u1', role: 'EMPLOYEE' }, () => service.listForUser('u1'));
     expect(list.map((m) => m.org.id)).toEqual(['a', 'b']);
-    expect(findMany.mock.calls[0]![0]).toMatchObject({ where: { userId: 'u1', status: 'ACTIVE', org: { deletedAt: null } } });
+    expect(findMany.mock.calls[0]![0]).toMatchObject({ where: { userId: 'u1', status: 'ACTIVE', org: { deletedAt: null } }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
   });
 });
 
