@@ -67,6 +67,16 @@ function describe(n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata'>, 
         tag: leadId ? `follow-${leadId}` : 'follow-up',
       };
     }
+    case 'lead.returned': {
+      const leadId = s(m.leadId);
+      const name = s(m.name);
+      return {
+        title: ar ? (name ? `${name} رجع لبطاقتك` : 'عميل رجع لبطاقتك') : name ? `${name} is back on your card` : 'A lead is back on your card',
+        body: [s(m.company), ar ? 'وقت مناسب للتواصل.' : 'A good moment to reach out.'].filter(Boolean).join(' · '),
+        url: leadId ? `/leads?lead=${encodeURIComponent(leadId)}` : '/leads',
+        tag: leadId ? `returned-${leadId}` : 'returned',
+      };
+    }
     case 'push.test':
       return {
         title: ar ? 'الإشعارات تعمل' : 'Notifications are on',

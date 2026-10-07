@@ -22,6 +22,7 @@ const SELECT = {
   assignedTo: true,
   cardId: true,
   tagId: true,
+  visitorId: true,
   firstContactedAt: true,
   lastContactedAt: true,
   createdAt: true,
@@ -41,6 +42,7 @@ type Row = {
   assignedTo: string | null;
   cardId: string | null;
   tagId: string | null;
+  visitorId?: string | null;
   firstContactedAt: Date | null;
   lastContactedAt: Date | null;
   createdAt: Date;
@@ -58,7 +60,7 @@ const latest = (dates: (Date | null)[]) => dates.filter((d): d is Date => !!d).s
  */
 export function mergedLead(keep: Row, others: Row[]) {
   const all = [keep, ...[...others].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())];
-  const pick = <K extends keyof Row>(k: K) => all.map((l) => l[k]).find((v) => v !== null && v !== '') ?? null;
+  const pick = <K extends keyof Row>(k: K) => all.map((l) => l[k]).find((v) => v != null && v !== '') ?? null;
   const data = {
     name: pick('name') as string | null,
     email: pick('email') as string | null,
@@ -68,6 +70,8 @@ export function mergedLead(keep: Row, others: Row[]) {
     assignedTo: pick('assignedTo') as string | null,
     cardId: pick('cardId') as string | null,
     tagId: pick('tagId') as string | null,
+    // The device of the first lead that has one: its card visits stay with the person.
+    visitorId: pick('visitorId') as string | null,
     value: Math.max(...all.map((l) => l.value)),
     score: Math.max(...all.map((l) => l.score)),
     temperature: all.map((l) => l.temperature).sort((a, b) => HEAT[b] - HEAT[a])[0]!,

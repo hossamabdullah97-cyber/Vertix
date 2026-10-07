@@ -212,6 +212,38 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     },
   },
   {
+    id: 'leadTimeline',
+    group: 'leads',
+    method: 'GET',
+    path: '/leads/{id}/timeline',
+    scope: 'crm:read',
+    summary: { en: 'Get a lead’s timeline', ar: 'سجل العميل' },
+    desc: {
+      en: 'Everything that happened with the lead, newest first: their visits to your cards (before and after they left their details, with what they tapped), activity, tasks and when they were captured. With a summary.',
+      ar: 'كل ما حدث مع العميل، الأحدث أولًا: زياراته لبطاقاتك (قبل ترك بياناته وبعدها، وما ضغط عليه)، والنشاط، والمهام، ووقت تسجيله. مع ملخص.',
+    },
+    pathParams: [id],
+    status: 200,
+    response: {
+      items: [
+        {
+          kind: 'visit',
+          id: 'visit-cm3k9x2evt009',
+          at: '2026-10-07T09:12:00.000Z',
+          endedAt: '2026-10-07T09:15:30.000Z',
+          card: { id: 'cm3k9x2card01', name: 'Omar Saeed' },
+          returning: true,
+          tapped: false,
+          actions: [{ type: 'CLICK', at: '2026-10-07T09:14:00.000Z', action: 'WHATSAPP' }],
+        },
+        { kind: 'activity', id: 'cm3k9x2act001', at: '2026-10-06T10:00:00.000Z', type: 'CALL', metadata: { note: 'Wants a demo', by: 'cm3k9x2user01' }, author: { id: 'cm3k9x2user01', name: 'Omar Saeed', avatarUrl: null } },
+        { kind: 'task', id: 'task-cm3k9x2task1', at: '2026-10-06T10:05:00.000Z', event: 'created', title: 'Send the offer', dueDate: '2026-10-08T09:00:00.000Z', completed: false, assignee: null },
+        { kind: 'created', id: `created-${LEAD.id}`, at: LEAD.createdAt, source: 'card_form', card: { id: 'cm3k9x2card01', name: 'Omar Saeed' }, tag: null },
+      ],
+      summary: { visits: 3, returns: 1, firstVisitAt: '2026-10-05T18:01:00.000Z', lastVisitAt: '2026-10-07T09:12:00.000Z', contacts: 1, lastContactAt: '2026-10-06T10:00:00.000Z', notes: 0, openTasks: 1, overdueTasks: 0 },
+    },
+  },
+  {
     id: 'updateLead',
     group: 'leads',
     method: 'PATCH',

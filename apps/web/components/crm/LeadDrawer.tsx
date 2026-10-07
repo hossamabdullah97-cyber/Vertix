@@ -17,7 +17,6 @@ import {
   type Task,
   type ActivityType,
   type LeadActivity,
-  type LeadDetail,
   ACTIVITY_META,
   TASK_PRIORITY,
   LOGGABLE,
@@ -28,6 +27,7 @@ import {
   waitingSpan,
   dueMeta,
   currencyLabel,
+  returnedAt,
 } from '@/lib/crm';
 import { Heat } from './LeadCard';
 import { MeetingRequest, meetingRequestOf } from './MeetingRequest';
@@ -36,6 +36,8 @@ import { MentionInput, NoteText } from './MentionInput';
 import { keptMentions, type Mention } from '@/lib/mentions';
 import { CustomFieldsPanel } from './CustomFieldsPanel';
 import { useCustomFields } from '@/lib/custom-fields';
+import { TIMELINE_FILTERS, activitiesOf, byDay, entries, matches, type CreatedItem, type TimelineFilter, type TimelineResponse, type TimelineSummary, type VisitItem } from '@/lib/timeline';
+import { TaskRow, TimelineSummaryStrip, VisitRow } from './TimelineParts';
 
 const TEMPS: Temp[] = ['COLD', 'WARM', 'HOT'];
 
@@ -205,8 +207,13 @@ function DrawerBody({
     if (next !== lead[field]) onPatch({ [field]: next });
   }
 
-  // Activity history from GET /leads/:id.
+  // The lead's whole story from GET /leads/:id/timeline: its activity is kept
+  // here as it changes, its visits and creation as they were loaded, and its
+  // tasks come from the page.
   const [activities, setActivities] = useState<LeadActivity[]>([]);
+  const [fixed, setFixed] = useState<(VisitItem | CreatedItem)[]>([]);
+  const [summary, setSummary] = useState<TimelineSummary | null>(null);
+  const [filter, setFilter] = useState<TimelineFilter>('all');
   const [loadingLog, setLoadingLog] = useState(true);
   const [logType, setLogType] = useState<ActivityType>('NOTE');
   const [logText, setLogText] = useState('');
@@ -224,12 +231,19 @@ function DrawerBody({
   useEffect(() => {
     let alive = true;
     setLoadingLog(true);
-    authFetch<LeadDetail>(`/leads/${lead.id}`)
-      .then((d) => {
-        if (alive) setActivities(d.activities ?? []);
+    authFetch<TimelineResponse>(`/leads/${lead.id}/timeline`)
+      .then((r) => {
+        if (!alive) return;
+        setActivities(activitiesOf(r));
+        setFixed(r.items.filter((i): i is VisitItem | CreatedItem => i.kind === 'visit' || i.kind === 'created'));
+        setSummary(r.summary);
       })
       .catch(() => {
-        if (alive) setActivities([]);
+        if (alive) {
+          setActivities([]);
+          setFixed([]);
+          setSummary(null);
+        }
       })
       .finally(() => {
         if (alive) setLoadingLog(false);
@@ -337,6 +351,87 @@ function DrawerBody({
       .catch(() => undefined);
   }
   const waiting = waitingHours(lead);
+  // Seen again since the details were left: the latest visit the timeline knows, or the list's.
+  const back = returnedAt({ createdAt: lead.createdAt, lastVisitAt: summary?.lastVisitAt ?? lead.lastVisitAt });
+  const shownDays = byDay(entries(fixed, activities, tasks).filter((e) => matches(e, filter)));
+  const dayLabel = (day: string) => {
+    const today = byDay([{ at: new Date().toISOString() }])[0]!.day;
+    const yesterday = byDay([{ at: new Date(Date.now() - 86_400_000).toISOString() }])[0]!.day;
+    if (day === today) return t('timeline.today');
+    if (day === yesterday) return t('timeline.yesterday');
+    return formatDate(`${day}T12:00:00`, locale, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  function renderActivity(a: LeadActivity) {
+                    const meta = ACTIVITY_META[a.type];
+                    const body = activityText(a);
+                    const m = (a.metadata ?? {}) as Record<string, unknown>;
+                    const mine = !!me && m.by === me.sub;
+                    const isNote = a.type === 'NOTE' && m.manual === true;
+                    const canDelete = isNote && (mine || me?.role === 'OWNER' || me?.role === 'ADMIN');
+                    return (
+                      <li key={a.id} className="group relative flex items-start gap-3" data-testid="activity">
+                        <span className="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-muted ring-1 ring-line">
+                          <Icon name={meta.icon} size={11} />
+                        </span>
+                        <div className="min-w-0 flex-1 pt-0.5">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className="min-w-0 truncate text-sm font-medium text-ink">
+                              {t(`activity.types.${a.type}`, meta.label)}
+                              {a.author && <span className="font-normal text-muted"> · {mine ? t('notes.you') : a.author.name}</span>}
+                            </p>
+                            <span className="shrink-0 text-xs text-faint">
+                              {typeof m.editedAt === 'string' && <span className="me-1">{t('notes.edited')} ·</span>}
+                              {formatDate(a.createdAt, locale, { hour: 'numeric', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {editing?.id === a.id ? (
+                            <div className="mt-1 rounded-lg ring-1 ring-inset ring-line">
+                              <MentionInput
+                                leadId={lead.id}
+                                value={editing.text}
+                                onChange={(text) => setEditing((e) => e && { ...e, text })}
+                                picked={editing.picked}
+                                onPick={(p) => setEditing((e) => e && { ...e, picked: p })}
+                                onSubmit={saveEdit}
+                                placeholder={t('notes.placeholder')}
+                                autoFocus
+                                className="block w-full resize-none bg-transparent px-3 py-2 text-xs leading-relaxed text-ink outline-none"
+                              />
+                              <div className="flex justify-end gap-2 border-t border-line px-2 py-1.5">
+                                <button type="button" onClick={() => setEditing(null)} className="v-btn v-btn-ghost !h-8 !px-2.5 !text-xs">
+                                  {t('notes.cancel')}
+                                </button>
+                                <button type="button" onClick={saveEdit} disabled={!editing.text.trim()} className="v-btn !h-8 !px-2.5 !text-xs">
+                                  {t('notes.save')}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            body && (
+                              <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-elevated px-3 py-2 text-xs leading-relaxed text-muted ring-1 ring-inset ring-line" dir="auto">
+                                <NoteText text={body} mentions={mentionsOf(a)} me={me?.sub} />
+                              </p>
+                            )
+                          )}
+                          {isNote && editing?.id !== a.id && (mine || canDelete) && (
+                            <div className="mt-1 flex gap-3 text-xs">
+                              {mine && (
+                                <button type="button" onClick={() => setEditing({ id: a.id, text: body, picked: mentionsOf(a) })} className="text-muted hover:text-ink">
+                                  {t('notes.edit')}
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button type="button" onClick={() => deleteNote(a)} className="text-muted hover:text-red-600">
+                                  {t('notes.delete')}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+  }
 
   return (
     <>
@@ -421,6 +516,21 @@ function DrawerBody({
               {t('waiting.lastContact', { when: formatRelativeTime(lead.lastContactedAt, locale) })}
             </p>
           ) : null}
+
+          {back && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('timeline');
+                setFilter('visits');
+              }}
+              data-testid="lead-back-on-card"
+              className="mt-2 flex w-full items-center gap-2 rounded-[10px] bg-accent/[0.08] px-3 py-2.5 text-start text-xs font-medium text-accent ring-1 ring-inset ring-accent/20"
+            >
+              <Icon name="eye" size={14} className="shrink-0" />
+              {t('timeline.backOnCard', { when: formatRelativeTime(back, locale) })}
+            </button>
+          )}
 
           {!loadingLog && meetingRequest && (
             <MeetingRequest
@@ -601,100 +711,67 @@ function DrawerBody({
                 </div>
               </div>
 
-              {loadingLog ? (
+{loadingLog ? (
                 <div className="mt-5 space-y-2">
                   {[0, 1, 2].map((i) => (
                     <div key={i} className="v-skeleton h-9 w-full" />
                   ))}
                 </div>
               ) : (
-                <ol className="relative mt-5 space-y-4">
-                  <span className="absolute inset-y-2 start-[11px] w-px bg-line" aria-hidden />
-                  {activities.map((a) => {
-                    const meta = ACTIVITY_META[a.type];
-                    const body = activityText(a);
-                    const m = (a.metadata ?? {}) as Record<string, unknown>;
-                    const mine = !!me && m.by === me.sub;
-                    const isNote = a.type === 'NOTE' && m.manual === true;
-                    const canDelete = isNote && (mine || me?.role === 'OWNER' || me?.role === 'ADMIN');
-                    return (
-                      <li key={a.id} className="group relative flex items-start gap-3" data-testid="activity">
-                        <span className="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-muted ring-1 ring-line">
-                          <Icon name={meta.icon} size={11} />
-                        </span>
-                        <div className="min-w-0 flex-1 pt-0.5">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className="min-w-0 truncate text-sm font-medium text-ink">
-                              {t(`activity.types.${a.type}`, meta.label)}
-                              {a.author && <span className="font-normal text-muted"> · {mine ? t('notes.you') : a.author.name}</span>}
-                            </p>
-                            <span className="shrink-0 text-xs text-faint">
-                              {typeof m.editedAt === 'string' && <span className="me-1">{t('notes.edited')} ·</span>}
-                              {formatRelativeTime(a.createdAt, locale, 'narrow')}
-                            </span>
-                          </div>
-                          {editing?.id === a.id ? (
-                            <div className="mt-1 rounded-lg ring-1 ring-inset ring-line">
-                              <MentionInput
-                                leadId={lead.id}
-                                value={editing.text}
-                                onChange={(text) => setEditing((e) => e && { ...e, text })}
-                                picked={editing.picked}
-                                onPick={(p) => setEditing((e) => e && { ...e, picked: p })}
-                                onSubmit={saveEdit}
-                                placeholder={t('notes.placeholder')}
-                                autoFocus
-                                className="block w-full resize-none bg-transparent px-3 py-2 text-xs leading-relaxed text-ink outline-none"
-                              />
-                              <div className="flex justify-end gap-2 border-t border-line px-2 py-1.5">
-                                <button type="button" onClick={() => setEditing(null)} className="v-btn v-btn-ghost !h-8 !px-2.5 !text-xs">
-                                  {t('notes.cancel')}
-                                </button>
-                                <button type="button" onClick={saveEdit} disabled={!editing.text.trim()} className="v-btn !h-8 !px-2.5 !text-xs">
-                                  {t('notes.save')}
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            body && (
-                              <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-elevated px-3 py-2 text-xs leading-relaxed text-muted ring-1 ring-inset ring-line" dir="auto">
-                                <NoteText text={body} mentions={mentionsOf(a)} me={me?.sub} />
-                              </p>
-                            )
+                <>
+                  {summary && <TimelineSummaryStrip summary={summary} activities={activities} tasks={tasks} locale={locale} />}
+                  <div role="group" aria-label={t('timeline.filter')} className="no-scrollbar -mx-1 mt-4 flex gap-1 overflow-x-auto px-1">
+                    {TIMELINE_FILTERS.map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setFilter(f)}
+                        aria-pressed={filter === f}
+                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                          filter === f ? 'bg-ink text-canvas' : 'text-muted ring-1 ring-inset ring-line hover:text-ink'
+                        }`}
+                      >
+                        {t(`timeline.filters.${f}`)}
+                      </button>
+                    ))}
+                  </div>
+                  {shownDays.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted">{t('timeline.empty')}</p>
+                  ) : (
+                    shownDays.map((d) => (
+                      <section key={d.day} className="mt-5">
+                        <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wide text-faint rtl:tracking-normal">{dayLabel(d.day)}</h3>
+                        <ol className="relative space-y-4">
+                          <span className="absolute inset-y-2 start-[11px] w-px bg-line" aria-hidden />
+                          {d.items.map((e) =>
+                            e.kind === 'activity' ? (
+                              renderActivity(e.activity)
+                            ) : e.kind === 'visit' ? (
+                              <VisitRow key={e.id} visit={e} locale={locale} />
+                            ) : e.kind === 'task' ? (
+                              <TaskRow key={e.id} event={e.event} task={e.task} at={e.at} locale={locale} />
+                            ) : (
+                              <li key={e.id} className="relative flex items-start gap-3" data-testid="timeline-created">
+                                <span className="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-muted ring-1 ring-line">
+                                  <Icon name="user-plus" size={11} />
+                                </span>
+                                <div className="min-w-0 flex-1 pt-0.5">
+                                  <p className="text-sm font-medium text-ink">{t('drawer.leadCreated')}</p>
+                                  <p className="text-xs text-faint">
+                                    {t('drawer.createdVia', {
+                                      source: [sourceLabel, e.card ? t('timeline.onCard', { card: e.card.name }) : ''].filter(Boolean).join(' · '),
+                                      date: formatDate(lead.createdAt, locale, { hour: 'numeric', minute: '2-digit' }),
+                                    })}
+                                  </p>
+                                </div>
+                              </li>
+                            ),
                           )}
-                          {isNote && editing?.id !== a.id && (mine || canDelete) && (
-                            <div className="mt-1 flex gap-3 text-xs">
-                              {mine && (
-                                <button type="button" onClick={() => setEditing({ id: a.id, text: body, picked: mentionsOf(a) })} className="text-muted hover:text-ink">
-                                  {t('notes.edit')}
-                                </button>
-                              )}
-                              {canDelete && (
-                                <button type="button" onClick={() => deleteNote(a)} className="text-muted hover:text-red-600">
-                                  {t('notes.delete')}
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                  <li className="relative flex items-start gap-3">
-                    <span className="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-muted ring-1 ring-line">
-                      <Icon name="user-plus" size={11} />
-                    </span>
-                    <div className="min-w-0 flex-1 pt-0.5">
-                      <p className="text-sm font-medium text-ink">{t('drawer.leadCreated')}</p>
-                      <p className="text-xs text-faint">
-                        {t('drawer.createdVia', {
-                          source: sourceLabel,
-                          date: formatDate(lead.createdAt, locale, { year: 'numeric', month: 'short', day: 'numeric' }),
-                        })}
-                      </p>
-                    </div>
-                  </li>
-                </ol>
+                        </ol>
+                      </section>
+                    ))
+                  )}
+                </>
               )}
             </>
           )}

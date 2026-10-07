@@ -47,6 +47,7 @@ import {
   updateLeadSchema,
   type UpdateLeadInput,
 } from '@vertex/shared';
+import { LeadTimelineService } from './lead-timeline.service';
 import { LeadNotesService } from './lead-notes.service';
 import { CustomFieldsService } from './custom-fields.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -71,6 +72,7 @@ export class LeadsController {
     private readonly imports: LeadImportService,
     private readonly notes: LeadNotesService,
     private readonly fields: CustomFieldsService,
+    private readonly timelines: LeadTimelineService,
   ) {}
 
   /** Public: capture a lead from a card's engagement workflow. */
@@ -238,6 +240,14 @@ export class LeadsController {
     // A note keeps who wrote it and who it names.
     if (body.type === 'NOTE' && body.note?.trim()) return this.notes.add(tenant, id, body.note.trim(), body.mentions);
     return this.leads.addActivity(tenant, id, body);
+  }
+
+  /** Everything that happened with this lead, newest first: card visits, conversations, notes, tasks, pipeline moves. */
+  @RequireScopes('crm:read')
+  @UseGuards(RequireTenantGuard)
+  @Get(':id/timeline')
+  timeline(@Tenant() tenant: TenantContext, @Param('id') id: string) {
+    return this.timelines.timeline(tenant, id);
   }
 
   /** The teammates a note on this lead can name with @. */

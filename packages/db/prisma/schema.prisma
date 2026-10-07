@@ -419,6 +419,13 @@ model Lead {
   /// Follow-up reminders sent while nobody had reached out (at most two).
   followUpReminders  Int       @default(0)
   followUpRemindedAt DateTime?
+  /// The phone or browser the details were left from (its anonymous Visitor),
+  /// so the lead's own visits to the card, before and after, are its history.
+  visitorId     String?
+  /// When that visitor last opened one of the workspace's cards, and when the
+  /// owner was last told they came back (at most twice a day).
+  lastVisitAt   DateTime?
+  returnAlertAt DateTime?
   /// The workspace's own fields (CustomField), by field id: text, a number,
   /// a YYYY-MM-DD date, true/false, or one of a choice field's options.
   customFields Json?
@@ -429,6 +436,7 @@ model Lead {
   org        Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   card       Card?          @relation(fields: [cardId], references: [id], onDelete: SetNull)
   tag        NfcTag?        @relation(fields: [tagId], references: [id], onDelete: SetNull)
+  visitor    Visitor?       @relation(fields: [visitorId], references: [id], onDelete: SetNull)
   assignee   User?          @relation("LeadAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
   stage      PipelineStage? @relation(fields: [stageId], references: [id], onDelete: SetNull)
   activities LeadActivity[]
@@ -439,6 +447,7 @@ model Lead {
   @@index([stageId])
   @@index([assignedTo])
   @@index([tagId])
+  @@index([visitorId])
   @@index([deletedAt])
   @@index([firstContactedAt, createdAt])
   @@map("leads")
@@ -666,6 +675,7 @@ model Visitor {
   lastSeen    DateTime @updatedAt
 
   events Event[]
+  leads  Lead[]
 
   @@map("visitors")
 }

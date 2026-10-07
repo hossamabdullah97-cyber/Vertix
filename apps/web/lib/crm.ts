@@ -16,6 +16,8 @@ export interface Lead {
   /** When someone first / last reached out (a call, WhatsApp, email or meeting). */
   firstContactedAt?: string | null;
   lastContactedAt?: string | null;
+  /** When they last opened one of the workspace's cards (known once they left their details from that phone). */
+  lastVisitAt?: string | null;
   createdAt: string;
   card: { slug: string } | null;
   /** The workspace's own fields, by field id. */
@@ -275,4 +277,12 @@ export function quickLinks(lead: Lead) {
     links.push({ key: 'email', icon: 'mail', href: `mailto:${lead.email}`, label: 'Email', color: '#ea4335' });
   }
   return links;
+}
+
+/** When a lead came back to the card lately (not the visit they left their details on): worth a call. */
+export function returnedAt(lead: Pick<Lead, 'lastVisitAt' | 'createdAt'>, now = Date.now()): string | null {
+  if (!lead.lastVisitAt) return null;
+  const at = new Date(lead.lastVisitAt).getTime();
+  if (at - new Date(lead.createdAt).getTime() < 30 * 60_000) return null;
+  return now - at < 7 * 24 * HOUR ? lead.lastVisitAt : null;
 }

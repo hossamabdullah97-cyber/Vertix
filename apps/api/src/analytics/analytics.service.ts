@@ -1,13 +1,16 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Prisma, type TenantContext } from '@vertex/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { WebhookService } from '../integrations/webhook.service';
 import { LIVE_ORG } from '../common/live-org';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const EVENT_TYPES = ['VIEW', 'CLICK', 'SAVE', 'SHARE', 'NFC_SCAN'] as const;
 /** Opening a card again within this long is the same view. */
 const VIEW_WINDOW_MS = 30 * 60 * 1000;
+/** A lead coming back is told to its owner at most this often. */
+export const RETURN_ALERT_MS = 12 * 60 * 60 * 1000;
 
 @Injectable()
 export class AnalyticsService {
@@ -16,6 +19,7 @@ export class AnalyticsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly webhooks: WebhookService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   private get db() {
@@ -73,6 +77,9 @@ export class AnalyticsService {
         },
       });
 
+      // A lead opening the card again is a client thinking about it.
+      if (type === 'VIEW') await this.noteReturn(card, visitor.id);
+
       // Fan the public event out to any subscribed integrations. Only the two
       // types that map to a catalogued webhook event are forwarded; the rest
       // (CLICK/SHARE) are analytics-only. Best-effort — never blocks tracking.
@@ -92,6 +99,44 @@ export class AnalyticsService {
       this.logger.warn(`track failed: ${(err as Error).message}`);
     }
     return { visitorId: anonymousId };
+  }
+
+  /**
+   * A new visit from someone who already left their details on this
+   * workspace's cards: their leads remember when they were last here, and
+   * whoever looks after them is told (not for the visit they left the details
+   * on, and at most twice a day per lead).
+   */
+  async noteReturn(card: { orgId: string; ownerId: string | null }, visitorId: string, now = new Date()) {
+    try {
+      const leads = await this.db.lead.findMany({
+        where: { orgId: card.orgId, visitorId, deletedAt: null },
+        select: { id: true, name: true, company: true, assignedTo: true, cardId: true, createdAt: true },
+      });
+      for (const lead of leads) {
+        await this.db.lead.update({ where: { id: lead.id }, data: { lastVisitAt: now } });
+        if (now.getTime() - lead.createdAt.getTime() < VIEW_WINDOW_MS) continue;
+        // Claimed in one statement, so two visits at once tell them once.
+        const claimed = await this.db.lead.updateMany({
+          where: { id: lead.id, OR: [{ returnAlertAt: null }, { returnAlertAt: { lt: new Date(now.getTime() - RETURN_ALERT_MS) } }] },
+          data: { returnAlertAt: now },
+        });
+        const to = lead.assignedTo ?? card.ownerId;
+        if (!claimed.count || !to || !this.notifications) continue;
+        await this.notifications.notify({
+          userId: to,
+          orgId: card.orgId,
+          type: 'lead.returned',
+          category: 'CRM',
+          priority: 'HIGH',
+          title: 'A lead is back on your card',
+          body: lead.name ?? '',
+          metadata: { leadId: lead.id, name: lead.name, company: lead.company },
+        });
+      }
+    } catch (err) {
+      this.logger.warn(`return visit failed: ${(err as Error).message}`);
+    }
   }
 
   private async isInsider(card: { orgId: string; ownerId: string | null }, userId: string): Promise<boolean> {
