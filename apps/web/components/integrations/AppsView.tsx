@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CopyField, Field, Notice, SheetSection, Toggle, iso, type Handoff } from './shared';
 import { CHANNEL_APPS, ChannelSettings, ChannelSetup } from './ChannelSetup';
 import { AUDIENCE_APPS, AudienceSettings, AudienceSetup } from './AudienceSetup';
+import { ZapierSetup } from './ZapierSetup';
 
 interface Connection {
   status: 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'SYNCING' | 'REQUIRES_REAUTH';
@@ -72,7 +73,7 @@ function describe(t: TFunction, p: Provider): string {
 }
 
 /** Tools that already take our webhooks, and the one an automation can post to. */
-const VIA_WEBHOOK = new Set(['zapier', 'make', 'n8n']);
+const VIA_WEBHOOK = new Set(['make', 'n8n']);
 const VIA_AUTOMATION: Record<string, string> = { slack: 'new-lead-slack' };
 
 function AppLogo({ p, size = 36 }: { p: Provider; size?: number }) {
@@ -305,7 +306,9 @@ function AppSheet({
   const channel = CHANNEL_APPS.has(app.key);
   // Email-marketing tools are connected with a key, in the sheet too.
   const audience = AUDIENCE_APPS.has(app.key);
-  const keyed = channel || audience;
+  // Zapier is set up with its Zaps' hook addresses, in the sheet.
+  const zapier = app.key === 'zapier';
+  const keyed = channel || audience || zapier;
 
   async function connect() {
     setError('');
@@ -321,7 +324,7 @@ function AppSheet({
   }
 
   const footer =
-    canManage && (state === 'connected' || state === 'attention' || (state === 'ready' && !keyed)) ? (
+    canManage && !zapier && (state === 'connected' || state === 'attention' || (state === 'ready' && !keyed)) ? (
       <div className="flex flex-wrap justify-end gap-2">
         {state !== 'ready' && (
           <button onClick={() => setConfirm('disconnect')} className="v-btn v-btn-ghost text-red-600 dark:text-red-400">
@@ -436,6 +439,7 @@ function AppSheet({
           {channel && state === 'connected' && <ChannelSettings appKey={app.key} canManage={canManage} onChanged={onChanged} />}
           {channel && canManage && (state === 'ready' || state === 'attention') && <ChannelSetup key={app.key} appKey={app.key} appName={app.name} onConnected={onChanged} />}
           {audience && state === 'connected' && <AudienceSettings appKey={app.key} canManage={canManage} onChanged={onChanged} />}
+          {zapier && canManage && <ZapierSetup onChanged={onChanged} />}
           {audience && canManage && (state === 'ready' || state === 'attention') && <AudienceSetup key={app.key} appKey={app.key} appName={app.name} onConnected={onChanged} />}
         </div>
       </Sheet>

@@ -4,6 +4,9 @@ packages:
   # mobile is a standalone Expo app (installed with its own package manager)
   # to avoid React Native's known conflicts with pnpm's strict node_modules.
   - "!apps/mobile"
+  # zapier is the app published to Zapier's platform with its CLI (zapier push),
+  # with that platform's own dependencies; its tests need none.
+  - "!apps/zapier"
 allowBuilds:
   '@embedded-postgres/windows-x64': true
   '@nestjs/core': true

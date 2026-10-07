@@ -257,7 +257,8 @@
     "card_scan": "Paper card",
     "manual": "Added by hand",
     "in_person": "Met in person",
-    "import": "Imported"
+    "import": "Imported",
+    "zapier": "Zapier"
   },
   "meeting": {
     "title": "Meeting request",

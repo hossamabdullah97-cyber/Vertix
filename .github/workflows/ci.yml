@@ -40,6 +40,10 @@ jobs:
           JWT_SECRET: ci-access-secret-placeholder
           JWT_REFRESH_SECRET: ci-refresh-secret-placeholder
 
+      # The app published to Zapier lives outside the workspace; its tests need nothing installed.
+      - name: Test the Zapier app
+        run: node --test apps/zapier/test/*.test.js
+
   # The whole product in a browser: a real Postgres, the API and the web app
   # from their production builds, driven by Playwright (apps/e2e). A failing
   # run keeps its report, screenshots and traces as an artifact.
