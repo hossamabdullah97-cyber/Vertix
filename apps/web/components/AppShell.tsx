@@ -224,6 +224,15 @@ export default function AppShell({
   const [searchLoaded, setSearchLoaded] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
 
+  // Opened inside the Vertex app (apps/mobile), which has its own bars: the
+  // phone header and bottom bar are left out.
+  const [embedded, setEmbedded] = useState(false);
+  useEffect(() => {
+    try {
+      setEmbedded(sessionStorage.getItem('vertex_embedded') === '1');
+    } catch {}
+  }, []);
+
   // Account menu (language, appearance, sign out)
   const [menuOpen, setMenuOpen] = useState(false);
   // Shortcut hint in the platform's own notation (⌘K on Apple, Ctrl K elsewhere).
@@ -870,7 +879,11 @@ export default function AppShell({
   );
 
   return (
-    <div data-theme={theme} className="min-h-screen bg-canvas text-ink antialiased [--v-dock:calc(64px+env(safe-area-inset-bottom))] md:flex md:h-screen md:overflow-hidden md:[--v-dock:0px]">
+    <div
+      data-theme={theme}
+      className="min-h-screen bg-canvas text-ink antialiased [--v-dock:calc(64px+env(safe-area-inset-bottom))] md:flex md:h-screen md:overflow-hidden md:[--v-dock:0px]"
+      style={embedded ? ({ '--v-dock': '0px' } as React.CSSProperties) : undefined}
+    >
       {/* Sidebar (desktop) */}
       <aside className="hidden w-[244px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 pb-3 pt-3.5 md:flex">
         <Link href="/dashboard" className="mb-2 flex items-center gap-2.5 px-2 py-1">
@@ -1195,7 +1208,7 @@ export default function AppShell({
       </aside>
 
       {/* Phone bar */}
-      <div className="v-glass sticky top-0 z-30 md:hidden">
+      <div className={`v-glass sticky top-0 z-30 md:hidden ${embedded ? 'hidden' : ''}`}>
         <div className="flex items-center justify-between gap-2 px-3 py-1.5">
           <Link href="/dashboard" className="flex min-h-11 items-center gap-2 px-1">
             <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-accent text-white">
@@ -1355,7 +1368,7 @@ export default function AppShell({
       {/* Phone bottom bar: the four places people go most, and the rest under More. */}
       <nav
         aria-label={t('mobile.label')}
-        className={`fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur-md md:hidden ${noWorkspace ? 'hidden' : ''}`}
+        className={`fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur-md md:hidden ${noWorkspace || embedded ? 'hidden' : ''}`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <ul className="grid h-16 grid-cols-5">

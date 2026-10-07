@@ -1,0 +1,256 @@
+{
+  "common": {
+    "cancel": "Cancel"
+  },
+  "tabs": {
+    "home": "Today",
+    "leads": "Leads",
+    "add": "Add",
+    "cards": "Cards",
+    "more": "More"
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "The same account as on the website.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "forgot": "Forgot your password?",
+    "noAccount": "New to Vertex Connect?",
+    "register": "Create an account on the website",
+    "twoStepTitle": "Two-step verification",
+    "twoStepBody": "Enter the 6-digit code from your authenticator app, or a recovery code.",
+    "code": "Code",
+    "codeHint": "The code changes every 30 seconds.",
+    "confirm": "Confirm",
+    "back": "Use another account",
+    "errors": {
+      "wrong": "The email or password is not right.",
+      "tooMany": "Too many tries. Wait a few minutes and try again.",
+      "verify": "Confirm your email first: we sent you a link.",
+      "code": "That code is not right. Try the latest one.",
+      "network": "Could not reach Vertex. Check your connection."
+    }
+  },
+  "home": {
+    "morning": "Good morning, {{name}}",
+    "afternoon": "Good afternoon, {{name}}",
+    "evening": "Good evening, {{name}}",
+    "waiting": "Waiting for a reply",
+    "back": "Back on your card",
+    "thisWeek": "New this week",
+    "backTitle": "Came back to your card",
+    "backOn": "On your card {{when}}",
+    "waitingTitle": "Waiting for a reply",
+    "noneWaiting": "Nobody is waiting",
+    "noneWaitingBody": "Every new lead has heard from you.",
+    "dueTitle": "Due today",
+    "noneDue": "Nothing due today",
+    "late": "Late"
+  },
+  "leads": {
+    "title": "Leads",
+    "search": "Search name, company, email or phone",
+    "filters": {
+      "all": "All",
+      "waiting": "Waiting",
+      "back": "Came back",
+      "hot": "Hot"
+    },
+    "empty": "No leads yet",
+    "emptyBody": "People who leave their details on your card appear here.",
+    "noMatch": "No leads match",
+    "unknown": "No name",
+    "waitingFor_one": "Waiting a day",
+    "waitingFor_other": "Waiting {{count}} days",
+    "waitingFor_zero": "Waiting since today",
+    "backBadge": "Back {{when}}",
+    "hot": "Hot"
+  },
+  "lead": {
+    "title": "Lead",
+    "notFound": "This lead is not here any more.",
+    "call": "Call",
+    "email": "Email",
+    "cannotOpen": "This phone cannot open that.",
+    "backOnCard": "Back on your card {{when}}: a good moment to reach out.",
+    "waiting_one": "Nobody has reached out for a day.",
+    "waiting_other": "Nobody has reached out for {{count}} days.",
+    "stage": "Stage",
+    "notePlaceholder": "Write a note…",
+    "addNote": "Add note",
+    "visits": "Card visits",
+    "contacts": "Times reached",
+    "openTasks": "Open tasks",
+    "history": "History",
+    "openOnWeb": "Open on the website"
+  },
+  "history": {
+    "viewed": "Viewed the card",
+    "cameBack": "Came back to the card",
+    "byTap": "Tapped a chip",
+    "byLink": "Opened the link",
+    "created": "Lead created",
+    "moved": "Moved from {{from}} to {{to}}",
+    "taskAdded": "Task added",
+    "taskDone": "Task done",
+    "types": {
+      "NOTE": "Note",
+      "CALL": "Call",
+      "EMAIL": "Email",
+      "WHATSAPP": "WhatsApp",
+      "MEETING": "Meeting",
+      "MERGE": "Merged",
+      "SCORE_CHANGE": "Score changed",
+      "SCAN": "Scan"
+    },
+    "did": {
+      "SAVE": "Saved your contact",
+      "SHARE": "Shared the card",
+      "link": "Opened a link",
+      "WHATSAPP": "Opened WhatsApp",
+      "CALL": "Tapped call",
+      "EMAIL": "Tapped email",
+      "MAPS": "Opened the map",
+      "WEBSITE": "Opened the website",
+      "LINKEDIN": "Opened LinkedIn",
+      "FILE": "Opened the file"
+    }
+  },
+  "add": {
+    "title": "Met someone",
+    "subtitle": "Their details in a few taps, while you remember.",
+    "scanTitle": "Read their paper card",
+    "scanBody": "Take a photo of the card and the details fill in.",
+    "scanned": "Read from the card: check the details, then save.",
+    "takePhoto": "Take a photo",
+    "choosePhoto": "Choose a photo",
+    "noPermission": "Allow the camera in Settings to read cards.",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "company": "Company",
+    "jobTitle": "Job title",
+    "note": "Note",
+    "noteHint": "Where you met, what they need.",
+    "save": "Save lead"
+  },
+  "cards": {
+    "title": "Cards",
+    "empty": "No cards yet",
+    "emptyBody": "Make your card on the website, then share it from here.",
+    "draft": "Draft",
+    "newOnWeb": "New card on the website"
+  },
+  "card": {
+    "title": "Card",
+    "notFound": "This card is not here any more.",
+    "unpublished": "This card is not published yet: its link does not open for others.",
+    "qrHint": "Let them scan this with their phone's camera.",
+    "share": "Share the link",
+    "copy": "Copy the link",
+    "copied": "Copied",
+    "editOnWeb": "Edit on the website"
+  },
+  "chip": {
+    "title": "NFC chip",
+    "program": "Program a chip with this card",
+    "read": "Read a chip",
+    "programTitle": "Program a chip",
+    "readTitle": "Which card does this chip open?",
+    "programBody": "Tapping the chip will open this card.",
+    "readBody": "Hold a chip to the phone to see what it opens.",
+    "holdIphone": "Hold the top of your iPhone near the chip…",
+    "holdAndroid": "Hold the chip against the back of your phone…",
+    "programmed": "Done: tapping the chip now opens this card.",
+    "programNow": "Program the chip",
+    "programAnother": "Program another chip",
+    "readNow": "Read the chip",
+    "opens": "This chip opens {{card}}",
+    "openIt": "Open it",
+    "foreign": "This chip opens another address: {{url}}",
+    "blank": "This chip has nothing on it yet.",
+    "unsupported": "This phone cannot read NFC chips.",
+    "notRegistered": "The chip was written, but could not be added to your workspace. Try again.",
+    "failed": "The chip could not be read. Hold it still and try again.",
+    "hint": "Chips open your card through Vertex, so every tap is counted and the card can change without reprogramming."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "readAll": "Read all",
+    "empty": "Nothing new",
+    "emptyBody": "New leads, meeting requests and leads coming back appear here.",
+    "types": {
+      "captured": {
+        "CONTACT": "New lead",
+        "MEETING": "New meeting request",
+        "QUOTE": "New quote request"
+      },
+      "returned": "{{name}} is back on your card",
+      "returnedNoName": "A lead is back on your card",
+      "followUp": "{{name}} is waiting for a reply",
+      "followUpNoName": "A lead is waiting for a reply",
+      "mentioned": "You were mentioned on {{lead}}"
+    }
+  },
+  "workspaces": {
+    "title": "Workspaces",
+    "body": "The same workspaces as on the website. What you see is from the one open.",
+    "personal": "Personal workspace"
+  },
+  "more": {
+    "sections": "On the website",
+    "app": "App",
+    "items": {
+      "analytics": "Analytics",
+      "tasks": "Tasks",
+      "tags": "NFC tags",
+      "team": "Team",
+      "integrations": "Integrations",
+      "settings": "Workspace settings",
+      "billing": "Plan and billing",
+      "account": "Your account"
+    },
+    "language": "Language",
+    "help": "Help",
+    "privacy": "Privacy",
+    "restart": "Close and reopen the app to switch its layout direction.",
+    "signOut": "Sign out",
+    "signOutTitle": "Sign out of this phone?",
+    "signOutBody": "You can sign in again any time.",
+    "deleteAccount": "Delete account"
+  },
+  "sources": {
+    "card_form": "Card form",
+    "nfc_scan": "NFC tap",
+    "meeting": "Meeting request",
+    "quote": "Quote request",
+    "share": "Shared link",
+    "view": "Profile view",
+    "card_scan": "Paper card",
+    "manual": "Added by hand",
+    "in_person": "Met in person",
+    "import": "Imported",
+    "zapier": "Zapier"
+  },
+  "roles": {
+    "OWNER": "Owner",
+    "ADMIN": "Admin",
+    "MANAGER": "Manager",
+    "EMPLOYEE": "Member"
+  },
+  "temperature": {
+    "HOT": "Hot",
+    "WARM": "Warm",
+    "COLD": "Cold"
+  },
+  "stages": {
+    "new": "New",
+    "contacted": "Contacted",
+    "qualified": "Qualified",
+    "proposal": "Proposal",
+    "negotiation": "Negotiation",
+    "won": "Won",
+    "lost": "Lost"
+  }
+}

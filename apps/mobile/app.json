@@ -5,22 +5,54 @@
     "scheme": "vertexconnect",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#F4F3EF",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "dev.vertex.connect",
       "infoPlist": {
-        "NFCReaderUsageDescription": "Vertex Connect uses NFC to program and read your smart business cards."
+        "NFCReaderUsageDescription": "Vertex Connect uses NFC to program and read your smart business cards.",
+        "NSCameraUsageDescription": "Vertex Connect uses the camera to read paper business cards into new leads.",
+        "NSPhotoLibraryUsageDescription": "Vertex Connect reads a photo of a business card you choose into a new lead.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "dev.vertex.connect",
-      "permissions": ["android.permission.NFC"]
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2563EB"
+      },
+      "permissions": ["android.permission.NFC", "android.permission.CAMERA"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-font",
+      "expo-localization",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Vertex Connect uses the camera to read paper business cards into new leads.",
+          "photosPermission": "Vertex Connect reads a photo of a business card you choose into a new lead."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F4F3EF",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 96,
+          "dark": { "backgroundColor": "#0E0E11", "image": "./assets/splash-icon.png" }
+        }
+      ],
       [
         "react-native-nfc-manager",
         {
@@ -29,6 +61,12 @@
           "includeNdefEntitlement": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "supportsRTL": true
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

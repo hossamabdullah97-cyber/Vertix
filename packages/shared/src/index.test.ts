@@ -199,6 +199,12 @@ describe('describeDevice', () => {
     expect(deviceLabel(chromeWin)).toBe('Chrome on Windows');
   });
 
+  it('names the Vertex app on a phone', () => {
+    expect(deviceLabel('VertexConnectApp/1.0 (iPhone; iOS 18.2; Mobile)')).toBe('Vertex app on iPhone');
+    expect(deviceLabel('VertexConnectApp/1.0 (Linux; Android 15; Mobile)')).toBe('Vertex app on Android');
+    expect(describeDevice('VertexConnectApp/1.0 (Linux; Android 15; Mobile)').kind).toBe('phone');
+  });
+
   it('says nothing it does not know', () => {
     expect(describeDevice(null)).toEqual({ browser: null, os: null, kind: 'desktop' });
     expect(deviceLabel('curl/8.0')).toBe('Unknown device');
