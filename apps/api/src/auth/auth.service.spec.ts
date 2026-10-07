@@ -950,6 +950,94 @@ describe('AuthService.google', () => {
   });
 });
 
+describe('AuthService.apple', () => {
+  const who = { sub: 'a-1', email: 'Mona@Example.com', emailVerified: true, privateEmail: false };
+  const NONCE = 'n'.repeat(32);
+
+  function apple(d: Deps, identity: Record<string, unknown> | Error = who) {
+    const ctx = makeService(d);
+    const verify = jest.fn(async () => {
+      if (identity instanceof Error) throw identity;
+      return identity;
+    });
+    (ctx.service as unknown as { appleVerifier: unknown }).appleVerifier = { verify };
+    return { ...ctx, verify };
+  }
+
+  it('signs in a returning person by their Apple id, though Apple no longer sends the email', async () => {
+    const linked = { id: 'u1', email: 'mona@example.com', appleId: 'a-1', emailVerified: new Date(), deletedAt: null };
+    const { service, signed, prisma, verify } = apple(
+      {
+        user: { findUnique: jest.fn().mockImplementation(({ where }) => (where.appleId ? linked : { isSuperAdmin: false })) },
+        membership: { findFirst: jest.fn().mockResolvedValue({ orgId: 'org1', role: 'MEMBER' }) },
+      },
+      { sub: 'a-1', email: null, emailVerified: false, privateEmail: false },
+    );
+    await expect(service.apple('tok'.repeat(10), NONCE, undefined)).resolves.toEqual({ accessToken: 'tok_1', refreshToken: 'tok_2' });
+    expect(verify).toHaveBeenCalledWith('tok'.repeat(10), NONCE);
+    expect(access(signed)).toMatchObject({ sub: 'u1', orgId: 'org1' });
+    expect(prisma.client.user.update).not.toHaveBeenCalled();
+  });
+
+  it('links an existing account with the same verified email, dropping an unproven password', async () => {
+    const existing = { id: 'u2', email: 'mona@example.com', appleId: null, emailVerified: null, passwordHash: 'h', name: null, deletedAt: null };
+    const { service, prisma } = apple({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.appleId ? null : { isSuperAdmin: false })),
+        findFirst: jest.fn().mockResolvedValue(existing),
+        update: jest.fn().mockResolvedValue({ ...existing, appleId: 'a-1' }),
+      },
+    });
+    await service.apple('tok'.repeat(10), NONCE, 'Mona Adel');
+    expect((prisma.client.user.update as jest.Mock).mock.calls[0][0]).toEqual({
+      where: { id: 'u2' },
+      data: { passwordHash: null, appleId: 'a-1', emailVerified: expect.any(Date), name: 'Mona Adel' },
+    });
+  });
+
+  it('creates an account and a workspace of their own for someone new, with the name from the app', async () => {
+    const { service, prisma, signed } = apple({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.appleId ? null : { isSuperAdmin: false })),
+        create: jest.fn().mockResolvedValue({ id: 'u3', email: 'mona@example.com' }),
+      },
+    });
+    await service.apple('tok'.repeat(10), NONCE, '  Mona Adel ');
+    expect(prisma.client.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ email: 'mona@example.com', name: 'Mona Adel', appleId: 'a-1', emailVerified: expect.any(Date) }),
+    });
+    expect(prisma.client.organization.create).toHaveBeenCalledWith({ data: expect.objectContaining({ kind: 'PERSONAL' }) });
+    expect(access(signed)).toMatchObject({ sub: 'u3', orgId: 'org_new', role: 'OWNER' });
+  });
+
+  it('needs a verified email to open or find an account', async () => {
+    const { service, prisma } = apple(
+      { user: { findUnique: jest.fn().mockImplementation(({ where }) => (where.appleId ? null : { isSuperAdmin: false })) } },
+      { ...who, emailVerified: false },
+    );
+    await expect(service.apple('tok'.repeat(10), NONCE, undefined)).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.client.user.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('will not move an account to a different Apple account', async () => {
+    const { service } = apple({
+      user: {
+        findUnique: jest.fn().mockImplementation(({ where }) => (where.appleId ? null : { isSuperAdmin: false })),
+        findFirst: jest.fn().mockResolvedValue({ id: 'u4', email: 'mona@example.com', appleId: 'a-other', deletedAt: null }),
+      },
+    });
+    await expect(service.apple('tok'.repeat(10), NONCE, undefined)).rejects.toThrow('This account is linked to a different Apple account');
+  });
+
+  it('refuses a bad token, or a deleted account, without saying why', async () => {
+    const { AppleTokenError } = jest.requireActual('./apple-id-token');
+    await expect(apple({}, new AppleTokenError('Wrong nonce')).service.apple('tok'.repeat(10), NONCE, undefined)).rejects.toThrow('Apple sign-in failed');
+    const gone = { id: 'u5', appleId: 'a-1', deletedAt: new Date() };
+    const { service } = apple({ user: { findUnique: jest.fn().mockImplementation(({ where }) => (where.appleId ? gone : null)) } });
+    await expect(service.apple('tok'.repeat(10), NONCE, undefined)).rejects.toThrow('Apple sign-in failed');
+  });
+});
+
 describe('AuthService email confirmation', () => {
   it('mails a confirmation link on sign-up, without making the sign-up wait on it', async () => {
     const create = jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b.co' });

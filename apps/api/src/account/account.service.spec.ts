@@ -16,6 +16,7 @@ function make(opts: { memberships: Mem[]; others: Record<string, number>; otherO
     nfcTag: { updateMany: rec('nfcTag.updateMany') },
     membership: { updateMany: rec('membership.updateMany') },
     pushSubscription: { deleteMany: rec('push.deleteMany') },
+    appPushToken: { deleteMany: rec('appPush.deleteMany') },
     authSession: { deleteMany: rec('sessions.deleteMany') },
     personalAccessToken: { deleteMany: rec('pat.deleteMany') },
     ssoIdentity: { deleteMany: rec('sso.deleteMany') },
@@ -87,8 +88,9 @@ describe('AccountService', () => {
     expect(calls['activity.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
     expect(calls['tips.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
     expect(calls['sso.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
+    expect(calls['appPush.deleteMany']).toEqual([{ where: { userId: 'u1' } }]);
     const erased = (calls['user.update']![0] as { data: Record<string, unknown> }).data;
-    expect(erased).toMatchObject({ email: 'deleted-u1@deleted.invalid', name: null, passwordHash: null, googleId: null });
+    expect(erased).toMatchObject({ email: 'deleted-u1@deleted.invalid', name: null, passwordHash: null, googleId: null, appleId: null });
     expect(erased.deletedAt).toBeInstanceOf(Date);
     expect(billing.stopRenewals).toHaveBeenCalledWith('o_solo');
     expect(mail.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'Mona@x.com' }));

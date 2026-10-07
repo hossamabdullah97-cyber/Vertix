@@ -131,6 +131,10 @@ services:
       # passing on each visitor's address, so the API's per-address limits
       # count visitors rather than this server (Caddy would replace it).
       API_INTERNAL_URL: http://api:4000/api
+      # The phone app opens the website's links (/.well-known/ files); empty = they open in the browser.
+      APPLE_APP_IDS: ${APPLE_APP_IDS:-}
+      ANDROID_PACKAGE: ${ANDROID_PACKAGE:-dev.vertex.connect}
+      ANDROID_CERT_FINGERPRINTS: ${ANDROID_CERT_FINGERPRINTS:-}
     depends_on:
       - api
 

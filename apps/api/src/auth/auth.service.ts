@@ -34,6 +34,7 @@ import {
   tooManyAttempts,
 } from './auth-throttle.service';
 import { GoogleIdTokenVerifier, GoogleTokenError } from './google-id-token';
+import { AppleIdTokenVerifier, AppleTokenError } from './apple-id-token';
 import { workspaceSlug } from '../common/workspace-slug';
 import { TwoFactorService } from './two-factor.service';
 import { requiresTwoStep, ssoRequired } from './guards/tenant.guard';
@@ -63,6 +64,7 @@ export const ACCOUNT_ACCEPTS_SIGNED_IN = 'You already have an account. Sign in t
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private googleVerifier: GoogleIdTokenVerifier | null = null;
+  private appleVerifier: AppleIdTokenVerifier | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -221,8 +223,8 @@ export class AuthService {
     }
     // The link sets a password, so it is only for someone who has no account
     // yet. An account holder accepts from the app, signed in, and keeps theirs.
-    const holder = await this.prisma.client.user.findUnique({ where: { id: rec.userId }, select: { passwordHash: true, googleId: true } });
-    if (holder?.passwordHash || holder?.googleId) {
+    const holder = await this.prisma.client.user.findUnique({ where: { id: rec.userId }, select: { passwordHash: true, googleId: true, appleId: true } });
+    if (holder?.passwordHash || holder?.googleId || holder?.appleId) {
       throw new BadRequestException(ACCOUNT_ACCEPTS_SIGNED_IN);
     }
     const passwordHash = await bcrypt.hash(password, 10);
@@ -421,8 +423,16 @@ export class AuthService {
   }
 
   /** The sign-in methods this server offers, for the sign-in page. */
-  providers(): { google: string | null } {
-    return { google: this.config.get<string>('GOOGLE_CLIENT_ID') || null };
+  providers(): { google: string | null; apple: boolean } {
+    return { google: this.config.get<string>('GOOGLE_CLIENT_ID') || null, apple: this.appleAudiences().length > 0 };
+  }
+
+  /** The apps Apple's tokens may be for: the iOS bundle id, and a Services ID if the website offers it. */
+  private appleAudiences(): string[] {
+    return (this.config.get<string>('APPLE_CLIENT_IDS') ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   /**
@@ -491,9 +501,68 @@ export class AuthService {
     return this.openSession({ sub: created.user.id, email: created.user.email, orgId: created.orgId, role: 'OWNER' }, client);
   }
 
+  /**
+   * Sign in (or sign up) with Apple, from the iOS app. The Apple account is
+   * matched first by its id, then by a verified email, as with Google. Apple
+   * sends the email and the name only the first time someone signs in to
+   * the app, so the name comes from the app, and a returning person is known
+   * by their Apple id alone.
+   */
+  async apple(identityToken: string, nonce: string, name: string | undefined, client: ClientInfo = {}): Promise<SignInResult> {
+    const audiences = this.appleAudiences();
+    if (!audiences.length) throw new ServiceUnavailableException('Sign in with Apple is not set up on this server');
+    this.appleVerifier ??= new AppleIdTokenVerifier(audiences);
+
+    let who;
+    try {
+      who = await this.appleVerifier.verify(identityToken, nonce);
+    } catch (err) {
+      if (err instanceof AppleTokenError) {
+        this.logger.warn(`Apple sign-in refused: ${err.message}`);
+        throw new UnauthorizedException('Apple sign-in failed');
+      }
+      throw err;
+    }
+
+    const linked = await this.prisma.client.user.findUnique({ where: { appleId: who.sub } });
+    if (linked) {
+      if (linked.deletedAt) throw new UnauthorizedException('Apple sign-in failed');
+      return this.signIn(linked, client);
+    }
+
+    // Someone new to this app: an address Apple has confirmed is needed to
+    // find or open their account.
+    if (!who.email || !who.emailVerified) throw new UnauthorizedException('Apple has not shared a verified email address');
+    const email = normalizeEmail(who.email);
+    const given = name?.trim().slice(0, 100) || null;
+
+    let user = await this.prisma.client.user.findFirst({ where: { email: emailIs(email) } });
+    if (user?.deletedAt) throw new UnauthorizedException('Apple sign-in failed');
+    if (user) {
+      if (user.appleId && user.appleId !== who.sub) {
+        throw new UnauthorizedException('This account is linked to a different Apple account');
+      }
+      user = await this.prisma.client.user.update({
+        where: { id: user.id },
+        data: {
+          // As with Google: a password from someone who never proved the inbox goes.
+          ...(!user.emailVerified && user.passwordHash ? { passwordHash: null } : {}),
+          appleId: who.sub,
+          emailVerified: user.emailVerified ?? new Date(),
+          name: user.name ?? given,
+        },
+      });
+      return this.signIn(user, client);
+    }
+
+    const display = given ?? email.split('@')[0]!;
+    const created = await this.createAccount({ email, name: display, appleId: who.sub, emailVerified: new Date() }, display, 'PERSONAL');
+    return this.openSession({ sub: created.user.id, email: created.user.email, orgId: created.orgId, role: 'OWNER' }, client);
+  }
+
   /** A new person with a workspace they own (their own, or a team's), its sales pipeline ready. */
   private createAccount(
-    data: { email: string; name?: string | null; passwordHash?: string; googleId?: string; emailVerified?: Date; avatarUrl?: string | null },
+    data: { email: string; name?: string | null; passwordHash?: string; googleId?: string; appleId?: string; emailVerified?: Date; avatarUrl?: string | null },
     organizationName: string,
     kind: 'PERSONAL' | 'TEAM',
   ) {

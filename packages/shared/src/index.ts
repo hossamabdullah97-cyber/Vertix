@@ -201,6 +201,14 @@ export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
 export const googleSignInSchema = z.object({ credential: z.string().min(20).max(4096) });
 export type GoogleSignInInput = z.infer<typeof googleSignInSchema>;
 
+/** Sign in with Apple, from the iOS app: Apple's identity token, the nonce whose SHA-256 the app gave Apple, and the name Apple shares only the first time. */
+export const appleSignInSchema = z.object({
+  identityToken: z.string().min(20).max(4096),
+  nonce: z.string().min(16).max(200),
+  name: z.string().trim().max(100).optional(),
+});
+export type AppleSignInInput = z.infer<typeof appleSignInSchema>;
+
 export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
@@ -617,6 +625,14 @@ export const pushSubscribeSchema = z.object({
   lang: z.enum(['en', 'ar']).default('en'),
 });
 export type PushSubscribeInput = z.infer<typeof pushSubscribeSchema>;
+
+/** A phone with the Vertex app: its Expo push token. */
+export const appPushTokenSchema = z.object({
+  token: z.string().max(200).regex(/^Expo(nent)?PushToken\[[A-Za-z0-9_-]+\]$/, 'Not an Expo push token'),
+  platform: z.enum(['ios', 'android']),
+  lang: z.enum(['en', 'ar']).default('en'),
+});
+export type AppPushTokenInput = z.infer<typeof appPushTokenSchema>;
 
 // The card owner's answer to a visitor's meeting request.
 export const meetingResponseSchema = z.object({

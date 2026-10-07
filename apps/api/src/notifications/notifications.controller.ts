@@ -1,5 +1,13 @@
 import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query, ServiceUnavailableException } from '@nestjs/common';
-import { leadAlertSettingsSchema, pushSubscribeSchema, type JwtPayload, type LeadAlertSettingsInput, type PushSubscribeInput } from '@vertex/shared';
+import {
+  appPushTokenSchema,
+  leadAlertSettingsSchema,
+  pushSubscribeSchema,
+  type AppPushTokenInput,
+  type JwtPayload,
+  type LeadAlertSettingsInput,
+  type PushSubscribeInput,
+} from '@vertex/shared';
 import { NotificationsService } from './notifications.service';
 import { LeadAlertsService } from './lead-alerts.service';
 import { PushService } from './push.service';
@@ -22,10 +30,23 @@ export class NotificationsController {
     private readonly throttle: AuthThrottleService,
   ) {}
 
-  /** Push on this server: its public key (null when off) and how many devices the user has on. */
+  /** Push on this server: its public key (null when off), how many browsers the user has on, and how many phones with the app. */
   @Get('push')
   async pushStatus(@CurrentUser() user: JwtPayload) {
-    return { publicKey: this.push.publicKey, devices: this.push.publicKey ? await this.push.deviceCount(user.sub) : 0 };
+    const [devices, phones] = await Promise.all([this.push.publicKey ? this.push.deviceCount(user.sub) : 0, this.push.appDeviceCount(user.sub)]);
+    return { publicKey: this.push.publicKey, devices, phones };
+  }
+
+  /** The app on this phone: notifications on its lock screen. */
+  @Post('push/app')
+  registerApp(@CurrentUser() user: JwtPayload, @Body(new ZodValidationPipe(appPushTokenSchema)) body: AppPushTokenInput) {
+    return this.push.registerApp(user.sub, body);
+  }
+
+  /** Signing out of the app: this phone stops receiving them. */
+  @Delete('push/app')
+  unregisterApp(@CurrentUser() user: JwtPayload, @Body() body: { token?: string } = {}) {
+    return this.push.unregisterApp(user.sub, typeof body?.token === 'string' ? body.token : '');
   }
 
   /** Turns push on for the calling device. */
@@ -48,7 +69,7 @@ export class NotificationsController {
   /** Sends the user's devices a test notification, so they can see it works. */
   @Post('push/test')
   async testPush(@CurrentUser() user: JwtPayload) {
-    if (!this.push.publicKey) throw new ServiceUnavailableException('Push notifications are not set up on this server');
+    if (!this.push.publicKey && !(await this.push.appDeviceCount(user.sub))) throw new ServiceUnavailableException('Push notifications are not set up on this server');
     const key = `push-test:${user.sub}`;
     const wait = await this.throttle.blockedFor(key, PUSH_TEST_LIMIT, 60 * 60_000);
     if (wait > 0) throw tooManyAttempts(wait);

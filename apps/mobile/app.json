@@ -15,8 +15,13 @@
         "NFCReaderUsageDescription": "Vertex Connect uses NFC to program and read your smart business cards.",
         "NSCameraUsageDescription": "Vertex Connect uses the camera to read paper business cards into new leads.",
         "NSPhotoLibraryUsageDescription": "Vertex Connect reads a photo of a business card you choose into a new lead.",
-        "ITSAppUsesNonExemptEncryption": false
-      }
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      },
+      "buildNumber": "1",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "dev.vertex.connect",
@@ -24,8 +29,13 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2563EB"
       },
-      "permissions": ["android.permission.NFC", "android.permission.CAMERA"],
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "android.permission.NFC",
+        "android.permission.CAMERA",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 1
     },
     "web": {
       "output": "single",
@@ -37,6 +47,15 @@
       "expo-font",
       "expo-localization",
       "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2563EB",
+          "defaultChannel": "default"
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -50,14 +69,19 @@
           "backgroundColor": "#F4F3EF",
           "image": "./assets/splash-icon.png",
           "imageWidth": 96,
-          "dark": { "backgroundColor": "#0E0E11", "image": "./assets/splash-icon.png" }
+          "dark": {
+            "backgroundColor": "#0E0E11",
+            "image": "./assets/splash-icon.png"
+          }
         }
       ],
       [
         "react-native-nfc-manager",
         {
           "nfcPermission": "Vertex Connect uses NFC to program and read your smart business cards.",
-          "selectIdentifiers": ["A0000002471001"],
+          "selectIdentifiers": [
+            "A0000002471001"
+          ],
           "includeNdefEntitlement": true
         }
       ]
@@ -67,6 +91,9 @@
     },
     "experiments": {
       "typedRoutes": true
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

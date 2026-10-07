@@ -175,6 +175,15 @@ export async function login(email: string, password: string): Promise<TwoStepCha
   return null;
 }
 
+/** Sign in with Apple (iOS): Apple's token, the nonce it was asked for, and the name Apple shares the first time. */
+export async function appleLogin(identityToken: string, nonce: string, name?: string): Promise<TwoStepChallenge | null> {
+  const data = await publicApi<AuthTokens | TwoStepChallenge>('/auth/apple', { method: 'POST', json: { identityToken, nonce, ...(name ? { name } : {}) } });
+  if ('mfaRequired' in data) return data;
+  await saveTokens(data);
+  await setActiveOrg(null);
+  return null;
+}
+
 export async function completeTwoStep(mfaToken: string, code: string) {
   const data = await publicApi<AuthTokens>('/auth/login/2fa', { method: 'POST', json: { mfaToken, code: code.trim() } });
   await saveTokens(data);

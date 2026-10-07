@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Alert, Platform, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Linking, Platform, View } from 'react-native';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
 import { Avatar, Button, Card, Divider, Icon, ListItem, Notice, Row, Screen, SectionTitle, Text } from '@/components/ui';
 import { WEB_BASE } from '@/lib/config';
 import { currentLang, directionReady, setLang } from '@/lib/i18n';
+import { enablePush, pushState, type PushState } from '@/lib/push';
 import { isManager, useSession, type Role } from '@/lib/session';
 import { useColors } from '@/lib/theme';
 
@@ -36,11 +37,22 @@ export default function More() {
   const [restart, setRestart] = useState(false);
   const role = workspace?.role ?? me?.role;
   const lang = currentLang();
+  const [push, setPush] = useState<PushState>('unavailable');
+  useEffect(() => {
+    void pushState().then(setPush);
+  }, []);
 
   async function switchLang() {
     const next = lang === 'ar' ? 'en' : 'ar';
     await setLang(next);
     setRestart(!directionReady(next));
+    // The phone's notifications follow the app's language.
+    if (push === 'on') void enablePush(false).catch(() => undefined);
+  }
+
+  async function turnOnPush() {
+    if (push === 'denied') return void Linking.openSettings();
+    setPush(await enablePush(true).catch(() => 'off' as PushState));
   }
 
   function confirmSignOut() {
@@ -96,6 +108,25 @@ export default function More() {
       <View style={{ gap: 8 }}>
         <SectionTitle>{t('more.app')}</SectionTitle>
         <Card padded={false}>
+          {push !== 'unavailable' && (
+            <>
+              <ListItem
+                title={t('more.push.title')}
+                subtitle={t(`more.push.${push}`)}
+                leading={<Icon name="bell" size={20} color={c.muted} />}
+                trailing={
+                  push === 'on' ? undefined : (
+                    <Text tone="accent" size="sm" weight="medium">
+                      {push === 'denied' ? t('more.push.openSettings') : t('more.push.turnOn')}
+                    </Text>
+                  )
+                }
+                onPress={push === 'on' ? undefined : turnOnPush}
+                testID="more-push"
+              />
+              <Divider />
+            </>
+          )}
           <ListItem title={t('more.language')} subtitle={lang === 'ar' ? 'العربية' : 'English'} leading={<Icon name="globe" size={20} color={c.muted} />} trailing={<Text tone="accent" size="sm" weight="medium">{lang === 'ar' ? 'English' : 'العربية'}</Text>} onPress={switchLang} testID="more-language" />
           <Divider />
           <ListItem title={t('more.help')} leading={<Icon name="help" size={20} color={c.muted} />} onPress={() => void WebBrowser.openBrowserAsync(`${WEB_BASE}/help`)} />

@@ -47,10 +47,10 @@ export class AccountService {
     return this.unscoped(userId, async () => {
       const user = await this.db.user.findFirst({
         where: { id: userId },
-        select: { id: true, email: true, name: true, avatarUrl: true, createdAt: true, emailVerified: true, totpEnabledAt: true, googleId: true },
+        select: { id: true, email: true, name: true, avatarUrl: true, createdAt: true, emailVerified: true, totpEnabledAt: true, googleId: true, appleId: true },
       });
       if (!user) throw new UnauthorizedException('Account not found');
-      const [memberships, cards, leads, notifications, alerts, devices] = await Promise.all([
+      const [memberships, cards, leads, notifications, alerts, devices, phones] = await Promise.all([
         this.db.membership.findMany({
           where: { userId },
           select: { role: true, status: true, createdAt: true, org: { select: { id: true, name: true } } },
@@ -83,6 +83,7 @@ export class AccountService {
         }),
         this.db.leadAlertSettings.findUnique({ where: { userId } }),
         this.db.pushSubscription.count({ where: { userId } }),
+        this.db.appPushToken.count({ where: { userId } }),
       ]);
       return {
         exportedAt: new Date().toISOString(),
@@ -94,13 +95,14 @@ export class AccountService {
           createdAt: user.createdAt,
           emailConfirmedAt: user.emailVerified,
           signsInWithGoogle: !!user.googleId,
+          signsInWithApple: !!user.appleId,
           twoStepVerificationSince: user.totpEnabledAt,
         },
         workspaces: memberships.map((m) => ({ id: m.org.id, name: m.org.name, role: m.role, status: m.status, joinedAt: m.createdAt })),
         cards: cards.map(({ org, ...c }) => ({ workspace: org.name, ...c })),
         leads: leads.map(({ org, stage, ...l }) => ({ workspace: org.name, stage: stage?.name ?? null, ...l })),
         notifications,
-        settings: { leadAlerts: alerts ? { ...alerts, id: undefined, userId: undefined } : null, devicesWithNotifications: devices },
+        settings: { leadAlerts: alerts ? { ...alerts, id: undefined, userId: undefined } : null, devicesWithNotifications: devices, phonesWithNotifications: phones },
       };
     });
   }
@@ -171,6 +173,7 @@ export class AccountService {
         await tx.nfcTag.updateMany({ where: { assignedUserId: userId }, data: { assignedUserId: null } });
         await tx.membership.updateMany({ where: { userId, deletedAt: null }, data: { deletedAt: now } });
         await tx.pushSubscription.deleteMany({ where: { userId } });
+        await tx.appPushToken.deleteMany({ where: { userId } });
         // Every device it was signed in on, with the addresses they came from.
         await tx.authSession.deleteMany({ where: { userId } });
         await tx.personalAccessToken.deleteMany({ where: { userId } });
@@ -192,6 +195,7 @@ export class AccountService {
             avatarUrl: null,
             passwordHash: null,
             googleId: null,
+            appleId: null,
             emailVerified: null,
             totpSecret: null,
             totpPendingSecret: null,

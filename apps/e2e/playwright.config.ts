@@ -46,6 +46,8 @@ export default defineConfig({
         GOOGLE_CALENDAR_API_URL: 'http://localhost:4106',
         // Zapier's hooks, played by tests/zapier.spec.ts.
         ZAPIER_TEST_HOOK_ORIGINS: 'http://localhost:4107/',
+        // Expo's push service, played by tests/app-push.spec.ts.
+        EXPO_PUSH_URL: 'http://localhost:4108/push/send',
         ...(process.env as Record<string, string>),
         NODE_ENV: 'test',
         AUTH_RATE_LIMIT: '500',

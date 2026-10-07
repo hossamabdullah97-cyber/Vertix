@@ -107,7 +107,7 @@ export class OrgPurgeService implements OnModuleInit, OnModuleDestroy {
     const placeholders = await this.db.$queryRaw<{ id: string }[]>`
       SELECT u.id FROM users u
       JOIN memberships m ON m."userId" = u.id AND m."orgId" = ${orgId}
-      WHERE u."passwordHash" IS NULL AND u."googleId" IS NULL AND u."isSuperAdmin" = false
+      WHERE u."passwordHash" IS NULL AND u."googleId" IS NULL AND u."appleId" IS NULL AND u."isSuperAdmin" = false
         AND NOT EXISTS (SELECT 1 FROM memberships o WHERE o."userId" = u.id AND o."orgId" <> ${orgId})`;
 
     const erased = await this.db.$transaction(async (tx) => {

@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import { Stack } from 'expo-router';
+import { router, Stack, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useFonts, IBMPlexSansArabic_400Regular, IBMPlexSansArabic_500Medium, IBMPlexSansArabic_600SemiBold, IBMPlexSansArabic_700Bold } from '@expo-google-fonts/ibm-plex-sans-arabic';
+import { api } from '@/lib/api';
 import { startI18n } from '@/lib/i18n';
+import { appRoute } from '@/lib/links';
+import { notificationUrl, useLastNotificationResponse } from '@/lib/push';
 import { SessionProvider, useSession } from '@/lib/session';
 import { fonts, palettes } from '@/lib/theme';
 
@@ -38,6 +41,22 @@ function Navigator() {
   useEffect(() => {
     if (status !== 'loading') void SplashScreen.hideAsync().catch(() => undefined);
   }, [status]);
+
+  // A tapped notification (the app open, in the background, or started by the tap) opens what it is about.
+  const response = useLastNotificationResponse();
+  const handled = useRef<string | null>(null);
+  useEffect(() => {
+    if (status !== 'signedIn' || !response) return;
+    const id = response.notification.request.identifier;
+    if (handled.current === id) return;
+    handled.current = id;
+    const notificationId = response.notification.request.content.data?.notificationId;
+    if (typeof notificationId === 'string') void api(`/notifications/${notificationId}/read`, { method: 'PATCH' }).catch(() => undefined);
+    const url = notificationUrl(response);
+    const route = url ? appRoute(url) : null;
+    router.push((route ?? '/notifications') as Href);
+  }, [status, response]);
+
   if (status === 'loading') return null;
 
   const signedIn = status === 'signedIn';

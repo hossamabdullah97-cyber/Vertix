@@ -8,6 +8,7 @@ import { returnedAt, waitingHours, whatsappHref, type Lead, type Stage } from '@
 import { date, relative, time } from '@/lib/format';
 import { fonts, radius, useColors } from '@/lib/theme';
 import { useApi } from '@/lib/use-api';
+import { useWorkspaceFromLink } from '@/lib/session';
 
 type Item =
   | { kind: 'visit'; id: string; at: string; card: { name: string } | null; returning: boolean; tapped: boolean; actions: { type: string; action?: string }[] }
@@ -24,7 +25,8 @@ const CONTACT_ICON: Record<string, string> = { CALL: 'phone', WHATSAPP: 'whatsap
 
 /** One lead: reach them in a tap, write down what happened, and see the whole story. */
 export default function LeadScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, org } = useLocalSearchParams<{ id: string; org?: string }>();
+  const inWorkspace = useWorkspaceFromLink(org);
   const { t } = useTranslation();
   const c = useColors();
   const lead = useApi<Lead & { stageId: string | null }>(`/leads/${id}`);
@@ -77,7 +79,7 @@ export default function LeadScreen() {
 
   const items = useMemo(() => (timeline.data?.items ?? []).filter((i) => !(i.kind === 'activity' && i.type === 'NOTE' && !i.metadata?.note)), [timeline.data]);
 
-  if (lead.loading && !l) return <Loading />;
+  if (!inWorkspace || (lead.loading && !l)) return <Loading />;
   if (!l) return <Notice tone="danger">{lead.error ?? t('lead.notFound')}</Notice>;
 
   const back = returnedAt(l);

@@ -137,11 +137,18 @@ export class PushService {
       config.get<string>('VAPID_SUBJECT')?.trim() ||
       (config.get<string>('APP_PUBLIC_URL')?.startsWith('https://') ? config.get<string>('APP_PUBLIC_URL')! : 'mailto:support@example.com');
     this.keys = publicKey && privateKey ? { publicKey, privateKey, subject } : null;
+    this.expo = {
+      url: config.get<string>('EXPO_PUSH_URL')?.trim() || 'https://exp.host/--/api/v2/push/send',
+      token: config.get<string>('EXPO_ACCESS_TOKEN')?.trim() || null,
+    };
   }
 
   private get db() {
     return this.prisma.client;
   }
+
+  /** Expo's push service (EXPO_PUSH_URL only for tests), and the access token if the Expo project requires one. */
+  private readonly expo: { url: string; token: string | null };
 
   /** The key a browser subscribes with, or null when push is off on this server. */
   get publicKey(): string | null {
@@ -164,9 +171,30 @@ export class PushService {
     return { ok: true as const };
   }
 
-  /** How many devices the user receives pushes on. */
+  /** How many browsers the user receives pushes on. */
   async deviceCount(userId: string): Promise<number> {
     return this.db.pushSubscription.count({ where: { userId } });
+  }
+
+  /** Records a phone with the app for the user (moving it over if someone else signed in on it before). */
+  async registerApp(userId: string, input: { token: string; platform: 'ios' | 'android'; lang: PushLang }) {
+    await this.db.appPushToken.upsert({
+      where: { token: input.token },
+      create: { userId, ...input },
+      update: { userId, platform: input.platform, lang: input.lang },
+    });
+    return { ok: true as const };
+  }
+
+  /** Forgets a phone, on signing out there (only the user's own). */
+  async unregisterApp(userId: string, token: string) {
+    await this.db.appPushToken.deleteMany({ where: { userId, token } });
+    return { ok: true as const };
+  }
+
+  /** How many phones with the app the user receives pushes on. */
+  async appDeviceCount(userId: string): Promise<number> {
+    return this.db.appPushToken.count({ where: { userId } });
   }
 
   /**
@@ -174,7 +202,12 @@ export class PushService {
    * a courtesy on top of the in-app notification. A device the push service
    * no longer knows (unsubscribed, app removed) is forgotten.
    */
-  async send(userId: string, n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata' | 'priority'>, id?: string): Promise<number> {
+  async send(userId: string, n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata' | 'priority' | 'orgId'>, id?: string): Promise<number> {
+    const [web, app] = await Promise.all([this.sendWeb(userId, n, id), this.sendApp(userId, n, id)]);
+    return web + app;
+  }
+
+  private async sendWeb(userId: string, n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata' | 'priority' | 'orgId'>, id?: string): Promise<number> {
     if (!this.keys) return 0;
     let subs: { id: string; endpoint: string; p256dh: string; auth: string; lang: string }[];
     try {
@@ -207,6 +240,74 @@ export class PushService {
           } else {
             this.logger.warn(`push to ${new URL(sub.endpoint).host} failed: ${status ?? ''} ${(err as Error).message}`);
           }
+        }
+      }),
+    );
+    return sent;
+  }
+
+  /**
+   * The same notification on the phones with the app, through Expo's push
+   * service (which hands it to Apple's or Google's). A tap opens the page it
+   * is about: the app reads the website address in its data. A phone the app
+   * was removed from is forgotten.
+   */
+  private async sendApp(userId: string, n: Pick<NotifyInput, 'type' | 'title' | 'body' | 'metadata' | 'priority' | 'orgId'>, id?: string): Promise<number> {
+    let phones: { id: string; token: string; lang: string }[];
+    try {
+      phones = await this.db.appPushToken.findMany({ where: { userId }, select: { id: true, token: true, lang: true } });
+    } catch (err) {
+      this.logger.warn(`app push lookup failed: ${(err as Error).message}`);
+      return 0;
+    }
+    if (!phones.length) return 0;
+    const m = (n.metadata ?? {}) as Record<string, unknown>;
+    const messages = phones.map((p) => {
+      const payload = pushPayload(n, p.lang === 'ar' ? 'ar' : 'en', id);
+      return {
+        to: p.token,
+        title: payload.title,
+        body: payload.body,
+        sound: 'default',
+        channelId: 'default',
+        priority: n.priority === 'HIGH' || n.priority === 'CRITICAL' ? 'high' : 'default',
+        ttl: 60 * 60 * 6,
+        data: { url: payload.url, ...(typeof m.leadId === 'string' ? { leadId: m.leadId } : {}), ...(n.orgId ? { orgId: n.orgId } : {}), ...(id ? { notificationId: id } : {}) },
+      };
+    });
+    let tickets: { status: 'ok' | 'error'; message?: string; details?: { error?: string } }[];
+    try {
+      const res = await fetch(this.expo.url, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          ...(this.expo.token ? { authorization: `Bearer ${this.expo.token}` } : {}),
+        },
+        body: JSON.stringify(messages),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) {
+        this.logger.warn(`app push failed: ${res.status} ${(await res.text()).slice(0, 200)}`);
+        return 0;
+      }
+      tickets = ((await res.json()) as { data?: typeof tickets }).data ?? [];
+    } catch (err) {
+      this.logger.warn(`app push failed: ${(err as Error).message}`);
+      return 0;
+    }
+    let sent = 0;
+    await Promise.all(
+      tickets.map(async (t, i) => {
+        const phone = phones[i];
+        if (!phone) return;
+        if (t.status === 'ok') {
+          sent++;
+          await this.db.appPushToken.update({ where: { id: phone.id }, data: { lastUsedAt: new Date() } }).catch(() => undefined);
+        } else if (t.details?.error === 'DeviceNotRegistered') {
+          await this.db.appPushToken.delete({ where: { id: phone.id } }).catch(() => undefined);
+        } else {
+          this.logger.warn(`app push refused: ${t.details?.error ?? ''} ${t.message ?? ''}`);
         }
       }),
     );
