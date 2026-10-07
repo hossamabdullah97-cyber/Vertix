@@ -148,6 +148,7 @@ export const AR_MESSAGES: Record<string, string> = {
   'Give a name, an email or a phone number': 'أدخل الاسم أو البريد الإلكتروني أو رقم الهاتف',
   'Provide an email or a phone number': 'أدخل البريد الإلكتروني أو رقم الهاتف',
   'This card does not take meeting requests': 'هذه البطاقة لا تستقبل طلبات الاجتماعات',
+  'before must be a date': 'يجب أن تكون قيمة before تاريخاً',
   'Choose a time for the meeting': 'اختر موعداً للاجتماع',
   'That time is no longer free': 'هذا الموعد لم يعد متاحاً',
   'Someone else has asked for this time since': 'طلب شخص آخر هذا الموعد في هذه الأثناء',

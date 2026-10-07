@@ -212,6 +212,32 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     },
   },
   {
+    id: 'leadActivityFeed',
+    group: 'leads',
+    method: 'GET',
+    path: '/leads/activity',
+    scope: 'crm:read',
+    summary: { en: 'Activity across leads', ar: 'النشاط عبر العملاء' },
+    desc: {
+      en: 'What happened across your leads, newest first: conversations, notes, pipeline moves, new leads, leads coming back to a card, and tasks done. Pass the returned `next` as `before` for the next page; an item may repeat at the edge of two pages, so drop ids you have.',
+      ar: 'ما حدث مع عملائك، الأحدث أولًا: التواصل والملاحظات وتحريك المراحل والعملاء الجدد ورجوع العملاء إلى البطاقة والمهام المنجزة. مرّر `next` كقيمة `before` للصفحة التالية؛ قد يتكرر عنصر عند حد صفحتين فتجاهل المعرّفات المكررة.',
+    },
+    query: [
+      { name: 'kind', type: 'string', enum: ['all', 'conversations', 'notes', 'visits', 'tasks', 'changes'], desc: { en: 'Only one kind of thing. Default all.', ar: 'نوع واحد فقط. الافتراضي الكل.' } },
+      { name: 'before', type: 'string', desc: { en: 'ISO date: things at or before it.', ar: 'تاريخ ISO: ما حدث فيه أو قبله.' } },
+      { name: 'limit', type: 'number', desc: { en: '1–100, default 40.', ar: 'من 1 إلى 100، الافتراضي 40.' } },
+    ],
+    status: 200,
+    response: {
+      items: [
+        { kind: 'returned', id: 'visit-cm3k9x2evt009-cm3k9x2lead1', at: '2026-10-07T09:12:00.000Z', lead: { id: LEAD.id, name: LEAD.name, company: LEAD.company }, card: 'Omar Saeed' },
+        { kind: 'activity', id: 'cm3k9x2act001', at: '2026-10-06T10:00:00.000Z', lead: { id: LEAD.id, name: LEAD.name, company: LEAD.company }, type: 'CALL', metadata: { note: 'Wants a demo' }, author: { id: 'cm3k9x2user01', name: 'Omar Saeed', avatarUrl: null } },
+        { kind: 'captured', id: `created-${LEAD.id}`, at: LEAD.createdAt, lead: { id: LEAD.id, name: LEAD.name, company: LEAD.company }, source: 'card_form', card: 'Omar Saeed' },
+      ],
+      next: '2026-10-06T09:14:00.000Z',
+    },
+  },
+  {
     id: 'leadTimeline',
     group: 'leads',
     method: 'GET',
