@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import i18next from 'i18next';
 import { API_BASE } from './config';
 import { secrets } from './storage';
 
@@ -86,8 +87,14 @@ const USER_AGENT =
       ? `VertexConnectApp/1.0 (Linux; Android ${Platform.Version}; Mobile)`
       : null;
 
-async function send(path: string, init: RequestInit & { json?: unknown } = {}, token: string | null, org: string | null) {
-  const { json, ...rest } = init;
+export type Init = RequestInit & { json?: unknown; /** Another workspace than the open one (a change made there while offline). */ orgId?: string | null };
+
+/** No answer at all (no connection, the server unreachable): status 0, in the reader's language. */
+export const unreachable = () => new ApiError(i18next.t('common.offline'), 0);
+
+async function send(path: string, init: Init = {}, token: string | null, org: string | null) {
+  const { json, orgId, ...rest } = init;
+  if (orgId !== undefined) org = orgId;
   const isForm = typeof FormData !== 'undefined' && rest.body instanceof FormData;
   return fetch(`${API_BASE}${path}`, {
     ...rest,
@@ -144,13 +151,14 @@ export function renewSession(): Promise<boolean> {
  * A request as the signed-in person, in the open workspace. An expired token
  * is renewed once; a session that cannot be renewed is ended.
  */
-export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
+export async function api<T = unknown>(path: string, init: Init = {}): Promise<T> {
   const s = await current();
-  let res = await send(path, init, s.token, s.org);
+  const attempt = (token: string | null, org: string | null) => send(path, init, token, org).catch(() => Promise.reject(unreachable()));
+  let res = await attempt(s.token, s.org);
   if (res.status === 401 && s.refresh) {
     if (await renewSession()) {
       const again = await current();
-      res = await send(path, init, again.token, again.org);
+      res = await attempt(again.token, again.org);
     }
     if (res.status === 401) {
       await clearSession();
@@ -161,8 +169,8 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
 }
 
 /** A request nobody needs to be signed in for. */
-export async function publicApi<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
-  return read<T>(await send(path, init, null, null));
+export async function publicApi<T = unknown>(path: string, init: Init = {}): Promise<T> {
+  return read<T>(await send(path, init, null, null).catch(() => Promise.reject(unreachable())));
 }
 
 // ---- Signing in and out ----

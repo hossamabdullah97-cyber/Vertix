@@ -2,12 +2,14 @@ import { useMemo } from 'react';
 import { Pressable, RefreshControl, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Avatar, Badge, Card, Divider, Empty, Icon, ListItem, Loading, Row, Screen, SectionTitle, Text } from '@/components/ui';
+import { Avatar, Card, Divider, Empty, Icon, ListItem, Loading, Row, Screen, SectionTitle, Text } from '@/components/ui';
 import { awaitsReply, returnedAt, waitingHours, type Lead, type Task } from '@/lib/crm';
-import { date, relative } from '@/lib/format';
+import { relative } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { radius, useColors } from '@/lib/theme';
 import { useApi } from '@/lib/use-api';
+import { setDone, TaskRow } from '@/components/Tasks';
+import { ConnectionBar } from '@/components/ConnectionBar';
 
 const DAY = 86_400_000;
 
@@ -29,9 +31,16 @@ export default function Home() {
       waiting: list.filter((l) => awaitsReply(l, now)),
       back: list.filter((l) => returnedAt(l, now)),
       week: list.filter((l) => now - new Date(l.createdAt).getTime() < 7 * DAY).length,
-      due: (tasks.data ?? []).filter((x) => !x.completed && x.dueDate && new Date(x.dueDate).getTime() <= endOfDay.getTime()),
+      // Ticked off today stays in sight, struck through, until the next visit.
+      due: (tasks.data ?? []).filter((x) => x.dueDate && new Date(x.dueDate).getTime() <= endOfDay.getTime() && (!x.completed || Date.now() - new Date(x.completedAt ?? 0).getTime() < 60 * 60_000)),
     };
   }, [leads.data, tasks.data, now]);
+
+  async function toggleTask(task: Task) {
+    const completed = !task.completed;
+    tasks.setData((list) => list?.map((x) => (x.id === task.id ? { ...x, completed, completedAt: completed ? new Date().toISOString() : null } : x)) ?? null);
+    await setDone(task, completed).catch(() => tasks.setData((list) => list?.map((x) => (x.id === task.id ? task : x)) ?? null));
+  }
 
   const reload = () => {
     void leads.reload();
@@ -65,6 +74,7 @@ export default function Home() {
         </Pressable>
       </Row>
 
+      <ConnectionBar savedAt={leads.savedAt} />
       <Text size="xl" weight="bold" testID="home-greeting">
         {greeting}
       </Text>
@@ -122,26 +132,27 @@ export default function Home() {
           </View>
 
           <View style={{ gap: 8 }}>
-            <SectionTitle>{t('home.dueTitle')}</SectionTitle>
+            <SectionTitle
+              action={
+                <Pressable accessibilityRole="link" onPress={() => router.push('/tasks')} hitSlop={8} testID="home-all-tasks">
+                  <Text size="sm" tone="accent" weight="medium">
+                    {t('home.allTasks')}
+                  </Text>
+                </Pressable>
+              }
+            >
+              {t('home.dueTitle')}
+            </SectionTitle>
             <Card padded={false}>
               {view.due.length === 0 ? (
                 <Empty icon="calendar" title={t('home.noneDue')} />
               ) : (
-                view.due.slice(0, 5).map((task, i) => {
-                  const late = new Date(task.dueDate!).getTime() < Date.now();
-                  return (
-                    <View key={task.id}>
-                      {i > 0 && <Divider />}
-                      <ListItem
-                        title={task.title}
-                        subtitle={[task.lead?.name, date(task.dueDate!, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })].filter(Boolean).join(' · ')}
-                        leading={<Icon name="check" size={20} color={late ? c.danger : c.muted} />}
-                        trailing={late ? <Badge label={t('home.late')} tone="danger" /> : undefined}
-                        onPress={task.leadId ? () => router.push(`/lead/${task.leadId}`) : undefined}
-                      />
-                    </View>
-                  );
-                })
+                view.due.slice(0, 5).map((task, i) => (
+                  <View key={task.id}>
+                    {i > 0 && <Divider />}
+                    <TaskRow task={task} onToggle={toggleTask} />
+                  </View>
+                ))
               )}
             </Card>
           </View>

@@ -2,5 +2,6 @@
   "CFBundleDisplayName": "Vertex Connect",
   "NSCameraUsageDescription": "يستخدم Vertex Connect الكاميرا لقراءة بطاقات العمل الورقية وتحويلها إلى عملاء جدد.",
   "NSPhotoLibraryUsageDescription": "يقرأ Vertex Connect صورة بطاقة العمل التي تختارها ويحوّلها إلى عميل جديد.",
-  "NFCReaderUsageDescription": "يستخدم Vertex Connect تقنية NFC لبرمجة بطاقاتك الذكية وقراءتها."
+  "NFCReaderUsageDescription": "يستخدم Vertex Connect تقنية NFC لبرمجة بطاقاتك الذكية وقراءتها.",
+  "NSFaceIDUsageDescription": "يستخدم Vertex Connect بصمة الوجه لفتح التطبيق عند تشغيل القفل."
 }

@@ -30,6 +30,7 @@ export const PATHS: Record<string, string> = {
   'chart-bar': 'M3 3v18h18M8 17v-5M13 17V9M18 17v-7',
   inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5 5l-3 7v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3-7z',
   plus: 'M12 5v14M5 12h14',
+  edit: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   search: 'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
   undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',

@@ -7,6 +7,8 @@ import { Avatar, Button, Card, Divider, Icon, ListItem, Notice, Row, Screen, Sec
 import { WEB_BASE } from '@/lib/config';
 import { currentLang, directionReady, setLang } from '@/lib/i18n';
 import { enablePush, pushState, type PushState } from '@/lib/push';
+import { pendingCount } from '@/lib/outbox';
+import { lockAvailable, lockEnabled, setLockEnabled } from '@/lib/lock';
 import { isManager, useSession, type Role } from '@/lib/session';
 import { useColors } from '@/lib/theme';
 
@@ -38,9 +40,16 @@ export default function More() {
   const role = workspace?.role ?? me?.role;
   const lang = currentLang();
   const [push, setPush] = useState<PushState>('unavailable');
+  const [lock, setLock] = useState<boolean | null>(null);
   useEffect(() => {
     void pushState().then(setPush);
+    void lockAvailable().then(async (ok) => setLock(ok ? await lockEnabled() : null));
   }, []);
+
+  async function toggleLock() {
+    if (lock === null) return;
+    if (await setLockEnabled(!lock, t('lock.prompt'))) setLock(!lock);
+  }
 
   async function switchLang() {
     const next = lang === 'ar' ? 'en' : 'ar';
@@ -55,9 +64,10 @@ export default function More() {
     setPush(await enablePush(true).catch(() => 'off' as PushState));
   }
 
-  function confirmSignOut() {
+  async function confirmSignOut() {
+    const waiting = await pendingCount();
     if (Platform.OS === 'web') return void signOut();
-    Alert.alert(t('more.signOutTitle'), t('more.signOutBody'), [
+    Alert.alert(t('more.signOutTitle'), waiting ? t('offline.signOutLoses', { count: waiting }) : t('more.signOutBody'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('more.signOut'), style: 'destructive', onPress: () => void signOut() },
     ]);
@@ -98,7 +108,9 @@ export default function More() {
                 testID={`more-${s.key}`}
                 title={t(`more.items.${s.key}`)}
                 leading={<Icon name={s.icon} size={20} color={c.muted} />}
-                onPress={() => router.push({ pathname: '/web', params: { path: s.path, title: t(`more.items.${s.key}`) } })}
+                onPress={() =>
+                  s.key === 'tasks' ? router.push('/tasks') : router.push({ pathname: '/web', params: { path: s.path, title: t(`more.items.${s.key}`) } })
+                }
               />
             </View>
           ))}
@@ -123,6 +135,23 @@ export default function More() {
                 }
                 onPress={push === 'on' ? undefined : turnOnPush}
                 testID="more-push"
+              />
+              <Divider />
+            </>
+          )}
+          {lock !== null && (
+            <>
+              <ListItem
+                title={t('lock.setting')}
+                subtitle={lock ? t('lock.on') : t('lock.off')}
+                leading={<Icon name="lock" size={20} color={c.muted} />}
+                trailing={
+                  <Text tone="accent" size="sm" weight="medium">
+                    {lock ? t('lock.turnOff') : t('lock.turnOn')}
+                  </Text>
+                }
+                onPress={toggleLock}
+                testID="more-lock"
               />
               <Divider />
             </>

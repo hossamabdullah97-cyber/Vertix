@@ -50,6 +50,12 @@
       "expo-web-browser",
       "expo-apple-authentication",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Vertex Connect uses Face ID to unlock the app when you turn the lock on."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",

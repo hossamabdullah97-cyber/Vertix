@@ -1,6 +1,7 @@
 {
   "common": {
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "offline": "No connection. Check your internet and try again."
   },
   "tabs": {
     "home": "Today",
@@ -49,7 +50,8 @@
     "noneWaitingBody": "Every new lead has heard from you.",
     "dueTitle": "Due today",
     "noneDue": "Nothing due today",
-    "late": "Late"
+    "late": "Late",
+    "allTasks": "All tasks"
   },
   "leads": {
     "title": "Leads",
@@ -269,5 +271,63 @@
     "title": "Something went wrong here",
     "body": "We have been told about it. Try again, and if it keeps happening, reopen the app.",
     "retry": "Try again"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "new": "New task",
+    "placeholder": "Call back about the quote…",
+    "add": "Add task",
+    "late": "Late",
+    "empty": "Nothing to do yet",
+    "emptyBody": "Add what you need to do next, and when.",
+    "allDone": "All done.",
+    "due": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "in3": "In 3 days",
+      "nextWeek": "Next week",
+      "none": "No date"
+    },
+    "groups": {
+      "overdue": "Late",
+      "today": "Today",
+      "upcoming": "Coming up",
+      "someday": "No date",
+      "done": "Done"
+    }
+  },
+  "edit": {
+    "title": "Edit lead",
+    "value": "Deal value",
+    "valueHint": "What the deal could be worth, in your currency.",
+    "valueBad": "Write a number.",
+    "temperature": "How warm",
+    "needOne": "Keep a name, a phone number or an email.",
+    "save": "Save"
+  },
+  "offline": {
+    "title": "You are offline.",
+    "savedAt": "Showing what was saved at {{time}}.",
+    "waiting_one": "1 change waits on this phone.",
+    "waiting_other": "{{count}} changes wait on this phone.",
+    "sending_one": "Sending 1 change…",
+    "sending_other": "Sending {{count}} changes…",
+    "failed_one": "1 change could not be saved (it was refused). Tap to hide.",
+    "failed_other": "{{count}} changes could not be saved (they were refused). Tap to hide.",
+    "kept": "Saved on this phone. It will be sent as soon as there is a connection.",
+    "leadKept": "Lead saved on this phone. It will be added as soon as there is a connection; you can add the next one.",
+    "signOutLoses_one": "1 change made offline has not been sent yet. Signing out now loses it.",
+    "signOutLoses_other": "{{count}} changes made offline have not been sent yet. Signing out now loses them.",
+    "leadSent": "Sent: the leads saved on this phone are now in your workspace."
+  },
+  "lock": {
+    "title": "Vertex Connect is locked",
+    "unlock": "Unlock",
+    "prompt": "Unlock Vertex Connect",
+    "setting": "Lock with Face ID or fingerprint",
+    "on": "Asked when the app opens, and after a minute away",
+    "off": "Off",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off"
   }
 }

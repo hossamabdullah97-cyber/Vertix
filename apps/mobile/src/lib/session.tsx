@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { activeOrg, api, hasSession, logout, onSignedOut, setActiveOrg } from './api';
 import { disablePush, enablePushAfterSignIn } from './push';
+import { clearCache } from './cache';
+import { clearOutbox } from './outbox';
 
 export type Role = 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 
@@ -86,6 +88,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await disablePush();
     await logout();
+    // What this phone kept, and what waited to be sent, belong to that account.
+    await Promise.all([clearCache(), clearOutbox()]);
   }, []);
 
   const switchTo = useCallback(async (id: string) => {
