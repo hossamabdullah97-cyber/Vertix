@@ -50,7 +50,12 @@ test('the help center finds an answer, takes a rating, and puts a person in reac
 
   // The palette can ask the help center too.
   await page.goto('/dashboard');
-  await page.keyboard.press('Control+k');
+  // The shortcut works once the page is live: press until the menu is open.
+  const palette = page.getByRole('dialog');
+  await expect(async () => {
+    if (!(await palette.isVisible())) await page.keyboard.press('Control+k');
+    await expect(palette).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 20_000 });
   await page.keyboard.type('chip');
   await page.getByRole('button', { name: /Search help for “chip”/ }).click();
   await expect(page).toHaveURL(/\/help\?.*q=chip/);

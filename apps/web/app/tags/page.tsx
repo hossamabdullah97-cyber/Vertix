@@ -17,6 +17,7 @@ import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Sheet } from '@/components/ui/Sheet';
 import { useShortcut } from '@/lib/shortcuts';
+import { can } from '@/lib/permissions';
 
 const HARDWARE = ['CARD', 'STICKER', 'KEYCHAIN', 'WRISTBAND', 'OTHER'] as const;
 type Hardware = (typeof HARDWARE)[number];
@@ -49,7 +50,7 @@ export default function TagsPage() {
   const [deleting, setDeleting] = useState<NfcTag | null>(null);
 
   // An employee handles only their own chip: no holders, no stock decisions.
-  const isEmployee = me?.role === 'EMPLOYEE';
+  const isEmployee = me?.role === 'EMPLOYEE' || (!!me && !can(me, 'people'));
 
   function flash(msg: string) {
     setToast(msg);
@@ -71,8 +72,8 @@ export default function TagsPage() {
     authFetch<Me>('/auth/me')
       .then((m) => {
         setMe(m);
-        // The member list is a manager's tool; an employee would only get a 403.
-        if (m.role && m.role !== 'EMPLOYEE') authFetch<Member[]>('/orgs/members').then(setMembers).catch(() => setMembers([]));
+        // The member list goes with the people area (a manager's, or a custom role's).
+        if (can(m, 'people')) authFetch<Member[]>('/orgs/members').then(setMembers).catch(() => setMembers([]));
       })
       .catch(() => setMe(null));
   }, [router, load]);

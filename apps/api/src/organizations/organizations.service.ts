@@ -27,6 +27,9 @@ export class OrganizationsService {
           },
         },
       },
+      // In the order they were joined: the first is where a fresh sign-in opens,
+      // and without an order the database may hand them back in any.
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
     return memberships.map((m) => ({
       org: m.org,

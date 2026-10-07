@@ -14,13 +14,17 @@ export const WORKSPACE_KEY = 'vertex:workspace-key';
 export type WorkspaceKey = { number: number } | { menu: true };
 
 /** Listens for the shortcuts (lib/shortcuts.ts) and shows their list on "?". */
-export function Shortcuts({ onSearch }: { onSearch: () => void }) {
+export function Shortcuts({ onSearch, allow = () => true }: { onSearch: () => void; allow?: (href: string) => boolean }) {
   const { t } = useTranslation('nav');
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const pending = useRef<number | null>(null); // G was pressed; the next letter picks the page
   const pendingW = useRef<number | null>(null); // W was pressed; a number picks the workspace
   const page = usePageShortcuts();
+
+  // The latest rule, without re-binding the keys on every render.
+  const allowRef = useRef(allow);
+  allowRef.current = allow;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -39,7 +43,7 @@ export function Shortcuts({ onSearch }: { onSearch: () => void }) {
       if (pending.current !== null) {
         window.clearTimeout(pending.current);
         pending.current = null;
-        const to = GO_TO.find((g) => g.key === key);
+        const to = GO_TO.find((g) => g.key === key && allowRef.current(g.href));
         if (to) {
           e.preventDefault();
           router.push(to.href);
@@ -116,7 +120,7 @@ export function Shortcuts({ onSearch }: { onSearch: () => void }) {
         <section>
           <h3 className="mb-1 text-xs font-medium text-faint">{t('shortcuts.goTo')}</h3>
           <ul className="divide-y divide-line">
-            {GO_TO.map((g) => (
+            {GO_TO.filter((g) => allow(g.href)).map((g) => (
               <Row key={g.key} keys={['G', '+', g.key.toUpperCase()]} label={t(g.labelKey)} />
             ))}
           </ul>

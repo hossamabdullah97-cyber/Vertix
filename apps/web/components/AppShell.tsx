@@ -32,6 +32,7 @@ import { lastUnreadByWorkspace, UNREAD_BY_WORKSPACE } from '@/components/notific
 import { GettingStarted, WelcomeDialog } from '@/components/GettingStarted';
 import { rememberPage } from '@/lib/support';
 import { useOnboarding } from '@/lib/onboarding';
+import { can, canOpen } from '@/lib/permissions';
 
 // Labels are i18n keys (nav namespace), resolved at render time so the sidebar
 // re-localizes instantly when the language changes. The first group needs no
@@ -470,9 +471,10 @@ export default function AppShell({
     try {
       const [crd, tm, mem, dept, lds, nfc, ast, ntf] = await Promise.all([
         authFetch<any[]>('/cards').catch(() => []),
-        selectedOrgId ? authFetch<any[]>('/orgs/teams').catch(() => []) : Promise.resolve([]),
-        selectedOrgId ? authFetch<any[]>('/orgs/members').catch(() => []) : Promise.resolve([]),
-        selectedOrgId ? authFetch<any[]>('/orgs/departments').catch(() => []) : Promise.resolve([]),
+        // People, teams and departments are found by those whose role shows them.
+        selectedOrgId && can(me, 'teams') ? authFetch<any[]>('/orgs/teams').catch(() => []) : Promise.resolve([]),
+        selectedOrgId && can(me, 'people') ? authFetch<any[]>('/orgs/members').catch(() => []) : Promise.resolve([]),
+        selectedOrgId && can(me, 'teams') ? authFetch<any[]>('/orgs/departments').catch(() => []) : Promise.resolve([]),
         authFetch<any[]>('/leads').catch(() => []),
         authFetch<any[]>('/nfc/tags').catch(() => []),
         selectedOrgId ? authFetch<any[]>('/orgs/assets').catch(() => []) : Promise.resolve([]),
@@ -494,7 +496,14 @@ export default function AppShell({
     }
   };
 
-  const groups = useMemo(() => groupsFor(personalWorkspaceEarly(orgs, selectedOrgId)), [orgs, selectedOrgId]);
+  // Only the pages this person's role includes (lib/permissions); a group left empty goes too.
+  const groups = useMemo(
+    () =>
+      groupsFor(personalWorkspaceEarly(orgs, selectedOrgId))
+        .map((g) => ({ ...g, items: g.items.filter((i) => canOpen(me, i.href)) }))
+        .filter((g) => g.items.length > 0),
+    [orgs, selectedOrgId, me],
+  );
   const navItems = useMemo(() => {
     const items = [...groups.flatMap((g) => g.items), HELP_ITEM];
     return me?.isSuperAdmin
@@ -1121,8 +1130,9 @@ export default function AppShell({
         <div className="mt-auto flex flex-col gap-2 pt-4">
           <GettingStarted view={onboarding.view} onHide={() => void onboarding.update({ dismissed: true })} />
           {usage && (
+            // The plan for everyone to see; a link to billing for those who handle it.
             <Link
-              href="/billing"
+              href={canOpen(me, '/billing') ? '/billing' : '/help/plans'}
               className="block rounded-xl bg-surface p-3 shadow-sm ring-1 ring-line transition-colors hover:bg-elevated"
             >
               <span className="flex items-baseline justify-between gap-2 text-xs">
@@ -1586,7 +1596,7 @@ export default function AppShell({
           }}
         />
       )}
-      <Shortcuts onSearch={openSearch} />
+      <Shortcuts onSearch={openSearch} allow={(href) => canOpen(me, href)} />
     </div>
   );
 }

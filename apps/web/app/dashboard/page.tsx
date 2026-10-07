@@ -20,6 +20,7 @@ import { CardThumb } from '@/components/cards/CardThumb';
 import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rangeQuery, type Overview, type Point } from '@/lib/analytics';
 import { useShortcut } from '@/lib/shortcuts';
 import { PushPrompt } from '@/components/notifications/PushPrompt';
+import { can } from '@/lib/permissions';
 
 
 interface Lead {
@@ -181,19 +182,19 @@ export default function HomePage() {
         setPersonalTasks(tsk);
         setPersonalNotifications(ntf);
       } else {
-        // A member sees their own work; the people and the workspace's log are for managers.
-        const manages = meInfo.role !== 'EMPLOYEE';
-        const orgOnly = <T,>(path: string) => (manages ? authFetch<T[]>(path).catch(() => [] as T[]) : Promise.resolve([] as T[]));
+        // Each part of the workspace for those whose role shows it (lib/permissions):
+        // a member sees their own work, a manager the team, an admin the log too.
+        const orgOnly = <T,>(path: string, allowed: boolean) => (allowed ? authFetch<T[]>(path).catch(() => [] as T[]) : Promise.resolve([] as T[]));
         const [c, tg, l, stg, mem, tm, dept, appList, logs] = await Promise.all([
           authFetch<CardType[]>('/cards').catch(() => []),
           authFetch<NfcTag[]>('/nfc/tags').catch(() => []),
           authFetch<Lead[]>('/leads').catch(() => []),
           authFetch<Stage[]>('/leads/stages').catch(() => []),
-          orgOnly<Member>('/orgs/members'),
-          orgOnly<Team>('/orgs/teams'),
-          orgOnly<Department>('/orgs/departments'),
-          orgOnly<ApprovalRequest>('/orgs/approvals'),
-          orgOnly<AuditLog>('/orgs/audit-logs'),
+          orgOnly<Member>('/orgs/members', can(meInfo, 'people')),
+          orgOnly<Team>('/orgs/teams', can(meInfo, 'teams')),
+          orgOnly<Department>('/orgs/departments', can(meInfo, 'teams')),
+          orgOnly<ApprovalRequest>('/orgs/approvals', can(meInfo, 'cards')),
+          orgOnly<AuditLog>('/orgs/audit-logs', can(meInfo, 'workspace', 'full')),
         ]);
         setCards(c);
         setTags(tg);
@@ -587,7 +588,10 @@ export default function HomePage() {
   const peakOccasion = occasionOn(occasions, windows.keys[peak]);
   const leadsDuringPeak = peakOccasion ? countDuring(peakOccasion.occasion, leads.map((l) => l.createdAt)) : 0;
   const myRole = members.find((m) => m.user.id === me?.id)?.role;
-  const canManageOccasions = !!me?.isSuperAdmin || myRole === 'OWNER' || myRole === 'ADMIN' || myRole === 'MANAGER';
+  const canManageOccasions = !!me?.isSuperAdmin || can(me, 'analytics');
+  // What the workspace part of Home shows: the log for admins, the team for those who see it.
+  const seesLog = can(me, 'workspace', 'full');
+  const seesTeam = can(me, 'people') || can(me, 'teams');
 
   // The headline: this week's new leads, and how many of them nobody has picked up yet.
   const weekAgo = Date.now() - 7 * DAY;
@@ -928,8 +932,9 @@ export default function HomePage() {
       </>
       )}
 
-      {!member && !personal && (
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      {!personal && (seesLog || seesTeam) && (
+      <div className={`mt-4 grid grid-cols-1 gap-4 ${seesLog && seesTeam ? 'lg:grid-cols-[minmax(0,1fr)_360px]' : ''}`}>
+        {seesLog && (
         <section className="v-card">
           <PanelHeader title={t('activity.title')} />
           {auditLogs.length === 0 ? (
@@ -959,7 +964,9 @@ export default function HomePage() {
             </ul>
           )}
         </section>
+        )}
 
+        {seesTeam && (
         <section className="v-card flex flex-col">
           <PanelHeader title={t('team.title')} />
           <dl className="grid grid-cols-3 border-y border-line">
@@ -995,6 +1002,7 @@ export default function HomePage() {
             {t('team.manage')}
           </Link>
         </section>
+        )}
       </div>
       )}
       <OccasionsSheet open={showOccasions} onClose={() => setShowOccasions(false)} occasions={occasions} canManage={canManageOccasions} onChanged={loadOccasions} />
