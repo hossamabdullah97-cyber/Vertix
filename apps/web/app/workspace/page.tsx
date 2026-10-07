@@ -18,6 +18,7 @@ import { OrgMark, ORG_UPDATED } from '@/components/OrgMark';
 import { ImageUpload } from '@/components/ImageUpload';
 import { ActionMenu } from '@/components/ui/ActionMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { gated } from '@/components/AccessGate';
 
 type Section = 'general' | 'brand' | 'files' | 'security' | 'sso';
 const SECTIONS: Section[] = ['general', 'brand', 'files', 'security', 'sso'];
@@ -48,7 +49,7 @@ interface Asset {
  * the defaults new cards start from, its brand mark, and its shared files.
  * People live on the Team page and plans on Billing.
  */
-export default function WorkspaceSettingsPage() {
+function WorkspaceSettingsPage() {
   const router = useRouter();
   const { t } = useTranslation('organizations');
   const [section, setSection] = useState<Section>('general');
@@ -758,3 +759,6 @@ function Files({ canManage, onDone, onError }: { canManage: boolean; onDone: (m:
     </div>
   );
 }
+
+// Only for the roles that include it (lib/permissions canOpen).
+export default gated(WorkspaceSettingsPage, '/workspace', (t) => t('items.settings'));

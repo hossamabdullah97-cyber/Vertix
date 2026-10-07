@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, createBlankCard, getToken, type Card, type Member, type NfcTag, peek } from '@/lib/client';
+import { authFetch, createBlankCard, getToken, type Card, type Me, type Member, type NfcTag, peek } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { readableOn, shade } from '@/lib/color';
@@ -14,6 +14,7 @@ import AppShell from '@/components/AppShell';
 import { ActionMenu, type ActionItem } from '@/components/ui/ActionMenu';
 import { offerUndo } from '@/lib/undo';
 import { useShortcut } from '@/lib/shortcuts';
+import { can } from '@/lib/permissions';
 
 /** The list endpoint returns a little more than the shared Card type declares. */
 type ListCard = Card & { updatedAt?: string; _count?: { variants: number } };
@@ -149,8 +150,9 @@ export default function CardsPage() {
     authFetch<NfcTag[]>('/nfc/tags')
       .then((tags) => setChipsByCard(chipsPerCard(tags)))
       .catch(() => setChipsByCard(null));
-    authFetch<Member[]>('/orgs/members')
-      .then((members) => setOwners(ownersOf(members)))
+    // Whose card each is, for those whose role shows the team.
+    authFetch<Me>('/auth/me')
+      .then((me) => (can(me, 'people') ? authFetch<Member[]>('/orgs/members').then((members) => setOwners(ownersOf(members))) : setOwners({})))
       .catch(() => setOwners({}));
   }, [router]);
 

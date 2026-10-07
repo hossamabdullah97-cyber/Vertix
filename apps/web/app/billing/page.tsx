@@ -13,6 +13,7 @@ import AppShell from '@/components/AppShell';
 import { Icon } from '@/components/Icon';
 import { SALES_MAILTO } from '@/lib/contact';
 import { BillingDetailsForm, InvoiceList } from '@/components/billing/Invoices';
+import { gated } from '@/components/AccessGate';
 
 type Plan = 'FREE' | 'PERSONAL' | 'PRO' | 'BUSINESS' | 'ENTERPRISE';
 /** The plans bought at checkout. */
@@ -56,7 +57,7 @@ type Notice = 'success' | 'failed' | 'cancelled' | null;
  * the other plans. Paying happens on Paymob's checkout page; this page starts
  * it, cancels renewals, and shows the result.
  */
-export default function BillingPage() {
+function BillingPage() {
   const router = useRouter();
   const { t } = useTranslation('billing');
   const { locale } = useLocale();
@@ -678,3 +679,6 @@ function PlanColumn({ plan, def, price, name, current, action, busy, own }: { pl
     </div>
   );
 }
+
+// Only for the roles that include it (lib/permissions canOpen).
+export default gated(BillingPage, '/billing');

@@ -12,6 +12,7 @@ import { csvCell, downloadText } from '@/lib/export-leads';
 import { formatMoney, stageKey, type Stage } from '@/lib/crm';
 import { useOccasionRange } from '@/components/occasions/OccasionsSheet';
 import { WaitingBadge } from '@/components/crm/LeadCard';
+import { gated } from '@/components/AccessGate';
 
 interface Report {
   occasion: { id: string; name: string; startsOn: string; endsOn: string; days: number; status: 'upcoming' | 'live' | 'past'; day: number | null };
@@ -32,7 +33,7 @@ const HOUR = 3_600_000;
  * followed up; when the stand was busiest; and every lead it produced, to
  * export. The numbers a company takes to the meeting about its next stand.
  */
-export default function OccasionReportPage(props: { params: Promise<{ id: string }> }) {
+function OccasionReportPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const { t } = useTranslation('dashboard');
   const { locale } = useLocale();
@@ -325,3 +326,6 @@ function spanOf(hours: number, t: (k: string, o?: Record<string, unknown>) => st
   if (hours < 1) return t('eventReport.underHour');
   return hours < 24 ? t('crm:waiting.hours', { count: Math.round(hours) }) : t('crm:waiting.days', { count: Math.round(hours / 24) });
 }
+
+// Only for the roles that include it (lib/permissions canOpen).
+export default gated(OccasionReportPage, '/analytics/events', (t) => t('items.analytics'));

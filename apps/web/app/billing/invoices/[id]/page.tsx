@@ -9,12 +9,13 @@ import { authFetch, getToken } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate, formatMoneyExact } from '@/lib/format';
 import { Icon } from '@/components/Icon';
+import { gated } from '@/components/AccessGate';
 
 /**
  * One invoice, laid out as a document: it prints, or saves as a PDF from the
  * browser's print dialog, on a single A4 page in the reader's language.
  */
-export default function InvoicePage(props: { params: Promise<{ id: string }> }) {
+function InvoicePage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const router = useRouter();
   const { t } = useTranslation('billing');
@@ -158,3 +159,6 @@ function Party({ party, heading, strong = false }: { party: InvoiceParty; headin
     </div>
   );
 }
+
+// Only for the roles that include it (lib/permissions canOpen).
+export default gated(InvoicePage, '/billing');

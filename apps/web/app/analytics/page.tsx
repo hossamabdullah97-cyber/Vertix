@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getToken, type Card, type Member } from '@/lib/client';
+import { authFetch, getToken, type Card, type Me, type Member } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate, formatNumber } from '@/lib/format';
 import {
@@ -30,6 +30,7 @@ import { CardsView } from '@/components/analytics/CardsView';
 import { ChipsView } from '@/components/analytics/ChipsView';
 import { TeamView } from '@/components/analytics/TeamView';
 import { LeadsView } from '@/components/analytics/LeadsView';
+import { can } from '@/lib/permissions';
 
 type Period = 7 | 30 | 90;
 type View = 'overview' | 'cards' | 'chips' | 'team' | 'leads';
@@ -109,7 +110,10 @@ export default function AnalyticsPage() {
     authFetch<Card[]>('/cards').then(setCards).catch(() => setCards([]));
     authFetch<Lead[]>('/leads').then(setLeads).catch(() => setLeads([]));
     authFetch<(Stage & { isWon?: boolean; isLost?: boolean })[]>('/leads/stages').then(setStages).catch(() => setStages([]));
-    authFetch<Member[]>('/orgs/members').then((m) => setMemberCount(m.length)).catch(() => setMemberCount(0));
+    // How many people the numbers cover: only those whose role shows the team see it.
+    authFetch<Me>('/auth/me')
+      .then((me) => (can(me, 'people') ? authFetch<Member[]>('/orgs/members').then((m) => setMemberCount(m.length)) : setMemberCount(0)))
+      .catch(() => setMemberCount(0));
     authFetch<Occasion[]>('/orgs/occasions').then(setOccasions).catch(() => setOccasions([]));
   }, [router]);
 

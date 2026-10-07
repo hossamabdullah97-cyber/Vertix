@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { gated } from '@/components/AccessGate';
 
 /** Teams now open in a panel on the Team page; old links land there. */
-export default function TeamRedirect() {
+function TeamRedirect() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   useEffect(() => {
@@ -12,3 +13,6 @@ export default function TeamRedirect() {
   }, [router, id]);
   return null;
 }
+
+// Only for the roles that include it (lib/permissions canOpen).
+export default gated(TeamRedirect, '/workspace/teams', (t) => t('items.team'));

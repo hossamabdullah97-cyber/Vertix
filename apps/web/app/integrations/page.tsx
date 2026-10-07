@@ -11,6 +11,7 @@ import { AutomationsView } from '@/components/integrations/AutomationsView';
 import { WebhooksView } from '@/components/integrations/WebhooksView';
 import { KeysView } from '@/components/integrations/KeysView';
 import { Notice, type Handoff, type Role } from '@/components/integrations/shared';
+import { gated } from '@/components/AccessGate';
 
 type Tab = 'apps' | 'automations' | 'webhooks' | 'keys';
 const TABS: Tab[] = ['apps', 'automations', 'webhooks', 'keys'];
@@ -27,7 +28,7 @@ function tabsFor(me: Me | null): Tab[] {
  * to, automations that act on events, webhooks that carry events out, and API
  * keys that let other software in.
  */
-export default function IntegrationsPage() {
+function IntegrationsPage() {
   const router = useRouter();
   const { t } = useTranslation('integrations');
   const [tab, setTab] = useState<Tab>('apps');
@@ -127,3 +128,6 @@ export default function IntegrationsPage() {
     </AppShell>
   );
 }
+
+// Only for the roles that include it (lib/permissions canOpen).
+export default gated(IntegrationsPage, '/integrations', (t) => t('items.integrations'));

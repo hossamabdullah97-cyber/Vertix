@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -26,6 +26,7 @@ import { CustomRoles } from '@/components/team/CustomRoles';
 import type { CustomRoleView } from '@vertex/shared';
 import { ActivityView } from '@/components/team/ActivityView';
 import { useShortcut } from '@/lib/shortcuts';
+import { gated } from '@/components/AccessGate';
 
 type View = 'members' | 'teams' | 'roles' | 'activity';
 const VIEWS: View[] = ['members', 'teams', 'roles', 'activity'];
@@ -36,7 +37,7 @@ type MemberRow = Member & { createdAt?: string };
 
 const personName = (m: Member) => m.user.name?.trim() || m.user.email;
 
-export default function TeamPage() {
+function TeamPage() {
   const router = useRouter();
   const { t } = useTranslation('teams');
   const { locale } = useLocale();
@@ -76,12 +77,18 @@ export default function TeamPage() {
 
   const [customRoles, setCustomRoles] = useState<CustomRoleView[] | null>(null);
   const loadRoles = useCallback(() => authFetch<CustomRoleView[]>('/orgs/roles').then(setCustomRoles).catch(() => setCustomRoles([])), []);
-  const load = useCallback(async () => {
-    void loadRoles();
+  // The people and the teams, each for a role that shows it (a custom role may have one without the other).
+  const meRef = useRef(me);
+  meRef.current = me;
+  const load = useCallback(async (who: Me | null = meRef.current) => {
+    const seesPeople = can(who, 'people');
+    const seesTeams = can(who, 'teams');
+    if (seesPeople) void loadRoles();
+    else setCustomRoles([]);
     const [mem, tm, dep, crd, tg] = await Promise.all([
-      authFetch<MemberRow[]>('/orgs/members'),
-      authFetch<TeamRow[]>('/orgs/teams').catch(() => []),
-      authFetch<Department[]>('/orgs/departments').catch(() => []),
+      seesPeople ? authFetch<MemberRow[]>('/orgs/members') : Promise.resolve([] as MemberRow[]),
+      seesTeams ? authFetch<TeamRow[]>('/orgs/teams').catch(() => []) : Promise.resolve([] as TeamRow[]),
+      seesTeams ? authFetch<Department[]>('/orgs/departments').catch(() => []) : Promise.resolve([] as Department[]),
       authFetch<Card[]>('/cards').catch(() => []),
       authFetch<NfcTag[]>('/nfc/tags').catch(() => []),
     ]);
@@ -126,14 +133,20 @@ export default function TeamPage() {
     }
     const active = getActiveOrgId();
     setOrgId(active);
-    authFetch<Me>('/auth/me').then(setMe).catch(() => setMe(null));
     if (!active) return;
-    load().catch((e) => {
-      // Members are a manager's view; an employee is told so rather than shown an error.
-      if ((e as ApiError).status === 403 || /forbidden|permission/i.test(apiMessageOf(e))) setForbidden(true);
-      else setError((e as Error).message);
-      setMembers([]);
-    });
+    authFetch<Me>('/auth/me')
+      .then((m) => {
+        setMe(m);
+        // Without the people, the page opens on the teams.
+        if (!can(m, 'people')) setView((v) => (v === 'members' || v === 'roles' ? 'teams' : v));
+        return load(m);
+      })
+      .catch((e) => {
+        // Members are a manager's view; an employee is told so rather than shown an error.
+        if ((e as ApiError).status === 403 || /forbidden|permission/i.test(apiMessageOf(e))) setForbidden(true);
+        else setError((e as Error).message);
+        setMembers([]);
+      });
   }, [router, load]);
 
   /** Runs a change, reloads and confirms it; the error stays visible where the user is. */
@@ -241,7 +254,9 @@ export default function TeamPage() {
     );
   }
 
-  const views = VIEWS.filter((v) => v !== 'activity' || can(me, 'workspace', 'full'));
+  const views = VIEWS.filter((v) =>
+    v === 'activity' ? can(me, 'workspace', 'full') : v === 'teams' ? can(me, 'teams') : can(me, 'people'),
+  );
 
   return (
     <AppShell
@@ -857,3 +872,6 @@ function PlanLimitNotice({ text }: { text: string }) {
     </div>
   );
 }
+
+// Only for the roles that include it (lib/permissions canOpen).
+export default gated(TeamPage, '/team', (t) => t('items.team'));
