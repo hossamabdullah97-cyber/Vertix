@@ -292,6 +292,11 @@
       "passed": "This time has already passed.",
       "taken": "Someone else asked for this time since you declined it.",
       "generic": "That didn't go through. Try again."
+    },
+    "calendar": {
+      "held": "Held on your Google Calendar until you answer",
+      "confirmed": "On your Google Calendar",
+      "outOfDate": "Your Google Calendar could not be updated: change the event there."
     }
   },
   "export": {

@@ -147,8 +147,10 @@ export class IntegrationsController {
     const appUrl = this.config.get<string>('APP_PUBLIC_URL', 'http://localhost:3000');
     if (error) return res.redirect(`${appUrl}/integrations?error=${encodeURIComponent(error)}`);
     try {
-      const { provider, orgId } = await this.oauth.handleCallback(code, state);
-      return res.redirect(appUrl + workspaceLink(`/integrations?connected=${encodeURIComponent(provider)}`, orgId));
+      const { provider, orgId, returnTo } = await this.oauth.handleCallback(code, state);
+      // Back where the flow started (a card's meeting hours, for a calendar), saying what connected.
+      const back = returnTo ? `${returnTo}${returnTo.includes('?') ? '&' : '?'}connected=${encodeURIComponent(provider)}` : `/integrations?connected=${encodeURIComponent(provider)}`;
+      return res.redirect(appUrl + workspaceLink(back, orgId));
     } catch (e) {
       return res.redirect(`${appUrl}/integrations?error=${encodeURIComponent((e as Error).message)}`);
     }

@@ -640,5 +640,19 @@
     "confirm": "Move the card",
     "moving": "Moving…",
     "cancel": "Cancel"
+  },
+  "calendar": {
+    "title": "Google Calendar",
+    "hint": "Connect your calendar: meeting requests are held on it until you answer, and the times you are busy are never offered on your card.",
+    "connectedAs": "Connected as {{account}}. Requests are held on it, and your busy times are left out of this card’s times.",
+    "yourAccount": "your Google account",
+    "reconnectHint": "Google stopped accepting the connection. Connect it again to keep your busy times off this card.",
+    "ownerConnected": "{{name}}’s calendar is connected: their busy times are left out of this card’s times.",
+    "ownerNot": "{{name}} has not connected a calendar. Only they can, from this card.",
+    "justConnected": "Connected. Your busy times are now left out.",
+    "failed": "That didn’t work. Try again in a moment.",
+    "connect": "Connect",
+    "reconnect": "Connect again",
+    "disconnect": "Disconnect"
   }
 }

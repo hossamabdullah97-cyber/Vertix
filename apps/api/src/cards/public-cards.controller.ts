@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   NotFoundException,
+  Optional,
   Param,
   Query,
   Req,
@@ -14,7 +15,8 @@ import { Public } from '../auth/decorators/public.decorator';
 import { StorageService } from '../uploads/storage.service';
 import { MAX_PHOTO_BYTES, buildVCard, inLanguage, vcardFileName, vcardPhoto } from './vcard';
 import { WalletService } from './wallet/wallet.service';
-import { availabilityOf, openSlots } from './availability';
+import { availabilityOf, BOOKING_DAYS, openSlots } from './availability';
+import { GoogleCalendarService } from '../integrations/calendar/google-calendar.service';
 import { bookedMeetings } from './booked-meetings';
 import { PrismaService } from '../prisma/prisma.service';
 import { walletCardOf } from './wallet/wallet-card';
@@ -29,6 +31,7 @@ export class PublicCardsController {
     private readonly wallet: WalletService,
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    @Optional() private readonly calendar?: GoogleCalendarService,
   ) {}
 
   private appUrl() {
@@ -65,12 +68,15 @@ export class PublicCardsController {
   async availability(@Param('slug') slug: string) {
     const card = await this.prisma.client.card.findFirst({
       where: { slug, isPublished: true, deletedAt: null, ...LIVE_ORG },
-      select: { id: true, theme: true },
+      select: { id: true, orgId: true, ownerId: true, theme: true },
     });
     if (!card) throw new NotFoundException('Card not found');
     const now = new Date();
     const a = availabilityOf(card.theme, this.config.get<string>('DEFAULT_TIMEZONE'));
-    const days = a.enabled ? openSlots(a, now, await bookedMeetings(this.prisma.client, card.id, now)) : [];
+    // When the owner's own calendar says they are busy is not offered either.
+    const busy =
+      a.enabled && this.calendar ? await this.calendar.busy(card.orgId, card.ownerId, now, new Date(now.getTime() + (BOOKING_DAYS + 1) * 86_400_000)) : [];
+    const days = a.enabled ? openSlots(a, now, await bookedMeetings(this.prisma.client, card.id, now), BOOKING_DAYS, busy) : [];
     return { enabled: a.enabled, timezone: a.timezone, length: a.length, days };
   }
 

@@ -11,7 +11,7 @@ import { Sheet } from '@/components/ui/Sheet';
 import { parseCsv } from '@/lib/import-members';
 import { identifies, leadsTemplateCsv, parseLeadRows, type ParsedLead } from '@/lib/import-leads';
 import { downloadText } from '@/lib/export-leads';
-import { useCustomFields } from '@/lib/custom-fields';
+import { loadCustomFields, useCustomFields } from '@/lib/custom-fields';
 import type { Stage } from '@/lib/crm';
 import enCrm from '@/locales/en/crm.json';
 import arCrm from '@/locales/ar/crm.json';
@@ -55,6 +55,13 @@ async function send(leads: ParsedLead[], duplicates: Duplicates, dryRun: boolean
  * (new, already here, or why not), then bring them in. Leads already here,
  * found by email or phone, are left alone or have their gaps filled.
  */
+function namesOf(stages: Stage[]) {
+  return stages.map((s) => {
+    const key = s.name.trim().toLowerCase() as keyof typeof enCrm.stages;
+    return { id: s.id, names: [s.name, enCrm.stages[key], arCrm.stages[key as keyof typeof arCrm.stages]].filter(Boolean) as string[] };
+  });
+}
+
 export function ImportLeads({ open, stages, onClose, onImported }: { open: boolean; stages: Stage[]; onClose: () => void; onImported: () => void }) {
   const { t } = useTranslation('crm');
   const { locale } = useLocale();
@@ -68,14 +75,7 @@ export function ImportLeads({ open, stages, onClose, onImported }: { open: boole
   const customFields = useCustomFields();
 
   // Every name a stage may have in a file: as stored, and as shown in either language.
-  const stageNames = useMemo(
-    () =>
-      stages.map((s) => {
-        const key = s.name.trim().toLowerCase() as keyof typeof enCrm.stages;
-        return { id: s.id, names: [s.name, enCrm.stages[key], arCrm.stages[key as keyof typeof arCrm.stages]].filter(Boolean) as string[] };
-      }),
-    [stages],
-  );
+  const stageNames = useMemo(() => namesOf(stages), [stages]);
 
   function close() {
     if (step.kind === 'importing') return;
@@ -103,9 +103,12 @@ export function ImportLeads({ open, stages, onClose, onImported }: { open: boole
     if (!file) return;
     setError(null);
     if (!/\.(xlsx|csv)$/i.test(file.name)) return setError(t('import.errors.type'));
+    // A file picked before the page had the pipeline and the fields is read against them all the same.
+    const names = stages.length ? stageNames : namesOf(await authFetch<Stage[]>('/leads/stages').catch(() => []));
+    const fields = customFields ?? (await loadCustomFields().catch(() => []));
     let parsed;
     try {
-      parsed = parseLeadRows(await readTable(file), stageNames, customFields ?? []);
+      parsed = parseLeadRows(await readTable(file), names, fields);
     } catch {
       return setError(t('import.errors.read'));
     }

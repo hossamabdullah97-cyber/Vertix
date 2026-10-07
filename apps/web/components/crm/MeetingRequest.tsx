@@ -50,6 +50,8 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
 
   // In the zone the visitor booked in (the card's), so both sides read the same time.
   const zone = typeof meta.timezone === 'string' ? meta.timezone : undefined;
+  // Held on the owner's Google Calendar until answered (and then the meeting there).
+  const cal = meta.calendar && typeof meta.calendar === 'object' ? (meta.calendar as { status?: string; link?: string | null }) : null;
   const when = formatWhen(at, locale, zone);
 
   async function send(decision: Decision) {
@@ -99,6 +101,22 @@ export function MeetingRequest({ lead, request, onChange }: { lead: Lead; reques
           </div>
           <p className={`mt-0.5 text-sm ${status === 'DECLINED' ? 'text-faint line-through' : 'text-ink'}`}>{when}</p>
           {typeof meta.note === 'string' && meta.note.trim() && <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-muted">{meta.note}</p>}
+          {cal && cal.status !== 'REMOVED' && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted" data-testid="meeting-calendar">
+              <Icon name="calendar" size={12} className="shrink-0" />
+              {cal.status === 'OUT_OF_DATE' ? (
+                t('meeting.calendar.outOfDate')
+              ) : cal.link ? (
+                <a href={cal.link} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
+                  {cal.status === 'CONFIRMED' ? t('meeting.calendar.confirmed') : t('meeting.calendar.held')}
+                </a>
+              ) : cal.status === 'CONFIRMED' ? (
+                t('meeting.calendar.confirmed')
+              ) : (
+                t('meeting.calendar.held')
+              )}
+            </p>
+          )}
           {typeof meta.reply === 'string' && meta.reply && (
             <p className="mt-1.5 text-xs leading-relaxed text-muted">
               <span className="text-faint">{t('meeting.yourReply')} </span>

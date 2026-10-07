@@ -7,6 +7,7 @@ import { API_URL } from '@/lib/api';
 import { authFetch } from '@/lib/client';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { Toggle } from '@/components/ui/Toggle';
+import { CalendarConnect } from './CalendarConnect';
 
 /** As stored in the card's theme (`theme.availability`); see apps/api/src/cards/availability.ts. */
 export interface MeetingHoursValue {
@@ -104,6 +105,7 @@ export function MeetingHours({ cardId, slug, stored, lang }: { cardId: string; s
 
       {value.enabled && (
         <>
+          <CalendarConnect cardId={cardId} />
           <div>
             <span id="meeting-days" className={label}>
               {t('meetings.days')}

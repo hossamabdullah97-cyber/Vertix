@@ -12,11 +12,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LeadAlertsService } from '../notifications/lead-alerts.service';
 import { WebhookService } from '../integrations/webhook.service';
-import { availabilityOf, isOpen } from '../cards/availability';
+import { availabilityOf, BOOKING_DAYS, isOpen } from '../cards/availability';
 import { bookedMeetings } from '../cards/booked-meetings';
 import { AuthThrottleService, tooManyAttempts } from '../auth/auth-throttle.service';
 import { LIVE_ORG } from '../common/live-org';
 import { CustomFieldsService } from './custom-fields.service';
+import { GoogleCalendarService, type MeetingDetails } from '../integrations/calendar/google-calendar.service';
 
 /**
  * How many times an hour the public form may be sent: by one visitor to one
@@ -55,6 +56,7 @@ export class LeadsService {
     private readonly alerts: LeadAlertsService,
     private readonly mail: MailService,
     @Optional() private readonly fields?: CustomFieldsService,
+    @Optional() private readonly calendar?: GoogleCalendarService,
   ) {}
 
   private get db() {
@@ -125,6 +127,27 @@ export class LeadsService {
     }
   }
 
+  /** Holds a requested meeting on the owner's calendar and remembers which event it is. */
+  private async holdOnCalendar(
+    orgId: string,
+    ownerId: string,
+    leadId: string,
+    activity: { id: string; metadata: unknown },
+    m: Omit<MeetingDetails, 'leadUrl'>,
+  ) {
+    try {
+      const base = (this.config.get<string>('APP_PUBLIC_URL') || 'http://localhost:3000').replace(/\/$/, '');
+      const event = await this.calendar!.hold(orgId, ownerId, { ...m, leadUrl: `${base}/leads?lead=${encodeURIComponent(leadId)}&w=${encodeURIComponent(orgId)}` });
+      if (!event) return;
+      await this.db.leadActivity.update({
+        where: { id: activity.id },
+        data: { metadata: { ...((activity.metadata ?? {}) as Record<string, unknown>), calendar: { provider: 'google_calendar', eventId: event.id, link: event.link, status: 'HELD' } } },
+      });
+    } catch (err) {
+      this.logger.warn(`calendar hold failed: ${(err as Error).message}`);
+    }
+  }
+
   /**
    * Public lead capture from a card's exchange form. Runs without tenant
    * context, so orgId is resolved from the card and set explicitly.
@@ -186,16 +209,20 @@ export class LeadsService {
     // A meeting must be at one of the times the card offers and nobody took.
     let meetingAt: string | undefined;
     let meetingZone: string | undefined;
+    let meetingMinutes = 30;
     if (input.intent === 'MEETING') {
       const now = new Date();
       const a = availabilityOf(card.theme, this.config.get<string>('DEFAULT_TIMEZONE'));
       if (!a.enabled) throw new BadRequestException('This card does not take meeting requests');
       if (!input.meetingAt) throw new BadRequestException('Choose a time for the meeting');
-      if (!isOpen(a, now, await bookedMeetings(this.db, card.id, now), input.meetingAt)) {
+      // Nor when the owner's own calendar says they are busy.
+      const busy = this.calendar ? await this.calendar.busy(card.orgId, card.ownerId, now, new Date(now.getTime() + (BOOKING_DAYS + 1) * 86_400_000)) : [];
+      if (!isOpen(a, now, await bookedMeetings(this.db, card.id, now), input.meetingAt, busy)) {
         throw new ConflictException('That time is no longer free');
       }
       meetingAt = new Date(input.meetingAt).toISOString();
       meetingZone = a.timezone;
+      meetingMinutes = a.length;
     }
 
     // Place the lead in the org's first pipeline stage, if any.
@@ -242,7 +269,7 @@ export class LeadsService {
 
     // Activity log captures the intent + any meeting time / note (best-effort).
     try {
-      await this.db.leadActivity.create({
+      const activity = await this.db.leadActivity.create({
         data: {
           leadId: lead.id,
           type: intent === 'MEETING' ? 'MEETING' : 'NOTE',
@@ -254,7 +281,22 @@ export class LeadsService {
             ...(meetingZone ? { timezone: meetingZone } : {}),
           },
         },
+        select: { id: true, metadata: true },
       });
+      // The time is held on the owner's calendar until they answer. Not waited
+      // for: the visitor's form never depends on Google.
+      if (meetingAt && this.calendar) {
+        void this.holdOnCalendar(card.orgId, card.ownerId, lead.id, activity, {
+          start: new Date(meetingAt),
+          minutes: meetingMinutes,
+          timezone: meetingZone ?? 'UTC',
+          name: input.name || input.email || input.phone || 'Someone',
+          email: input.email || null,
+          phone: input.phone || null,
+          company: input.company || null,
+          note: input.note || null,
+        });
+      }
     } catch (err) {
       this.logger.warn(`lead activity failed: ${(err as Error).message}`);
     }
@@ -448,7 +490,7 @@ export class LeadsService {
         name: true,
         email: true,
         cardId: true,
-        card: { select: { slug: true, theme: true, vcardData: true, owner: { select: { email: true, name: true } } } },
+        card: { select: { slug: true, ownerId: true, theme: true, vcardData: true, owner: { select: { email: true, name: true } } } },
         activities: {
           where: { type: 'MEETING' },
           orderBy: { createdAt: 'desc' },
@@ -523,12 +565,22 @@ export class LeadsService {
       if (taken) throw new ConflictException('Someone else has asked for this time since');
     }
 
+    // The hold on the owner's calendar becomes the meeting, or gives its time back.
+    let calendar = m.meta.calendar as { eventId?: unknown; status?: unknown } | undefined;
+    if (this.calendar && calendar && typeof calendar.eventId === 'string' && m.lead.card) {
+      const done =
+        status === 'ACCEPTED'
+          ? await this.calendar.confirm(viewer.orgId, m.lead.card.ownerId, calendar.eventId, m.lead.name || m.lead.email || 'your visitor')
+          : await this.calendar.cancel(viewer.orgId, m.lead.card.ownerId, calendar.eventId);
+      calendar = { ...calendar, status: done ? (status === 'ACCEPTED' ? 'CONFIRMED' : 'REMOVED') : 'OUT_OF_DATE' };
+    }
     const metadata = {
       ...m.meta,
       status,
       decidedAt: new Date().toISOString(),
       decidedBy: userId,
       reply: input.message?.trim() || null,
+      ...(calendar ? { calendar } : {}),
     };
     const activity = await this.db.leadActivity.update({
       where: { id: m.request.id },

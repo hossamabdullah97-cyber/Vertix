@@ -42,7 +42,9 @@ export const OAUTH_ENDPOINTS: Record<string, OAuthEndpoints> = {
   google_calendar: {
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
-    scopes: ['https://www.googleapis.com/auth/calendar.events'],
+    // Its events (to hold and confirm meetings) and when its owner is busy;
+    // the address, to show which calendar is connected.
+    scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.freebusy'],
   },
   outlook_calendar: {
     authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
@@ -84,6 +86,12 @@ export interface ResolvedOAuthConfig {
 }
 
 type Env = { get(key: string): string | undefined };
+
+/**
+ * Providers each person connects for themselves (their own calendar), rather
+ * than once for the workspace. Their connection rows carry the person.
+ */
+export const USER_SCOPED_PROVIDERS: ReadonlySet<string> = new Set(['google_calendar']);
 
 /** Uppercase env prefix for a provider key, e.g. "google_calendar" → "GOOGLE_CALENDAR". */
 function envKey(provider: string): string {
@@ -166,6 +174,13 @@ export function buildAuthorizationUrl(cfg: ResolvedOAuthConfig, state: string): 
     state,
   });
   if (cfg.scopes.length) params.set('scope', cfg.scopes.join(' '));
+  // Google gives a refresh token only when asked for offline access, and again
+  // on a reconnect only when consent is asked for again.
+  if (cfg.provider.startsWith('google_')) {
+    params.set('access_type', 'offline');
+    params.set('prompt', 'consent');
+    params.set('include_granted_scopes', 'true');
+  }
   return `${cfg.authUrl}?${params.toString()}`;
 }
 

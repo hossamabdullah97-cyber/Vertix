@@ -16,6 +16,8 @@ import { ChannelsService } from './channels/channels.service';
 import { ChannelsController } from './channels/channels.controller';
 import { AudienceService } from './audience/audience.service';
 import { AudienceController } from './audience/audience.controller';
+import { CalendarController } from './calendar/calendar.controller';
+import { GoogleCalendarService } from './calendar/google-calendar.service';
 
 /**
  * The Enterprise Integration Hub. Exports WebhookService so other modules can
@@ -24,7 +26,7 @@ import { AudienceController } from './audience/audience.controller';
  * NotificationsService (used by the automation engine) is available globally.
  */
 @Module({
-  controllers: [WebhooksController, IntegrationsController, AutomationsController, ChannelsController, AudienceController],
+  controllers: [WebhooksController, IntegrationsController, AutomationsController, ChannelsController, AudienceController, CalendarController],
   providers: [
     CredentialVault,
     WebhookService,
@@ -38,7 +40,8 @@ import { AudienceController } from './audience/audience.controller';
     ChannelsService,
     AudienceService,
     AuditService,
+    GoogleCalendarService,
   ],
-  exports: [WebhookService, CredentialVault, OAuthService],
+  exports: [WebhookService, CredentialVault, OAuthService, GoogleCalendarService],
 })
 export class IntegrationsModule {}

@@ -84,7 +84,7 @@ export const INTEGRATION_REGISTRY: IntegrationProviderDef[] = [
   { key: 'telegram', name: 'Telegram', category: 'communication', auth: 'api_key', status: 'available', description: 'Post new leads and workspace events to a Telegram group or channel through your bot.', scopes: ['Send messages'] },
 
   // --- Calendar ---
-  { key: 'google_calendar', name: 'Google Calendar', category: 'calendar', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Turn meeting requests into calendar events.', scopes: ['Calendar events'] },
+  { key: 'google_calendar', name: 'Google Calendar', category: 'calendar', auth: 'oauth2', status: 'coming_soon', popular: true, description: 'Each person connects their own calendar: meeting requests land in it, and its busy times are never offered on their card.', scopes: ['Calendar events', 'Free and busy times'] },
   { key: 'outlook_calendar', name: 'Outlook Calendar', category: 'calendar', auth: 'oauth2', status: 'coming_soon', description: 'Create events in Microsoft Outlook Calendar.', scopes: ['Calendar events'] },
   { key: 'calendly', name: 'Calendly', category: 'calendar', auth: 'oauth2', status: 'coming_soon', description: 'Link Calendly bookings to leads.', scopes: ['Scheduled events'] },
 
