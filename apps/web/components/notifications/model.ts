@@ -98,6 +98,13 @@ export function describe(n: Notif, t: TFunction, locale: Locale = 'en'): { title
         body: [str(m.company), t('notifications:types.followUpBody', { count: days })].filter(Boolean).join(' · '),
       };
     }
+    case 'lead.returned': {
+      const name = str(m.name);
+      return {
+        title: name ? t('notifications:types.returned', { name: iso(name) }) : t('notifications:types.returnedNoName'),
+        body: [str(m.company), t('notifications:types.returnedBody')].filter(Boolean).join(' · '),
+      };
+    }
     case 'lead.mentioned':
       return {
         title: t('notifications:types.mentioned', { actor: iso(actor || '—'), lead: iso(str(m.leadName) || t('notifications:types.aLead')) }),
@@ -191,6 +198,7 @@ export function linkOf(n: Notif): string | null {
       return '/leads';
     case 'lead.captured':
     case 'lead.follow_up':
+    case 'lead.returned':
       return str(m.leadId) ? `/leads?lead=${encodeURIComponent(str(m.leadId))}` : '/leads';
     case 'automation.triggered':
       return str(data.leadId) ? `/leads?lead=${encodeURIComponent(str(data.leadId))}` : '/integrations?tab=automations';

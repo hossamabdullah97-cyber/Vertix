@@ -126,7 +126,10 @@
     "leadsImportedBy_one": "{{actor}} assigned you {{count}} imported lead",
     "leadsImportedBy_other": "{{actor}} assigned you {{count}} imported leads",
     "mentioned": "{{actor}} mentioned you in a note on {{lead}}",
-    "aLead": "a lead"
+    "aLead": "a lead",
+    "returned": "{{name}} is back on your card",
+    "returnedNoName": "A lead is back on your card",
+    "returnedBody": "A good moment to reach out."
   },
   "push": {
     "title": "On this device",

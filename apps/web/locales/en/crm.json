@@ -581,5 +581,59 @@
       "SELECT": "Pick one of the choices.",
       "CHECKBOX": ""
     }
+  },
+  "timeline": {
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "conversations": "Conversations",
+      "notes": "Notes",
+      "visits": "Card visits",
+      "tasks": "Tasks",
+      "changes": "Changes"
+    },
+    "empty": "Nothing here yet.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "summary": {
+      "visits": "Card visits",
+      "contacts": "Times reached",
+      "openTasks": "Open tasks",
+      "lastSeen": "Last seen {{when}}",
+      "noVisits": "No visits seen",
+      "returns_one": "Came back once",
+      "returns_other": "Came back {{count}} times",
+      "overdue_one": "1 overdue",
+      "overdue_other": "{{count}} overdue"
+    },
+    "viewed": "Viewed {{card}}’s card",
+    "cameBack": "Came back to {{card}}’s card",
+    "onCard": "on {{card}}’s card",
+    "byTap": "Tapped a chip",
+    "byLink": "Opened the link",
+    "minutes_one": "1 minute",
+    "minutes_other": "{{count}} minutes",
+    "did": {
+      "save": "Saved your contact",
+      "share": "Shared the card",
+      "payment": "Opened {{platform}}",
+      "link": "Opened a link",
+      "WHATSAPP": "Opened WhatsApp",
+      "LINKEDIN": "Opened LinkedIn",
+      "CALL": "Tapped call",
+      "EMAIL": "Tapped email",
+      "MAPS": "Opened the map",
+      "WEBSITE": "Opened the website",
+      "FILE": "Opened the file",
+      "BOOK_MEETING": "Looked at booking",
+      "REQUEST_QUOTE": "Looked at a quote",
+      "SAVE_CONTACT": "Saved your contact"
+    },
+    "taskAdded": "Task added",
+    "taskDone": "Task done",
+    "due": "Due {{date}}",
+    "backOnCard": "Back on your card {{when}}",
+    "viewedYours": "Viewed your card",
+    "cameBackYours": "Came back to your card"
   }
 }

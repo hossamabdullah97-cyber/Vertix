@@ -146,7 +146,10 @@
     "leadsImportedBy_many": "أسند إليك {{actor}} {{count}} عميلًا مستوردًا",
     "leadsImportedBy_other": "أسند إليك {{actor}} {{count}} عميل مستورد",
     "mentioned": "ذكرك {{actor}} في ملاحظة على {{lead}}",
-    "aLead": "عميل"
+    "aLead": "عميل",
+    "returned": "{{name}} رجع لبطاقتك",
+    "returnedNoName": "عميل رجع لبطاقتك",
+    "returnedBody": "وقت مناسب للتواصل."
   },
   "push": {
     "title": "على هذا الجهاز",

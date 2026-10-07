@@ -115,6 +115,16 @@ export class LeadsService {
     }
   }
 
+  /** The anonymous visitor behind a phone's id, if it has been seen (best-effort: a lead without one is still a lead). */
+  private async visitorOf(anonymousId: string | undefined): Promise<{ id: string } | null> {
+    if (!anonymousId) return null;
+    try {
+      return await this.db.visitor.findUnique({ where: { anonymousId }, select: { id: true } });
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Public lead capture from a card's exchange form. Runs without tenant
    * context, so orgId is resolved from the card and set explicitly.
@@ -196,6 +206,8 @@ export class LeadsService {
     });
 
     const tag = await this.resolveTag(input, card.id, card.orgId);
+    // The device the form was sent from: its visits to the card are the lead's history.
+    const visitorRow = await this.visitorOf(input.visitorId);
 
     const intent = input.intent ?? 'CONTACT';
     // A lead that came off a chip says so, so the source reads as the channel it
@@ -217,6 +229,7 @@ export class LeadsService {
         assignedTo: card.ownerId,
         stageId: stage?.id,
         tagId: tag?.id ?? null,
+        visitorId: visitorRow?.id ?? null,
         name: input.name,
         email: input.email || undefined,
         phone: input.phone,
@@ -335,6 +348,7 @@ export class LeadsService {
         assignedTo: true,
         firstContactedAt: true,
         lastContactedAt: true,
+        lastVisitAt: true,
         createdAt: true,
         customFields: true,
         card: { select: { slug: true } },
@@ -360,6 +374,7 @@ export class LeadsService {
         assignedTo: true,
         firstContactedAt: true,
         lastContactedAt: true,
+        lastVisitAt: true,
         createdAt: true,
         customFields: true,
         card: { select: { slug: true } },
@@ -687,7 +702,7 @@ export class LeadsService {
           data: {
             leadId: id,
             type: 'STAGE_CHANGE',
-            metadata: { from: lead.stageId ?? null, to: input.stageId ?? null },
+            metadata: { from: lead.stageId ?? null, to: input.stageId ?? null, by: viewer.userId },
           },
         });
       } catch (err) {
