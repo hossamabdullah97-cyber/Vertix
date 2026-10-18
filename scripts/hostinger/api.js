@@ -5,6 +5,8 @@
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 
+require('./env.cjs').loadRootEnv();
+
 const root = path.join(__dirname, '../..');
 const db = path.join(root, 'packages/db');
 const prisma = require.resolve('prisma/build/index.js', { paths: [db] });

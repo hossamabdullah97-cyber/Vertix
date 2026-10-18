@@ -24,7 +24,9 @@ redeploys them:
 | Entry file | `scripts/hostinger/web.js` | `scripts/hostinger/api.js` |
 
 `build.mjs` installs (with the development tools the build needs) and builds
-the one part; the entry files start it as the Docker images do. The API's
+the one part, with the pnpm that runs it (Hostinger's own pnpm on the PATH is
+another major version, which will not stand in for the pinned one), and reads
+the variables Hostinger writes to `.env` (`env.cjs`, also used at start); the entry files start it as the Docker images do. The API's
 applies pending database migrations first and stops if one fails, with the
 reason in the log.
 
