@@ -5,7 +5,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  * per build profile, eas.json):
  * - EXPO_PUBLIC_WEB_URL: the website whose links open the app (iOS Universal
  *   Links, Android App Links), checked against its /.well-known/ files.
- * - EAS_PROJECT_ID: the Expo project, which push notifications are sent for.
+ * - EAS_PROJECT_ID: the Expo project, which push notifications are sent for
+ *   (else app.json's extra.eas.projectId).
  * - GOOGLE_SERVICES_JSON: the Firebase project's google-services.json (an EAS
  *   file variable), which Android needs to receive them.
  */
@@ -17,7 +18,9 @@ const APP_PATHS = ['/dashboard', '/leads', '/notifications', '/invitations', '/c
 export default ({ config }: ConfigContext): ExpoConfig => {
   const web = process.env.EXPO_PUBLIC_WEB_URL ?? '';
   const host = /^https:\/\//.test(web) ? new URL(web).host : null;
-  const projectId = process.env.EAS_PROJECT_ID;
+  const projectId =
+    process.env.EAS_PROJECT_ID ??
+    (config.extra?.eas as { projectId?: string } | undefined)?.projectId;
   const googleServicesFile = process.env.GOOGLE_SERVICES_JSON;
 
   return {
@@ -48,6 +51,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     // Fixes reach phones without a store review (eas update), for builds of
     // the same version (runtimeVersion); a new version needs a new build.
-    updates: projectId ? { url: `https://u.expo.dev/${projectId}`, checkAutomatically: 'ON_LOAD', fallbackToCacheTimeout: 0 } : { enabled: false },
+    updates: projectId
+      ? {
+          url: `https://u.expo.dev/${projectId}`,
+          checkAutomatically: 'ON_LOAD',
+          fallbackToCacheTimeout: 0,
+        }
+      : { enabled: false },
   };
 };

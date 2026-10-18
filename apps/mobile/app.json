@@ -2,6 +2,7 @@
   "expo": {
     "name": "Vertex Connect",
     "slug": "vertex-connect",
+    "owner": "vertex-connect",
     "scheme": "vertexconnect",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -94,7 +95,10 @@
       ]
     ],
     "extra": {
-      "supportsRTL": true
+      "supportsRTL": true,
+      "eas": {
+        "projectId": "ca8dc218-e755-4b3c-9ab1-100462f902b6"
+      }
     },
     "experiments": {
       "typedRoutes": true
