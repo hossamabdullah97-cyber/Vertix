@@ -162,6 +162,14 @@ eas update --channel production --message "What changed"
 A new native module, permission or app.json change needs a new build (and a
 new `version` in app.json, which is what `runtimeVersion` follows).
 
+**Without a computer:** GitHub › Actions › *Phone app build* › Run workflow
+(`.github/workflows/mobile-build.yml`) starts the same `eas build` on Expo's
+servers, with the profile and platform chosen there; it can also set
+`EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_WEB_URL` for that profile first. It needs
+the repository secret `EXPO_TOKEN` (expo.dev › Account settings › Access
+tokens) and the Expo project in app.json (`owner`, `extra.eas.projectId`,
+which `eas init` writes). The build page on expo.dev has the result.
+
 What the stores need beyond the build (accounts, listing texts in Arabic and
 English, privacy answers, review notes): [STORE.md](STORE.md).
 

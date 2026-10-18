@@ -1,0 +1,81 @@
+# Builds the phone app (apps/mobile) on EAS, started by hand from the Actions
+# tab (or the API). The build itself runs on Expo's servers: this job only
+# hands it over, and the build page on expo.dev has the result (for the
+# preview profile, an APK to install with a QR code).
+#
+# Needs the repository secret EXPO_TOKEN (expo.dev › Account settings ›
+# Access tokens) and the Expo project in app.json (extra.eas.projectId, owner).
+name: Phone app build
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Build profile (eas.json)
+        type: choice
+        options: [preview, production, development]
+        default: preview
+      platform:
+        description: Platform
+        type: choice
+        options: [android, ios, all]
+        default: android
+      api_url:
+        description: Sets EXPO_PUBLIC_API_URL for the profile's environment first (blank keeps the one on EAS)
+        type: string
+        required: false
+      web_url:
+        description: Sets EXPO_PUBLIC_WEB_URL for the profile's environment first (blank keeps the one on EAS)
+        type: string
+        required: false
+
+concurrency:
+  group: mobile-build-${{ inputs.profile }}-${{ inputs.platform }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS: npx --yes eas-cli@25
+    steps:
+      - name: Check the Expo token
+        if: env.EXPO_TOKEN == ''
+        working-directory: .
+        run: |
+          echo "::error::Add the repository secret EXPO_TOKEN (expo.dev › Account settings › Access tokens)."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set the app's addresses on EAS
+        env:
+          ENVIRONMENT: ${{ inputs.profile }}
+          API_URL: ${{ inputs.api_url }}
+          WEB_URL: ${{ inputs.web_url }}
+        run: |
+          set_var() {
+            [ -z "$2" ] && return 0
+            $EAS env:set "$ENVIRONMENT" --name "$1" --value "$2" --visibility plaintext --non-interactive
+          }
+          set_var EXPO_PUBLIC_API_URL "$API_URL"
+          set_var EXPO_PUBLIC_WEB_URL "$WEB_URL"
+
+      - name: Start the build
+        env:
+          PROFILE: ${{ inputs.profile }}
+          PLATFORM: ${{ inputs.platform }}
+        run: $EAS build --profile "$PROFILE" --platform "$PLATFORM" --non-interactive --no-wait
