@@ -124,7 +124,10 @@ export const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv(config: Record<string, unknown>): Env {
-  const parsed = envSchema.safeParse(config);
+  // A variable set to nothing counts as not set: hosting panels and compose
+  // files (`${VAR:-}`) keep unused keys blank, and a blank URL is not a URL.
+  const given = Object.fromEntries(Object.entries(config).filter(([, v]) => !(typeof v === 'string' && v.trim() === '')));
+  const parsed = envSchema.safeParse(given);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
