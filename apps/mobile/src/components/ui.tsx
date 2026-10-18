@@ -1,9 +1,13 @@
 import { forwardRef, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text as RNText,
   TextInput,
   View,
@@ -223,6 +227,7 @@ export function ListItem({
   trailing,
   onPress,
   testID,
+  subtitleLines = 1,
 }: {
   title: string;
   subtitle?: string | null;
@@ -230,6 +235,7 @@ export function ListItem({
   trailing?: ReactNode;
   onPress?: () => void;
   testID?: string;
+  subtitleLines?: number;
 }) {
   const c = useColors();
   return (
@@ -241,7 +247,7 @@ export function ListItem({
             {title}
           </Text>
           {subtitle ? (
-            <Text size="sm" tone="muted" numberOfLines={1}>
+            <Text size="sm" tone="muted" numberOfLines={subtitleLines}>
               {subtitle}
             </Text>
           ) : null}
@@ -327,6 +333,65 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
         );
       })}
     </ScrollView>
+  );
+}
+
+/** An on/off switch in the accent colour. */
+export function Toggle({ value, onChange, label, disabled, testID }: { value: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean; testID?: string }) {
+  const c = useColors();
+  // The browser build draws a right-to-left switch with its knob outside the track; phones mirror their own.
+  return (
+    <View style={Platform.OS === 'web' ? { direction: 'ltr' } : undefined}>
+      <Switch
+        testID={testID}
+        value={value}
+        onValueChange={onChange}
+        disabled={disabled}
+        accessibilityLabel={label}
+        trackColor={{ false: c.lineStrong, true: c.accent }}
+        thumbColor="#FFFFFF"
+        ios_backgroundColor={c.lineStrong}
+      />
+    </View>
+  );
+}
+
+/** A row with a title, a line under it, and a switch. */
+export function ToggleRow({ title, hint, value, onChange, disabled, testID }: { title: string; hint?: string; value: boolean; onChange: (v: boolean) => void; disabled?: boolean; testID?: string }) {
+  return (
+    <Row gap={12} style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 56 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text weight="medium">{title}</Text>
+        {hint ? (
+          <Text size="xs" tone="faint">
+            {hint}
+          </Text>
+        ) : null}
+      </View>
+      <Toggle value={value} onChange={onChange} label={title} disabled={disabled} testID={testID} />
+    </Row>
+  );
+}
+
+/** A page that slides up over the screen, with a title and a way to close it. */
+export function Sheet({ visible, title, onClose, closeLabel, children }: { visible: boolean; title: string; onClose: () => void; closeLabel: string; children: ReactNode }) {
+  const c = useColors();
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.canvas }}>
+        <Row style={{ justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line }}>
+          <Text size="lg" weight="semibold" style={{ flex: 1 }} numberOfLines={1}>
+            {title}
+          </Text>
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={closeLabel} hitSlop={12} style={{ padding: 4 }}>
+            <Icon name="x" size={22} color={c.muted} />
+          </Pressable>
+        </Row>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 

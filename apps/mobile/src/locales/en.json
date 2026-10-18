@@ -1,7 +1,8 @@
 {
   "common": {
     "cancel": "Cancel",
-    "offline": "No connection. Check your internet and try again."
+    "offline": "No connection. Check your internet and try again.",
+    "close": "Close"
   },
   "tabs": {
     "home": "Today",
@@ -143,9 +144,12 @@
   "cards": {
     "title": "Cards",
     "empty": "No cards yet",
-    "emptyBody": "Make your card on the website, then share it from here.",
+    "emptyBody": "Your photo, how to reach you and your links, on a card you share with a QR code, a link or a chip.",
     "draft": "Draft",
-    "newOnWeb": "New card on the website"
+    "new": "New card",
+    "newFirst": "Make your first card",
+    "newFailed": "Could not make a card",
+    "live": "Live"
   },
   "card": {
     "title": "Card",
@@ -155,7 +159,7 @@
     "share": "Share the link",
     "copy": "Copy the link",
     "copied": "Copied",
-    "editOnWeb": "Edit on the website"
+    "edit": "Edit card"
   },
   "chip": {
     "title": "NFC chip",
@@ -329,5 +333,143 @@
     "off": "Off",
     "turnOn": "Turn on",
     "turnOff": "Turn off"
+  },
+  "editor": {
+    "title": "Edit card",
+    "preview": "Preview",
+    "yourName": "Your name",
+    "saved": "Saved. The card is up to date.",
+    "unsaved": "Changes not saved",
+    "save": "Save",
+    "discard": "Discard",
+    "unsavedTitle": "Save your changes?",
+    "unsavedBody": "You changed this card and have not saved it yet.",
+    "keepEditing": "Keep editing",
+    "slugTaken": "That address is taken. Try another one.",
+    "tabs": {
+      "profile": "Profile",
+      "links": "Buttons",
+      "design": "Design",
+      "settings": "Settings"
+    },
+    "photo": "Photo",
+    "cover": "Cover",
+    "takePhoto": "Take a photo",
+    "choosePhoto": "Choose from photos",
+    "removePhoto": "Remove",
+    "fullName": "Full name",
+    "fullNameHint": "e.g. Sara Ahmed",
+    "jobTitle": "Job title",
+    "jobTitleHint": "e.g. Sales manager",
+    "company": "Company",
+    "companyHint": "e.g. Vertex",
+    "phone": "Phone",
+    "email": "Email",
+    "location": "Location",
+    "locationHint": "e.g. Cairo, Egypt",
+    "about": "About",
+    "aboutHint": "A line or two about you and what you do.",
+    "aboutCount": "{{count}} / 600",
+    "profileNote": "The phone and email here go into the contact visitors save to their phone. To show them as buttons on the card, add them under Buttons.",
+    "addTitle": "Add a button",
+    "addSearch": "Search: WhatsApp, Instagram, website…",
+    "addNone": "Nothing by that name",
+    "categories": {
+      "quick": "Contact",
+      "social": "Social media",
+      "business": "Business",
+      "media": "Files and media",
+      "custom": "Other"
+    },
+    "linkHelp": {
+      "phone": "The number it calls or messages, with the country code.",
+      "email": "The address it writes to.",
+      "url": "The page it opens.",
+      "none": "A button that saves your details to the visitor’s phone. Nothing more to fill in."
+    },
+    "linkPhone": "Phone number",
+    "linkEmail": "Email address",
+    "linkUrl": "Link",
+    "linkMessage": "First message (optional)",
+    "linkMessageHint": "e.g. Hello, I got your card…",
+    "saveLink": "Save",
+    "linkShown": "Show on the card",
+    "linkShownHint": "Off keeps it here, hidden from visitors.",
+    "linkQuick": "In the contact row",
+    "linkQuickHint": "The round buttons under your name, for calling and messaging.",
+    "linkPrimary": "Open it from a chip",
+    "linkPrimaryHint": "A tap on your NFC chip goes straight here instead of to the card.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "removeLink": "Remove",
+    "removeLinkTitle": "Remove this button?",
+    "removeLinkBody": "{{name}} will no longer show on the card.",
+    "linkNotSet": "Not set yet",
+    "linkSaveContact": "Saves your details",
+    "addLink": "Add a button",
+    "linksEmpty": "No buttons yet",
+    "linksEmptyBody": "Add how people reach you: phone, WhatsApp, email, your social media and links.",
+    "group": {
+      "quick": "Contact row",
+      "quickHint": "Round buttons under your name.",
+      "quickEmpty": "Nothing here yet. Phone, WhatsApp and email go here.",
+      "links": "Links",
+      "linksHint": "The list under the contact row.",
+      "linksEmpty": "No links yet."
+    },
+    "templates": "Ready-made designs",
+    "accent": "Colour",
+    "mode": "Light or dark",
+    "modes": {
+      "light": "Light",
+      "dark": "Dark",
+      "auto": "As their phone"
+    },
+    "modeAutoHint": "Light or dark, as the visitor’s phone is set.",
+    "coverStyle": "Cover",
+    "covers": {
+      "gradient": "Gradient",
+      "constellation": "Night sky",
+      "solid": "Solid",
+      "mesh": "Mesh",
+      "lines": "Lines"
+    },
+    "coverPhotoWins": "A cover photo, when you add one, shows instead.",
+    "layout": "Layout",
+    "layouts": {
+      "classic": "Classic",
+      "centered": "Centered",
+      "spotlight": "Spotlight",
+      "minimal": "Minimal"
+    },
+    "linkStyle": "Show the links as",
+    "linkStyles": {
+      "list": "A list",
+      "icons": "Icons",
+      "buttons": "Buttons"
+    },
+    "cardLanguage": "Card language",
+    "brand": "The workspace’s name and logo",
+    "brandHint": "At the top of the card.",
+    "openInApp": "Open in the visitor’s apps",
+    "openInAppHint": "WhatsApp, LinkedIn and the like open in their app when it is installed.",
+    "published": "Published",
+    "publishedOn": "Live: anyone with the link or the QR code can open it.",
+    "publishedOff": "Draft: only you can see it. Turn it on to share it.",
+    "slug": "Card address",
+    "slugProblem": {
+      "short": "At least 3 characters.",
+      "long": "At most 60 characters.",
+      "chars": "Only small English letters, numbers and dashes."
+    },
+    "slugWarning": "A new address stops the old link and the QR codes already shared or printed from working.",
+    "onWebsite": "On the website",
+    "onWebsiteTitle": "More options",
+    "onWebsiteBody": "A second language, meeting hours, payment links, sections (portfolio, video, certificates) and card profiles",
+    "danger": "Delete",
+    "deleteBody": "Deleting the card stops its link and QR code from working. The leads it brought stay.",
+    "delete": "Delete card",
+    "deleteTitle": "Delete this card?",
+    "deleteConfirm": "The card of {{name}} and its link will stop working."
   }
 }

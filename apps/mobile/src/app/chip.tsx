@@ -54,7 +54,7 @@ export default function Chip() {
     <Screen edges={[]}>
       <Card style={{ alignItems: 'center', gap: 16, paddingVertical: 28 }}>
         <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: state.kind === 'waiting' ? c.accentSoft : c.elevated, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={state.kind === 'programmed' ? 'check' : 'wifi-off'} size={40} color={state.kind === 'programmed' ? c.success : c.accentText} />
+          <Icon name={state.kind === 'programmed' ? 'check' : 'nfc'} size={40} color={state.kind === 'programmed' ? c.success : c.accentText} />
         </View>
         <Text size="lg" weight="semibold" style={{ textAlign: 'center' }}>
           {programming ? t('chip.programTitle') : t('chip.readTitle')}
@@ -86,7 +86,7 @@ export default function Chip() {
 
       <Button
         label={state.kind === 'programmed' ? t('chip.programAnother') : programming ? t('chip.programNow') : t('chip.readNow')}
-        icon="wifi-off"
+        icon="nfc"
         onPress={programming ? program : read}
         busy={state.kind === 'waiting'}
         disabled={supported === false}
