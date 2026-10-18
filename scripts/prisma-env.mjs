@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -34,10 +35,15 @@ function loadEnvFile(path) {
 loadEnvFile(resolve(rootDir, '.env'));
 loadEnvFile(resolve(process.cwd(), '.env'));
 
-const result = spawnSync('pnpm', ['exec', 'prisma', ...process.argv.slice(2)], {
+// The package's own Prisma CLI, run by this node: no pnpm in between (the one
+// on the PATH may be another major version than the workspace's, and refuse
+// to run, as on Hostinger).
+const prismaCli = createRequire(resolve(process.cwd(), 'package.json')).resolve(
+  'prisma/build/index.js',
+);
+const result = spawnSync(process.execPath, [prismaCli, ...process.argv.slice(2)], {
   cwd: process.cwd(),
   env: process.env,
-  shell: process.platform === 'win32',
   stdio: 'inherit',
 });
 
