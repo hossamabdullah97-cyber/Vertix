@@ -15,8 +15,20 @@ signed in.
   call, WhatsApp or email (each one logged), stage, a note, and the history.
 - **Add** — the details of someone just met, or read from their paper card
   with the camera (when the server has card reading on).
-- **Cards** — each card's QR code to show across a table, its link to share,
-  and NFC: program a chip with a card, or read which card a chip opens.
+- **Cards** — each card as it looks (cover, photo, name, in its colours), its
+  QR code to show across a table, its link to share, and NFC: program a chip
+  with a card, or read which card a chip opens. A new card is made here.
+- **Card editor** — as on the website's Studio: the photo and cover (camera or
+  photos), name, job title, company, phone, email, location and About; the
+  buttons (calling, WhatsApp, email, social profiles, links and files: added
+  from a searchable list, edited, shown or hidden, moved, removed); the design
+  (a ready-made template, colour, light or dark, cover, layout, how links
+  show, the card's language); published or draft, its address, and deleting
+  it. The card at the top follows what is typed; buttons are saved as they
+  change, the rest with Save (leaving unsaved asks first). Preview shows the
+  card as visitors see it, drafts too (`/cards/<id>/preview` on the website,
+  which tracks nothing). A second language, meeting hours, payment links,
+  sections and card profiles stay on the website for now.
 - **Notifications** — opened in the right workspace.
 - **More** — analytics, tasks, tags, team, integrations, settings, billing and
   the account, as the website pages (by role, as on the website's side bar);
@@ -70,7 +82,8 @@ the platform's alert email, as the website's do. The screen offers to try
 again instead of going blank.
 
 **Fixes without a store review.** Builds check for an update when they open
-(`eas update`), for the same app version.
+(`eas update`), for the same app version: GitHub › Actions › *Phone app
+build* with "update" sends one to the phones with that profile's build.
 
 ## Setup
 
@@ -168,7 +181,8 @@ servers, with the profile and platform chosen there; it can also set
 `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_WEB_URL` for that profile first. It needs
 the repository secret `EXPO_TOKEN` (expo.dev › Account settings › Access
 tokens) and the Expo project in app.json (`owner`, `extra.eas.projectId`,
-which `eas init` writes). The build page on expo.dev has the result.
+which `eas init` writes). The build page on expo.dev has the result. With
+"update" instead of "build", it runs `eas update` on the profile's channel.
 
 What the stores need beyond the build (accounts, listing texts in Arabic and
 English, privacy answers, review notes): [STORE.md](STORE.md).
@@ -186,8 +200,8 @@ CI runs all three (the `mobile` job).
 ## Layout
 
 ```
-src/app/            screens (Expo Router): login, (tabs)/…, lead/[id], card/[id], chip, notifications, workspaces, web
-src/components/     ui.tsx (the design system's pieces), WebPage (the website inside the app)
-src/lib/            api + session, web-sign-in, push, links, errors, outbox + cache, lock, tasks, i18n, theme, format, crm rules (as on the web), cards, chips, nfc
+src/app/            screens (Expo Router): login, (tabs)/…, lead/[id], card/[id], card/edit/[id], chip, notifications, workspaces, web
+src/components/     ui.tsx (the design system's pieces), WebPage (the website inside the app), CardFace, card-editor/
+src/lib/            api + session, web-sign-in, push, links, errors, outbox + cache, lock, tasks, i18n, theme, format, crm rules (as on the web), cards, card-editor, upload, chips, nfc
 src/locales/        en.json, ar.json
 ```

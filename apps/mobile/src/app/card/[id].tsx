@@ -1,21 +1,33 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Share, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Loading, Notice, Screen, Text } from '@/components/ui';
-import { cardName, cardUrl, type CardRow } from '@/lib/cards';
+import { CardFace } from '@/components/CardFace';
+import { Button, Card, Loading, Notice, Row, Screen, Text } from '@/components/ui';
+import { identityOf, lookOf, type FullCard } from '@/lib/card-editor';
+import { cardName, cardUrl } from '@/lib/cards';
 import { useApi } from '@/lib/use-api';
 import { useWorkspaceFromLink } from '@/lib/session';
 
-/** One card: its QR code to show across a table, its link to send, and a chip to program. */
+/** One card: how it looks, editing it, its QR code to show across a table, its link to send, and a chip to program. */
 export default function CardScreen() {
   const { id, org } = useLocalSearchParams<{ id: string; org?: string }>();
   const inWorkspace = useWorkspaceFromLink(org);
   const { t } = useTranslation();
-  const { data: card, error, loading } = useApi<CardRow>(`/cards/${id}`);
+  const { data: card, error, loading, reload } = useApi<FullCard>(`/cards/${id}`);
   const [copied, setCopied] = useState(false);
+  // Back from the editor: show what was saved there (the first showing has just loaded it).
+  const reloadRef = useRef(reload);
+  reloadRef.current = reload;
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) firstFocus.current = false;
+      else void reloadRef.current();
+    }, []),
+  );
 
   if (!inWorkspace || (loading && !card)) return <Loading />;
   if (!card) return <Notice tone="danger">{error ?? t('card.notFound')}</Notice>;
@@ -26,13 +38,21 @@ export default function CardScreen() {
     <Screen edges={[]}>
       <Stack.Screen options={{ title: name }} />
       {!card.isPublished && <Notice tone="warning">{t('card.unpublished')}</Notice>}
-      <Card style={{ alignItems: 'center', gap: 14, paddingVertical: 24 }}>
+      <CardFace id={card.id} size="hero" look={lookOf(card)} identity={identityOf(card)} fallbackName={t('editor.yourName')} />
+      <Row gap={10}>
+        <Button label={t('card.edit')} icon="edit" onPress={() => router.push(`/card/edit/${card.id}`)} style={{ flex: 1 }} testID="card-edit" />
+        <Button
+          label={t('editor.preview')}
+          icon="eye"
+          kind="secondary"
+          onPress={() => router.push({ pathname: '/web', params: { path: `/cards/${card.id}/preview`, title: t('editor.preview') } })}
+          style={{ flex: 1 }}
+        />
+      </Row>
+      <Card style={{ alignItems: 'center', gap: 12, paddingVertical: 22 }}>
         <View style={{ backgroundColor: '#fff', padding: 14, borderRadius: 12 }} testID="card-qr">
-          <QRCode value={url} size={220} color="#18181B" backgroundColor="#FFFFFF" ecl="M" />
+          <QRCode value={url} size={200} color="#18181B" backgroundColor="#FFFFFF" ecl="M" />
         </View>
-        <Text weight="semibold" style={{ textAlign: 'center' }}>
-          {name}
-        </Text>
         <Text size="sm" tone="muted" selectable style={{ textAlign: 'center' }}>
           {url.replace(/^https?:\/\//, '')}
         </Text>
@@ -40,19 +60,21 @@ export default function CardScreen() {
           {t('card.qrHint')}
         </Text>
       </Card>
-      <Button label={t('card.share')} icon="share" onPress={() => void Share.share({ message: url, url })} testID="card-share" />
-      <Button
-        label={copied ? t('card.copied') : t('card.copy')}
-        kind="secondary"
-        icon={copied ? 'check' : 'copy'}
-        onPress={async () => {
-          await Clipboard.setStringAsync(url);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1800);
-        }}
-      />
-      <Button label={t('chip.program')} kind="secondary" icon="wifi-off" onPress={() => router.push({ pathname: '/chip', params: { cardId: card.id } })} />
-      <Button label={t('card.editOnWeb')} kind="ghost" icon="external-link" onPress={() => router.push({ pathname: '/web', params: { path: `/cards/${card.id}` } })} />
+      <Row gap={10}>
+        <Button label={t('card.share')} icon="share" kind="secondary" onPress={() => void Share.share({ message: url, url })} style={{ flex: 1 }} testID="card-share" />
+        <Button
+          label={copied ? t('card.copied') : t('card.copy')}
+          kind="secondary"
+          icon={copied ? 'check' : 'copy'}
+          style={{ flex: 1 }}
+          onPress={async () => {
+            await Clipboard.setStringAsync(url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+          }}
+        />
+      </Row>
+      <Button label={t('chip.program')} kind="secondary" icon="nfc" onPress={() => router.push({ pathname: '/chip', params: { cardId: card.id } })} />
     </Screen>
   );
 }

@@ -110,6 +110,7 @@ function Navigator() {
           <Stack.Screen name="lead/edit/[id]" options={{ title: t('edit.title'), presentation: 'modal' }} />
           <Stack.Screen name="tasks" options={{ title: t('tasks.title') }} />
           <Stack.Screen name="card/[id]" options={{ title: t('card.title') }} />
+          <Stack.Screen name="card/edit/[id]" options={{ title: t('editor.title') }} />
           <Stack.Screen name="notifications" options={{ title: t('notifications.title') }} />
           <Stack.Screen name="workspaces" options={{ title: t('workspaces.title'), presentation: 'modal' }} />
           <Stack.Screen name="web" options={{ title: '' }} />

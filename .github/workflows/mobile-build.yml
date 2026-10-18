@@ -3,6 +3,10 @@
 # hands it over, and the build page on expo.dev has the result (for the
 # preview profile, an APK to install with a QR code).
 #
+# Or, with "update", sends the app's code to the phones that already have a
+# build of that profile (its channel), without a new build: what changed
+# must be JavaScript only, for the same app version (eas update).
+#
 # Needs the repository secret EXPO_TOKEN (expo.dev › Account settings ›
 # Access tokens) and the Expo project in app.json (extra.eas.projectId, owner).
 name: Phone app build
@@ -10,6 +14,15 @@ name: Phone app build
 on:
   workflow_dispatch:
     inputs:
+      what:
+        description: A new build, or an update to the builds already installed
+        type: choice
+        options: [build, update]
+        default: build
+      message:
+        description: For an update, what changed (shown on expo.dev)
+        type: string
+        required: false
       profile:
         description: Build profile (eas.json)
         type: choice
@@ -30,7 +43,7 @@ on:
         required: false
 
 concurrency:
-  group: mobile-build-${{ inputs.profile }}-${{ inputs.platform }}
+  group: mobile-${{ inputs.what }}-${{ inputs.profile }}-${{ inputs.platform }}
 
 jobs:
   build:
@@ -75,7 +88,17 @@ jobs:
           set_var EXPO_PUBLIC_WEB_URL "$WEB_URL"
 
       - name: Start the build
+        if: inputs.what != 'update'
         env:
           PROFILE: ${{ inputs.profile }}
           PLATFORM: ${{ inputs.platform }}
         run: $EAS build --profile "$PROFILE" --platform "$PLATFORM" --non-interactive --no-wait
+
+      - name: Send the update
+        if: inputs.what == 'update'
+        env:
+          PROFILE: ${{ inputs.profile }}
+          PLATFORM: ${{ inputs.platform }}
+          MESSAGE: ${{ inputs.message || 'Update' }}
+        # The profile's channel (eas.json) and its EAS environment, as its builds were made.
+        run: $EAS update --channel "$PROFILE" --environment "$PROFILE" --platform "$PLATFORM" --message "$MESSAGE" --non-interactive
