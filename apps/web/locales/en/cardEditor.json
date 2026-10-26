@@ -656,7 +656,7 @@
   },
   "linksPanel": {
     "addTitle": "Add a button",
-    "addHint": "Tap one and type your number, address or username. It shows on the card straight away.",
+    "addHint": "Paste a link, a number or an email, or pick one below.",
     "more": "More…",
     "onCard": "On your card",
     "onCardHint": "Tap one to change it. The switch hides it without deleting it.",
@@ -671,7 +671,13 @@
     "editNamed": "Change {{name}}",
     "unfinished": "Not filled in: tap to finish",
     "savedTitle": "Saved with your contact",
-    "savedHint": "The number and email that go into a visitor’s phone when they tap Save contact. Filled in for you from your first Phone, WhatsApp or Email button."
+    "savedHint": "The number and email that go into a visitor’s phone when they tap Save contact. Filled in for you from your first Phone, WhatsApp or Email button.",
+    "pasteLabel": "A link, number or email",
+    "pastePlaceholder": "Paste a link, number or email",
+    "pasteAdd": "Add",
+    "phoneAs": "Add this number as:",
+    "pasteUnknown": "We couldn’t tell what that is. Paste the whole link (with the site’s address), or pick from the list below.",
+    "orPick": "Or pick one:"
   },
   "composer": {
     "addTitle": "Add {{name}}",
@@ -739,9 +745,37 @@
     "tuneTitle": "Make it yours",
     "tuneHint": "Your colour, light or dark, and the cover.",
     "moreTitle": "More options",
-    "moreHint": "Layout, how links look, the card’s language and logo"
+    "moreHint": "Layout, how links look, the card’s language and logo",
+    "font": "Font",
+    "fromPhotos": "From your photos and logo",
+    "fonts": {
+      "modern": {
+        "label": "Modern",
+        "desc": "Clean and simple"
+      },
+      "cairo": {
+        "label": "Cairo",
+        "desc": "Bold, easy to read"
+      },
+      "tajawal": {
+        "label": "Tajawal",
+        "desc": "Light and friendly"
+      },
+      "elegant": {
+        "label": "Elegant",
+        "desc": "Classic serif"
+      }
+    }
   },
   "extras": {
     "sectionsHint": "Longer content below the buttons: a gallery, a video, certificates, clients, a booking link."
+  },
+  "crop": {
+    "photoTitle": "Place your photo",
+    "coverTitle": "Place your cover",
+    "hint": "Drag to move it, use the slider to zoom.",
+    "zoom": "Zoom",
+    "reset": "Reset",
+    "use": "Use this"
   }
 }

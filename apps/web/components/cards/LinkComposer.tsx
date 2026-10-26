@@ -35,6 +35,7 @@ export interface LinkDraft {
 export function LinkComposer({
   kind,
   action,
+  initial,
   onClose,
   onSubmit,
   onDelete,
@@ -43,6 +44,8 @@ export function LinkComposer({
   kind: LinkKind | null;
   /** The button being changed; absent when adding. */
   action?: CardAction | null;
+  /** What a new one starts from (a link pasted into the Studio's box). */
+  initial?: string;
   onClose: () => void;
   onSubmit: (draft: LinkDraft) => Promise<void>;
   onDelete?: () => void;
@@ -62,11 +65,11 @@ export function LinkComposer({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Each opening starts from the button as it is (or empty for a new one).
-  const openKey = kind ? `${kind.key}:${action?.id ?? 'new'}` : null;
+  const openKey = kind ? `${kind.key}:${action?.id ?? 'new'}:${initial ?? ''}` : null;
   useEffect(() => {
     if (!kind) return;
     const config = (action?.config ?? {}) as Record<string, unknown>;
-    setValue(action ? valueOf(kind, config) : '');
+    setValue(action ? valueOf(kind, config) : (initial ?? ''));
     setMessage(typeof config.text === 'string' ? config.text : '');
     setQuick(action ? isQuickAction(action) : quickByDefault(kind));
     setPrimary(config.isPrimary === true);

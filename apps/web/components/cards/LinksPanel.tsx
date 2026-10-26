@@ -6,7 +6,7 @@ import { Icon } from '@/components/Icon';
 import { Toggle } from '@/components/ui/Toggle';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import type { CardAction } from '@/lib/client';
-import { isQuickAction, isUnfinished, kindByKey, kindOf, QUICK_ADD, summaryOf } from '@/lib/link-kinds';
+import { detectLink, isQuickAction, isUnfinished, kindByKey, kindOf, QUICK_ADD, summaryOf } from '@/lib/link-kinds';
 import { BrandBubble } from './LinkComposer';
 
 /**
@@ -26,8 +26,8 @@ export function LinksPanel({
   contact,
 }: {
   actions: CardAction[];
-  /** Opens the composer for a kind, by its key. */
-  onAdd: (key: string) => void;
+  /** Opens the composer for a kind, by its key, with a value to start from. */
+  onAdd: (key: string, initial?: string) => void;
   /** Every kind, searchable. */
   onBrowse: () => void;
   onEdit: (a: CardAction) => void;
@@ -42,6 +42,26 @@ export function LinksPanel({
   const [arranging, setArranging] = useState<'quick' | 'list' | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
+  // The one box: a pasted link, number or email, and what it was taken for.
+  const [pasted, setPasted] = useState('');
+  const [phone, setPhone] = useState<string | null>(null);
+  const [unknown, setUnknown] = useState(false);
+  const take = (raw: string) => {
+    const found = detectLink(raw);
+    setUnknown(false);
+    setPhone(null);
+    if (!found) {
+      setUnknown(!!raw.trim());
+      return;
+    }
+    if ('phone' in found) {
+      // A number can be a WhatsApp chat or a call: the owner says which.
+      setPhone(found.phone);
+      return;
+    }
+    onAdd(found.kind.key, found.value);
+    setPasted('');
+  };
   const name = (a: CardAction) => {
     const k = kindOf(a);
     return locale === 'ar' ? k.arLabel : k.label;
@@ -75,7 +95,74 @@ export function LinksPanel({
           {t('linksPanel.addTitle')}
         </h3>
         <p className="mt-0.5 text-xs text-faint">{t('linksPanel.addHint')}</p>
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+        <form
+          className="mt-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            take(pasted);
+          }}
+        >
+          <div className="flex gap-2">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">{t('linksPanel.pasteLabel')}</span>
+              <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-faint">
+                <Icon name="link" size={15} />
+              </span>
+              <input
+                dir="auto"
+                value={pasted}
+                onChange={(e) => {
+                  setPasted(e.target.value);
+                  setUnknown(false);
+                  setPhone(null);
+                }}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData('text');
+                  if (!text) return;
+                  e.preventDefault();
+                  setPasted(text.trim());
+                  take(text);
+                }}
+                placeholder={t('linksPanel.pastePlaceholder')}
+                data-testid="link-paste"
+                className="v-field !h-12 !ps-9 sm:!h-11"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+              />
+            </label>
+            <button type="submit" className="v-btn !h-12 shrink-0 sm:!h-11" disabled={!pasted.trim()}>
+              {t('linksPanel.pasteAdd')}
+            </button>
+          </div>
+          {phone && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-elevated px-3 py-2.5 text-sm text-muted" role="status">
+              <span className="me-1">{t('linksPanel.phoneAs')}</span>
+              {(['WHATSAPP', 'CALL'] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    onAdd(key, phone);
+                    setPhone(null);
+                    setPasted('');
+                  }}
+                  className="flex min-h-10 items-center gap-2 rounded-lg bg-surface px-3 text-sm font-medium text-ink ring-1 ring-inset ring-line hover:ring-line-strong"
+                >
+                  <BrandBubble kind={kindByKey(key)!} size={22} />
+                  {locale === 'ar' ? kindByKey(key)!.arLabel : kindByKey(key)!.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {unknown && (
+            <p className="mt-2 text-xs text-amber-700 dark:text-amber-400" role="status">
+              {t('linksPanel.pasteUnknown')}
+            </p>
+          )}
+        </form>
+        <p className="mb-2 mt-4 text-xs text-faint">{t('linksPanel.orPick')}</p>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {QUICK_ADD.map((key) => {
             const kind = kindByKey(key)!;
             return (

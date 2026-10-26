@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { configFor, inputOf, isQuickAction, isUnfinished, kindByKey, kindOf, summaryOf, valueOf, valueProblem } from './link-kinds';
+import { configFor, detectLink, inputOf, isQuickAction, isUnfinished, kindByKey, kindOf, summaryOf, valueOf, valueProblem } from './link-kinds';
 
 const kind = (key: string) => kindByKey(key)!;
 
@@ -90,5 +90,36 @@ describe('a button on the card', () => {
     expect(isUnfinished({ type: 'WEBSITE', config: { url: '' } })).toBe(true);
     expect(isUnfinished({ type: 'SAVE_CONTACT', config: {} })).toBe(false);
     expect(summaryOf({ type: 'WEBSITE', config: { url: 'https://www.vertex.example/' } })).toBe('vertex.example');
+  });
+});
+
+describe('detectLink', () => {
+  const key = (raw: string) => {
+    const d = detectLink(raw);
+    return d && 'kind' in d ? [d.kind.key, d.value] : d;
+  };
+  it('names a link after its site, keeping only the username where it can', () => {
+    expect(key('https://www.instagram.com/mariam.k')).toEqual(['INSTAGRAM', 'mariam.k']);
+    expect(key('instagram.com/mariam.k')).toEqual(['INSTAGRAM', 'mariam.k']);
+    expect(key('linkedin.com/in/mariam-khaled')).toEqual(['LINKEDIN', 'mariam-khaled']);
+    expect(key('https://tiktok.com/@mariam')).toEqual(['TIKTOK', 'mariam']);
+    expect(key('vertex.example')).toEqual(['WEBSITE', 'https://vertex.example']);
+    expect(key('https://maps.app.goo.gl/abc')).toEqual(['MAPS', 'https://maps.app.goo.gl/abc']);
+    expect(key('https://calendly.com/mariam/30min')).toEqual(['CALENDLY', 'mariam/30min']);
+    // …and that value goes back to the same address.
+    expect(configFor(kind('CALENDLY'), 'mariam/30min')).toEqual({ url: 'https://calendly.com/mariam/30min' });
+  });
+  it('reads a WhatsApp chat link as its number', () => {
+    expect(key('https://wa.me/201005550142')).toEqual(['WHATSAPP', '+201005550142']);
+  });
+  it('knows an email and a phone number', () => {
+    expect(key('mariam@vertex.example')).toEqual(['EMAIL', 'mariam@vertex.example']);
+    expect(detectLink('+20 100 555 0142')).toEqual({ phone: '+20 100 555 0142' });
+    expect(detectLink('01005550142')).toEqual({ phone: '01005550142' });
+  });
+  it('gives up on what is none of these', () => {
+    expect(detectLink('')).toBeNull();
+    expect(detectLink('hello there')).toBeNull();
+    expect(detectLink('12345')).toBeNull();
   });
 });

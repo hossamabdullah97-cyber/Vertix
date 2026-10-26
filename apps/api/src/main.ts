@@ -49,9 +49,14 @@ async function bootstrap() {
   // Small answers (under 1 KB) are left alone; compressing them costs more than it saves.
   app.use(compression({ threshold: 1024 }));
 
-  // Serve uploaded images at /uploads (outside the /api global prefix).
+  // Serve uploaded images at /uploads (outside the /api global prefix). They are
+  // public (they show on the cards), so any page may also read them: the Studio
+  // takes a card's colours from its photo and logo.
   mkdirSync(UPLOAD_DIR, { recursive: true });
-  app.useStaticAssets(UPLOAD_DIR, { prefix: '/uploads' });
+  app.useStaticAssets(UPLOAD_DIR, {
+    prefix: '/uploads',
+    setHeaders: (res) => res.setHeader('Access-Control-Allow-Origin', '*'),
+  });
 
   // A spreadsheet import sends up to 500 rows at a time; the default 100 KB is too little for that.
   app.useBodyParser('json', { limit: '1mb' });

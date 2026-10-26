@@ -57,8 +57,25 @@ test('a button is added in one step, with its value asked for first', async ({ p
     .poll(async () => (await card()).actions.find((a) => a.type === 'WEBSITE')?.config)
     .toEqual({ url: 'https://instagram.com/studio.person', isQuick: true });
 
-  // A ready-made design is one tap.
+  // Anything pasted into the one box is recognised: a LinkedIn address opens LinkedIn, username filled in.
+  await page.getByTestId('link-paste').fill('https://www.linkedin.com/in/studio-person');
+  await page.getByTestId('link-paste').press('Enter');
+  await expect(dialog.getByLabel('Username')).toHaveValue('studio-person');
+  await dialog.getByRole('button', { name: 'Add to card' }).click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(async () => (await card()).actions.find((a) => a.type === 'LINKEDIN')?.config.url).toBe('https://linkedin.com/in/studio-person');
+  // A number asks which it is.
+  await page.getByTestId('link-paste').fill('+20 122 333 4444');
+  await page.getByTestId('link-paste').press('Enter');
+  await page.getByRole('status').filter({ hasText: 'Add this number as' }).getByRole('button', { name: 'Phone' }).click();
+  await expect(dialog.getByLabel('Phone number')).toHaveValue('+20 122 333 4444');
+  await dialog.getByRole('button', { name: 'Add to card' }).click();
+  await expect.poll(async () => (await card()).actions.find((a) => a.type === 'CALL')?.config.phone).toBe('+20 122 333 4444');
+
+  // A ready-made design is one tap, and a font another.
   await page.getByRole('tab', { name: 'Design' }).click();
   await page.getByTestId('template-noir-teal').click();
   await expect.poll(async () => (await account.api<{ templateId: string }>(`/cards/${id}`)).data.templateId).toBe('noir-teal');
+  await page.getByTestId('font-cairo').click();
+  await expect.poll(async () => (await account.api<{ theme: { font?: string } }>(`/cards/${id}`)).data.theme.font).toBe('cairo');
 });

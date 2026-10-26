@@ -161,8 +161,9 @@ export function configFor(kind: LinkKind, raw: string): Record<string, unknown> 
     case 'place':
       return looksLikeUrl(v) ? { url: normalizeUrl(v) } : { query: v };
     case 'handle': {
-      // A username can hold dots ("mariam.k"), never a slash: only a scheme or a path makes it a link.
-      if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v) || v.includes('/')) return { url: normalizeUrl(v) };
+      // A username can hold dots ("mariam.k") and a path ("mariam/30min"); only a
+      // scheme, or a domain before the first slash, makes it a whole link.
+      if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v) || /^[^/\s]+\.[^/\s]+\//.test(v)) return { url: normalizeUrl(v) };
       const handle = v.replace(/^@/, '');
       // A site whose addresses carry the @ already ("tiktok.com/@") takes the name without it.
       return { url: `${kind.initialUrl}${handle}` };
@@ -230,4 +231,30 @@ export const quickByDefault = (kind: LinkKind) => ['CALL', 'EMAIL', 'WHATSAPP'].
 /** A button on, but going nowhere: shown to the owner as unfinished. */
 export function isUnfinished(a: Pick<CardAction, 'type' | 'config'>): boolean {
   return a.type !== 'SAVE_CONTACT' && !summaryOf(a).trim();
+}
+
+/**
+ * What a pasted or typed value is, for the Studio's one box: an email, a phone
+ * number (WhatsApp or a call: the owner picks), or a link, named after the
+ * site it goes to, with the value its dialog starts from. Null when it is
+ * none of these.
+ */
+export type Detected = { kind: LinkKind; value: string } | { phone: string } | null;
+export function detectLink(raw: string): Detected {
+  const v = raw.trim();
+  if (!v) return null;
+  if (/^(mailto:)?[^\s@/]+@[^\s@/]+\.[^\s@/]+$/i.test(v)) return { kind: kindByKey('EMAIL')!, value: v.replace(/^mailto:/i, '') };
+  if (/^(tel:)?\+?[\d\s().-]+$/i.test(v) && v.replace(/\D/g, '').length >= 7) return { phone: v.replace(/^tel:/i, '').trim() };
+  if (!looksLikeUrl(v)) return null;
+  const url = normalizeUrl(v);
+  // A WhatsApp chat link is a number.
+  const wa = url.match(/^https?:\/\/(?:api\.)?(?:wa\.me|whatsapp\.com\/send\?phone=)\/?\+?(\d{7,})/i);
+  if (wa) return { kind: kindByKey('WHATSAPP')!, value: `+${wa[1]}` };
+  if (/linkedin\.com\//i.test(url)) {
+    const kind = kindByKey('LINKEDIN')!;
+    return { kind, value: valueOf(kind, { url }) };
+  }
+  if (/(maps\.google\.|google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(url)) return { kind: kindByKey('MAPS')!, value: url };
+  const kind = kindOf({ type: 'WEBSITE', config: { url } });
+  return { kind, value: inputOf(kind) === 'handle' ? valueOf(kind, { url }) : url };
 }
