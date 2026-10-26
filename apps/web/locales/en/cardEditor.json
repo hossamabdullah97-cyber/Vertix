@@ -22,11 +22,10 @@
   },
   "tabs": {
     "heading": "Card",
-    "content": "Content",
+    "profile": "Profile",
+    "links": "Links",
     "design": "Design",
-    "templates": "Templates",
-    "profiles": "Variants",
-    "nfc": "NFC chips",
+    "extras": "Extras",
     "settings": "Settings"
   },
   "quickNav": {
@@ -74,8 +73,8 @@
     "go": "Do it"
   },
   "links": {
-    "title": "Links",
-    "subtitle": "Buttons on your card. Drag to reorder; switch one off to hide it without deleting it.",
+    "title": "Contact and links",
+    "subtitle": "How people reach you from the card. Pick one, fill it in, and it is on the card.",
     "add": "Add a link",
     "emptyTitle": "No links yet",
     "emptyDesc": "Add the ways people should reach you. Start with one of these, or browse every platform.",
@@ -379,7 +378,7 @@
     },
     "look": {
       "title": "Pick a style",
-      "subtitle": "You can change this any time, and there are more in the Templates tab."
+      "subtitle": "You can change this any time, and there are more under Design."
     },
     "preview": "Live preview",
     "previewName": "Your name",
@@ -654,5 +653,95 @@
     "connect": "Connect",
     "reconnect": "Connect again",
     "disconnect": "Disconnect"
+  },
+  "linksPanel": {
+    "addTitle": "Add a button",
+    "addHint": "Tap one and type your number, address or username. It shows on the card straight away.",
+    "more": "More…",
+    "onCard": "On your card",
+    "onCardHint": "Tap one to change it. The switch hides it without deleting it.",
+    "group": {
+      "quick": "Round buttons under your name",
+      "list": "Links on the card",
+      "quickEmpty": "Nothing here yet. Phone, WhatsApp and Email go here by default.",
+      "listEmpty": "Nothing here yet. Websites and social accounts go here by default."
+    },
+    "arrange": "Arrange",
+    "doneArranging": "Done",
+    "editNamed": "Change {{name}}",
+    "unfinished": "Not filled in: tap to finish",
+    "savedTitle": "Saved with your contact",
+    "savedHint": "The number and email that go into a visitor’s phone when they tap Save contact. Filled in for you from your first Phone, WhatsApp or Email button."
+  },
+  "composer": {
+    "addTitle": "Add {{name}}",
+    "editTitle": "{{name}}",
+    "ask": {
+      "phone": "Your number, with the country code",
+      "email": "Your email address",
+      "url": "The link it opens",
+      "handle": "Your username, or paste the whole link",
+      "place": "An address, or a Google Maps link",
+      "none": "Adds a button that saves your details to a visitor’s phone"
+    },
+    "fields": {
+      "phone": "Phone number",
+      "email": "Email address",
+      "url": "Link",
+      "handle": "Username",
+      "place": "Address or map link"
+    },
+    "placeholders": {
+      "phone": "+20 100 123 4567",
+      "email": "name@company.com",
+      "url": "https://…",
+      "handle": "username",
+      "place": "Tahrir Square, Cairo"
+    },
+    "hints": {
+      "phone": "Start with + and the country code, so it works from any country.",
+      "email": "Visitors’ email app opens with this address.",
+      "url": "A website, a file or any page. https:// is added if you leave it out.",
+      "handle": "Without the @. A full link works too.",
+      "place": "Opens in the visitor’s maps app."
+    },
+    "problems": {
+      "required": "Fill this in to add the button.",
+      "phone": "That doesn’t look like a phone number. Use digits, with the country code.",
+      "email": "That doesn’t look like an email address.",
+      "url": "That doesn’t look like a link."
+    },
+    "saveContactHint": "Visitors tap it to save your name, number, email and photo to their phone.",
+    "where": "Where on the card",
+    "quick": "Round button",
+    "quickHint": "Under your name, one tap away",
+    "list": "In the list",
+    "listHint": "Below, with its name and address",
+    "save": "Save",
+    "add": "Add to card"
+  },
+  "profileTab": {
+    "about": "About",
+    "aboutHint": "A few lines under your name: what you do and for whom.",
+    "moreTitle": "More details",
+    "moreHint": "City, languages and how fast you usually reply"
+  },
+  "nextPart": {
+    "links": "Next: contact and links",
+    "design": "Next: design",
+    "extras": "Next: extras"
+  },
+  "designTab": {
+    "readyTitle": "Ready-made designs",
+    "readyHint": "Pick one to start. Your details stay; only the look changes.",
+    "browseAll": "Search, favourite and compare designs",
+    "hideAll": "Hide",
+    "tuneTitle": "Make it yours",
+    "tuneHint": "Your colour, light or dark, and the cover.",
+    "moreTitle": "More options",
+    "moreHint": "Layout, how links look, the card’s language and logo"
+  },
+  "extras": {
+    "sectionsHint": "Longer content below the buttons: a gallery, a video, certificates, clients, a booking link."
   }
 }

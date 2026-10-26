@@ -882,7 +882,7 @@ export default function AppShell({
     <div
       data-theme={theme}
       className="min-h-screen bg-canvas text-ink antialiased [--v-dock:calc(64px+env(safe-area-inset-bottom))] md:flex md:h-screen md:overflow-hidden md:[--v-dock:0px]"
-      style={embedded ? ({ '--v-dock': '0px' } as React.CSSProperties) : undefined}
+      style={embedded ? ({ '--v-dock': '0px', '--v-bar': '0px' } as React.CSSProperties) : undefined}
     >
       {/* Sidebar (desktop) */}
       <aside className="hidden w-[244px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 pb-3 pt-3.5 md:flex">

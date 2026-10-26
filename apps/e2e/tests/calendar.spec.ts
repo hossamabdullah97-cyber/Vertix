@@ -59,9 +59,9 @@ test('a card owner connects their Google Calendar: busy times leave the card, an
     // The owner is busy at the third time the card offers.
     google.busy = [{ start: taken, end: new Date(new Date(taken).getTime() + 30 * 60_000).toISOString() }];
 
-    // 1. From the card's meeting hours, the owner connects their own calendar.
+    // 1. From the card's meeting hours (under Extras), the owner connects their own calendar.
     await signIn(page, account);
-    await page.goto(`/cards/${card.id}`);
+    await page.goto(`/cards/${card.id}?tab=extras`);
     const row = page.getByTestId('calendar-connect');
     await expect(row).toContainText('Connect your calendar');
     await row.getByRole('button', { name: 'Connect' }).click();
@@ -94,7 +94,7 @@ test('a card owner connects their Google Calendar: busy times leave the card, an
     expect(google.events.at(-1)).toMatchObject({ method: 'PATCH', path: '/calendars/primary/events/evt-e2e', body: { status: 'confirmed', summary: 'Meeting with Laila Visitor' } });
 
     // 5. Disconnected: the card offers every time again.
-    await page.goto(`/cards/${card.id}`);
+    await page.goto(`/cards/${card.id}?tab=extras`);
     await row.getByRole('button', { name: 'Disconnect' }).click();
     await expect(row).toContainText('Connect your calendar');
     expect(await slots()).toContain(taken);

@@ -21,7 +21,7 @@ const CHANNELS = [
 
 type ChannelKey = (typeof CHANNELS)[number]['key'];
 
-/** A deliberately short list — the full 19 live in the Templates tab. */
+/** A deliberately short list — the full 19 are under Design in the Studio. */
 type Look = { key: string; id: string; accent: string; mode: 'light' | 'dark' };
 const LOOKS: Look[] = [
   { key: 'swiss-blue', id: 'swiss-blue',   accent: '#2563eb', mode: 'light' as const },

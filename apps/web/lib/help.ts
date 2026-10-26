@@ -266,7 +266,7 @@ const en: HelpStrings = {
       title: 'Links and buttons on your card',
       summary: 'Phone, email, WhatsApp, LinkedIn and any other way to reach you.',
       body: [
-        { p: 'Links are the buttons on your card. In the card’s Content tab, use “Add a link” and pick a platform: phone, email, WhatsApp, a website, LinkedIn, Instagram and many more.' },
+        { p: 'Links are the buttons on your card. In the card’s Links tab, tap one of the tiles (WhatsApp, Phone, Email, Instagram…) or “More…” for every platform, type your number, address or username, and choose “Add to card”.' },
         { p: 'Drag links to change their order. Switch one off to hide it without deleting it. For WhatsApp you can write a message that is ready when the visitor opens the chat.' },
         { p: 'On a phone, WhatsApp and LinkedIn links open in their apps when the visitor has them.' },
       ],
@@ -278,7 +278,7 @@ const en: HelpStrings = {
       summary: 'Longer content below the buttons.',
       body: [
         { p: 'Sections add more to your card below its buttons: About (a few lines about you), Social profiles, a Gallery of your work, a Video from YouTube or Vimeo, a Booking button, your Certifications, and the logos of Clients you have worked with.' },
-        { p: 'Add them from the card’s Content tab, under Sections. Each can be hidden without deleting it, and moved up or down.' },
+        { p: 'Add them from the card’s Extras tab, under Sections. Each can be hidden without deleting it, and moved up or down.' },
       ],
       action: 'Open your cards',
       keywords: 'bio about gallery portfolio video booking certifications clients logos',
@@ -287,7 +287,7 @@ const en: HelpStrings = {
       title: 'Your card’s look',
       summary: 'Templates, colours, the cover and your company’s brand.',
       body: [
-        { p: 'The Templates tab changes the whole layout of the card; your details stay as they are. The Design tab changes colours, the cover, and whether the card follows the phone’s light or dark mode.' },
+        { p: 'In the card’s Design tab, a ready-made design changes the whole look at once; your details stay as they are. Below it you choose the colour, light or dark, and the cover; layout, how links look and the card’s language are under More options.' },
         { p: 'In a team workspace, the logo and colours set in Settings → Brand appear on everyone’s cards, so the company looks the same on every one.' },
       ],
       action: 'Open your cards',
@@ -307,7 +307,7 @@ const en: HelpStrings = {
       title: 'Several profiles on one link',
       summary: 'Show different details at an event, to some people, or at certain times.',
       body: [
-        { p: 'A card keeps one public link, but can have several profiles, set up in the card’s Variants tab. Each profile can change the details, look, links and sections.' },
+        { p: 'A card keeps one public link, but can have several profiles, set up in the card’s Settings tab, under profiles. Each profile can change the details, look, links and sections.' },
         { p: 'A profile shows to people with its private link or passcode, on a schedule (for example during an exhibition), or when you switch it on. When none applies, the default profile shows.' },
       ],
       action: 'Open your cards',
@@ -360,7 +360,7 @@ const en: HelpStrings = {
       title: 'Write a blank NFC tag from your phone',
       summary: 'Use any blank tag with your card.',
       body: [
-        { p: 'On an Android phone with Chrome, open the card, go to its NFC chips tab and choose “Program tag”. Hold a blank tag to the back of the phone: the link is written to it and it is linked to the card.' },
+        { p: 'On an Android phone with Chrome, open the card, go to its Settings tab and choose “Program tag” under NFC chips. Hold a blank tag to the back of the phone: the link is written to it and it is linked to the card.' },
         { p: 'Then tap it once more so the link on it can be checked. You can also lock the tag so nobody can change or wipe it, you included; this can’t be undone.' },
         { tip: 'iPhone doesn’t let websites write NFC tags. Use an Android phone, or chips from us.' },
       ],
@@ -713,7 +713,7 @@ const ar: HelpStrings = {
       title: 'الروابط والأزرار في بطاقتك',
       summary: 'الهاتف والبريد وواتساب ولينكدإن وأي طريقة أخرى للتواصل.',
       body: [
-        { p: 'الروابط هي أزرار بطاقتك. من تبويب «المحتوى» في البطاقة اختر «أضف رابطًا» ثم المنصة: الهاتف، البريد، واتساب، موقع، لينكدإن، إنستجرام وغيرها الكثير.' },
+        { p: 'الروابط هي أزرار بطاقتك. من تبويب «الروابط» في البطاقة اضغط على أحد المربعات (واتساب، الهاتف، البريد، انستجرام…) أو «المزيد…» لكل المنصات، ثم اكتب رقمك أو بريدك أو اسم المستخدم واختر «أضف إلى البطاقة».' },
         { p: 'اسحب الروابط لتغيير ترتيبها. أوقف أي رابط لإخفائه دون حذفه. ولواتساب يمكنك كتابة رسالة تظهر جاهزة حين يفتح الزائر المحادثة.' },
         { p: 'على الهاتف تفتح روابط واتساب ولينكدإن في تطبيقاتها إن كانت لدى الزائر.' },
       ],
@@ -725,7 +725,7 @@ const ar: HelpStrings = {
       summary: 'محتوى أطول أسفل الأزرار.',
       body: [
         { p: 'تضيف الأقسام المزيد إلى بطاقتك أسفل أزرارها: نبذة (سطور عنك)، وحسابات التواصل الاجتماعي، ومعرض لأعمالك، وفيديو من يوتيوب أو فيميو، وزر حجز، وشهاداتك، وشعارات العملاء الذين عملت معهم.' },
-        { p: 'أضفها من تبويب «المحتوى» في البطاقة تحت «الأقسام». يمكن إخفاء أي قسم دون حذفه، وتحريكه لأعلى أو لأسفل.' },
+        { p: 'أضفها من تبويب «إضافات» في البطاقة تحت «الأقسام». يمكن إخفاء أي قسم دون حذفه، وتحريكه لأعلى أو لأسفل.' },
       ],
       action: 'افتح بطاقاتك',
       keywords: 'نبذة معرض أعمال فيديو حجز شهادات عملاء شعارات أقسام',
@@ -734,7 +734,7 @@ const ar: HelpStrings = {
       title: 'شكل بطاقتك',
       summary: 'القوالب والألوان والغلاف وهوية شركتك.',
       body: [
-        { p: 'يغيّر تبويب «القوالب» تصميم البطاقة بالكامل وتبقى بياناتك كما هي. ويغيّر تبويب «التصميم» الألوان والغلاف، وهل تتبع البطاقة الوضع الفاتح أو الداكن في الهاتف.' },
+        { p: 'في تبويب «التصميم» يغيّر التصميم الجاهز شكل البطاقة كله مرة واحدة وتبقى بياناتك كما هي. وتحته تختار اللون، والفاتح أو الداكن، والغلاف؛ أما التخطيط وشكل الروابط ولغة البطاقة ففي «خيارات أكثر».' },
         { p: 'في مساحة الفريق، يظهر الشعار والألوان المحددة في الإعدادات ← الهوية على بطاقات الجميع، فتبدو الشركة واحدة في كل بطاقة.' },
       ],
       action: 'افتح بطاقاتك',
@@ -754,7 +754,7 @@ const ar: HelpStrings = {
       title: 'عدة ملفات على رابط واحد',
       summary: 'اعرض بيانات مختلفة في معرض، أو لأشخاص معيّنين، أو في أوقات محددة.',
       body: [
-        { p: 'تحتفظ البطاقة برابط عام واحد، لكن يمكن أن يكون لها عدة ملفات تُعدّها من تبويب «النسخ». كل ملف يمكنه تغيير البيانات والشكل والروابط والأقسام.' },
+        { p: 'تحتفظ البطاقة برابط عام واحد، لكن يمكن أن يكون لها عدة ملفات تُعدّها من تبويب «الإعدادات» في البطاقة. كل ملف يمكنه تغيير البيانات والشكل والروابط والأقسام.' },
         { p: 'يظهر الملف لمن معه رابطه الخاص أو رمز المرور، أو حسب جدول زمني (مثلًا أثناء معرض)، أو حين تشغّله أنت. وإن لم ينطبق أيّها يظهر الملف الافتراضي.' },
       ],
       action: 'افتح بطاقاتك',
@@ -807,7 +807,7 @@ const ar: HelpStrings = {
       title: 'اكتب على شريحة NFC فارغة من هاتفك',
       summary: 'استخدم أي شريحة فارغة مع بطاقتك.',
       body: [
-        { p: 'على هاتف أندرويد في كروم، افتح البطاقة ثم تبويب «شرائح NFC» واختر «برمجة الشريحة». ضع شريحة فارغة على ظهر الهاتف: يُكتب الرابط عليها وتُربط بالبطاقة.' },
+        { p: 'على هاتف أندرويد في كروم، افتح البطاقة ثم تبويب «الإعدادات» واختر «برمجة الشريحة» تحت شرائح NFC. ضع شريحة فارغة على ظهر الهاتف: يُكتب الرابط عليها وتُربط بالبطاقة.' },
         { p: 'ثم المسها مرة أخرى للتحقق من الرابط المكتوب عليها. ويمكنك أيضًا قفل الشريحة فلا يستطيع أحد تغييرها أو مسحها، ولا أنت؛ ولا يمكن التراجع عن ذلك.' },
         { tip: 'لا يسمح آيفون للمواقع بالكتابة على شرائح NFC. استخدم هاتف أندرويد، أو شرائح من عندنا.' },
       ],
