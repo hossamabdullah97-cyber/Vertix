@@ -2,20 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authFetch, authPostFile, apiMessageOf } from '@/lib/client';
+import { authFetch, apiMessageOf } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { Sheet } from '@/components/ui/Sheet';
 import type { Lead } from '@/lib/crm';
-import { contactFromQr, contactFromText, mergeContacts, type CardContact } from '@/lib/card-text';
-import { canvasJpeg, photoCanvas, readQr, readText, type ReadProgress } from '@/lib/card-reader';
+import type { CardContact } from '@/lib/card-text';
+import type { ReadProgress } from '@/lib/card-reader';
+import { readCardPhoto, scanAvailable, type ReadBy } from '@/lib/read-card';
 import { problemOf, useChecks, type Problem } from '@/lib/validate';
 import { FieldError } from '@/components/ui/FieldError';
 
 type Scanned = CardContact;
 /** How the card was read: its QR code (exact), Claude on the server, or this phone. */
-type ReadBy = 'qr' | 'ai' | 'device' | 'deviceArabic';
 
-const found = (c: CardContact | null) => !!c && !!(c.name || c.company || c.emails.length || c.phones.length);
 
 type Fields = { name: string; title: string; company: string; email: string; phone: string; website: string; address: string; note: string };
 const EMPTY: Fields = { name: '', title: '', company: '', email: '', phone: '', website: '', address: '', note: '' };
@@ -65,9 +64,8 @@ export function AddLead({
   const [aiChecked, setAiChecked] = useState(false);
   useEffect(() => {
     if (!open) return;
-    authFetch<{ available: boolean }>('/leads/scan')
-      .then((r) => setAiReady(r.available))
-      .catch(() => setAiReady(false))
+    void scanAvailable()
+      .then(setAiReady)
       .finally(() => setAiChecked(true));
   }, [open]);
 
@@ -129,42 +127,14 @@ export function AddLead({
     setPhoto(URL.createObjectURL(file));
     setReading(true);
     try {
-      const canvas = await photoCanvas(file);
-
-      // 1. A QR code with a vCard is exact: nothing to guess.
-      const qrText = await readQr(canvas).catch(() => null);
-      const qr = qrText ? contactFromQr(qrText) : null;
-      if (!current()) return;
-      if (qr && (qr.name || qr.emails.length || qr.phones.length)) return fill(qr, 'qr');
-
-      // 2. Claude, when the server has it: best at names and Arabic.
-      if (aiReady) {
-        try {
-          const c = await authPostFile<Scanned>('/leads/scan', await canvasJpeg(canvas), 'card.jpg');
-          if (!current()) return;
-          return fill(qr ? mergeContacts(c, qr) : c, 'ai');
-        } catch (e) {
-          if (!current()) return;
-          if ((e as { status?: number }).status === 422) {
-            setError(t('add.errors.notCard'));
-            return;
-          }
-          // Down or over its limit: read it here instead.
-        }
-      }
-
-      // 3. On this phone.
-      const lines = await readText(canvas, (p) => current() && setProgress(p));
-      if (!current()) return;
-      const c = qr ? mergeContacts(contactFromText(lines), qr) : contactFromText(lines);
-      if (!found(c)) {
-        setError(t('add.errors.notCard'));
+      // The QR code, then Claude on the server when it is there, then this phone (lib/read-card.ts).
+      const read = await readCardPhoto(file, { ai: aiReady, current, onProgress: setProgress });
+      if (!read) return;
+      if (!read.ok) {
+        setError(t(read.error === 'notCard' ? 'add.errors.notCard' : 'add.errors.read'));
         return;
       }
-      // Tesseract reads Arabic, and Arabic digits above all, much less well than English.
-      fill(c, lines.some((l) => /[\u0600-\u06FF]/.test(l.text)) ? 'deviceArabic' : 'device');
-    } catch {
-      if (current()) setError(t('add.errors.read'));
+      fill(read.contact, read.by);
     } finally {
       if (current()) {
         setReading(false);
