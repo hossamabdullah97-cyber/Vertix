@@ -54,6 +54,7 @@ export function HeroVisual() {
       wallet: { apple: false, google: false },
       privacyUrl: null,
       linkStyle: 'list',
+      font: 'modern',
       openInApp: false,
       meta: { available: 'now', location: t('sample.location'), languages: '', responseTime: '' },
       profileName: null,

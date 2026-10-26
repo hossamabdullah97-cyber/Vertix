@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { uploadImage } from '@/lib/client';
 import { Icon } from '@/components/Icon';
+import { ImageCropper } from '@/components/ImageCropper';
 
 const MAX_BYTES = 5 * 1024 * 1024; // keep in sync with the API limit
 const ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,image/avif';
@@ -18,11 +19,17 @@ export function ImageUpload({
   onChange,
   shape = 'wide',
   label,
+  crop = false,
+  onColors,
 }: {
   value: string;
   onChange: (url: string) => void;
   shape?: 'circle' | 'wide';
   label?: string;
+  /** Place and zoom the picture in its frame before it is uploaded. */
+  crop?: boolean;
+  /** The colours of a picture placed here (from the cropper). */
+  onColors?: (colors: string[]) => void;
 }) {
   const { t } = useTranslation('cardEditor');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,6 +37,8 @@ export function ImageUpload({
   const [error, setError] = useState('');
   const [drag, setDrag] = useState(false);
   const [byLink, setByLink] = useState(false);
+  // A picture waiting to be placed in its frame.
+  const [placing, setPlacing] = useState<File | null>(null);
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -42,6 +51,15 @@ export function ImageUpload({
       setError(t('upload.tooLarge'));
       return;
     }
+    // A moving picture would stop moving once cut, so a GIF is kept as it is.
+    if (crop && file.type !== 'image/gif') {
+      setPlacing(file);
+      return;
+    }
+    await upload(file);
+  }
+
+  async function upload(file: File) {
     setBusy(true);
     try {
       const url = await uploadImage(file);
@@ -149,6 +167,17 @@ export function ImageUpload({
       )}
 
       {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+      <ImageCropper
+        file={placing}
+        shape={shape}
+        onCancel={() => setPlacing(null)}
+        onDone={({ file, colors }) => {
+          setPlacing(null);
+          if (colors.length) onColors?.(colors);
+          void upload(file);
+        }}
+      />
     </div>
   );
 }

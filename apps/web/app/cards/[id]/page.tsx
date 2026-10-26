@@ -29,11 +29,12 @@ const LivePreview = nextDynamic(() => import('@/components/preview/LivePreview')
 });
 import ShareCard from '@/components/ShareCard';
 import { PublishedSheet } from '@/components/cards/PublishedSheet';
-import { COVER_STYLES, LAYOUTS, LINK_STYLES, layoutOf, linkStyleOf, modeOf, type CoverStyle, type Layout, type LinkStyle, type ThemeMode } from '@/lib/profile';
+import { CARD_FONTS, COVER_STYLES, FONT_STACKS, LAYOUTS, LINK_STYLES, fontOf, layoutOf, linkStyleOf, modeOf, type CardFont, type CoverStyle, type Layout, type LinkStyle, type ThemeMode } from '@/lib/profile';
 import { Toggle } from '@/components/ui/Toggle';
 import { MeetingHours } from '@/components/cards/MeetingHours';
 import { SecondLanguage, type AltIdentity } from '@/components/cards/SecondLanguage';
 import { shade } from '@/lib/color';
+import { paletteFromImage } from '@/lib/palette';
 import { PresenceBadge, useCardPresence } from '@/components/cards/Presence';
 import { Icon } from '@/components/Icon';
 import { ImageUpload } from '@/components/ImageUpload';
@@ -51,7 +52,7 @@ function identityPayload(
   slug: string,
   templateId: string,
   vcard: Record<string, string>,
-  theme: { accent: string; mode: string; cover: string; lang: string; links: LinkStyle; openInApp: boolean; layout: Layout; brand: boolean },
+  theme: { accent: string; mode: string; cover: string; lang: string; links: LinkStyle; openInApp: boolean; layout: Layout; brand: boolean; font: CardFont },
 ) {
   return { slug, templateId, theme, vcardData: vcard };
 }
@@ -124,7 +125,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
 
   // UX Enhancement States
   // The button being added or changed, asked for in one dialog before it reaches the card.
-  const [composer, setComposer] = useState<{ kind: LinkKind; action?: CardAction } | null>(null);
+  const [composer, setComposer] = useState<{ kind: LinkKind; action?: CardAction; initial?: string } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [platformSearch, setPlatformSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -135,6 +136,9 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
   // Design: every template with search and compare, and the finer choices, folded until asked for.
   const [allTemplates, setAllTemplates] = useState(false);
   const [moreDesign, setMoreDesign] = useState(false);
+  // Colours taken from the card's own pictures (and the workspace logo), offered as accents.
+  const [photoColors, setPhotoColors] = useState<string[]>([]);
+  const addColors = useCallback((colors: string[]) => setPhotoColors((prev) => [...new Set([...colors, ...prev])].slice(0, 6)), []);
 
   // Local changes editing states
   const [slug, setSlug] = useState('');
@@ -151,6 +155,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
   // Teammates with this card open right now.
   const others = useCardPresence(id);
   const [openInApp, setOpenInApp] = useState(false);
+  const [font, setFont] = useState<CardFont>('modern');
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -209,6 +214,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
     const langV = (th.lang as 'en' | 'ar') === 'ar' ? 'ar' : 'en';
     const linksV = linkStyleOf(th.links);
     const inAppV = (th as Record<string, unknown>).openInApp === true;
+    const fontV = fontOf((th as Record<string, unknown>).font);
     setCard(c);
     setSlug(c.slug);
     setTemplateId(c.templateId);
@@ -221,10 +227,11 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
     setLang(langV);
     setLinkStyle(linksV);
     setOpenInApp(inAppV);
+    setFont(fontV);
     setSections([...(c.sections ?? [])].sort((a, b) => a.order - b.order));
     setActions([...(c.actions ?? [])].sort((a, b) => a.order - b.order));
     lastSavedRef.current = JSON.stringify(
-      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV, links: linksV, openInApp: inAppV, layout: layoutV, brand: brandV }),
+      identityPayload(c.slug, c.templateId, vc, { accent: accentV, mode: modeV, cover: coverV, lang: langV, links: linksV, openInApp: inAppV, layout: layoutV, brand: brandV, font: fontV }),
     );
   }, []);
 
@@ -312,7 +319,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
     if (!loadedRef.current) return; // don't save before the first load lands
     if (!latestRef.current) return; // nor before its values are on screen (a re-run of this effect can see the blank first render)
     if (suppressSaveRef.current) { suppressSaveRef.current = false; return; } // ignore server echoes
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand, font }));
     if (body === lastSavedRef.current) {
       // Nothing to save: back to what the card already holds (e.g. the link put right again).
       setAutoSaveStatus((st) => (st === 'Offline' ? 'Saved' : st));
@@ -341,7 +348,35 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
       }
     }, 700);
     return () => clearTimeout(handle);
-  }, [slug, templateId, vcard, accent, mode, cover, lang, linkStyle, openInApp, layout, showBrand, id]);
+  }, [slug, templateId, vcard, accent, mode, cover, lang, linkStyle, openInApp, layout, showBrand, font, id]);
+
+  // Opening Design, the colours of the photo, cover and workspace logo already on the card are read
+  // (a picture another site will not share is skipped).
+  const avatarUrl = vcard.avatar ?? '';
+  const coverUrl = vcard.coverImage ?? '';
+  useEffect(() => {
+    if (activeTab !== 'design') return;
+    let cancelled = false;
+    const read = (src: string) =>
+      new Promise<string[]>((resolve) => {
+        if (!src) return resolve([]);
+        const el = new Image();
+        el.crossOrigin = 'anonymous';
+        el.onload = () => resolve(paletteFromImage(el, 3));
+        el.onerror = () => resolve([]);
+        el.src = src;
+      });
+    void (async () => {
+      const logo = await authFetch<{ branding: Record<string, unknown> | null }>('/orgs/current')
+        .then((o) => (typeof o.branding?.logo === 'string' ? o.branding.logo : ''))
+        .catch(() => '');
+      const found = (await Promise.all([logo, avatarUrl, coverUrl].map(read))).flat();
+      if (!cancelled && found.length) addColors(found);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, avatarUrl, coverUrl, addColors]);
 
   // Load favorites & recentlyUsed from localStorage
   useEffect(() => {
@@ -404,6 +439,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
     setLang(th.lang === 'ar' ? 'ar' : 'en');
     setLinkStyle(th.links);
     setOpenInApp(th.openInApp);
+    setFont(fontOf(th.font));
     setLayout(th.layout);
     setShowBrand(th.brand);
   };
@@ -421,7 +457,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
    * structural mutation pulls fresh server state, so nothing is lost).
    */
   const flushIdentity = async () => {
-    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand }));
+    const body = JSON.stringify(identityPayload(slug, templateId, vcard, { accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand, font }));
     if (body === lastSavedRef.current) return;
     await authFetch(`/cards/${id}`, { method: 'PATCH', body });
     lastSavedRef.current = body;
@@ -545,7 +581,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
       .then(() => offerUndo(message, () => run(() => authFetch(`/cards/${id}/${kind}/${itemId}/restore`, { method: 'POST' }))))
       .catch(() => {});
 
-  const openComposer = (kind: LinkKind, action?: CardAction) => setComposer({ kind, action });
+  const openComposer = (kind: LinkKind, action?: CardAction, initial?: string) => setComposer({ kind, action, initial });
 
   /**
    * A button from the composer, made or changed in one go. A number or address
@@ -918,8 +954,8 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
               <StudioSection id="studio-profile" title={t('profile.title')} description={t('profile.subtitle')}>
                 {/* The face first: it is what people notice on the card. */}
                 <div className="mb-5 grid gap-4 sm:grid-cols-2">
-                  <ImageUpload label={t('profile.avatarLabel')} shape="circle" value={vcard.avatar ?? ''} onChange={(url) => setVcard({ ...vcard, avatar: url })} />
-                  <ImageUpload label={t('profile.coverLabel')} shape="wide" value={vcard.coverImage ?? ''} onChange={(url) => setVcard({ ...vcard, coverImage: url })} />
+                  <ImageUpload label={t('profile.avatarLabel')} shape="circle" crop onColors={addColors} value={vcard.avatar ?? ''} onChange={(url) => setVcard({ ...vcard, avatar: url })} />
+                  <ImageUpload label={t('profile.coverLabel')} shape="wide" crop onColors={addColors} value={vcard.coverImage ?? ''} onChange={(url) => setVcard({ ...vcard, coverImage: url })} />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
@@ -984,9 +1020,9 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
               <StudioSection id="studio-links" title={t('links.title')} description={t('links.subtitle')}>
                 <LinksPanel
                   actions={actions}
-                  onAdd={(key) => {
+                  onAdd={(key, initial) => {
                     const kind = LINK_KINDS.find((k) => k.key === key);
-                    if (kind) openComposer(kind);
+                    if (kind) openComposer(kind, undefined, initial);
                   }}
                   onBrowse={openPicker}
                   onEdit={(a) => openComposer(kindOf(a), a)}
@@ -1050,6 +1086,30 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                   <div className="space-y-8">
                     <div>
                       <h3 className="mb-3 text-sm font-medium text-ink">{t('design.accent')}</h3>
+                      {photoColors.length > 0 && (
+                        <div className="mb-3 flex flex-wrap items-center gap-2.5 rounded-xl bg-elevated px-3 py-2.5" data-testid="photo-colors">
+                          <span className="flex items-center gap-1.5 text-xs text-muted">
+                            <Icon name="sparkle" size={13} className="text-accent" />
+                            {t('designTab.fromPhotos')}
+                          </span>
+                          {photoColors.map((c) => {
+                            const selected = accent.toLowerCase() === c.toLowerCase();
+                            return (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => setAccent(c)}
+                                aria-label={c}
+                                aria-pressed={selected}
+                                className={`h-8 w-8 rounded-full ring-1 ring-inset ring-black/10 transition-shadow ${
+                                  selected ? 'shadow-[0_0_0_2px_hsl(var(--v-surface)),0_0_0_4px_hsl(var(--v-fg))]' : ''
+                                }`}
+                                style={{ background: c }}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
                       <div className="flex flex-wrap items-center gap-2.5">
                         {SWATCHES.map((c) => {
                           const selected = accent.toLowerCase() === c.toLowerCase();
@@ -1114,6 +1174,31 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                         ))}
                       </div>
                       {vcard.coverImage && <p className="mt-2 text-xs text-faint">{t('design.coverImageWins')}</p>}
+                    </div>
+
+                    <div>
+                      <h3 id="design-font" className="mb-3 text-sm font-medium text-ink">{t('designTab.font')}</h3>
+                      <div role="radiogroup" aria-labelledby="design-font" className="grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                        {CARD_FONTS.map((f) => (
+                          <button
+                            key={f}
+                            type="button"
+                            role="radio"
+                            aria-checked={font === f}
+                            onClick={() => setFont(f)}
+                            data-testid={`font-${f}`}
+                            className={`min-w-0 rounded-xl px-3 py-3 text-start transition-colors ${
+                              font === f ? 'bg-accent/[0.05] ring-2 ring-inset ring-accent' : 'ring-1 ring-inset ring-line hover:bg-elevated'
+                            }`}
+                          >
+                            <span className="block truncate text-xl leading-tight text-ink" style={{ fontFamily: FONT_STACKS[f] }}>
+                              Aa أب
+                            </span>
+                            <span className="mt-1.5 block truncate text-xs font-medium text-ink">{t(`designTab.fonts.${f}.label`)}</span>
+                            <span className="block truncate text-xs text-faint">{t(`designTab.fonts.${f}.desc`)}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </StudioSection>
@@ -1699,7 +1784,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                 {
                   ...card,
                   vcardData: vcard,
-                  theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand },
+                  theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand, font },
                 } as any
               }
               sections={previewSections}
@@ -1718,6 +1803,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
       <LinkComposer
         kind={composer?.kind ?? null}
         action={composer?.action}
+        initial={composer?.initial}
         onClose={() => setComposer(null)}
         onSubmit={saveLink}
         onDelete={

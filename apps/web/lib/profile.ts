@@ -39,6 +39,23 @@ export function linkStyleOf(v: unknown): LinkStyle {
   return v === 'icons' || v === 'buttons' ? v : 'list';
 }
 
+/**
+ * The card's typeface. Each covers Arabic and Latin: Elegant pairs Playfair
+ * Display with Amiri for Arabic. "modern" is the site's own (Geist with IBM
+ * Plex Sans Arabic).
+ */
+export type CardFont = 'modern' | 'cairo' | 'tajawal' | 'elegant';
+export const CARD_FONTS: CardFont[] = ['modern', 'cairo', 'tajawal', 'elegant'];
+export function fontOf(v: unknown): CardFont {
+  return CARD_FONTS.includes(v as CardFont) ? (v as CardFont) : 'modern';
+}
+export const FONT_STACKS: Record<CardFont, string | undefined> = {
+  modern: undefined,
+  cairo: "'Cairo', 'IBM Plex Sans Arabic', sans-serif",
+  tajawal: "'Tajawal', 'IBM Plex Sans Arabic', sans-serif",
+  elegant: "'Playfair Display', 'Amiri', Georgia, serif",
+};
+
 export interface ProfileSection {
   id: string;
   type: string;
@@ -73,6 +90,7 @@ export interface ProfileData {
   /** The workspace's privacy policy, linked under the exchange form. */
   privacyUrl: string | null;
   linkStyle: LinkStyle;
+  font: CardFont;
   /** WhatsApp and LinkedIn links open their apps on a phone. */
   openInApp: boolean;
   /** Optional identity details, shown only when the owner filled them in. */
@@ -145,6 +163,7 @@ export function buildProfile(input: {
     langs: alt ? [primary, alt.lang] : [primary],
     circle: theme.avatarShape !== 'square',
     linkStyle: linkStyleOf(theme.links),
+    font: fontOf(theme.font),
     openInApp: theme.openInApp === true,
     verified: input.verified === true,
     brand: theme.brand === false ? null : input.brand ?? null,
@@ -211,8 +230,10 @@ const PALETTE = {
  * An "auto" card starts light, and globals.css switches it to the dark palette
  * when the visitor's phone is dark (see `profileAttrs`).
  */
-export function profileStyle(p: Pick<ProfileData, 'accent' | 'mode'>): React.CSSProperties {
+export function profileStyle(p: Pick<ProfileData, 'accent' | 'mode'> & { font?: CardFont }): React.CSSProperties {
+  const family = p.font ? FONT_STACKS[p.font] : undefined;
   const vars: Record<string, string> = {
+    ...(family ? { fontFamily: family } : {}),
     ...PALETTE[p.mode === 'dark' ? 'dark' : 'light'],
     '--p-accent': p.accent,
     '--p-accent-ch': hexChannels(p.accent),
