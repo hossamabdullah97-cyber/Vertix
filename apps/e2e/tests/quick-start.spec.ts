@@ -25,8 +25,9 @@ test('what the guided start asks for is kept on the card, not only as its button
     .poll(async () => (await account.api<{ actions: { type: string }[] }>(`/cards/${created.data.id}`)).data.actions.map((a) => a.type))
     .toEqual(['WHATSAPP', 'CALL', 'EMAIL', 'WEBSITE']);
 
-  // The studio shows them filled in, not empty.
+  // The studio shows them filled in, not empty (the saved contact is under Contact and links).
   await page.reload();
+  await page.getByRole('tab', { name: 'Links' }).click();
   await expect(page.locator('input[value="+201029665534"]').first()).toBeVisible();
   await expect(page.locator('input[value="hossam@example.test"]').first()).toBeVisible();
 });

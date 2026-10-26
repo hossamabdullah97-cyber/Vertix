@@ -11,11 +11,13 @@ import { problemOf, useChecks } from '@/lib/validate';
 import { FieldError } from '@/components/ui/FieldError';
 import { authFetch, getToken, peek, remember, type Card as CardType, type Section, type CardAction, type NfcTag } from '@/lib/client';
 
-import type { Template } from '@/lib/templates';
+import { TEMPLATES, type Template } from '@/lib/templates';
 import { TemplateMarketplace } from '@/components/TemplateMarketplace';
 import { CardProfiles } from '@/components/CardProfiles';
 import PaymentLinksManager, { type PaymentLinkRow } from '@/components/cards/PaymentLinksManager';
-import ActionCard, { isQuickAction } from '@/components/cards/ActionCard';
+import { LinksPanel } from '@/components/cards/LinksPanel';
+import { LinkComposer, type LinkDraft } from '@/components/cards/LinkComposer';
+import { LINK_CATEGORIES, LINK_KINDS, kindOf, type LinkKind } from '@/lib/link-kinds';
 import QuickStart from '@/components/cards/QuickStart';
 import NfcProgrammer from '@/components/nfc/NfcProgrammer';
 import AppShell from '@/components/AppShell';
@@ -53,36 +55,26 @@ function identityPayload(
 ) {
   return { slug, templateId, theme, vcardData: vcard };
 }
-/** Where each completion step is done in the Content tab. */
-const RECOMMENDATION_TARGET: Record<string, string> = {
-  fullName: 'studio-profile',
-  avatar: 'studio-profile',
-  phone: 'studio-links',
-  email: 'studio-links',
-  actions: 'studio-links',
-  sections: 'studio-sections',
-};
-const BRANDS_COLORS: Record<string, string> = {
-  LINKEDIN: '#0a66c2',
-  WHATSAPP: '#25d366',
-  INSTAGRAM: '#e1306c',
-  FACEBOOK: '#1877f2',
-  TIKTOK: '#000000',
-  YOUTUBE: '#ff0000',
-  GITHUB: '#24292e',
-};
 
-const ACTION_DETAILS: Record<string, { label: string; arLabel: string; color: string; icon: string; desc: string }> = {
-  SAVE_CONTACT: { label: 'Save Contact', arLabel: 'حفظ جهة الاتصال', color: '#1d4ed8', icon: 'user-plus', desc: 'Adds a contact card download button' },
-  WHATSAPP: { label: 'WhatsApp', arLabel: 'واتساب', color: '#25d366', icon: 'whatsapp', desc: 'Direct chat with prefilled message' },
-  CALL: { label: 'Phone Call', arLabel: 'اتصال هاتفي', color: '#10b981', icon: 'phone', desc: 'Initiate a mobile phone call' },
-  EMAIL: { label: 'Send Email', arLabel: 'بريد إلكتروني', color: '#ef4444', icon: 'mail', desc: 'Open email client composer' },
-  LINKEDIN: { label: 'LinkedIn', arLabel: 'لينكد إن', color: '#0a66c2', icon: 'linkedin', desc: 'Link professional LinkedIn profile' },
-  WEBSITE: { label: 'Website Link', arLabel: 'موقع إلكتروني', color: '#2563eb', icon: 'globe', desc: 'Redirect to custom web URL' },
-  BOOK_MEETING: { label: 'Book Meeting', arLabel: 'حجز موعد', color: '#f59e0b', icon: 'calendar', desc: 'Connect booking calendar tools' },
-  REQUEST_QUOTE: { label: 'Request Quote', arLabel: 'طلب تسعيرة', color: '#0ea5e9', icon: 'file-text', desc: 'Collect quote requests from users' },
-  MAPS: { label: 'Google Maps', arLabel: 'خرائط جوجل', color: '#f43f5e', icon: 'map-pin', desc: 'Show store or office address' },
-  FILE: { label: 'Download File', arLabel: 'تحميل ملف PDF', color: '#64748b', icon: 'download', desc: 'Provide PDF guides or resume' },
+/** The five parts of the Studio, in the order a card is made. */
+const TAB_IDS = ['profile', 'links', 'design', 'extras', 'settings'] as const;
+type TabId = (typeof TAB_IDS)[number];
+/** Older addresses (`?tab=content` …) still open the part that now holds what they showed. */
+const LEGACY_TABS: Record<string, TabId> = { content: 'profile', templates: 'design', profiles: 'settings', nfc: 'settings', sections: 'extras' };
+function tabFromUrl(): TabId {
+  if (typeof window === 'undefined') return 'profile';
+  const q = new URLSearchParams(window.location.search).get('tab') ?? '';
+  return (TAB_IDS as readonly string[]).includes(q) ? (q as TabId) : (LEGACY_TABS[q] ?? 'profile');
+}
+
+/** Where each completion step is done: its part, and the place in it. */
+const RECOMMENDATION_TARGET: Record<string, { tab: TabId; el: string }> = {
+  fullName: { tab: 'profile', el: 'studio-profile' },
+  avatar: { tab: 'profile', el: 'studio-profile' },
+  phone: { tab: 'links', el: 'studio-links' },
+  email: { tab: 'links', el: 'studio-links' },
+  actions: { tab: 'links', el: 'studio-links' },
+  sections: { tab: 'profile', el: 'studio-about' },
 };
 
 const SECTION_DETAILS: Record<string, { label: string; arLabel: string; color: string; icon: string; desc: string }> = {
@@ -98,103 +90,6 @@ const SECTION_DETAILS: Record<string, { label: string; arLabel: string; color: s
 /** One certificate, licence or award in a Certifications block. */
 type Credential = { id: string; name: string; issuer: string; year: string };
 const newId = () => Math.random().toString(36).slice(2, 10);
-
-const SOCIAL_PRESETS: Record<
-  string,
-  { label: string; arLabel: string; color: string; icon: string; desc: string; type: string; initialUrl: string }
-> = {
-  INSTAGRAM: { label: 'Instagram', arLabel: 'انستجرام', color: '#e1306c', icon: 'instagram', desc: 'Link to your Instagram profile', type: 'WEBSITE', initialUrl: 'https://instagram.com/' },
-  FACEBOOK: { label: 'Facebook', arLabel: 'فيسبوك', color: '#1877f2', icon: 'facebook', desc: 'Link to your Facebook page/profile', type: 'WEBSITE', initialUrl: 'https://facebook.com/' },
-  TWITTER: { label: 'Twitter / X', arLabel: 'تويتر / إكس', color: '#000000', icon: 'twitter', desc: 'Link to your Twitter / X profile', type: 'WEBSITE', initialUrl: 'https://x.com/' },
-  YOUTUBE: { label: 'YouTube', arLabel: 'يوتيوب', color: '#ff0000', icon: 'youtube', desc: 'Link to your YouTube channel', type: 'WEBSITE', initialUrl: 'https://youtube.com/' },
-  TELEGRAM: { label: 'Telegram', arLabel: 'تليجرام', color: '#24a1de', icon: 'telegram', desc: 'Link to your Telegram direct message', type: 'WEBSITE', initialUrl: 'https://t.me/' },
-  GITHUB: { label: 'GitHub', arLabel: 'جيتهاب', color: '#24292e', icon: 'github', desc: 'Link to your GitHub profile', type: 'WEBSITE', initialUrl: 'https://github.com/' },
-  SNAPCHAT: { label: 'Snapchat', arLabel: 'سناب شات', color: '#fffc00', icon: 'snapchat', desc: 'Link to your Snapchat account', type: 'WEBSITE', initialUrl: 'https://snapchat.com/add/' },
-};
-
-const ALL_PLATFORMS = [
-  { key: 'CALL', label: 'Phone', arLabel: 'رقم الهاتف', color: '#10b981', icon: 'phone', type: 'CALL', category: 'quickActions' },
-  { key: 'EMAIL', label: 'Email', arLabel: 'البريد الإلكتروني', color: '#ef4444', icon: 'mail', type: 'EMAIL', category: 'quickActions' },
-  { key: 'WHATSAPP', label: 'WhatsApp', arLabel: 'واتساب', color: '#25d366', icon: 'whatsapp', type: 'WHATSAPP', category: 'quickActions' },
-  { key: 'SMS', label: 'SMS', arLabel: 'رسالة قصيرة', color: '#0ea5e9', icon: 'message', type: 'WEBSITE', initialUrl: 'sms:', category: 'quickActions' },
-  { key: 'MAPS', label: 'Maps', arLabel: 'خرائط جوجل', color: '#f43f5e', icon: 'map-pin', type: 'MAPS', category: 'quickActions' },
-  { key: 'ADDRESS', label: 'Address', arLabel: 'العنوان الجغرافي', color: '#2563eb', icon: 'map-pin', type: 'MAPS', category: 'quickActions' },
-  { key: 'LOCATION', label: 'Location', arLabel: 'الموقع الحالي', color: '#3b82f6', icon: 'map-pin', type: 'MAPS', category: 'quickActions' },
-  { key: 'SAVE_CONTACT', label: 'Save Contact', arLabel: 'حفظ جهة الاتصال', color: '#1d4ed8', icon: 'user-plus', type: 'SAVE_CONTACT', category: 'quickActions' },
-  { key: 'CONTACT_FORM', label: 'Contact Form', arLabel: 'نموذج التواصل', color: '#14b8a6', icon: 'mail', type: 'WEBSITE', category: 'quickActions' },
-
-  { key: 'LINKEDIN', label: 'LinkedIn', arLabel: 'لينكد إن', color: '#0a66c2', icon: 'linkedin', type: 'LINKEDIN', category: 'socialMedia' },
-  { key: 'FACEBOOK', label: 'Facebook', arLabel: 'فيسبوك', color: '#1877f2', icon: 'facebook', type: 'WEBSITE', initialUrl: 'https://facebook.com/', category: 'socialMedia' },
-  { key: 'INSTAGRAM', label: 'Instagram', arLabel: 'انستجرام', color: '#e1306c', icon: 'instagram', type: 'WEBSITE', initialUrl: 'https://instagram.com/', category: 'socialMedia' },
-  { key: 'TWITTER', label: 'X / Twitter', arLabel: 'إكس / تويتر', color: '#000000', icon: 'twitter', type: 'WEBSITE', initialUrl: 'https://x.com/', category: 'socialMedia' },
-  { key: 'THREADS', label: 'Threads', arLabel: 'ثريدز', color: '#000000', icon: 'link', type: 'WEBSITE', initialUrl: 'https://threads.net/@', category: 'socialMedia' },
-  { key: 'TIKTOK', label: 'TikTok', arLabel: 'تيك توك', color: '#ff0050', icon: 'youtube', type: 'WEBSITE', initialUrl: 'https://tiktok.com/@', category: 'socialMedia' },
-  { key: 'YOUTUBE', label: 'YouTube', arLabel: 'يوتيوب', color: '#ff0000', icon: 'youtube', type: 'WEBSITE', initialUrl: 'https://youtube.com/', category: 'socialMedia' },
-  { key: 'PINTEREST', label: 'Pinterest', arLabel: 'بينتريست', color: '#bd081c', icon: 'tag', type: 'WEBSITE', initialUrl: 'https://pinterest.com/', category: 'socialMedia' },
-  { key: 'BEHANCE', label: 'Behance', arLabel: 'بيهانس', color: '#1769ff', icon: 'layers', type: 'WEBSITE', initialUrl: 'https://behance.net/', category: 'socialMedia' },
-  { key: 'DRIBBBLE', label: 'Dribbble', arLabel: 'دريبل', color: '#ea4c89', icon: 'globe', type: 'WEBSITE', initialUrl: 'https://dribbble.com/', category: 'socialMedia' },
-  { key: 'GITHUB', label: 'GitHub', arLabel: 'جيتهاب', color: '#24292e', icon: 'github', type: 'WEBSITE', initialUrl: 'https://github.com/', category: 'socialMedia' },
-  { key: 'REDDIT', label: 'Reddit', arLabel: 'ريديت', color: '#ff4500', icon: 'users', type: 'WEBSITE', initialUrl: 'https://reddit.com/u/', category: 'socialMedia' },
-  { key: 'DISCORD', label: 'Discord', arLabel: 'ديسكورد', color: '#5865f2', icon: 'message', type: 'WEBSITE', initialUrl: 'https://discord.gg/', category: 'socialMedia' },
-  { key: 'TELEGRAM', label: 'Telegram', arLabel: 'تليجرام', color: '#24a1de', icon: 'telegram', type: 'WEBSITE', initialUrl: 'https://t.me/', category: 'socialMedia' },
-  { key: 'SNAPCHAT', label: 'Snapchat', arLabel: 'سناب شات', color: '#fffc00', icon: 'snapchat', type: 'WEBSITE', initialUrl: 'https://snapchat.com/add/', category: 'socialMedia' },
-
-  { key: 'WEBSITE', label: 'Website', arLabel: 'موقع إلكتروني', color: '#2563eb', icon: 'globe', type: 'WEBSITE', category: 'business' },
-  { key: 'PORTFOLIO', label: 'Portfolio', arLabel: 'معرض الأعمال', color: '#3b82f6', icon: 'briefcase', type: 'WEBSITE', category: 'business' },
-  { key: 'CALENDLY', label: 'Calendly', arLabel: 'حجز كاليندلي', color: '#006bff', icon: 'calendar', type: 'BOOK_MEETING', initialUrl: 'https://calendly.com/', category: 'business' },
-  { key: 'BOOKING', label: 'Booking', arLabel: 'صفحة الحجز', color: '#f59e0b', icon: 'clock', type: 'BOOK_MEETING', category: 'business' },
-  { key: 'STRIPE', label: 'Stripe', arLabel: 'بوابة سترايب', color: '#635bff', icon: 'link', type: 'WEBSITE', category: 'business' },
-  { key: 'PAYPAL', label: 'PayPal', arLabel: 'حساب بايبال', color: '#003087', icon: 'globe', type: 'WEBSITE', initialUrl: 'https://paypal.me/', category: 'business' },
-  { key: 'ZOOM', label: 'Zoom Meeting', arLabel: 'اجتماع زووم', color: '#2d8cff', icon: 'youtube', type: 'BOOK_MEETING', category: 'business' },
-  { key: 'GOOGLE_MEET', label: 'Google Meet', arLabel: 'جوجل ميت', color: '#00897b', icon: 'youtube', type: 'BOOK_MEETING', category: 'business' },
-  { key: 'TEAMS', label: 'Microsoft Teams', arLabel: 'مايكروسوفت تيمز', color: '#464eb8', icon: 'youtube', type: 'BOOK_MEETING', category: 'business' },
-  { key: 'CRM', label: 'CRM Link', arLabel: 'رابط CRM', color: '#ec4899', icon: 'users', type: 'WEBSITE', category: 'business' },
-  { key: 'STORE', label: 'Online Store', arLabel: 'المتجر الإلكتروني', color: '#10b981', icon: 'globe', type: 'WEBSITE', category: 'business' },
-  { key: 'PRODUCT', label: 'Product Link', arLabel: 'رابط المنتج', color: '#0ea5e9', icon: 'tag', type: 'WEBSITE', category: 'business' },
-
-  { key: 'GALLERY', label: 'Gallery', arLabel: 'معرض صور', color: '#ec4899', icon: 'image', type: 'WEBSITE', category: 'media' },
-  { key: 'VIDEO', label: 'Video', arLabel: 'رابط فيديو', color: '#ff0000', icon: 'youtube', type: 'WEBSITE', category: 'media' },
-  { key: 'PDF', label: 'PDF Document', arLabel: 'ملف PDF', color: '#ef4444', icon: 'file-text', type: 'FILE', category: 'media' },
-  { key: 'PRESENTATION', label: 'Presentation', arLabel: 'عرض تقديمي', color: '#f59e0b', icon: 'file-text', type: 'FILE', category: 'media' },
-  { key: 'RESUME', label: 'Resume', arLabel: 'السيرة الذاتية', color: '#10b981', icon: 'file-text', type: 'FILE', category: 'media' },
-  { key: 'DOWNLOAD', label: 'Download File', arLabel: 'تحميل ملف', color: '#64748b', icon: 'download', type: 'FILE', category: 'media' },
-  { key: 'CASE_STUDY', label: 'Case Study', arLabel: 'دراسة حالة', color: '#2563eb', icon: 'file-text', type: 'FILE', category: 'media' },
-
-  { key: 'CUSTOM', label: 'Custom Button', arLabel: 'زر مخصص', color: '#3b82f6', icon: 'link', type: 'WEBSITE', category: 'custom' },
-  { key: 'URL', label: 'External URL', arLabel: 'رابط خارجي', color: '#2563eb', icon: 'external-link', type: 'WEBSITE', category: 'custom' },
-  { key: 'INTERNAL_LINK', label: 'Internal Link', arLabel: 'رابط داخلي', color: '#1d4ed8', icon: 'link', type: 'WEBSITE', category: 'custom' },
-  { key: 'EMBED', label: 'Embed Action', arLabel: 'رابط تضمين', color: '#ec4899', icon: 'layers', type: 'WEBSITE', category: 'custom' },
-  { key: 'API_ACTION', label: 'API Action', arLabel: 'أمر API برمي', color: '#10b981', icon: 'settings', type: 'WEBSITE', category: 'custom' }
-];
-
-/** Picker groups, in the order they are listed (and keyboard-walked). */
-const CATEGORY_KEYS = ['quickActions', 'socialMedia', 'business', 'media', 'custom'] as const;
-
-const getActionBrandDetails = (a: { type: string; config: any }) => {
-  const defaultDetails = ACTION_DETAILS[a.type] ?? { label: 'Link', arLabel: 'رابط', color: '#2563eb', icon: 'link', desc: 'Redirect to custom url' };
-  
-  if (a.type === 'WEBSITE' && typeof a.config?.url === 'string') {
-    const url = a.config.url;
-    if (/instagram\.com/i.test(url)) return { label: 'Instagram', arLabel: 'انستجرام', color: '#e1306c', icon: 'instagram', desc: 'Link to your Instagram profile' };
-    if (/facebook\.com|fb\.com|fb\.me/i.test(url)) return { label: 'Facebook', arLabel: 'فيسبوك', color: '#1877f2', icon: 'facebook', desc: 'Link to your Facebook page/profile' };
-    if (/(?:twitter|x)\.com/i.test(url)) return { label: 'Twitter / X', arLabel: 'تويتر / إكس', color: '#000000', icon: 'twitter', desc: 'Link to your Twitter / X profile' };
-    if (/youtube\.com|youtu\.be/i.test(url)) return { label: 'YouTube', arLabel: 'يوتيوب', color: '#ff0000', icon: 'youtube', desc: 'Link to your YouTube channel' };
-    if (/t\.me|telegram\.(me|org)/i.test(url)) return { label: 'Telegram', arLabel: 'تليجرام', color: '#24a1de', icon: 'telegram', desc: 'Link to your Telegram direct message' };
-    if (/github\.com/i.test(url)) return { label: 'GitHub', arLabel: 'جيتهاب', color: '#24292e', icon: 'github', desc: 'Link to your GitHub profile' };
-    if (/snapchat\.com/i.test(url)) return { label: 'Snapchat', arLabel: 'سناب شات', color: '#fffc00', icon: 'snapchat', desc: 'Link to your Snapchat account' };
-    if (/threads\.net/i.test(url)) return { label: 'Threads', arLabel: 'ثريدز', color: '#000000', icon: 'link', desc: 'Link to your Threads profile' };
-    if (/tiktok\.com/i.test(url)) return { label: 'TikTok', arLabel: 'تيك توك', color: '#ff0050', icon: 'youtube', desc: 'Link to your TikTok account' };
-    if (/pinterest\.com/i.test(url)) return { label: 'Pinterest', arLabel: 'بينتريست', color: '#bd081c', icon: 'tag', desc: 'Link to Pinterest' };
-    if (/behance\.net/i.test(url)) return { label: 'Behance', arLabel: 'بيهانس', color: '#1769ff', icon: 'layers', desc: 'Link to Behance portfolio' };
-    if (/dribbble\.com/i.test(url)) return { label: 'Dribbble', arLabel: 'دريبل', color: '#ea4c89', icon: 'globe', desc: 'Link to Dribbble showcase' };
-    if (/reddit\.com/i.test(url)) return { label: 'Reddit', arLabel: 'ريديت', color: '#ff4500', icon: 'users', desc: 'Link to Reddit profile' };
-    if (/discord/i.test(url)) return { label: 'Discord', arLabel: 'ديسكورد', color: '#5865f2', icon: 'message', desc: 'Invite link to Discord server' };
-    if (/paypal\.me/i.test(url)) return { label: 'PayPal', arLabel: 'بايبال', color: '#003087', icon: 'globe', desc: 'Send payments via PayPal' };
-    if (/stripe\.com/i.test(url)) return { label: 'Stripe', arLabel: 'سترايب', color: '#635bff', icon: 'link', desc: 'Stripe payment page' };
-    if (/calendly\.com/i.test(url)) return { label: 'Calendly', arLabel: 'كاليندلي', color: '#006bff', icon: 'calendar', desc: 'Schedule a meeting' };
-  }
-  return defaultDetails;
-};
 
 export default function CardBuilderStudio(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
@@ -213,8 +108,8 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [previewOpen]);
-  const [activeTab, setActiveTab] = useState<'content' | 'design' | 'templates' | 'profiles' | 'nfc' | 'settings'>('content');
-  const [activeSection, setActiveSection] = useState<'profile' | string>('profile');
+  // The part open, kept in the address (?tab=) so a reload or a link comes back to it.
+  const [activeTab, setActiveTab] = useState<TabId>(tabFromUrl);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'Saved' | 'Saving...' | 'Offline'>('Saved');
 
   // Backend States
@@ -228,14 +123,18 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
   const [error, setError] = useState('');
 
   // UX Enhancement States
-  const [expandedActionId, setExpandedActionId] = useState<string | null>(null);
+  // The button being added or changed, asked for in one dialog before it reaches the card.
+  const [composer, setComposer] = useState<{ kind: LinkKind; action?: CardAction } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [platformSearch, setPlatformSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recentlyUsed, setRecentlyUsed] = useState<string[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
-  const [draggedActionId, setDraggedActionId] = useState<string | null>(null);
-  const [dragOverActionId, setDragOverActionId] = useState<string | null>(null);
+  // The About text as it is typed; null while it is what the card holds.
+  const [aboutDraft, setAboutDraft] = useState<string | null>(null);
+  // Design: every template with search and compare, and the finer choices, folded until asked for.
+  const [allTemplates, setAllTemplates] = useState(false);
+  const [moreDesign, setMoreDesign] = useState(false);
 
   // Local changes editing states
   const [slug, setSlug] = useState('');
@@ -646,78 +545,58 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
       .then(() => offerUndo(message, () => run(() => authFetch(`/cards/${id}/${kind}/${itemId}/restore`, { method: 'POST' }))))
       .catch(() => {});
 
-  const addAction = async (type: string, initialConfig: Record<string, unknown> = {}) => {
-    const oldIds = new Set(actions.map((a) => a.id));
-    try {
-      const freshCard = await run(() =>
-        authFetch(`/cards/${id}/actions`, {
-          method: 'POST',
-          body: JSON.stringify({ type, config: initialConfig }),
-        }),
-      ) as CardType;
+  const openComposer = (kind: LinkKind, action?: CardAction) => setComposer({ kind, action });
 
-      const freshActions = freshCard.actions ?? [];
-      const newAction = freshActions.find((a) => !oldIds.has(a.id));
-      if (newAction) {
-        setExpandedActionId(newAction.id);
-        setTimeout(() => {
-          const el = document.getElementById(`action-card-${newAction.id}`);
-          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 120);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const duplicateAction = async (action: CardAction) => {
-    await addAction(action.type, action.config);
-  };
-
-  const handleDragDrop = (draggedId: string, targetId: string) => {
-    const list = [...actions];
-    const draggedIdx = list.findIndex((x) => x.id === draggedId);
-    const targetIdx = list.findIndex((x) => x.id === targetId);
-    if (draggedIdx === -1 || targetIdx === -1) return;
-
-    const ids = list.map((x) => x.id);
-    const [removed] = ids.splice(draggedIdx, 1);
-    ids.splice(targetIdx, 0, removed);
-    reorder('actions', ids);
+  /**
+   * A button from the composer, made or changed in one go. A number or address
+   * given to the card's first Call, WhatsApp or Email button is also the
+   * contact's own when it has none yet, so people saving it get it too.
+   */
+  const saveLink = async ({ config }: LinkDraft) => {
+    if (!composer) return;
+    const { kind, action } = composer;
+    const fill: Record<string, string> = {};
+    if ((kind.type === 'CALL' || kind.type === 'WHATSAPP') && !vcard.phone?.trim() && typeof config.phone === 'string') fill.phone = config.phone;
+    if (kind.type === 'EMAIL' && !vcard.email?.trim() && typeof config.email === 'string') fill.email = config.email;
+    await run(async () => {
+      if (action) await authFetch(`/cards/${id}/actions/${action.id}`, { method: 'PATCH', body: JSON.stringify({ config }) });
+      else await authFetch(`/cards/${id}/actions`, { method: 'POST', body: JSON.stringify({ type: kind.type, config }) });
+      if (Object.keys(fill).length) await authFetch(`/cards/${id}`, { method: 'PATCH', body: JSON.stringify({ vcardData: { ...vcard, ...fill } }) });
+    });
+    if (!action) addRecent(kind.key);
+    setComposer(null);
   };
 
   const addSection = (type: string) => {
     run(() => authFetch(`/cards/${id}/sections`, { method: 'POST', body: JSON.stringify({ type, content: {} }) }));
   };
 
-  const visiblePlatforms = useMemo(() => {
-    const query = platformSearch.trim().toLowerCase();
-    let basicFiltered = ALL_PLATFORMS.filter(
-      (p) => p.label.toLowerCase().includes(query) || p.arLabel.includes(query)
-    );
-    const flat: typeof ALL_PLATFORMS = [];
-    if (!query) {
-      const favItems = ALL_PLATFORMS.filter((p) => favorites.includes(p.key));
-      flat.push(...favItems.map((p) => ({ ...p, category: 'favorites' })));
-      const recentItems = ALL_PLATFORMS.filter((p) => recentlyUsed.includes(p.key) && !favorites.includes(p.key));
-      flat.push(...recentItems.map((p) => ({ ...p, category: 'recentlyUsed' })));
+  // The picker's list, flat for the arrow keys: favourites, recents, then every kind by group.
+  type PickerItem = LinkKind & { group: string };
+  const pickerGroups = useMemo(() => {
+    const q = platformSearch.trim().toLowerCase();
+    const groups: { key: string; items: PickerItem[] }[] = [];
+    if (!q) {
+      const favs = LINK_KINDS.filter((p) => favorites.includes(p.key));
+      if (favs.length) groups.push({ key: 'favorites', items: favs.map((p) => ({ ...p, group: 'favorites' })) });
+      const recents = LINK_KINDS.filter((p) => recentlyUsed.includes(p.key) && !favorites.includes(p.key));
+      if (recents.length) groups.push({ key: 'recentlyUsed', items: recents.map((p) => ({ ...p, group: 'recentlyUsed' })) });
     }
-    flat.push(...basicFiltered);
-    return flat;
+    for (const cat of LINK_CATEGORIES) {
+      const items = LINK_KINDS.filter((p) => p.category === cat && (!q || p.label.toLowerCase().includes(q) || p.arLabel.includes(q)));
+      if (items.length) groups.push({ key: cat, items: items.map((p) => ({ ...p, group: cat })) });
+    }
+    return groups;
   }, [platformSearch, favorites, recentlyUsed]);
+  const visiblePlatforms = useMemo(() => pickerGroups.flatMap((g) => g.items), [pickerGroups]);
 
   useEffect(() => {
     setHighlightedIndex(0);
   }, [platformSearch]);
 
-  const handleSelectPlatform = (plat: typeof ALL_PLATFORMS[0]) => {
-    addRecent(plat.key);
-    if (plat.initialUrl) {
-      addAction(plat.type, { url: plat.initialUrl });
-    } else {
-      addAction(plat.type);
-    }
+  const handleSelectPlatform = (plat: LinkKind) => {
     setIsModalOpen(false);
+    openComposer(plat);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -890,21 +769,28 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
     </div>
   );
 
-  // A new tab starts at its top: the editor column scrolls on desktop, the page on a phone.
-  const switchTab = (next: typeof activeTab) => {
+  // A new part starts at its top (the editor column scrolls on desktop, the page on a phone), and the address says which part is open.
+  const switchTab = (next: TabId, focus?: string) => {
     setActiveTab(next);
+    const url = new URL(window.location.href);
+    if (next === 'profile') url.searchParams.delete('tab');
+    else url.searchParams.set('tab', next);
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    if (focus) {
+      setTimeout(() => document.getElementById(focus)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      return;
+    }
     const el = editorRef.current;
     if (!el) return;
     if (el.scrollTop > 0) el.scrollTop = 0;
     else if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ block: 'start' });
   };
 
-  const TABS: { id: typeof activeTab; icon: string }[] = [
-    { id: 'content', icon: 'grid' },
+  const TABS: { id: TabId; icon: string }[] = [
+    { id: 'profile', icon: 'user' },
+    { id: 'links', icon: 'link' },
     { id: 'design', icon: 'palette' },
-    { id: 'templates', icon: 'layers' },
-    { id: 'profiles', icon: 'user' },
-    { id: 'nfc', icon: 'tag' },
+    { id: 'extras', icon: 'layers' },
     { id: 'settings', icon: 'settings' },
   ];
 
@@ -923,19 +809,47 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
     setIsModalOpen(true);
   };
 
-  // Keyboard focus in the picker walks this flat list: favourites, recents, then categories.
-  const pickerGroups: { key: string; items: typeof ALL_PLATFORMS }[] = [];
-  if (!platformSearch.trim()) {
-    const favs = ALL_PLATFORMS.filter((p) => favorites.includes(p.key));
-    if (favs.length) pickerGroups.push({ key: 'favorites', items: favs.map((p) => ({ ...p, category: 'favorites' })) });
-    const recents = ALL_PLATFORMS.filter((p) => recentlyUsed.includes(p.key) && !favorites.includes(p.key));
-    if (recents.length) pickerGroups.push({ key: 'recentlyUsed', items: recents.map((p) => ({ ...p, category: 'recentlyUsed' })) });
-  }
-  for (const cat of CATEGORY_KEYS) {
-    const q = platformSearch.trim().toLowerCase();
-    const items = ALL_PLATFORMS.filter((p) => p.category === cat && (!q || p.label.toLowerCase().includes(q) || p.arLabel.includes(q)));
-    if (items.length) pickerGroups.push({ key: cat, items });
-  }
+  // About: the card's first About section, written in Profile; every other section is under Extras.
+  const bio = sections.find((s) => s.type === 'BIO') ?? null;
+  const storedAbout = typeof bio?.content.body === 'string' ? (bio.content.body as string) : '';
+  const about = aboutDraft ?? storedAbout;
+  const saveAbout = async () => {
+    if (aboutDraft === null) return;
+    const text = aboutDraft.trim();
+    if (text === storedAbout.trim()) {
+      setAboutDraft(null);
+      return;
+    }
+    try {
+      if (bio) await patchSection(bio, 'body', text);
+      else if (text) await run(() => authFetch(`/cards/${id}/sections`, { method: 'POST', body: JSON.stringify({ type: 'BIO', content: { body: text } }) }));
+      setAboutDraft(null);
+    } catch {
+      // The error banner says why; the text stays in the field to try again.
+    }
+  };
+  const extras = sections.filter((s) => s.id !== bio?.id);
+  const moveSection = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= extras.length) return;
+    const ids = sections.map((x) => x.id);
+    const [x, y] = [ids.indexOf(extras[i].id), ids.indexOf(extras[j].id)];
+    [ids[x], ids[y]] = [ids[y], ids[x]];
+    reorder('sections', ids);
+  };
+  // The preview shows the About as it is typed, before it is saved.
+  const previewSections: Section[] =
+    aboutDraft === null
+      ? sections
+      : bio
+        ? sections.map((s) => (s.id === bio.id ? { ...s, content: { ...s.content, body: aboutDraft } } : s))
+        : aboutDraft.trim()
+          ? [{ id: 'about-draft', type: 'BIO', order: -1, isVisible: true, content: { body: aboutDraft } }, ...sections]
+          : sections;
+  const goToStep = (step: string) => {
+    const target = RECOMMENDATION_TARGET[step] ?? { tab: 'profile', el: 'studio-profile' };
+    switchTab(target.tab, target.el);
+  };
 
   return (
     <AppShell title={title} action={headerActions} bleed>
@@ -955,7 +869,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
           <div
             role="tablist"
             aria-label={t('tabs.heading')}
-            className="no-scrollbar flex gap-5 overflow-x-auto border-b border-line bg-surface/95 px-5 backdrop-blur md:px-8 lg:sticky lg:top-0 lg:z-10"
+            className="sticky top-[var(--v-bar,3.5rem)] z-20 grid grid-cols-5 border-b border-line bg-surface/95 backdrop-blur sm:flex sm:gap-6 sm:px-6 md:px-8 lg:top-0 lg:z-10"
           >
             {TABS.map((tab) => {
               const active = activeTab === tab.id;
@@ -965,14 +879,15 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                   role="tab"
                   aria-selected={active}
                   onClick={() => switchTab(tab.id)}
-                  className={`relative flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                  data-testid={`tab-${tab.id}`}
+                  className={`relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 px-1 text-2xs font-medium transition-colors sm:min-h-12 sm:shrink-0 sm:flex-row sm:gap-2 sm:px-0 sm:text-sm ${
                     active ? 'text-ink' : 'text-muted hover:text-ink'
                   }`}
                 >
                   <span className={active ? 'text-accent' : 'text-faint'}>
-                    <Icon name={tab.icon} size={14} />
+                    <Icon name={tab.icon} size={16} />
                   </span>
-                  {t(`tabs.${tab.id}`)}
+                  <span className="max-w-full truncate">{t(`tabs.${tab.id}`)}</span>
                   {active && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
                 </button>
               );
@@ -980,294 +895,342 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
           </div>
 
           <div className="mx-auto max-w-[760px] px-5 py-6 md:px-8 md:py-7">
-            {activeTab === 'content' && (
-              <div className="space-y-10">
-                {missingRecommendations.length > 0 ? (
-                  <div className="flex items-center gap-3 rounded-[10px] bg-elevated px-3.5 py-3 ring-1 ring-inset ring-line">
-                    <ScoreRing value={profileScore} />
-                    <p className="min-w-0 flex-1 text-sm text-muted">
-                      <span className="font-medium text-ink">
-                        {t('quality.title')} · <span className="tabular">{profileScore}%</span>
-                      </span>
-                      <span className="mx-1.5 text-faint" aria-hidden>
-                        ·
-                      </span>
-                      {t('quality.next', { step: t(`quality.recommendations.${missingRecommendations[0]}`) })}
-                    </p>
-                    {/* The next step is one tap away: it takes you to where it is done. */}
-                    <button
-                      onClick={() =>
-                        document.getElementById(RECOMMENDATION_TARGET[missingRecommendations[0]] ?? 'studio-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      }
-                      className="v-btn shrink-0 !h-11 px-3 text-xs sm:!h-8"
-                    >
-                      {t('quality.go')}
-                    </button>
-                  </div>
-                ) : null}
+            {(activeTab === 'profile' || activeTab === 'links') && missingRecommendations.length > 0 ? (
+              <div className="mb-8 flex items-center gap-3 rounded-[10px] bg-elevated px-3.5 py-3 ring-1 ring-inset ring-line">
+                <ScoreRing value={profileScore} />
+                <p className="min-w-0 flex-1 text-sm text-muted">
+                  <span className="font-medium text-ink">
+                    {t('quality.title')} · <span className="tabular">{profileScore}%</span>
+                  </span>
+                  <span className="mx-1.5 text-faint" aria-hidden>
+                    ·
+                  </span>
+                  {t('quality.next', { step: t(`quality.recommendations.${missingRecommendations[0]}`) })}
+                </p>
+                {/* The next step is one tap away: it opens the part where it is done. */}
+                <button onClick={() => goToStep(missingRecommendations[0])} className="v-btn shrink-0 !h-11 px-3 text-xs sm:!h-8">
+                  {t('quality.go')}
+                </button>
+              </div>
+            ) : null}
 
-                <StudioSection id="studio-profile" title={t('profile.title')} description={t('profile.subtitle')}>
-                  {/* The face first: it is what people notice on the card. */}
-                  <div className="mb-4 grid gap-4 sm:grid-cols-2">
-                    <ImageUpload
-                      label={t('profile.avatarLabel')}
-                      shape="circle"
-                      value={vcard.avatar ?? ''}
-                      onChange={(url) => setVcard({ ...vcard, avatar: url })}
-                    />
-                    <ImageUpload
-                      label={t('profile.coverLabel')}
-                      shape="wide"
-                      value={vcard.coverImage ?? ''}
-                      onChange={(url) => setVcard({ ...vcard, coverImage: url })}
-                    />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
+            {activeTab === 'profile' && (
+              <StudioSection id="studio-profile" title={t('profile.title')} description={t('profile.subtitle')}>
+                {/* The face first: it is what people notice on the card. */}
+                <div className="mb-5 grid gap-4 sm:grid-cols-2">
+                  <ImageUpload label={t('profile.avatarLabel')} shape="circle" value={vcard.avatar ?? ''} onChange={(url) => setVcard({ ...vcard, avatar: url })} />
+                  <ImageUpload label={t('profile.coverLabel')} shape="wide" value={vcard.coverImage ?? ''} onChange={(url) => setVcard({ ...vcard, coverImage: url })} />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
                     <Field label={t('profile.fullName')}>
-                      <input
-                        className="v-field"
-                        value={vcard.fullName ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, fullName: e.target.value })}
-                        placeholder={t('profile.fullNamePlaceholder')}
-                      />
-                    </Field>
-                    <Field label={t('profile.jobTitle')}>
-                      <input
-                        className="v-field"
-                        value={vcard.title ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, title: e.target.value })}
-                        placeholder={t('profile.jobTitlePlaceholder')}
-                      />
-                    </Field>
-                    <Field label={t('profile.company')}>
-                      <input
-                        className="v-field"
-                        value={vcard.company ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, company: e.target.value })}
-                        placeholder={t('profile.companyPlaceholder')}
-                        autoComplete="organization"
-                      />
-                    </Field>
-                    <Field label={t('profile.phone')} error={say('phone')} errorId="studio-phone-err">
-                      <input
-                        dir="ltr"
-                        {...checks.bind('phone', 'studio-phone-err')}
-                        className="v-field tabular rtl:text-right"
-                        value={vcard.phone ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, phone: e.target.value })}
-                        placeholder={t('profile.phonePlaceholder')}
-                      />
-                    </Field>
-                    <Field label={t('profile.email')} error={say('email')} errorId="studio-email-err">
-                      <input
-                        dir="ltr"
-                        inputMode="email"
-                        {...checks.bind('email', 'studio-email-err')}
-                        className="v-field rtl:text-right"
-                        value={vcard.email ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, email: e.target.value })}
-                        placeholder={t('profile.emailPlaceholder')}
-                      />
+                      <input className="v-field" value={vcard.fullName ?? ''} onChange={(e) => setVcard({ ...vcard, fullName: e.target.value })} placeholder={t('profile.fullNamePlaceholder')} autoComplete="name" />
                     </Field>
                   </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                  <Field label={t('profile.jobTitle')}>
+                    <input className="v-field" value={vcard.title ?? ''} onChange={(e) => setVcard({ ...vcard, title: e.target.value })} placeholder={t('profile.jobTitlePlaceholder')} />
+                  </Field>
+                  <Field label={t('profile.company')}>
+                    <input className="v-field" value={vcard.company ?? ''} onChange={(e) => setVcard({ ...vcard, company: e.target.value })} placeholder={t('profile.companyPlaceholder')} autoComplete="organization" />
+                  </Field>
+                </div>
+                <div id="studio-about" className="mt-4 scroll-mt-16">
+                  <Field label={t('profileTab.about')} hint={t('profileTab.aboutHint')}>
+                    <textarea
+                      className="v-field min-h-28"
+                      value={about}
+                      onChange={(e) => setAboutDraft(e.target.value)}
+                      onBlur={() => void saveAbout()}
+                      placeholder={t('sections.bioPlaceholder')}
+                      maxLength={1000}
+                    />
+                  </Field>
+                </div>
+                <details className="group mt-5 rounded-xl ring-1 ring-inset ring-line [&_summary::-webkit-details-marker]:hidden" open={!!(vcard.location || vcard.languages || vcard.responseTime) || undefined}>
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-ink">{t('profileTab.moreTitle')}</span>
+                      <span className="block text-xs text-faint">{t('profileTab.moreHint')}</span>
+                    </span>
+                    <Icon name="chevron-down" size={15} className="shrink-0 text-faint transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="grid gap-4 border-t border-line px-4 py-4 sm:grid-cols-3">
                     <Field label={t('profile.location')}>
-                      <input
-                        className="v-field"
-                        value={vcard.location ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, location: e.target.value })}
-                        placeholder={t('profile.locationPlaceholder')}
-                      />
+                      <input className="v-field" value={vcard.location ?? ''} onChange={(e) => setVcard({ ...vcard, location: e.target.value })} placeholder={t('profile.locationPlaceholder')} />
                     </Field>
                     <Field label={t('profile.languages')}>
-                      <input
-                        className="v-field"
-                        value={vcard.languages ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, languages: e.target.value })}
-                        placeholder={t('profile.languagesPlaceholder')}
-                      />
+                      <input className="v-field" value={vcard.languages ?? ''} onChange={(e) => setVcard({ ...vcard, languages: e.target.value })} placeholder={t('profile.languagesPlaceholder')} />
                     </Field>
                     <Field label={t('profile.responseTime')}>
-                      <input
-                        className="v-field"
-                        value={vcard.responseTime ?? ''}
-                        onChange={(e) => setVcard({ ...vcard, responseTime: e.target.value })}
-                        placeholder={t('profile.responseTimePlaceholder')}
-                      />
+                      <input className="v-field" value={vcard.responseTime ?? ''} onChange={(e) => setVcard({ ...vcard, responseTime: e.target.value })} placeholder={t('profile.responseTimePlaceholder')} />
                     </Field>
                   </div>
-                  <SecondLanguage
-                    primary={lang}
-                    value={(vcard as unknown as { alt?: AltIdentity }).alt}
-                    onChange={(alt) => {
-                      const next = { ...vcard } as Record<string, unknown>;
-                      if (alt) next.alt = alt;
-                      else delete next.alt;
-                      setVcard(next as Record<string, string>);
-                    }}
-                  />
-                </StudioSection>
+                </details>
+                <SecondLanguage
+                  primary={lang}
+                  value={(vcard as unknown as { alt?: AltIdentity }).alt}
+                  onChange={(alt) => {
+                    const next = { ...vcard } as Record<string, unknown>;
+                    if (alt) next.alt = alt;
+                    else delete next.alt;
+                    setVcard(next as Record<string, string>);
+                  }}
+                />
+                <NextPart label={t('nextPart.links')} onClick={() => switchTab('links')} />
+              </StudioSection>
+            )}
 
-                <StudioSection
-                  id="studio-links"
-                  title={t('links.title')}
-                  description={t('links.subtitle')}
-                  action={
-                    actions.length > 0 && (
-                      <button onClick={openPicker} className="v-btn v-btn-ghost">
-                        <Icon name="plus" size={14} /> {t('links.addShort')}
-                      </button>
-                    )
+            {activeTab === 'links' && (
+              <StudioSection id="studio-links" title={t('links.title')} description={t('links.subtitle')}>
+                <LinksPanel
+                  actions={actions}
+                  onAdd={(key) => {
+                    const kind = LINK_KINDS.find((k) => k.key === key);
+                    if (kind) openComposer(kind);
+                  }}
+                  onBrowse={openPicker}
+                  onEdit={(a) => openComposer(kindOf(a), a)}
+                  onToggle={(a) =>
+                    void run(() => authFetch(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', body: JSON.stringify({ isActive: !a.isActive }) })).catch(() => {})
                   }
-                >
-                  {actions.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-line-strong px-6 py-8 text-center">
-                      <p className="text-base font-medium text-ink">{t('links.emptyTitle')}</p>
-                      <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted">{t('links.emptyDesc')}</p>
-                      <div className="mt-4 flex flex-wrap justify-center gap-2">
-                        {(
-                          [
-                            { key: 'phone', type: 'CALL', icon: 'phone' },
-                            { key: 'email', type: 'EMAIL', icon: 'mail' },
-                            { key: 'whatsapp', type: 'WHATSAPP', icon: 'whatsapp' },
-                            { key: 'website', type: 'WEBSITE', icon: 'globe' },
-                            { key: 'linkedin', type: 'LINKEDIN', icon: 'linkedin' },
-                          ] as const
-                        ).map((item) => (
-                          <button
-                            key={item.type}
-                            onClick={() => addAction(item.type)}
-                            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-ink ring-1 ring-inset ring-line transition-colors hover:bg-elevated sm:min-h-8"
-                          >
-                            <Icon name={item.icon} size={14} /> {t(`links.shortcuts.${item.key}`)}
-                          </button>
-                        ))}
-                        <button onClick={openPicker} className="v-btn">
-                          <Icon name="search" size={14} /> {t('links.add')}
-                        </button>
-                      </div>
+                  onReorder={(ids) => void reorder('actions', ids).catch(() => {})}
+                  contact={
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label={t('profile.phone')} error={say('phone')} errorId="studio-phone-err">
+                        <input
+                          dir="ltr"
+                          {...checks.bind('phone', 'studio-phone-err')}
+                          className="v-field tabular rtl:text-right"
+                          value={vcard.phone ?? ''}
+                          onChange={(e) => setVcard({ ...vcard, phone: e.target.value })}
+                          placeholder={t('profile.phonePlaceholder')}
+                          inputMode="tel"
+                          autoComplete="tel"
+                        />
+                      </Field>
+                      <Field label={t('profile.email')} error={say('email')} errorId="studio-email-err">
+                        <input
+                          dir="ltr"
+                          inputMode="email"
+                          {...checks.bind('email', 'studio-email-err')}
+                          className="v-field rtl:text-right"
+                          value={vcard.email ?? ''}
+                          onChange={(e) => setVcard({ ...vcard, email: e.target.value })}
+                          placeholder={t('profile.emailPlaceholder')}
+                          autoComplete="email"
+                        />
+                      </Field>
                     </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {/* Both placements render the same ActionCard; the group only
-                          says where the action shows up on the public card. */}
-                      {(
-                        [
-                          { key: 'quick', inGroup: (a: CardAction) => isQuickAction(a) },
-                          { key: 'grid', inGroup: (a: CardAction) => !isQuickAction(a) },
-                        ] as const
-                      ).map(({ key, inGroup }) => {
-                        const list = actions.filter(inGroup);
-                        return (
-                          <div key={key}>
-                            <div className="mb-2 flex items-baseline justify-between gap-3">
-                              <h3 className="text-sm font-medium text-ink">{t(`links.group.${key}`)}</h3>
-                              <span className="text-xs text-faint">{t(`links.group.${key}Hint`)}</span>
-                            </div>
-                            {list.length > 0 ? (
-                              <div className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
-                                {list.map((a) => (
-                                  <ActionCard
-                                    key={a.id}
-                                    action={a}
-                                    details={{ ...getActionBrandDetails(a), label: pickerLabel(getActionBrandDetails(a)) }}
-                                    expanded={expandedActionId === a.id}
-                                    dragOver={dragOverActionId === a.id}
-                                    onToggleExpand={() => setExpandedActionId(expandedActionId === a.id ? null : a.id)}
-                                    onToggleActive={() =>
-                                      run(() =>
-                                        authFetch(`/cards/${id}/actions/${a.id}`, {
-                                          method: 'PATCH',
-                                          body: JSON.stringify({ isActive: !a.isActive }),
-                                        }),
-                                      )
-                                    }
-                                    onPatchConfig={(config) =>
-                                      run(() =>
-                                        authFetch(`/cards/${id}/actions/${a.id}`, {
-                                          method: 'PATCH',
-                                          body: JSON.stringify({ config }),
-                                        }),
-                                      )
-                                    }
-                                    onDuplicate={() => duplicateAction(a)}
-                                    onDelete={() => removeWithUndo('actions', a.id, t('links.removed'))}
-                                    onDragStart={(e) => {
-                                      setDraggedActionId(a.id);
-                                      e.dataTransfer.effectAllowed = 'move';
-                                    }}
-                                    onDragOver={(e) => {
-                                      e.preventDefault();
-                                      if (draggedActionId && draggedActionId !== a.id) setDragOverActionId(a.id);
-                                    }}
-                                    onDragLeave={() => setDragOverActionId(null)}
-                                    onDragEnd={() => {
-                                      setDraggedActionId(null);
-                                      setDragOverActionId(null);
-                                    }}
-                                    onDrop={(e) => {
-                                      e.preventDefault();
-                                      if (draggedActionId && draggedActionId !== a.id) handleDragDrop(draggedActionId, a.id);
-                                      setDraggedActionId(null);
-                                      setDragOverActionId(null);
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-xs text-faint">
-                                {t(`links.group.${key}Empty`)}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
+                  }
+                />
+                <NextPart label={t('nextPart.design')} onClick={() => switchTab('design')} />
+              </StudioSection>
+            )}
 
-                      <div>
-                        <div className="mb-2 flex items-baseline justify-between gap-3">
-                          <h3 id="links-display" className="text-sm font-medium text-ink">
-                            {t('links.display.title')}
-                          </h3>
-                          <span className="text-xs text-faint">{t('links.display.hint')}</span>
-                        </div>
-                        <div role="radiogroup" aria-labelledby="links-display" className="grid grid-cols-3 gap-2.5">
-                          {LINK_STYLES.map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              role="radio"
-                              aria-checked={linkStyle === s}
-                              onClick={() => setLinkStyle(s)}
-                              className={`min-w-0 rounded-xl p-3 text-start transition-colors ${
-                                linkStyle === s ? 'bg-accent/[0.05] ring-2 ring-inset ring-accent' : 'ring-1 ring-inset ring-line hover:bg-elevated'
-                              }`}
-                            >
-                              <LinkStyleSketch style={s} />
-                              <span className="mt-2.5 block truncate text-sm font-medium text-ink">{t(`links.display.${s}.label`)}</span>
-                              <span className="block truncate text-xs text-faint">{t(`links.display.${s}.desc`)}</span>
-                            </button>
-                          ))}
-                        </div>
-                        <div className="mt-3 flex items-center justify-between gap-4 rounded-xl px-3.5 py-3 ring-1 ring-inset ring-line">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-ink">{t('links.openInApp.title')}</p>
-                            <p className="mt-0.5 text-xs leading-snug text-faint">{t('links.openInApp.hint')}</p>
-                          </div>
-                          <Toggle on={openInApp} onChange={() => setOpenInApp((v) => !v)} label={t('links.openInApp.title')} />
-                        </div>
-                      </div>
+            {activeTab === 'design' && (
+              <div className="space-y-10">
+                <StudioSection title={t('designTab.readyTitle')} description={t('designTab.readyHint')}>
+                  <div role="radiogroup" aria-label={t('designTab.readyTitle')} className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
+                    {TEMPLATES.map((tpl) => (
+                      <TemplateTile key={tpl.id} tpl={tpl} selected={templateId === tpl.id} busy={applyingId === tpl.id} onClick={() => void applyTemplate(tpl)} />
+                    ))}
+                  </div>
+                  <button type="button" onClick={() => setAllTemplates((v) => !v)} aria-expanded={allTemplates} className="v-btn v-btn-ghost mt-4">
+                    <Icon name={allTemplates ? 'chevron-up' : 'search'} size={14} />
+                    {allTemplates ? t('designTab.hideAll') : t('designTab.browseAll')}
+                  </button>
+                  {allTemplates && (
+                    <div className="mt-4">
+                      <TemplateMarketplace currentTemplateId={templateId} onApply={applyTemplate} applyingId={applyingId} />
                     </div>
                   )}
                 </StudioSection>
 
-                {/* Payment links — external link-sharing only */}
-                <div id="studio-payments" className="scroll-mt-16">
-                  <PaymentLinksManager cardId={id} onChange={setPaymentLinks} />
-                </div>
+                <StudioSection title={t('designTab.tuneTitle')} description={t('designTab.tuneHint')}>
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="mb-3 text-sm font-medium text-ink">{t('design.accent')}</h3>
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        {SWATCHES.map((c) => {
+                          const selected = accent.toLowerCase() === c.toLowerCase();
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setAccent(c)}
+                              aria-label={c}
+                              aria-pressed={selected}
+                              className={`h-8 w-8 rounded-full ring-1 ring-inset ring-black/10 transition-shadow ${
+                                selected ? 'shadow-[0_0_0_2px_hsl(var(--v-surface)),0_0_0_4px_hsl(var(--v-fg))]' : ''
+                              }`}
+                              style={{ background: c }}
+                            />
+                          );
+                        })}
+                        <label
+                          className="relative flex h-8 items-center gap-2 rounded-full px-3 text-xs text-muted ring-1 ring-inset ring-line hover:bg-elevated"
+                          title={accent}
+                        >
+                          <span className="h-4 w-4 rounded-full ring-1 ring-inset ring-black/10" style={{ background: accent }} />
+                          <span dir="ltr" className="font-mono">{accent}</span>
+                          <input
+                            type="color"
+                            value={/^#[0-9a-f]{6}$/i.test(accent) ? accent : '#2563eb'}
+                            onChange={(e) => setAccent(e.target.value)}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                          />
+                        </label>
+                      </div>
+                    </div>
 
-                <StudioSection id="studio-sections" title={t('sections.title')} description={t('sections.subtitle')}>
+                    <div>
+                      <h3 className="mb-3 text-sm font-medium text-ink">{t('design.themeMode')}</h3>
+                      <div className="grid max-w-lg grid-cols-3 gap-3">
+                        {(['light', 'dark', 'auto'] as const).map((m) => (
+                          <OptionCard key={m} selected={mode === m} onClick={() => setMode(m)} label={t(`design.${m}Mode`)}>
+                            <span className="relative flex h-16 overflow-hidden rounded-md ring-1 ring-inset ring-black/10">
+                              {/* "Auto" shows both halves: it follows the visitor's phone. */}
+                              {(m === 'auto' ? (['light', 'dark'] as const) : [m]).map((half) => (
+                                <span key={half} className={`flex flex-1 flex-col gap-1.5 p-2.5 ${half === 'light' ? 'bg-white' : 'bg-[#141416]'}`}>
+                                  <span className="h-2 w-10 max-w-full rounded-full" style={{ background: accent }} />
+                                  <span className={`h-1.5 w-16 max-w-full rounded-full ${half === 'light' ? 'bg-black/15' : 'bg-white/20'}`} />
+                                  <span className={`h-1.5 w-12 max-w-full rounded-full ${half === 'light' ? 'bg-black/10' : 'bg-white/10'}`} />
+                                </span>
+                              ))}
+                            </span>
+                          </OptionCard>
+                        ))}
+                      </div>
+                      {mode === 'auto' && <p className="mt-2 text-xs text-faint">{t('design.autoHint')}</p>}
+                    </div>
+
+                    <div>
+                      <h3 className="mb-3 text-sm font-medium text-ink">{t('design.cover')}</h3>
+                      <div className="grid max-w-2xl grid-cols-3 gap-3 sm:grid-cols-5">
+                        {COVER_STYLES.map((type) => (
+                          <OptionCard key={type} selected={cover === type} onClick={() => setCover(type)} label={t(`design.covers.${type}`)}>
+                            <CoverSwatch type={type} accent={accent} />
+                          </OptionCard>
+                        ))}
+                      </div>
+                      {vcard.coverImage && <p className="mt-2 text-xs text-faint">{t('design.coverImageWins')}</p>}
+                    </div>
+                  </div>
+                </StudioSection>
+
+                <section className="rounded-xl ring-1 ring-inset ring-line">
+                  <button
+                    type="button"
+                    onClick={() => setMoreDesign((v) => !v)}
+                    aria-expanded={moreDesign}
+                    className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-start"
+                  >
+                    <span className="v-icon-tile">
+                      <Icon name="settings" size={15} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-ink">{t('designTab.moreTitle')}</span>
+                      <span className="block text-xs text-faint">{t('designTab.moreHint')}</span>
+                    </span>
+                    <Icon name="chevron-down" size={15} className={`shrink-0 text-faint transition-transform ${moreDesign ? 'rotate-180' : ''}`} />
+                  </button>
+                  {moreDesign && (
+                    <div className="divide-y divide-line border-t border-line">
+                      <div className="space-y-8 px-4 py-5">
+                        <div>
+                          <h3 id="design-layout" className="mb-3 text-sm font-medium text-ink">{t('design.layout')}</h3>
+                          <div role="radiogroup" aria-labelledby="design-layout" className="grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                            {LAYOUTS.map((l) => (
+                              <button
+                                key={l}
+                                type="button"
+                                role="radio"
+                                aria-checked={layout === l}
+                                onClick={() => setLayout(l)}
+                                className={`min-w-0 rounded-xl p-2.5 text-start transition-colors ${
+                                  layout === l ? 'bg-accent/[0.05] ring-2 ring-inset ring-accent' : 'ring-1 ring-inset ring-line hover:bg-elevated'
+                                }`}
+                              >
+                                <LayoutSketch layout={l} accent={accent} />
+                                <span className="mt-2.5 block truncate text-sm font-medium text-ink">{t(`design.layouts.${l}.label`)}</span>
+                                <span className="block text-xs leading-snug text-faint">{t(`design.layouts.${l}.desc`)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 id="links-display" className="mb-3 text-sm font-medium text-ink">
+                            {t('links.display.title')}
+                          </h3>
+                          <div role="radiogroup" aria-labelledby="links-display" className="grid grid-cols-3 gap-2.5">
+                            {LINK_STYLES.map((s) => (
+                              <button
+                                key={s}
+                                type="button"
+                                role="radio"
+                                aria-checked={linkStyle === s}
+                                onClick={() => setLinkStyle(s)}
+                                className={`min-w-0 rounded-xl p-3 text-start transition-colors ${
+                                  linkStyle === s ? 'bg-accent/[0.05] ring-2 ring-inset ring-accent' : 'ring-1 ring-inset ring-line hover:bg-elevated'
+                                }`}
+                              >
+                                <LinkStyleSketch style={s} />
+                                <span className="mt-2.5 block truncate text-sm font-medium text-ink">{t(`links.display.${s}.label`)}</span>
+                                <span className="block truncate text-xs text-faint">{t(`links.display.${s}.desc`)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="mb-3 text-sm font-medium text-ink">{t('design.cardLanguage')}</h3>
+                          <div className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
+                            {(
+                              [
+                                ['en', 'English'],
+                                ['ar', 'العربية'],
+                              ] as const
+                            ).map(([code, label]) => (
+                              <button
+                                key={code}
+                                type="button"
+                                onClick={() => setLang(code)}
+                                aria-pressed={lang === code}
+                                className={`h-11 rounded-md px-4 text-sm font-medium transition-colors sm:h-8 ${
+                                  lang === code ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-ink">{t('links.openInApp.title')}</p>
+                          <p className="mt-0.5 text-xs leading-snug text-faint">{t('links.openInApp.hint')}</p>
+                        </div>
+                        <Toggle on={openInApp} onChange={() => setOpenInApp((v) => !v)} label={t('links.openInApp.title')} />
+                      </div>
+                      <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-ink">{t('design.brand.title')}</p>
+                          <p className="mt-0.5 text-xs leading-snug text-faint">{t('design.brand.hint')}</p>
+                        </div>
+                        <Toggle on={showBrand} onChange={() => setShowBrand((v) => !v)} label={t('design.brand.title')} />
+                      </div>
+                    </div>
+                  )}
+                </section>
+                <NextPart label={t('nextPart.extras')} onClick={() => switchTab('extras')} />
+              </div>
+            )}
+
+            {activeTab === 'extras' && (
+              <div className="space-y-10">
+                <StudioSection id="studio-sections" title={t('sections.title')} description={t('extras.sectionsHint')}>
                   <div className="space-y-3">
-                    {sections.map((s, i) => {
+                    {extras.map((s, i) => {
                       const details = SECTION_DETAILS[s.type];
                       return (
                         <div key={s.id} className="rounded-xl ring-1 ring-inset ring-line">
@@ -1296,10 +1259,10 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                               >
                                 <Icon name={s.isVisible ? 'eye' : 'eye-off'} size={15} />
                               </RowButton>
-                              <RowButton label={t('links.moveUp')} disabled={i === 0} onClick={() => move(sections, i, -1, 'sections')}>
+                              <RowButton label={t('links.moveUp')} disabled={i === 0} onClick={() => moveSection(i, -1)}>
                                 <Icon name="chevron-down" size={15} className="rotate-180" />
                               </RowButton>
-                              <RowButton label={t('links.moveDown')} disabled={i === sections.length - 1} onClick={() => move(sections, i, 1, 'sections')}>
+                              <RowButton label={t('links.moveDown')} disabled={i === extras.length - 1} onClick={() => moveSection(i, 1)}>
                                 <Icon name="chevron-down" size={15} />
                               </RowButton>
                               <RowButton label={t('sections.deleteBlock')} danger onClick={() => removeWithUndo('sections', s.id, t('sections.removed'))}>
@@ -1539,7 +1502,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                       );
                     })}
 
-                    {sections.length === 0 && (
+                    {extras.length === 0 && (
                       <p className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-xs text-faint">
                         {t('sections.empty')}
                       </p>
@@ -1548,7 +1511,9 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
 
                   <h3 className="mb-2 mt-6 text-sm font-medium text-ink">{t('sections.available')}</h3>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {Object.entries(SECTION_DETAILS).map(([type, details]) => (
+                    {Object.entries(SECTION_DETAILS)
+                      .filter(([type]) => type !== 'BIO')
+                      .map(([type, details]) => (
                       <button
                         key={type}
                         onClick={() => addSection(type)}
@@ -1563,188 +1528,14 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                   </div>
                 </StudioSection>
 
+                <div id="studio-payments" className="scroll-mt-16">
+                  <PaymentLinksManager cardId={id} onChange={setPaymentLinks} />
+                </div>
+
                 <StudioSection id="studio-meetings" title={t('meetings.title')} description={t('meetings.subtitle')}>
                   <MeetingHours cardId={id} slug={card.slug} lang={lang} stored={(card.theme as Record<string, unknown> | null)?.availability} />
                 </StudioSection>
               </div>
-            )}
-
-            {activeTab === 'design' && (
-              <StudioSection title={t('design.title')} description={t('design.subtitle')}>
-                <div className="space-y-8">
-                  <div>
-                    <h3 id="design-layout" className="mb-3 text-sm font-medium text-ink">{t('design.layout')}</h3>
-                    <div role="radiogroup" aria-labelledby="design-layout" className="grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
-                      {LAYOUTS.map((l) => (
-                        <button
-                          key={l}
-                          type="button"
-                          role="radio"
-                          aria-checked={layout === l}
-                          onClick={() => setLayout(l)}
-                          className={`min-w-0 rounded-xl p-2.5 text-start transition-colors ${
-                            layout === l ? 'bg-accent/[0.05] ring-2 ring-inset ring-accent' : 'ring-1 ring-inset ring-line hover:bg-elevated'
-                          }`}
-                        >
-                          <LayoutSketch layout={l} accent={accent} />
-                          <span className="mt-2.5 block truncate text-sm font-medium text-ink">{t(`design.layouts.${l}.label`)}</span>
-                          <span className="block text-xs leading-snug text-faint">{t(`design.layouts.${l}.desc`)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.accent')}</h3>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      {SWATCHES.map((c) => {
-                        const selected = accent.toLowerCase() === c.toLowerCase();
-                        return (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setAccent(c)}
-                            aria-label={c}
-                            aria-pressed={selected}
-                            className={`h-8 w-8 rounded-full ring-1 ring-inset ring-black/10 transition-shadow ${
-                              selected ? 'shadow-[0_0_0_2px_hsl(var(--v-surface)),0_0_0_4px_hsl(var(--v-fg))]' : ''
-                            }`}
-                            style={{ background: c }}
-                          />
-                        );
-                      })}
-                      <label
-                        className="relative flex h-8 items-center gap-2 rounded-full px-3 text-xs text-muted ring-1 ring-inset ring-line hover:bg-elevated"
-                        title={accent}
-                      >
-                        <span className="h-4 w-4 rounded-full ring-1 ring-inset ring-black/10" style={{ background: accent }} />
-                        <span dir="ltr" className="font-mono">{accent}</span>
-                        <input
-                          type="color"
-                          value={/^#[0-9a-f]{6}$/i.test(accent) ? accent : '#2563eb'}
-                          onChange={(e) => setAccent(e.target.value)}
-                          className="absolute inset-0 cursor-pointer opacity-0"
-                        />
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.themeMode')}</h3>
-                    <div className="grid max-w-lg grid-cols-3 gap-3">
-                      {(['light', 'dark', 'auto'] as const).map((m) => (
-                        <OptionCard key={m} selected={mode === m} onClick={() => setMode(m)} label={t(`design.${m}Mode`)}>
-                          <span className="relative flex h-16 overflow-hidden rounded-md ring-1 ring-inset ring-black/10">
-                            {/* "Auto" shows both halves: it follows the visitor's phone. */}
-                            {(m === 'auto' ? (['light', 'dark'] as const) : [m]).map((half) => (
-                              <span key={half} className={`flex flex-1 flex-col gap-1.5 p-2.5 ${half === 'light' ? 'bg-white' : 'bg-[#141416]'}`}>
-                                <span className="h-2 w-10 max-w-full rounded-full" style={{ background: accent }} />
-                                <span className={`h-1.5 w-16 max-w-full rounded-full ${half === 'light' ? 'bg-black/15' : 'bg-white/20'}`} />
-                                <span className={`h-1.5 w-12 max-w-full rounded-full ${half === 'light' ? 'bg-black/10' : 'bg-white/10'}`} />
-                              </span>
-                            ))}
-                          </span>
-                        </OptionCard>
-                      ))}
-                    </div>
-                    {mode === 'auto' && <p className="mt-2 text-xs text-faint">{t('design.autoHint')}</p>}
-                  </div>
-
-                  <div>
-                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.cover')}</h3>
-                    <div className="grid max-w-2xl grid-cols-3 gap-3 sm:grid-cols-5">
-                      {COVER_STYLES.map((type) => (
-                        <OptionCard key={type} selected={cover === type} onClick={() => setCover(type)} label={t(`design.covers.${type}`)}>
-                          <CoverSwatch type={type} accent={accent} />
-                        </OptionCard>
-                      ))}
-                    </div>
-                    {vcard.coverImage && <p className="mt-2 text-xs text-faint">{t('design.coverImageWins')}</p>}
-                  </div>
-
-                  <div className="flex max-w-2xl items-center justify-between gap-4 rounded-xl px-3.5 py-3 ring-1 ring-inset ring-line">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-ink">{t('design.brand.title')}</p>
-                      <p className="mt-0.5 text-xs leading-snug text-faint">{t('design.brand.hint')}</p>
-                    </div>
-                    <Toggle on={showBrand} onChange={() => setShowBrand((v) => !v)} label={t('design.brand.title')} />
-                  </div>
-
-                  <div>
-                    <h3 className="mb-3 text-sm font-medium text-ink">{t('design.cardLanguage')}</h3>
-                    <div className="inline-flex rounded-lg bg-elevated p-0.5 ring-1 ring-inset ring-line">
-                      {(
-                        [
-                          ['en', 'English'],
-                          ['ar', 'العربية'],
-                        ] as const
-                      ).map(([code, label]) => (
-                        <button
-                          key={code}
-                          type="button"
-                          onClick={() => setLang(code)}
-                          aria-pressed={lang === code}
-                          className={`h-11 rounded-md px-4 text-sm font-medium transition-colors sm:h-8 ${
-                            lang === code ? 'bg-surface text-ink shadow-sm ring-1 ring-line' : 'text-muted hover:text-ink'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </StudioSection>
-            )}
-
-            {activeTab === 'templates' && (
-              <StudioSection title={t('templates.title')} description={t('templates.subtitle')}>
-                <TemplateMarketplace currentTemplateId={templateId} onApply={applyTemplate} applyingId={applyingId} />
-              </StudioSection>
-            )}
-
-            {activeTab === 'profiles' && card && <CardProfiles cardId={id} slug={card.slug} />}
-
-            {activeTab === 'nfc' && (
-              <StudioSection
-                title={t('nfc.provisioning')}
-                description={t('nfc.subtitle')}
-                action={
-                  <Link href="/tags" className="v-btn v-btn-ghost">
-                    {t('nfc.manage')}
-                  </Link>
-                }
-              >
-                {/* Write a blank tag from this phone — Chromium on Android only,
-                    and the component says so itself everywhere else. */}
-                <NfcProgrammer cardId={id} onProgrammed={() => void load()} />
-
-                <h3 className="mb-2 mt-8 text-sm font-medium text-ink">{t('nfc.title')}</h3>
-                {linkedTags.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">{t('nfc.empty')}</p>
-                ) : (
-                  <ul className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
-                    {linkedTags.map((tag) => (
-                      <li key={tag.id} className="flex items-center gap-3 px-3.5 py-3">
-                        <span className="v-icon-tile">
-                          <Icon name="tag" size={15} />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p dir="ltr" className="truncate text-start font-mono text-xs text-ink rtl:text-right">
-                            {tag.uid}
-                          </p>
-                          <p className="text-xs text-faint">
-                            {tag.hardwareType.toLowerCase()} · {t('nfc.scanCount')}{' '}
-                            <span className="tabular">{tag.activationCount}</span>
-                          </p>
-                        </div>
-                        <span className="v-badge v-badge-success">{t('nfc.bound')}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="mt-3 text-xs text-faint">{t('nfc.explain')}</p>
-              </StudioSection>
             )}
 
             {activeTab === 'settings' && (
@@ -1796,6 +1587,48 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                     </div>
                   </div>
                 </StudioSection>
+
+                <StudioSection
+                  title={t('nfc.provisioning')}
+                  description={t('nfc.subtitle')}
+                  action={
+                    <Link href="/tags" className="v-btn v-btn-ghost">
+                      {t('nfc.manage')}
+                    </Link>
+                  }
+                >
+                  {/* Write a blank tag from this phone — Chromium on Android only,
+                      and the component says so itself everywhere else. */}
+                  <NfcProgrammer cardId={id} onProgrammed={() => void load()} />
+
+                  <h3 className="mb-2 mt-8 text-sm font-medium text-ink">{t('nfc.title')}</h3>
+                  {linkedTags.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">{t('nfc.empty')}</p>
+                  ) : (
+                    <ul className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-inset ring-line">
+                      {linkedTags.map((tag) => (
+                        <li key={tag.id} className="flex items-center gap-3 px-3.5 py-3">
+                          <span className="v-icon-tile">
+                            <Icon name="tag" size={15} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p dir="ltr" className="truncate text-start font-mono text-xs text-ink rtl:text-right">
+                              {tag.uid}
+                            </p>
+                            <p className="text-xs text-faint">
+                              {tag.hardwareType.toLowerCase()} · {t('nfc.scanCount')}{' '}
+                              <span className="tabular">{tag.activationCount}</span>
+                            </p>
+                          </div>
+                          <span className="v-badge v-badge-success">{t('nfc.bound')}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-3 text-xs text-faint">{t('nfc.explain')}</p>
+                </StudioSection>
+
+                <CardProfiles cardId={id} slug={card.slug} />
 
                 <MoveCard cardId={card.id} cardName={(card.vcardData as { fullName?: string } | null)?.fullName || card.slug} />
 
@@ -1869,7 +1702,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                   theme: { ...card.theme, accent, mode, cover, lang, links: linkStyle, openInApp, layout, brand: showBrand },
                 } as any
               }
-              sections={sections}
+              sections={previewSections}
               actions={actions}
               paymentLinks={paymentLinks}
               slug={card.slug}
@@ -1881,6 +1714,22 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
           </div>
         </aside>
       </div>
+
+      <LinkComposer
+        kind={composer?.kind ?? null}
+        action={composer?.action}
+        onClose={() => setComposer(null)}
+        onSubmit={saveLink}
+        onDelete={
+          composer?.action
+            ? () => {
+                const a = composer.action!;
+                setComposer(null);
+                void removeWithUndo('actions', a.id, t('links.removed'));
+              }
+            : undefined
+        }
+      />
 
       <PublishedSheet open={justPublished} onClose={() => setJustPublished(false)} slug={card.slug} name={cardName} />
 
@@ -1942,7 +1791,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                     <div className="grid gap-0.5 sm:grid-cols-2">
                       {group.items.map((plat) => {
                         const current = visiblePlatforms[highlightedIndex];
-                        const isHighlighted = current?.key === plat.key && current?.category === plat.category;
+                        const isHighlighted = current?.key === plat.key && current?.group === plat.group;
                         const isDisabled = plat.key === 'SAVE_CONTACT' && actions.some((a) => a.type === 'SAVE_CONTACT');
                         const isFav = favorites.includes(plat.key);
                         return (
@@ -2060,7 +1909,7 @@ function RowButton({
 }
 
 /** A cover pattern in small, as the card draws it (see CoverArt). */
-function CoverSwatch({ type, accent }: { type: CoverStyle; accent: string }) {
+function CoverSwatch({ type, accent, className = 'h-12 rounded-md ring-1 ring-inset ring-black/10' }: { type: CoverStyle; accent: string; className?: string }) {
   const background =
     type === 'solid'
       ? accent
@@ -2071,7 +1920,7 @@ function CoverSwatch({ type, accent }: { type: CoverStyle; accent: string }) {
           : type === 'lines'
             ? `repeating-linear-gradient(135deg, rgba(255,255,255,0.12) 0 1px, transparent 1px 7px), linear-gradient(160deg, ${shade(accent, 10)}, ${shade(accent, -30)})`
             : 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px) 0 0 / 10px 10px, #0b0b10';
-  return <span className="block h-12 rounded-md ring-1 ring-inset ring-black/10" style={{ background }} />;
+  return <span className={`block ${className}`} style={{ background }} />;
 }
 
 /** Where the photo, name and buttons sit, in small. */
@@ -2160,6 +2009,49 @@ function OptionCard({
       {children}
       <span className="mt-2 block px-0.5 text-xs font-medium text-ink">{label}</span>
     </button>
+  );
+}
+
+/** A ready-made design in small: its cover, colour and light or dark, as the card wears it. */
+function TemplateTile({ tpl, selected, busy, onClick }: { tpl: Template; selected: boolean; busy: boolean; onClick: () => void }) {
+  const dark = tpl.mode === 'dark';
+  const cover: CoverStyle = tpl.cover ?? (dark ? 'constellation' : 'gradient');
+  const line = dark ? 'rgba(255,255,255,' : 'rgba(0,0,0,';
+  return (
+    <button type="button" role="radio" aria-checked={selected} aria-label={tpl.name} onClick={onClick} className="group min-w-0 text-start" data-testid={`template-${tpl.id}`}>
+      <span
+        className={`relative block overflow-hidden rounded-xl transition-shadow ${
+          selected ? 'shadow-[0_0_0_2px_hsl(var(--v-surface)),0_0_0_4px_var(--v-accent)]' : 'ring-1 ring-inset ring-line group-hover:ring-line-strong'
+        }`}
+        style={{ background: dark ? '#141416' : '#ffffff' }}
+      >
+        <CoverSwatch type={cover} accent={tpl.accent} className="h-9" />
+        <span className="block px-2.5 pb-2.5">
+          <span className="-mt-3.5 block h-7 w-7 rounded-full" style={{ background: tpl.accent, boxShadow: `0 0 0 2px ${dark ? '#141416' : '#ffffff'}` }} />
+          <span className="mt-2 block h-1.5 w-3/4 rounded-full" style={{ background: `${line}0.6)` }} />
+          <span className="mt-1 block h-1 w-1/2 rounded-full" style={{ background: `${line}0.2)` }} />
+          <span className="mt-2 block h-2.5 rounded" style={{ background: tpl.accent }} />
+        </span>
+        {(selected || busy) && (
+          <span className="absolute end-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white">
+            <Icon name={busy ? 'loader' : 'check'} size={12} className={busy ? 'animate-spin' : undefined} />
+          </span>
+        )}
+      </span>
+      <span className={`mt-1.5 block truncate text-xs ${selected ? 'font-medium text-ink' : 'text-muted'}`}>{tpl.name}</span>
+    </button>
+  );
+}
+
+/** At the end of a part: the next one, so a card is made by going down the list. */
+function NextPart({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <div className="mt-10 flex justify-end border-t border-line pt-5">
+      <button type="button" onClick={onClick} className="v-btn v-btn-ghost">
+        {label}
+        <Icon name="arrow" size={14} className="rtl:rotate-180" />
+      </button>
+    </div>
   );
 }
 
