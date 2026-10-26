@@ -23,7 +23,7 @@ export class ActionsService {
     await this.cards.ensureEditable(tenant, cardId);
     return this.db.cardAction.findMany({
       where: { cardId, variantId: variantId ?? null },
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
@@ -34,12 +34,14 @@ export class ActionsService {
     variantId?: string | null,
   ) {
     await this.cards.ensureEditable(tenant, cardId);
+    // A new one goes at the end: after the last, in the same profile.
+    const last = await this.db.cardAction.aggregate({ where: { cardId, variantId: variantId ?? null }, _max: { order: true } });
     return this.db.cardAction.create({
       data: {
         cardId,
         variantId: variantId ?? null,
         type: input.type,
-        order: input.order ?? 0,
+        order: input.order ?? (last._max.order ?? -1) + 1,
         isActive: input.isActive ?? true,
         config: input.config as Prisma.InputJsonValue,
       },

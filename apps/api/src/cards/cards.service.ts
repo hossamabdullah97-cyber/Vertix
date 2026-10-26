@@ -142,8 +142,8 @@ export class CardsService {
     const card = await this.db.card.findFirst({
       where: { id },
       include: {
-        sections: { where: { deletedAt: null, variantId: null }, orderBy: { order: 'asc' } },
-        actions: { where: { deletedAt: null, variantId: null }, orderBy: { order: 'asc' } },
+        sections: { where: { deletedAt: null, variantId: null }, orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
+        actions: { where: { deletedAt: null, variantId: null }, orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
       },
     });
     if (!card) throw new NotFoundException('Card not found');
@@ -252,12 +252,12 @@ export class CardsService {
         org: { select: { plan: true, name: true, branding: true, settings: true } },
         sections: {
           where: { isVisible: true, deletedAt: null, variantId: null },
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
           select: { id: true, type: true, order: true, content: true },
         },
         actions: {
           where: { isActive: true, deletedAt: null, variantId: null },
-          orderBy: { order: 'asc' },
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
           select: { id: true, type: true, order: true, config: true },
         },
         paymentLinks: {
@@ -384,12 +384,12 @@ export class CardsService {
     const [sections, actions, paymentLinks] = await Promise.all([
       this.db.cardSection.findMany({
         where: { variantId: chosen.id, isVisible: true, deletedAt: null },
-        orderBy: { order: 'asc' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
         select: { id: true, type: true, order: true, content: true },
       }),
       this.db.cardAction.findMany({
         where: { variantId: chosen.id, isActive: true, deletedAt: null },
-        orderBy: { order: 'asc' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
         select: { id: true, type: true, order: true, config: true },
       }),
       // Each identity carries its own payment links (section 9).

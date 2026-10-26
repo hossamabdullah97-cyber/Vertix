@@ -73,7 +73,7 @@ export class GatewayService {
             slug: true,
             actions: {
               where: { isActive: true, deletedAt: null },
-              orderBy: { order: 'asc' },
+              orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
               select: { type: true, config: true },
             },
           },

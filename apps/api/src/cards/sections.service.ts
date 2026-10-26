@@ -26,7 +26,7 @@ export class SectionsService {
     return this.db.cardSection.findMany({
       // undefined variantId → the card's default profile (variantId null).
       where: { cardId, variantId: variantId ?? null },
-      orderBy: { order: 'asc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     });
   }
 
@@ -37,12 +37,14 @@ export class SectionsService {
     variantId?: string | null,
   ) {
     await this.cards.ensureEditable(tenant, cardId);
+    // A new one goes at the end: after the last, in the same profile.
+    const last = await this.db.cardSection.aggregate({ where: { cardId, variantId: variantId ?? null }, _max: { order: true } });
     return this.db.cardSection.create({
       data: {
         cardId,
         variantId: variantId ?? null,
         type: input.type,
-        order: input.order ?? 0,
+        order: input.order ?? (last._max.order ?? -1) + 1,
         isVisible: input.isVisible ?? true,
         content: input.content as Prisma.InputJsonValue,
       },

@@ -60,8 +60,8 @@ export class AccountService {
           select: {
             id: true, slug: true, templateId: true, theme: true, vcardData: true, isPublished: true, createdAt: true, updatedAt: true,
             org: { select: { name: true } },
-            sections: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
-            actions: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
+            sections: { where: { deletedAt: null }, orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
+            actions: { where: { deletedAt: null }, orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
           },
         }),
         this.db.lead.findMany({
