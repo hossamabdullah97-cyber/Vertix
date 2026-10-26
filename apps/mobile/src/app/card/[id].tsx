@@ -1,12 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
-import { Share, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
 import { useTranslation } from 'react-i18next';
-import { CardFace } from '@/components/CardFace';
+import { LivePreview } from '@/components/LivePreview';
 import { Button, Card, Loading, Notice, Row, Screen, Text } from '@/components/ui';
-import { identityOf, lookOf, type FullCard } from '@/lib/card-editor';
+import type { FullCard } from '@/lib/card-editor';
+import { useColors } from '@/lib/theme';
 import { cardName, cardUrl } from '@/lib/cards';
 import { useApi } from '@/lib/use-api';
 import { useWorkspaceFromLink } from '@/lib/session';
@@ -16,7 +17,10 @@ export default function CardScreen() {
   const { id, org } = useLocalSearchParams<{ id: string; org?: string }>();
   const inWorkspace = useWorkspaceFromLink(org);
   const { t } = useTranslation();
+  const c = useColors();
   const { data: card, error, loading, reload } = useApi<FullCard>(`/cards/${id}`);
+  // Back from the editor, the card is drawn again with what was saved there.
+  const [reloads, setReloads] = useState(0);
   const [copied, setCopied] = useState(false);
   // Back from the editor: show what was saved there (the first showing has just loaded it).
   const reloadRef = useRef(reload);
@@ -25,7 +29,10 @@ export default function CardScreen() {
   useFocusEffect(
     useCallback(() => {
       if (firstFocus.current) firstFocus.current = false;
-      else void reloadRef.current();
+      else {
+        void reloadRef.current();
+        setReloads((n) => n + 1);
+      }
     }, []),
   );
 
@@ -38,14 +45,16 @@ export default function CardScreen() {
     <Screen edges={[]}>
       <Stack.Screen options={{ title: name }} />
       {!card.isPublished && <Notice tone="warning">{t('card.unpublished')}</Notice>}
-      <CardFace id={card.id} size="hero" look={lookOf(card)} identity={identityOf(card)} fallbackName={t('editor.yourName')} />
+      <Pressable onPress={() => router.push(`/card/edit/${card.id}`)} accessibilityRole="button" accessibilityLabel={t('card.edit')}>
+        <LivePreview key={reloads} cardId={card.id} style={{ height: 360, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: c.lineStrong }} />
+      </Pressable>
       <Row gap={10}>
         <Button label={t('card.edit')} icon="edit" onPress={() => router.push(`/card/edit/${card.id}`)} style={{ flex: 1 }} testID="card-edit" />
         <Button
           label={t('editor.preview')}
           icon="eye"
           kind="secondary"
-          onPress={() => router.push({ pathname: '/web', params: { path: `/cards/${card.id}/preview`, title: t('editor.preview') } })}
+          onPress={() => router.push({ pathname: '/web', params: { path: `/preview/${card.id}`, title: t('editor.preview') } })}
           style={{ flex: 1 }}
         />
       </Row>

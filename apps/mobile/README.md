@@ -18,21 +18,19 @@ signed in.
 - **Cards** — each card as it looks (cover, photo, name, in its colours), its
   QR code to show across a table, its link to share, and NFC: program a chip
   with a card, or read which card a chip opens. A new card is made here.
-- **Card editor** — as on the website's Studio: the photo and cover (camera or
-  photos), name, job title, company, phone, email, location and About; the
-  buttons (calling, WhatsApp, email, social profiles, links and files: added
-  from a searchable list, edited, shown or hidden, moved, removed); the design
-  (a ready-made template, colour, light or dark, cover, layout, how links
-  show, the card's language); published or draft, its address, and deleting
-  it. The card at the top follows what is typed; buttons are saved as they
-  change, the rest with Save (leaving unsaved asks first). Preview shows the
-  card as visitors see it, drafts too (`/cards/<id>/preview` on the website,
-  which tracks nothing). A second language, meeting hours, payment links,
-  sections and card profiles stay on the website for now.
-- **Notifications** — opened in the right workspace.
-- **More** — analytics, tasks, tags, team, integrations, settings, billing and
-  the account, as the website pages (by role, as on the website's side bar);
-  language; sign out.
+- **Card editor** — the card at the top as visitors see it (drawn by the
+  website's `/preview/<id>?live=1`, sent every change as it is typed), how
+  complete it is and what to add next, then four parts, each on its own page:
+  *Photo and details* (cover and photo where they sit on the card, from the
+  camera or photos; name, job title, company, location, About), *Contact and
+  links* (a button added in one step: pick it, fill it in, Add; shown or
+  hidden, moved, made a round button or a link, removed; a phone or email
+  given to one is also the card's own), *Design* (ready-made designs with the
+  card above, colour, light or dark, cover; layout, link style, language and
+  logo under More options) and *Settings* (published, the address, deleting
+  it). Everything is saved as it changes, as on the website. A second
+  language, meeting hours, payment links, sections and card profiles stay on
+  the website for now.
 
 **One account, one session.** The app signs in through the same API as the
 website and hands its session to the website pages it opens, so nobody signs in

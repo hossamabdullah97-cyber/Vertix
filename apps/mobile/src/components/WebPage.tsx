@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as WebBrowser from 'expo-web-browser';
-import { KEYS, sessionTokens } from '@/lib/api';
 import { WEB_BASE } from '@/lib/config';
-import { currentLang } from '@/lib/i18n';
+import { sessionScript } from '@/lib/web-session';
 import { useColors } from '@/lib/theme';
 
 /**
@@ -27,22 +26,7 @@ export function WebPage({ path }: { path: string }) {
   const [script, setScript] = useState<string | null>(null);
 
   useEffect(() => {
-    void sessionTokens().then((s) => {
-      const set = (k: string, v: string | null) => (v ? `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(v)});` : `localStorage.removeItem(${JSON.stringify(k)});`);
-      setScript(
-        [
-          'try {',
-          set(KEYS.token, s.token),
-          set(KEYS.refresh, s.refresh),
-          set(KEYS.org, s.org),
-          "sessionStorage.setItem('vertex_embedded', '1');",
-          s.token ? `document.cookie = 'vertex_token=${s.token}; path=/; max-age=604800; SameSite=Lax';` : '',
-          `document.cookie = 'vertex_locale=${currentLang()}; path=/; max-age=31536000; SameSite=Lax';`,
-          '} catch (e) {}',
-          'true;',
-        ].join('\n'),
-      );
-    });
+    void sessionScript().then(setScript);
   }, []);
 
   if (!script) return <ActivityIndicator style={{ marginTop: 40 }} color={c.accent} />;
