@@ -1,237 +1,135 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { CardFace } from '@/components/CardFace';
-import { DesignTab } from '@/components/card-editor/DesignTab';
-import { LinksTab, type LinkOps } from '@/components/card-editor/LinksTab';
-import { ProfileTab } from '@/components/card-editor/ProfileTab';
-import { SettingsTab } from '@/components/card-editor/SettingsTab';
-import { Button, Loading, Notice, Row, Segmented, Text } from '@/components/ui';
-import { api, ApiError } from '@/lib/api';
-import {
-  aboutOf,
-  identityOf,
-  initialConfig,
-  isQuick,
-  lookOf,
-  slugProblem,
-  themeOf,
-  vcardWith,
-  type CardAction,
-  type FullCard,
-  type Identity,
-  type Look,
-} from '@/lib/card-editor';
+import { DesignSheet } from '@/components/card-editor/DesignSheet';
+import { BrandBubble, LinksSheet } from '@/components/card-editor/LinksSheet';
+import { ProfileSheet } from '@/components/card-editor/ProfileSheet';
+import { SettingsSheet } from '@/components/card-editor/SettingsSheet';
+import { LivePreview } from '@/components/LivePreview';
+import { Card, Divider, Forward, Icon, Loading, Notice, Row, Screen, SectionTitle, Text } from '@/components/ui';
+import { api } from '@/lib/api';
+import { CardEditorProvider, useCardEditor } from '@/lib/card-draft';
+import { brandOf, isDraft, ltr, TEMPLATES, type FullCard } from '@/lib/card-editor';
 import { useWorkspaceFromLink } from '@/lib/session';
-import { fonts, useColors } from '@/lib/theme';
-import { useApi } from '@/lib/use-api';
+import { radius, useColors } from '@/lib/theme';
 
-type Tab = 'profile' | 'links' | 'design' | 'settings';
-const TABS: Tab[] = ['profile', 'links', 'design', 'settings'];
+type Section = 'profile' | 'links' | 'design' | 'settings';
+const SECTIONS: { key: Section; icon: string }[] = [
+  { key: 'profile', icon: 'user' },
+  { key: 'links', icon: 'link' },
+  { key: 'design', icon: 'palette' },
+  { key: 'settings', icon: 'settings' },
+];
 
-/** What the editor holds until it is saved: who, the About, the look and the address. */
-interface Draft {
-  identity: Identity;
-  about: string;
-  look: Look;
-  slug: string;
-}
-
-const draftOf = (card: FullCard): Draft => ({ identity: identityOf(card), about: aboutOf(card).text, look: lookOf(card), slug: card.slug });
-const same = (a: Draft | null, b: Draft | null) => JSON.stringify(a) === JSON.stringify(b);
-const byOrder = (list: CardAction[] = []) => [...list].sort((a, b) => a.order - b.order);
-
-/**
- * A card made on the phone, as on the website's Studio: who is on it, its
- * buttons, its look, and whether it is live. Buttons are saved as they change;
- * the rest waits for Save, so a half-typed name never reaches the live card.
- */
-export default function EditCard() {
-  const { id, org, tab: firstTab } = useLocalSearchParams<{ id: string; org?: string; tab?: Tab }>();
-  const inWorkspace = useWorkspaceFromLink(org);
+/** How saving stands: kept, on its way, or refused (with another try). */
+function SaveState() {
   const { t } = useTranslation();
   const c = useColors();
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
-  const card = useApi<FullCard>(`/cards/${id}`);
-  const [tab, setTab] = useState<Tab>(TABS.includes(firstTab as Tab) ? (firstTab as Tab) : 'profile');
-  const [draft, setDraft] = useState<Draft | null>(null);
-  const savedRef = useRef<Draft | null>(null);
-  const [actions, setActions] = useState<CardAction[]>([]);
-  const [published, setPublished] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const leaving = useRef(false);
-
-  // The server's card becomes the editor's, unless something is being edited.
-  const forceApply = useRef(false);
-  useEffect(() => {
-    const d = card.data;
-    if (!d) return;
-    const fresh = draftOf(d);
-    // Read now: the updater may run later, after both refs have moved on.
-    const force = forceApply.current;
-    const before = savedRef.current;
-    setDraft((cur) => (force || !cur || same(cur, before) ? fresh : cur));
-    savedRef.current = fresh;
-    forceApply.current = false;
-    setActions(byOrder(d.actions));
-    setPublished(d.isPublished);
-  }, [card.data]);
-
-  const dirty = !!draft && !same(draft, savedRef.current);
-
-  async function save(): Promise<boolean> {
-    const base = card.data;
-    if (!draft || !base) return false;
-    if (slugProblem(draft.slug)) {
-      setTab('settings');
-      return false;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      const body: Record<string, unknown> = { vcardData: vcardWith(base, draft.identity), theme: themeOf(draft.look), templateId: draft.look.templateId };
-      if (draft.slug !== base.slug) body.slug = draft.slug;
-      await api(`/cards/${id}`, { method: 'PATCH', json: body });
-      const about = aboutOf(base);
-      const text = draft.about.trim();
-      if (text !== about.text.trim()) {
-        if (about.section) {
-          await api(`/cards/${id}/sections/${about.section.id}`, { method: 'PATCH', json: { content: { ...about.section.content, body: text } } });
-        } else if (text) {
-          await api(`/cards/${id}/sections`, { method: 'POST', json: { type: 'BIO', content: { body: text } } });
-        }
-      }
-      forceApply.current = true;
-      await card.reload();
-      setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 2200);
-      return true;
-    } catch (e) {
-      setError(e instanceof ApiError && e.status === 409 ? t('editor.slugTaken') : (e as Error).message);
-      return false;
-    } finally {
-      setSaving(false);
-    }
+  const { saveState, saveError, retry } = useCardEditor();
+  if (saveState === 'error') {
+    return (
+      <Pressable onPress={retry} accessibilityRole="button" testID="save-retry">
+        <Notice tone="danger">{t('editor.saveFailed', { reason: saveError ?? '' })}</Notice>
+      </Pressable>
+    );
   }
+  return (
+    <Row gap={6} style={{ justifyContent: 'center' }}>
+      <Icon name={saveState === 'saving' ? 'loader' : 'check'} size={15} color={saveState === 'saving' ? c.faint : c.success} />
+      <Text size="xs" tone={saveState === 'saving' ? 'faint' : 'success'} testID="save-state">
+        {saveState === 'saving' ? t('editor.saving') : t('editor.allSaved')}
+      </Text>
+    </Row>
+  );
+}
 
-  // Leaving with changes not saved asks first (the swipe back is off meanwhile, as it cannot ask).
-  useEffect(() => {
-    if (!dirty) return;
-    return navigation.addListener('beforeRemove', (e) => {
-      if (leaving.current) return;
-      e.preventDefault();
-      Alert.alert(t('editor.unsavedTitle'), t('editor.unsavedBody'), [
-        { text: t('editor.keepEditing'), style: 'cancel' },
-        { text: t('editor.discard'), style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
-        { text: t('editor.save'), onPress: () => void save().then((ok) => ok && navigation.dispatch(e.data.action)) },
-      ]);
-    });
-  });
+/** The card as visitors see it, full height and scrollable, links not followed. */
+function FullPreview({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const c = useColors();
+  const { card, live } = useCardEditor();
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.canvas }}>
+        <Row style={{ justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line }}>
+          <View style={{ flex: 1 }}>
+            <Text size="lg" weight="semibold">
+              {t('editor.preview')}
+            </Text>
+            <Text size="xs" tone="faint">
+              {t('editor.previewHint')}
+            </Text>
+          </View>
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close')} hitSlop={12} style={{ padding: 4 }}>
+            <Icon name="x" size={22} color={c.muted} />
+          </Pressable>
+        </Row>
+        {visible ? <LivePreview cardId={card.id} live={live} interactive style={{ flex: 1 }} /> : null}
+      </SafeAreaView>
+    </Modal>
+  );
+}
 
-  // ---- buttons: each change goes to the server at once, as on the website
-  const patchAction = async (a: CardAction, body: { config?: Record<string, unknown>; isActive?: boolean }) => {
-    const updated = await api<CardAction>(`/cards/${id}/actions/${a.id}`, { method: 'PATCH', json: body });
-    setActions((list) => list.map((x) => (x.id === a.id ? { ...x, ...updated } : x)));
+/**
+ * The card editor's front page: the card as visitors see it (following every
+ * change), how complete it is and what to do next, and the four parts it is
+ * made of, each opened on its own page.
+ */
+function Editor({ first }: { first: Section | null }) {
+  const { t } = useTranslation();
+  const c = useColors();
+  const { card, draft, actions, live } = useCardEditor();
+  const [open, setOpen] = useState<Section | null>(first);
+  const [full, setFull] = useState(false);
+  const { identity, look } = draft;
+
+  // How complete the card is: the five things a good card has, and the first one missing.
+  const checks: { key: string; done: boolean; section: Section }[] = [
+    { key: 'name', done: !!identity.fullName.trim(), section: 'profile' },
+    { key: 'photo', done: !!identity.avatar, section: 'profile' },
+    { key: 'title', done: !!(identity.title.trim() || identity.company.trim()), section: 'profile' },
+    { key: 'contact', done: actions.some((a) => a.isActive && !isDraft(a) && ['CALL', 'WHATSAPP', 'EMAIL'].includes(a.type)), section: 'links' },
+    { key: 'about', done: !!draft.about.trim(), section: 'profile' },
+  ];
+  const score = Math.round((checks.filter((x) => x.done).length / checks.length) * 100);
+  const next = checks.find((x) => !x.done);
+  const template = TEMPLATES.find((x) => x.id === look.templateId);
+
+  const summary: Record<Section, string> = {
+    profile: [identity.fullName.trim(), identity.title.trim()].filter(Boolean).join(' · ') || t('editor.summary.profileEmpty'),
+    links: actions.length ? t('editor.summary.links', { count: actions.length }) : t('editor.summary.linksEmpty'),
+    design: `${template?.name ?? t('editor.summary.custom')} · ${t(`editor.modes.${look.mode}`)}`,
+    settings: `${t(card.isPublished ? 'editor.summary.live' : 'editor.summary.draft')} · ${ltr(`/c/${card.slug}`)}`,
   };
-  const ops: LinkOps = {
-    add: async (p) => {
-      const made = await api<CardAction>(`/cards/${id}/actions`, {
-        method: 'POST',
-        json: { type: p.type, order: actions.length, config: initialConfig(p, draft?.identity ?? { phone: '', email: '' }) },
-      });
-      setActions((list) => [...list, made]);
-      return made;
-    },
-    patch: patchAction,
-    remove: async (a) => {
-      await api(`/cards/${id}/actions/${a.id}`, { method: 'DELETE' });
-      setActions((list) => list.filter((x) => x.id !== a.id));
-    },
-    // Up and down within its own group (the quick row, or the links), as the card shows them.
-    move: async (a, dir) => {
-      const group = actions.filter((x) => isQuick(x) === isQuick(a));
-      const other = group[group.findIndex((x) => x.id === a.id) + dir];
-      if (!other) return;
-      const ids = actions.map((x) => x.id);
-      const i = ids.indexOf(a.id);
-      const j = ids.indexOf(other.id);
-      [ids[i], ids[j]] = [ids[j], ids[i]];
-      const before = actions;
-      setActions(ids.map((x, order) => ({ ...(actions.find((y) => y.id === x) as CardAction), order })));
-      try {
-        await api(`/cards/${id}/actions/reorder`, { method: 'PATCH', json: { ids } });
-      } catch (e) {
-        setActions(before);
-        throw e;
-      }
-    },
-    // A chip opens one button directly: turning it on here turns it off on the others.
-    setPrimary: async (a, on) => {
-      if (on) {
-        for (const other of actions.filter((x) => x.id !== a.id && x.config.isPrimary === true)) {
-          await patchAction(other, { config: { ...other.config, isPrimary: false } });
-        }
-      }
-      await patchAction(a, { config: { ...a.config, isPrimary: on } });
-    },
-  };
-
-  async function publish(on: boolean) {
-    setPublishing(true);
-    setPublished(on);
-    setError(null);
-    try {
-      await api(`/cards/${id}`, { method: 'PATCH', json: { isPublished: on } });
-    } catch (e) {
-      setPublished(!on);
-      setError((e as Error).message);
-    } finally {
-      setPublishing(false);
-    }
-  }
-
-  async function openWeb(path: string, title?: string) {
-    if (dirty && !(await save())) return;
-    router.push({ pathname: '/web', params: { path, ...(title ? { title } : {}) } });
-  }
 
   function remove() {
-    const name = draft?.identity.fullName || card.data?.slug || '';
-    Alert.alert(t('editor.deleteTitle'), t('editor.deleteConfirm', { name }), [
+    Alert.alert(t('editor.deleteTitle'), t('editor.deleteConfirm', { name: identity.fullName || card.slug }), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('editor.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
-            await api(`/cards/${id}`, { method: 'DELETE' });
-            leaving.current = true;
+            await api(`/cards/${card.id}`, { method: 'DELETE' });
+            setOpen(null);
             router.dismissTo('/cards');
           } catch (e) {
-            setError((e as Error).message);
+            Alert.alert(t('editor.deleteFailed'), (e as Error).message);
           }
         },
       },
     ]);
   }
 
-  if (!inWorkspace || (card.loading && !card.data)) return <Loading />;
-  if (!card.data || !draft) return <Notice tone="danger">{card.error ?? t('card.notFound')}</Notice>;
-
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.canvas }} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+    <>
       <Stack.Screen
         options={{
           title: t('editor.title'),
-          gestureEnabled: !dirty,
           headerRight: () => (
-            <Pressable onPress={() => void openWeb(`/cards/${id}/preview`, t('editor.preview'))} accessibilityRole="button" hitSlop={10} testID="editor-preview">
+            <Pressable onPress={() => setFull(true)} accessibilityRole="button" hitSlop={10} testID="editor-preview">
               <Text tone="accent" weight="semibold">
                 {t('editor.preview')}
               </Text>
@@ -239,57 +137,127 @@ export default function EditCard() {
           ),
         }}
       />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: dirty ? 120 : 40 }} keyboardShouldPersistTaps="handled">
-        <CardFace id={card.data.id} size="hero" look={draft.look} identity={draft.identity} fallbackName={t('editor.yourName')} />
-        <Segmented value={tab} onChange={setTab} options={TABS.map((v) => ({ value: v, label: t(`editor.tabs.${v}`) }))} />
-        {error ? <Notice tone="danger">{error}</Notice> : null}
-        {savedFlash && !dirty ? <Notice tone="success">{t('editor.saved')}</Notice> : null}
-        {tab === 'profile' && (
-          <ProfileTab
-            identity={draft.identity}
-            about={draft.about}
-            onIdentity={(identity) => setDraft((d) => (d ? { ...d, identity } : d))}
-            onAbout={(about) => setDraft((d) => (d ? { ...d, about } : d))}
+      <Screen edges={[]}>
+        <Pressable onPress={() => setFull(true)} accessibilityRole="button" accessibilityLabel={t('editor.preview')} testID="editor-card">
+          <LivePreview
+            cardId={card.id}
+            live={live}
+            style={{ height: 400, borderRadius: radius.xl, borderWidth: StyleSheet.hairlineWidth, borderColor: c.lineStrong }}
           />
-        )}
-        {tab === 'links' && <LinksTab actions={actions} ops={ops} />}
-        {tab === 'design' && <DesignTab look={draft.look} onLook={(look) => setDraft((d) => (d ? { ...d, look } : d))} />}
-        {tab === 'settings' && (
-          <SettingsTab
-            published={published}
-            publishing={publishing}
-            onPublished={(on) => void publish(on)}
-            slug={draft.slug}
-            onSlug={(slug) => setDraft((d) => (d ? { ...d, slug } : d))}
-            onWebsite={() => void openWeb(`/cards/${id}`)}
-            onDelete={remove}
-          />
-        )}
-      </ScrollView>
-      {dirty && (
-        <View
-          style={{
-            position: 'absolute',
-            start: 0,
-            end: 0,
-            bottom: 0,
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            paddingBottom: Math.max(insets.bottom, 12),
-            backgroundColor: c.surface,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: c.lineStrong,
-          }}
-        >
-          <Row gap={10}>
-            <Text size="sm" tone="muted" style={{ flex: 1, fontFamily: fonts.medium }}>
-              {t('editor.unsaved')}
+          <View style={{ position: 'absolute', bottom: 12, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <Icon name="eye" size={15} color="#FFFFFF" />
+            <Text size="xs" weight="semibold" style={{ color: '#FFFFFF' }}>
+              {t('editor.seeFull')}
             </Text>
-            <Button label={t('editor.discard')} kind="ghost" small onPress={() => setDraft(savedRef.current)} disabled={saving} />
-            <Button label={t('editor.save')} icon="check" small onPress={() => void save()} busy={saving} testID="editor-save" />
-          </Row>
+          </View>
+        </Pressable>
+        <SaveState />
+
+        <Card>
+          <View style={{ gap: 10 }}>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <Text weight="semibold">{t('editor.strength')}</Text>
+              <Text weight="bold" tone={score === 100 ? 'success' : 'accent'} testID="editor-score">
+                {score}%
+              </Text>
+            </Row>
+            <View style={{ height: 8, borderRadius: 4, backgroundColor: c.elevated, overflow: 'hidden' }}>
+              <View style={{ width: `${score}%`, height: '100%', borderRadius: 4, backgroundColor: score === 100 ? c.success : c.accent }} />
+            </View>
+            {next ? (
+              <Pressable onPress={() => setOpen(next.section)} accessibilityRole="button" testID="editor-next">
+                <Row gap={8}>
+                  <Icon name="sparkle" size={16} color={c.accentText} />
+                  <Text size="sm" tone="accent" weight="medium" style={{ flex: 1 }}>
+                    {t(`editor.next.${next.key}`)}
+                  </Text>
+                  <Forward color={c.accentText} />
+                </Row>
+              </Pressable>
+            ) : (
+              <Text size="sm" tone="success">
+                {t('editor.complete')}
+              </Text>
+            )}
+          </View>
+        </Card>
+
+        <View style={{ gap: 8 }}>
+          <SectionTitle>{t('editor.partsTitle')}</SectionTitle>
+          <Card padded={false}>
+            {SECTIONS.map((s, i) => (
+              <View key={s.key}>
+                {i > 0 && <Divider />}
+                <Pressable
+                  onPress={() => setOpen(s.key)}
+                  accessibilityRole="button"
+                  testID={`section-${s.key}`}
+                  style={({ pressed }) => ({ backgroundColor: pressed ? c.elevated : 'transparent' })}
+                >
+                  <Row gap={14} style={{ paddingHorizontal: 16, paddingVertical: 14, minHeight: 72 }}>
+                    <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name={s.icon} size={21} color={c.accentText} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                      <Text weight="semibold">{t(`editor.sections.${s.key}`)}</Text>
+                      <Text size="sm" tone="muted" numberOfLines={1}>
+                        {summary[s.key]}
+                      </Text>
+                      {s.key === 'links' && actions.length > 0 ? (
+                        <Row gap={4} style={{ marginTop: 4 }}>
+                          {actions.slice(0, 6).map((a) => (
+                            <BrandBubble key={a.id} brand={brandOf(a)} size={20} />
+                          ))}
+                        </Row>
+                      ) : null}
+                    </View>
+                    <Forward color={c.faint} />
+                  </Row>
+                </Pressable>
+              </View>
+            ))}
+          </Card>
         </View>
-      )}
-    </KeyboardAvoidingView>
+      </Screen>
+
+      <ProfileSheet visible={open === 'profile'} onClose={() => setOpen(null)} />
+      <LinksSheet visible={open === 'links'} onClose={() => setOpen(null)} />
+      <DesignSheet visible={open === 'design'} onClose={() => setOpen(null)} />
+      <SettingsSheet
+        visible={open === 'settings'}
+        onClose={() => setOpen(null)}
+        onWebsite={() => {
+          setOpen(null);
+          router.push({ pathname: '/web', params: { path: `/cards/${card.id}` } });
+        }}
+        onDelete={remove}
+      />
+      <FullPreview visible={full} onClose={() => setFull(false)} />
+    </>
+  );
+}
+
+/** A card made on the phone, as on the website's Studio, in clear parts; every change is kept as it is made. */
+export default function EditCard() {
+  const { id, org, open } = useLocalSearchParams<{ id: string; org?: string; open?: Section }>();
+  const inWorkspace = useWorkspaceFromLink(org);
+  const { t } = useTranslation();
+  const [card, setCard] = useState<FullCard | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // The server's copy, fresh: an editor never starts from what was kept offline.
+  useEffect(() => {
+    if (!inWorkspace) return;
+    api<FullCard>(`/cards/${id}`)
+      .then(setCard)
+      .catch((e: Error) => setError(e.message));
+  }, [id, inWorkspace]);
+
+  if (error) return <Notice tone="danger">{error}</Notice>;
+  if (!inWorkspace || !card) return <Loading />;
+  return (
+    <CardEditorProvider initial={card}>
+      <Editor first={SECTIONS.some((s) => s.key === open) ? (open as Section) : null} />
+    </CardEditorProvider>
   );
 }

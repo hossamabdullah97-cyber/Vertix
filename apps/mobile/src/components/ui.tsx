@@ -374,7 +374,25 @@ export function ToggleRow({ title, hint, value, onChange, disabled, testID }: { 
 }
 
 /** A page that slides up over the screen, with a title and a way to close it. */
-export function Sheet({ visible, title, onClose, closeLabel, children }: { visible: boolean; title: string; onClose: () => void; closeLabel: string; children: ReactNode }) {
+export function Sheet({
+  visible,
+  title,
+  onClose,
+  closeLabel,
+  doneLabel,
+  top,
+  children,
+}: {
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+  closeLabel: string;
+  /** A word ("Done") in place of the ✕, for a page whose changes are already kept. */
+  doneLabel?: string;
+  /** Stays above the scrolling part (a preview, a search). */
+  top?: ReactNode;
+  children: ReactNode;
+}) {
   const c = useColors();
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -383,10 +401,17 @@ export function Sheet({ visible, title, onClose, closeLabel, children }: { visib
           <Text size="lg" weight="semibold" style={{ flex: 1 }} numberOfLines={1}>
             {title}
           </Text>
-          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={closeLabel} hitSlop={12} style={{ padding: 4 }}>
-            <Icon name="x" size={22} color={c.muted} />
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={doneLabel ?? closeLabel} hitSlop={12} style={{ padding: 4 }} testID="sheet-close">
+            {doneLabel ? (
+              <Text tone="accent" weight="semibold">
+                {doneLabel}
+              </Text>
+            ) : (
+              <Icon name="x" size={22} color={c.muted} />
+            )}
           </Pressable>
         </Row>
+        {top}
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
           {children}
         </ScrollView>
