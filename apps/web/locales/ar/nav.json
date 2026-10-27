@@ -26,6 +26,7 @@
   "signOut": "تسجيل الخروج",
   "notifications": "الإشعارات",
   "search": "بحث",
+  "skipToContent": "تخطَّ إلى المحتوى",
   "searchPlaceholder": "ابحث في البطاقات والعملاء والأعضاء…",
   "searchLoading": "جارٍ التحميل…",
   "searchEmpty": "لا توجد نتائج لـ «{{query}}»",

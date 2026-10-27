@@ -68,7 +68,7 @@
     "reportSent": "Sent to {{address}}.",
     "reportQuiet": "Sent to {{address}}. It was a quiet week, so there's little in it.",
     "tips": "Tips and reminders",
-    "tipsHint": "An occasional email to help you set up (finishing and sharing your card, inviting your team) and when leads have been waiting while you were away. Never more than one in two days."
+    "tipsHint": "Setup tips (finishing and sharing your card, inviting your team), and a nudge when leads wait while you’re away. At most one every two days."
   },
   "prefs": {
     "intro": "Choose what shows up here. Turning a type off stops new ones; the ones you have stay.",

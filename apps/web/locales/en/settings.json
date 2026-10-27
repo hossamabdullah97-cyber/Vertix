@@ -3,7 +3,7 @@
   "subtitle": "How you sign in, your data, and closing your account. These settings follow you into every workspace you belong to.",
   "twoStep": {
     "title": "Two-step verification",
-    "body": "After your password, sign-in also asks for a code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator, 1Password…). Someone who learns your password still can't get in.",
+    "body": "Sign-in also asks for a code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), so a stolen password alone can’t get in.",
     "on": "On",
     "off": "Off",
     "since": "On since {{date}}",
@@ -32,7 +32,7 @@
   },
   "devices": {
     "title": "Where you're signed in",
-    "body": "Each browser and phone signed in to your account. Sign out any you don't recognise, or that you no longer use. We email you when a new device signs in.",
+    "body": "Every browser and phone signed in to your account. Sign out any you don’t recognise or no longer use. A new sign-in is always emailed to you.",
     "on": "{{browser}} on {{os}}",
     "unknown": "Unknown device",
     "thisDevice": "This device",
@@ -53,7 +53,7 @@
   },
   "data": {
     "title": "Your data",
-    "body": "Download a copy of everything your account holds: your profile, the workspaces you're in, your cards, the leads from your cards or assigned to you with their history, and your notifications.",
+    "body": "A copy of everything your account holds: profile, workspaces, cards, your leads with their history, and notifications.",
     "download": "Download my data",
     "preparing": "Preparing…"
   },

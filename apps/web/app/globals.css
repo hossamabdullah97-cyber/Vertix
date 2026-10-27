@@ -374,6 +374,66 @@ textarea.v-field {
   }
 }
 
+/* Motion: one curve for everything that appears. Menus and popovers fade in
+   and settle 4px from the side they open from; nothing bounces or travels far.
+   With reduced motion they simply appear. */
+:root {
+  --v-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes v-pop-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+@keyframes v-pop-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+.v-pop {
+  transform-origin: top;
+  animation: v-pop-down 0.16s var(--v-ease-out) both;
+}
+.v-pop-up {
+  transform-origin: bottom;
+  animation: v-pop-up 0.16s var(--v-ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .v-pop,
+  .v-pop-up {
+    animation: none;
+  }
+}
+
+/* Keyboard focus: one ring for every control that has no ring of its own
+   (links, icon buttons, tabs, rows), drawn only when the keyboard put it there. */
+/* Controls that style their own focus (a focus class, .v-btn, .v-field) keep it. */
+:where(a, button, summary, [role='button'], [role='tab'], [tabindex]:not([tabindex='-1'])):where(:not([class*='focus'])):focus-visible {
+  outline: 2px solid rgb(var(--v-accent-text-ch));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* "Skip to content": the first stop for the keyboard, out of sight until then. */
+.v-skip {
+  position: fixed;
+  inset-inline-start: 0.75rem;
+  top: 0.75rem;
+  z-index: 200;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  background: var(--v-accent);
+  color: var(--v-accent-contrast);
+  font-size: calc(13px * var(--v-script-scale, 1));
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+.v-skip:focus {
+  transform: none;
+}
+
 /* --- iPhone Mock Frame --- */
 .phone-mock {
   position: relative;

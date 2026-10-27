@@ -26,6 +26,7 @@
   "signOut": "Sign out",
   "notifications": "Notifications",
   "search": "Search",
+  "skipToContent": "Skip to content",
   "searchPlaceholder": "Search cards, leads, people…",
   "searchLoading": "Loading…",
   "searchEmpty": "No results for “{{query}}”",

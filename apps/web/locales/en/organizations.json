@@ -103,7 +103,7 @@
     "converting": "Changing…"
   },
   "sso": {
-    "intro": "Let people sign in with their company account from Google Workspace, Microsoft Entra ID or any OpenID Connect provider. Set it up in order: prove your email domain, connect your app, test it, then choose who it applies to.",
+    "intro": "People sign in with their company account (Google Workspace, Microsoft Entra ID or any OpenID Connect provider). Four steps: prove your domain, connect your app, test, then choose who it applies to.",
     "domains": "Your email domains",
     "domainsHint": "Only addresses on a verified domain can sign in this way. Proving the domain stops anyone else claiming your company’s addresses.",
     "domainLabel": "Domain",

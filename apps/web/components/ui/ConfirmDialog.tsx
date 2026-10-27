@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useDialogFocus } from '@/lib/useDialogFocus';
 
 /**
  * Asks before something that cannot be undone. The confirm action may be
@@ -32,6 +33,8 @@ export function ConfirmDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open, boxRef);
 
   useEffect(() => {
     if (!open) return;
@@ -54,6 +57,8 @@ export function ConfirmDialog({
           className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center"
         >
           <motion.div
+            ref={boxRef}
+            tabIndex={-1}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="confirm-title"
@@ -63,7 +68,7 @@ export function ConfirmDialog({
             exit={{ y: 8, opacity: 0 }}
             transition={{ duration: 0.16 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[420px] rounded-xl border border-line bg-surface p-5 shadow-lg"
+            className="w-full max-w-[420px] rounded-xl border border-line bg-surface p-5 shadow-lg outline-none"
           >
             <h2 id="confirm-title" className="text-md font-semibold text-ink">
               {title}
