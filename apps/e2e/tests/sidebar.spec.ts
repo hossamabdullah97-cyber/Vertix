@@ -13,6 +13,8 @@ test('the menu is whole from the start, so a link does not move under a click', 
   const asked = page.waitForRequest(/\/api\/auth\/me$/);
   await page.goto('/leads');
   await asked;
+  // Measured once the fonts are in, which resize the text on their own.
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
 
   const nav = page.getByRole('navigation').first();
   const help = nav.getByRole('link', { name: 'Help', exact: true });
