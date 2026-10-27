@@ -131,8 +131,30 @@ export function PublicProfile({
         <Header profile={profile} t={t} meta={metaItems} onShare={() => setSheet('share')} lang={langLink} />
       </div>
 
-      <div className={`px-5 pb-8 ${preview ? '' : 'p-rise'}`}>
-        <div className="mt-5 grid grid-cols-2 gap-2">
+      <div className={`px-5 ${preview ? '' : 'p-rise'}`}>
+        {/* The ways to reach the person, as small plain circles: quiet beside the
+            main button, and all one kind. */}
+        {quick.length > 0 && (
+          <div className="mt-4 flex justify-center gap-3">
+            {quick.map((l) => (
+              <a
+                key={l.a.id}
+                href={l.href}
+                target={l.href.startsWith('http') ? '_blank' : undefined}
+                rel="noreferrer"
+                onClick={(e) => onLink(e, l)}
+                aria-label={l.label}
+                title={l.label}
+                className="flex h-12 w-12 items-center justify-center rounded-full ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+              >
+                <BrandGlyph icon={l.icon} size={20} />
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* One main action, and the exchange beside it. */}
+        <div className="mt-4 flex gap-2.5">
           <a
             href={vcardUrl}
             onClick={(e) => {
@@ -141,58 +163,33 @@ export function PublicProfile({
               setSaved(true);
               setTimeout(() => setSaved(false), 2200);
             }}
-            className="flex h-[52px] items-center justify-center gap-2 rounded-[14px] bg-[var(--p-accent)] px-3 text-md font-semibold text-[var(--p-on-accent)] shadow-[0_8px_20px_-10px_var(--p-accent)] transition-opacity active:opacity-85"
+            className="flex h-[54px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--p-accent)] px-4 text-md font-semibold text-[var(--p-on-accent)] shadow-[0_10px_24px_-12px_var(--p-accent)] transition-opacity active:opacity-85"
           >
-            <Icon name={saved ? 'check' : 'user-plus'} size={17} />
+            <Icon name={saved ? 'check' : 'user-plus'} size={18} />
             <span className="truncate">{saved ? t.saved : t.save}</span>
           </a>
           <button
             onClick={() => setSheet('exchange')}
-            className="flex h-[52px] items-center justify-center gap-2 rounded-[14px] px-3 text-md font-semibold ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+            aria-label={t.exchange}
+            title={t.exchange}
+            className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
           >
-            <Icon name="swap" size={17} className="text-[var(--p-muted)]" />
-            <span className="truncate">{t.exchange}</span>
+            <Icon name="swap" size={20} />
           </button>
         </div>
 
-        {/* The ways to reach the person, as round buttons the way a phone's own
-            contact card shows them: WhatsApp in its green, the rest in the card's colour. */}
-        {quick.length > 0 && (
-          <div className="mt-5 grid gap-2" style={{ gridTemplateColumns: `repeat(${quick.length}, minmax(0, 1fr))` }}>
-            {quick.map((l) => (
-              <a
-                key={l.a.id}
-                href={l.href}
-                target={l.href.startsWith('http') ? '_blank' : undefined}
-                rel="noreferrer"
-                onClick={(e) => onLink(e, l)}
-                className="group flex min-w-0 flex-col items-center gap-1.5 py-1"
-              >
-                <span
-                  className="flex h-[52px] w-[52px] items-center justify-center rounded-full shadow-[0_6px_16px_-8px_rgba(16,24,40,0.45)] transition-transform group-active:scale-95"
-                  style={l.icon === 'whatsapp' ? { background: '#25D366', color: '#fff' } : { background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
-                >
-                  <BrandGlyph icon={l.icon} size={22} />
-                </span>
-                <span className="max-w-full truncate px-1 text-sm font-medium">{l.label}</span>
-              </a>
-            ))}
-          </div>
-        )}
-
         <WalletButtons profile={profile} t={t} query={vq.toString()} preview={preview} />
+      </div>
 
-        {profile.about && (
-          <Block title={t.about}>
-            <About text={profile.about} t={t} />
-          </Block>
-        )}
+      {/* Everything else on a panel that rises from the bottom, the links first. */}
+      <div className={`mt-7 min-h-[45vh] rounded-t-[28px] bg-[var(--p-elevated)] px-5 pb-8 pt-3 [&>section:first-of-type]:mt-5 ${preview ? '' : 'p-rise'}`}>
+        <span aria-hidden className="mx-auto block h-1 w-10 rounded-full bg-[var(--p-line-strong)]" />
 
         {rest.length > 0 && (
           <Block title={t.links}>
             {profile.linkStyle === 'icons' ? (
               // Like a phone's home screen: each network as its own app icon, named under it.
-              <ul className="grid grid-cols-4 gap-x-2 gap-y-4">
+              <ul className="grid grid-cols-3 gap-x-3 gap-y-5">
                 {rest.map((l) => (
                   <li key={l.a.id} className="min-w-0">
                     <a
@@ -204,9 +201,9 @@ export function PublicProfile({
                       className="group flex flex-col items-center gap-1.5"
                     >
                       <span className="transition-transform group-active:scale-95">
-                        <BrandTile icon={l.icon} color={l.color} size={58} radius={17} />
+                        <BrandTile icon={l.icon} color={l.color} size={66} radius={19} />
                       </span>
-                      <span className="max-w-full truncate px-0.5 text-xs font-medium text-[var(--p-muted)]">{l.label}</span>
+                      <span className="max-w-full truncate px-0.5 text-sm font-medium">{l.label}</span>
                     </a>
                   </li>
                 ))}
@@ -220,7 +217,7 @@ export function PublicProfile({
                       target={/^https?:/.test(l.href) ? '_blank' : undefined}
                       rel="noreferrer"
                       onClick={(e) => onLink(e, l)}
-                      className="flex h-[60px] w-full items-center gap-3 rounded-[16px] bg-[var(--p-elevated)] px-2.5 ring-1 ring-inset ring-[var(--p-line)] transition-transform active:scale-[0.99]"
+                      className="flex h-[60px] w-full items-center gap-3 rounded-[16px] bg-[var(--p-surface)] px-2.5 ring-1 ring-inset ring-[var(--p-line)] transition-transform active:scale-[0.99]"
                     >
                       <BrandTile icon={l.icon} color={l.color} size={40} radius={12} />
                       {/* Centred on the whole button: the end padding matches the tile. */}
@@ -243,6 +240,12 @@ export function PublicProfile({
                 ))}
               </List>
             )}
+          </Block>
+        )}
+
+        {profile.about && (
+          <Block title={t.about}>
+            <About text={profile.about} t={t} />
           </Block>
         )}
 
@@ -366,13 +369,16 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
     case 'centered':
       return (
         <>
-          <div className="relative h-[148px] overflow-hidden">
-            <CoverArt profile={profile} />
-            <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
+          {/* The cover as a card of its own, inset from the edges. */}
+          <div className="px-3.5 pt-3.5">
+            <div className="relative h-[164px] overflow-hidden rounded-[22px]">
+              <CoverArt profile={profile} />
+              <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
+            </div>
           </div>
           <div className="flex flex-col items-center px-5 text-center">
-            <div className="-mt-[52px]">
-              <Avatar profile={profile} size={104} />
+            <div className="-mt-[62px]">
+              <Avatar profile={profile} size={120} />
             </div>
             <Identity profile={profile} t={t} meta={meta} center />
           </div>
@@ -475,7 +481,7 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
 function Identity({ profile, t, meta, center = false }: { profile: ProfileData; t: ProfileStrings; meta: MetaItem[]; center?: boolean }) {
   return (
     <div className={center ? 'flex flex-col items-center' : ''}>
-      <Name profile={profile} t={t} className="mt-3 text-3xl" />
+      <Name profile={profile} t={t} className={`mt-3 ${center ? 'text-[26px]' : 'text-3xl'}`} />
       {profile.title && <p className="mt-1 text-md leading-snug text-[var(--p-muted)]">{profile.title}</p>}
       <Company profile={profile} className="mt-2.5" />
       <Meta items={meta} center={center} />
@@ -531,9 +537,9 @@ function BrandMark({ brand, size }: { brand: { name: string; logo: string | null
 function Meta({ items, center = false }: { items: MetaItem[]; center?: boolean }) {
   if (!items.length) return null;
   return (
-    <ul className={`mt-3.5 flex flex-wrap gap-1.5 text-sm text-[var(--p-muted)] ${center ? 'justify-center' : ''}`}>
+    <ul className={`mt-3 flex flex-wrap gap-x-3.5 gap-y-1 text-sm text-[var(--p-muted)] ${center ? 'justify-center' : ''}`}>
       {items.map((m) => (
-        <li key={m.key} className="flex items-center gap-1.5 rounded-full bg-[var(--p-elevated)] px-2.5 py-1 ring-1 ring-inset ring-[var(--p-line)]">
+        <li key={m.key} className="flex items-center gap-1.5">
           {m.dot ? <span className="h-2 w-2 rounded-full bg-[#22a06b]" aria-hidden /> : <Icon name={m.icon!} size={14} className="text-[var(--p-faint)]" />}
           {/* One item, so the flex gap does not split a sentence. */}
           <span>{m.label}</span>
@@ -658,15 +664,15 @@ function Avatar({ profile, size, ring = true }: { profile: ProfileData; size: nu
 
 function Block({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
-    <section className="mt-8">
-      {title && <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--p-faint)] rtl:text-sm rtl:normal-case rtl:tracking-normal">{title}</h2>}
+    <section className="mt-7">
+      {title && <h2 className="mb-3.5 text-center text-sm font-semibold text-[var(--p-muted)]">{title}</h2>}
       {children}
     </section>
   );
 }
 
 function List({ children }: { children: React.ReactNode }) {
-  return <ul className="divide-y divide-[var(--p-line)] overflow-hidden rounded-[16px] ring-1 ring-inset ring-[var(--p-line)]">{children}</ul>;
+  return <ul className="divide-y divide-[var(--p-line)] overflow-hidden rounded-[18px] bg-[var(--p-surface)] ring-1 ring-inset ring-[var(--p-line)]">{children}</ul>;
 }
 
 function Tile({ children }: { children: React.ReactNode }) {
@@ -722,7 +728,7 @@ function About({ text, t }: { text: string; t: ProfileStrings }) {
   const [open, setOpen] = useState(false);
   const long = text.length > 220 || text.split('\n').length > 4;
   return (
-    <div>
+    <div className="rounded-[18px] bg-[var(--p-surface)] px-4 py-3.5 ring-1 ring-inset ring-[var(--p-line)]">
       <p dir="auto" className={`whitespace-pre-line text-md leading-[1.6] ${!open && long ? 'line-clamp-4' : ''}`}>{text}</p>
       {long && (
         <button onClick={() => setOpen((o) => !o)} className="mt-1.5 min-h-[44px] text-base font-medium text-[var(--p-accent)]">
@@ -851,8 +857,10 @@ function SectionBlock({
   if (!text) return null;
   return (
     <Block title={title}>
-      {pick(section.content, 'subtitle') && <p className="mb-1.5 text-md font-medium">{pick(section.content, 'subtitle')}</p>}
-      <p dir="auto" className="whitespace-pre-line text-md leading-[1.6] text-[var(--p-muted)]">{text}</p>
+      <div className="rounded-[18px] bg-[var(--p-surface)] px-4 py-3.5 ring-1 ring-inset ring-[var(--p-line)]">
+        {pick(section.content, 'subtitle') && <p className="mb-1.5 text-md font-medium">{pick(section.content, 'subtitle')}</p>}
+        <p dir="auto" className="whitespace-pre-line text-md leading-[1.6] text-[var(--p-muted)]">{text}</p>
+      </div>
     </Block>
   );
 }
