@@ -314,6 +314,37 @@ textarea.v-field {
   box-shadow: var(--v-shadow-sm);
 }
 
+/* A menu link whose page is on its way: shown only when it takes a moment, so
+   a page that was ready opens without a flicker. */
+.v-nav-pending {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0;
+  animation: v-nav-pending-in 0.15s ease 0.12s forwards, v-nav-spin 0.7s linear infinite;
+}
+
+@keyframes v-nav-pending-in {
+  to {
+    opacity: 0.7;
+  }
+}
+
+@keyframes v-nav-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v-nav-pending {
+    animation: v-nav-pending-in 0.15s ease 0.12s forwards;
+  }
+}
+
 /* --- iPhone Mock Frame --- */
 .phone-mock {
   position: relative;
