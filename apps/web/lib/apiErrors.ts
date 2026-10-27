@@ -185,6 +185,7 @@ export const AR_MESSAGES: Record<string, string> = {
   'This chip is not registered with the platform. Only chips issued by Vertex Connect can be used.':
     'هذه الشريحة غير مسجلة في المنصة. يمكن استخدام الشرائح الصادرة من Vertex Connect فقط.',
   'This chip was issued to another workspace.': 'هذه الشريحة صادرة لمساحة عمل أخرى.',
+  'Only the workspace owner can remove a chip. Ask them to remove it.': 'مالك مساحة العمل فقط يمكنه إزالة شريحة. اطلب منه إزالتها.',
   'You can only link your own cards to a chip.': 'يمكنك ربط بطاقاتك أنت فقط بالشريحة.',
 
   // Notifications
@@ -288,7 +289,6 @@ export const AR_PATTERNS: [RegExp, (...m: string[]) => string][] = [
   [/^(\S+) does not support CRM sync\.$/, (p) => `${p} لا يدعم مزامنة CRM.`],
   [/^(\S+) is not a supported CRM connector\.$/, (p) => `${p} ليس من أنظمة CRM المدعومة.`],
   [/^(\d+) of these chips are already claimed by a workspace and cannot be reallocated\.$/, (n) => `${n} من هذه الشرائح مسجلة بالفعل لمساحة عمل ولا يمكن إعادة تخصيصها.`],
-  [/^Cannot delete this tag: it has (\d+) recorded scan\(s\)\./, (n) => `لا يمكن حذف هذه الشريحة: لها ${n} عملية مسح مسجلة. عطّلها بدلاً من ذلك — يوقفها ذلك مع الاحتفاظ بسجلها.`],
   [/^Make someone else an owner of (.+) first, or remove its other members$/, (o) => `اجعل شخصاً آخر مالكاً لـ ${o} أولاً، أو أزل أعضاءها الآخرين`],
   [/^(.+) requires two-step verification, so it cannot be turned off$/, (o) => `مساحة العمل ${o} تتطلب التحقق بخطوتين، لذلك لا يمكن إيقافه`],
   [/^Feature flag (.+) not found$/, (f) => `الخاصية ${f} غير موجودة`],
