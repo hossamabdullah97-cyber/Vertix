@@ -34,8 +34,8 @@ export class CardVariantsService {
       where: { cardId, deletedAt: null },
       orderBy: { order: 'asc' },
       include: {
-        sections: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
-        actions: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
+        sections: { where: { deletedAt: null }, orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
+        actions: { where: { deletedAt: null }, orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
       },
     });
   }

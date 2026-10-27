@@ -359,7 +359,11 @@
     },
     "identity": {
       "title": "Let's start with your name",
-      "subtitle": "This is what people see first when they open your card."
+      "subtitle": "This is what people see first when they open your card.",
+      "readTitle": "We read your card",
+      "readSubtitle": "Check the details and put right anything we got wrong.",
+      "checkArabic": "Arabic text and numbers are harder to read from a photo: check them carefully.",
+      "nameAlt": "Your name in the other language"
     },
     "channels": {
       "title": "How should people reach you?",
@@ -378,7 +382,14 @@
     },
     "look": {
       "title": "Pick a style",
-      "subtitle": "You can change this any time, and there are more under Design."
+      "subtitle": "You can change this any time, and there are more under Design.",
+      "from": {
+        "card": "From your card",
+        "logo": "From your logo",
+        "workspace": "Your workspace"
+      },
+      "logo": "Use your logo’s colours",
+      "logoHint": "Pick your company logo and we’ll offer its colours. The logo itself is not uploaded."
     },
     "preview": "Live preview",
     "previewName": "Your name",
@@ -387,7 +398,31 @@
     "next": "Continue",
     "finish": "Create my card",
     "saving": "Creating…",
-    "skip": "Skip to the full studio"
+    "skip": "Skip to the full studio",
+    "start": {
+      "title": "Let’s make your card",
+      "subtitle": "The quickest way is a photo of your paper card: we fill everything in, and you check it.",
+      "photo": "Photograph your paper card",
+      "fastest": "Fastest",
+      "photoHint": "Or upload a photo of it. We read the name, job, company, phone, email and website, and take its colours.",
+      "write": "I’ll write it myself",
+      "writeHint": "Three short steps: about you, how to reach you, and a style.",
+      "reading": "Reading your card…",
+      "loadingReader": "Getting the reader ready (the first time takes a moment)…",
+      "readingHint": "This takes a few seconds.",
+      "notCard": "We couldn’t read a card in that photo. Try again with the card flat, well lit and filling the picture, or write it yourself.",
+      "readFailed": "That photo couldn’t be read. Try another, or write it yourself.",
+      "privacy": "The photo is only used to read the card; it is not kept."
+    },
+    "done": {
+      "title": "Your card is ready 🎉",
+      "subtitle": "Publish it to share its link and QR code, or keep it as a draft and add more.",
+      "liveTitle": "Your card is live 🎉",
+      "liveSubtitle": "Send its link, or let people scan the QR code.",
+      "publish": "Publish and share",
+      "see": "See it",
+      "edit": "Keep editing"
+    }
   },
   "nfcProgram": {
     "title": "Program a tag from this phone",
