@@ -62,10 +62,49 @@ export function workspaceNames(): Record<string, string> {
   }
 }
 
+const ROLES_KEY = 'vertex_org_roles';
+
+/** What the menus need to know of a person in a workspace. */
+export type MenuRole = {
+  sub: string;
+  role?: string;
+  customRole?: { id: string; name: string; capabilities: string[] } | null;
+  isSuperAdmin?: boolean;
+  workspaceKind?: 'PERSONAL' | 'TEAM' | null;
+};
+
+/**
+ * Remembers the role this person holds in a workspace, so a page opened
+ * again draws its whole menu at once instead of growing when the account
+ * arrives (which moved the links under a click). Only what the menus show
+ * depends on it; the API decides what is allowed.
+ */
+export function rememberRole(orgId: string, who: MenuRole) {
+  try {
+    const map = JSON.parse(localStorage.getItem(ROLES_KEY) ?? '{}');
+    map[orgId] = { sub: who.sub, role: who.role, customRole: who.customRole ?? null, isSuperAdmin: !!who.isSuperAdmin, workspaceKind: who.workspaceKind ?? null };
+    localStorage.setItem(ROLES_KEY, JSON.stringify(map));
+  } catch {
+    /* storage unavailable: the menu fills in when the account arrives */
+  }
+}
+
+/** The role last seen for this person in a workspace, if it was this person. */
+export function recalledRole(orgId: string | null, sub: string | null): MenuRole | null {
+  if (!orgId || !sub) return null;
+  try {
+    const hit = JSON.parse(localStorage.getItem(ROLES_KEY) ?? '{}')?.[orgId];
+    return hit && hit.sub === sub ? (hit as MenuRole) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function forgetWorkspaces() {
   try {
     localStorage.removeItem(SLUGS_KEY);
     localStorage.removeItem(NAMES_KEY);
+    localStorage.removeItem(ROLES_KEY);
   } catch {
     /* nothing to forget */
   }

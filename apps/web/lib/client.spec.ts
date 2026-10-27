@@ -516,3 +516,28 @@ describe('signing out', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('the menus remember the role held in a workspace', () => {
+  const token = (sub: string) => `h.${Buffer.from(JSON.stringify({ sub })).toString('base64url')}.s`;
+
+  it('draws from the role last seen for the same person, in the same workspace', async () => {
+    const { tokenSubject } = await import('./client');
+    const { recalledRole, rememberRole } = await import('./workspaces');
+    localStorage.setItem('vertex_token', token('u1'));
+    rememberRole('org1', { sub: 'u1', role: 'OWNER', workspaceKind: 'TEAM' });
+    expect(tokenSubject()).toBe('u1');
+    expect(recalledRole('org1', tokenSubject())).toMatchObject({ role: 'OWNER', workspaceKind: 'TEAM' });
+    expect(recalledRole('org2', tokenSubject())).toBeNull();
+    // Someone else signed in on this browser does not get it.
+    expect(recalledRole('org1', 'u2')).toBeNull();
+  });
+
+  it('is forgotten on signing out', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}')));
+    const { logout } = await import('./client');
+    const { recalledRole, rememberRole } = await import('./workspaces');
+    rememberRole('org1', { sub: 'u1', role: 'OWNER' });
+    logout();
+    expect(recalledRole('org1', 'u1')).toBeNull();
+  });
+});

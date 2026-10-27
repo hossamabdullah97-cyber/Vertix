@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
-import { authFetch, logout, getActiveOrgId, setActiveOrgId, ssoStart, type Me } from '@/lib/client';
+import { authFetch, logout, getActiveOrgId, setActiveOrgId, ssoStart, tokenSubject, type Me } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { useTheme } from '@/lib/useStoredTheme';
 import { Avatar } from '@/components/Avatar';
@@ -26,7 +26,7 @@ import { TwoStepPanel } from '@/components/account/TwoStepPanel';
 import { registerServiceWorker, syncPush } from '@/lib/pwa';
 import { Shortcuts, SHOW_SHORTCUTS, WORKSPACE_KEY, type WorkspaceKey } from '@/components/ui/Shortcuts';
 import { InvitationList, useInvitations } from '@/components/invitations/Invitations';
-import { dropWorkspaceFromAddress, matchWorkspace, rememberWorkspaces, requestedWorkspace, wasKnown, withWorkspace, WORKSPACE_PARAM } from '@/lib/workspaces';
+import { dropWorkspaceFromAddress, matchWorkspace, recalledRole, rememberRole, rememberWorkspaces, requestedWorkspace, wasKnown, withWorkspace, WORKSPACE_PARAM, type MenuRole } from '@/lib/workspaces';
 import { openWorkspace, WORKSPACE_SWITCH, type WorkspaceSwitch } from '@/lib/switch';
 import { lastUnreadByWorkspace, UNREAD_BY_WORKSPACE } from '@/components/notifications/model';
 import { GettingStarted, WelcomeDialog } from '@/components/GettingStarted';
@@ -181,6 +181,15 @@ export default function AppShell({
   const { locale, setLocale } = useLocale();
   const { theme, pref: themePref, setPref: chooseTheme } = useTheme();
   const [me, setMe] = useState<Me | null>(shellCache?.me ?? null);
+  // Until the account arrives, the menus go by the role last seen here, so
+  // they are whole from the first paint rather than growing under a click.
+  // Read after hydration: the server has no storage to draw it from.
+  const [recalled, setRecalled] = useState<MenuRole | null>(null);
+  useLayoutEffect(() => {
+    if (!me) setRecalled(recalledRole(getActiveOrgId(), tokenSubject()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const menuWho = me ?? recalled;
   // The getting-started guide, looked at again on each page so a step done is ticked off.
   const onboarding = useOnboarding(pathname);
   // The page someone was on before opening help, for support to see where they were stuck.
@@ -364,6 +373,12 @@ export default function AppShell({
     if (ready) shellCache = { me, orgs: orgsLoaded ? orgs : null, usage, orgId: selectedOrgId };
   }, [ready, me, orgs, orgsLoaded, usage, selectedOrgId]);
 
+  // Only an account read in this workspace: during a switch the one held is
+  // still the last workspace's.
+  useEffect(() => {
+    if (me?.orgId && me.orgId === selectedOrgId) rememberRole(selectedOrgId, me);
+  }, [me, selectedOrgId]);
+
   // Opening the menu loads the search index once, and always starts clean.
   useEffect(() => {
     if (!paletteOpen) return;
@@ -508,17 +523,17 @@ export default function AppShell({
   // Only the pages this person's role includes (lib/permissions); a group left empty goes too.
   const groups = useMemo(
     () =>
-      groupsFor(personalWorkspaceEarly(orgs, selectedOrgId))
-        .map((g) => ({ ...g, items: g.items.filter((i) => canOpen(me, i.href)) }))
+      groupsFor(orgsLoaded ? personalWorkspaceEarly(orgs, selectedOrgId) : menuWho?.workspaceKind === 'PERSONAL')
+        .map((g) => ({ ...g, items: g.items.filter((i) => canOpen(menuWho as Me | null, i.href)) }))
         .filter((g) => g.items.length > 0),
-    [orgs, selectedOrgId, me],
+    [orgs, orgsLoaded, selectedOrgId, menuWho],
   );
   const navItems = useMemo(() => {
     const items = [...groups.flatMap((g) => g.items), HELP_ITEM];
-    return me?.isSuperAdmin
+    return menuWho?.isSuperAdmin
       ? [...items, { href: '/admin', labelKey: 'items.adminConsole', icon: 'shield' }]
       : items;
-  }, [me?.isSuperAdmin, groups]);
+  }, [menuWho?.isSuperAdmin, groups]);
 
   // Everything the command menu can show for the current query, in display order.
   const paletteItems = useMemo<PaletteItem[]>(() => {
@@ -1118,7 +1133,7 @@ export default function AppShell({
             </div>
           ))}
 
-          {me?.isSuperAdmin && (
+          {menuWho?.isSuperAdmin && (
             <div className="flex flex-col gap-0.5">
               <p className="px-2 pb-1 pt-4 text-2xs font-medium text-faint">{t('groups.administration')}</p>
               <Link href="/admin" className="v-nav-item" data-active={pathname.startsWith('/admin')}>
