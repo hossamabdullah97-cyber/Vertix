@@ -153,8 +153,16 @@ export function PublicProfile({
           </div>
         )}
 
-        {/* One main action, and the exchange beside it. */}
+        {/* One main action, the exchange (so the visitor leaves their details
+            too), and saving the contact beside it. */}
         <div className="mt-4 flex gap-2.5">
+          <button
+            onClick={() => setSheet('exchange')}
+            className="flex h-[54px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--p-accent)] px-4 text-md font-semibold text-[var(--p-on-accent)] shadow-[0_10px_24px_-12px_var(--p-accent)] transition-opacity active:opacity-85"
+          >
+            <Icon name="swap" size={18} />
+            <span className="truncate">{t.exchangeCta}</span>
+          </button>
           <a
             href={vcardUrl}
             onClick={(e) => {
@@ -163,19 +171,12 @@ export function PublicProfile({
               setSaved(true);
               setTimeout(() => setSaved(false), 2200);
             }}
-            className="flex h-[54px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--p-accent)] px-4 text-md font-semibold text-[var(--p-on-accent)] shadow-[0_10px_24px_-12px_var(--p-accent)] transition-opacity active:opacity-85"
+            aria-label={saved ? t.saved : t.save}
+            title={t.save}
+            className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full ring-1 ring-inset transition-colors active:bg-[var(--p-elevated)] ${saved ? 'text-[#22a06b] ring-[#22a06b]' : 'ring-[var(--p-line-strong)]'}`}
           >
-            <Icon name={saved ? 'check' : 'user-plus'} size={18} />
-            <span className="truncate">{saved ? t.saved : t.save}</span>
+            <Icon name={saved ? 'check' : 'user-plus'} size={20} />
           </a>
-          <button
-            onClick={() => setSheet('exchange')}
-            aria-label={t.exchange}
-            title={t.exchange}
-            className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
-          >
-            <Icon name="swap" size={20} />
-          </button>
         </div>
 
         <WalletButtons profile={profile} t={t} query={vq.toString()} preview={preview} />
