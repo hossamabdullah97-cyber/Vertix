@@ -41,7 +41,9 @@
     "LEADS": "New leads",
     "before": "Previous period: {{value}}",
     "previous": "Previous period",
-    "noActivity": "Nothing happened in this period yet. Share your card's link or tap a chip and the numbers start here."
+    "noActivity": "Nothing happened in this period yet. Share your card's link or tap a chip and the numbers start here.",
+    "emptyShare": "Share your card",
+    "emptyChip": "Link a chip"
   },
   "funnel": {
     "title": "From view to lead",

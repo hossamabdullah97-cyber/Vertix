@@ -31,6 +31,7 @@ import { ChipsView } from '@/components/analytics/ChipsView';
 import { TeamView } from '@/components/analytics/TeamView';
 import { LeadsView } from '@/components/analytics/LeadsView';
 import { can } from '@/lib/permissions';
+import { EmptyChart } from '@/components/analytics/EmptyChart';
 
 type Period = 7 | 30 | 90;
 type View = 'overview' | 'cards' | 'chips' | 'team' | 'leads';
@@ -367,9 +368,13 @@ function OverviewView({
               markers={markersFor(occasions, windows.keys)}
             />
           ) : (
-            <div className="flex h-[232px] items-center justify-center px-6 text-center text-sm leading-relaxed text-muted">
-              <p className="max-w-sm">{t('metrics.noActivity')}</p>
-            </div>
+            <EmptyChart
+              message={t('metrics.noActivity')}
+              actions={[
+                { href: '/cards', label: t('metrics.emptyShare'), icon: 'share' },
+                { href: '/tags', label: t('metrics.emptyChip'), icon: 'tag' },
+              ]}
+            />
           )}
         </div>
       </section>

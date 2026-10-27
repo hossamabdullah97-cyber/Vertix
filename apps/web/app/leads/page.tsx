@@ -481,7 +481,7 @@ export default function LeadsPage() {
                           onMore={() => setBoardLimit((b) => ({ ...b, [stage.id]: (b[stage.id] ?? BOARD_PAGE) + BOARD_PAGE }))}
                         />
                         {items.length === 0 && (
-                          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line py-8 text-xs text-faint">
+                          <div className="flex items-center justify-center rounded-lg border border-dashed border-line py-6 text-xs text-faint">
                             {isOver ? t('board.releaseToDrop') : t('board.noLeads')}
                           </div>
                         )}

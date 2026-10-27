@@ -42,6 +42,8 @@
     "leadsSub": "معدل التحويل {{pct}}",
     "previous": "الفترة السابقة",
     "noActivity": "لم يُسجَّل شيء في هذه الفترة بعد. تظهر المشاهدات واللمسات وحفظ جهات الاتصال هنا عندما يفتح الناس بطاقاتك.",
+    "emptyShare": "شارك بطاقتك",
+    "emptyChip": "اربط شريحة",
     "busiest": "أنشط يوم: <b>{{date}}</b>، بعدد {{count}} ({{metric}}).",
     "insight": "ملاحظة",
     "openAnalytics": "فتح التحليلات",
@@ -144,6 +146,12 @@
   "onboarding": {
     "title": "ابدأ الإعداد",
     "progress": "تم {{done}} من {{total}}",
+    "more_zero": "لا خطوات أخرى",
+    "more_one": "خطوة أخرى",
+    "more_two": "خطوتان أخريان",
+    "more_few": "{{value}} خطوات أخرى",
+    "more_many": "{{value}} خطوة أخرى",
+    "more_other": "{{value}} خطوة أخرى",
     "hide": "إخفاء",
     "show": "عرض قائمة الإعداد (تم {{done}} من {{total}})",
     "steps": {
