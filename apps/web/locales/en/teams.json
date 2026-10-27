@@ -371,7 +371,7 @@
   },
   "customRoles": {
     "title": "Your workspace’s roles",
-    "intro": "Make roles that fit how your company works: start from a built-in role, which decides what data people see (every lead, or their own), then choose what they can change in each part of the workspace.",
+    "intro": "Roles that fit how your company works. Start from a built-in role (it decides whether people see every lead or only theirs), then choose what they can change.",
     "new": "New role",
     "newTitle": "New role",
     "editTitle": "Edit role",

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@/components/Icon';
 import { useLocale } from '@/components/i18n/LanguageProvider';
+import { useDialogFocus } from '@/lib/useDialogFocus';
 
 /**
  * A panel that slides in from the end edge, the same shape as the lead panel.
@@ -31,6 +32,8 @@ export function Sheet({
   const titleId = useId();
   // Slides in from the edge it sits on, which is the left in Arabic.
   const dx = dir === 'rtl' ? -24 : 24;
+  const panelRef = useRef<HTMLElement>(null);
+  useDialogFocus(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -51,6 +54,8 @@ export function Sheet({
             className="fixed inset-0 z-40 bg-canvas/60"
           />
           <motion.aside
+            ref={panelRef}
+            tabIndex={-1}
             initial={{ opacity: 0, x: dx }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: dx }}
@@ -58,7 +63,7 @@ export function Sheet({
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="fixed inset-y-0 end-0 z-50 flex w-full max-w-[440px] flex-col bg-surface shadow-2xl sm:inset-y-2 sm:end-2 sm:rounded-[14px] sm:ring-1 sm:ring-line"
+            className="fixed inset-y-0 end-0 z-50 flex w-full max-w-[440px] flex-col bg-surface shadow-2xl outline-none sm:inset-y-2 sm:end-2 sm:rounded-[14px] sm:ring-1 sm:ring-line"
           >
             <header className="flex items-start gap-3 border-b border-line px-5 py-4">
               <div className="min-w-0 flex-1">

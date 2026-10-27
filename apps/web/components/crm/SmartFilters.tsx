@@ -136,7 +136,7 @@ export function SmartFilters({
       </button>
 
       {open && (
-        <div className="absolute end-0 top-full z-40 mt-2 w-[300px] max-w-[calc(100vw-2.5rem)] rounded-xl border border-line bg-surface p-1.5 shadow-lg">
+        <div className="v-pop absolute end-0 top-full z-40 mt-2 w-[300px] max-w-[calc(100vw-2.5rem)] rounded-xl border border-line bg-surface p-1.5 shadow-lg">
           <div className="space-y-3 p-2.5">
             <label className="block">
               <span className="mb-1.5 block text-xs text-faint">{t('filters.priority')}</span>

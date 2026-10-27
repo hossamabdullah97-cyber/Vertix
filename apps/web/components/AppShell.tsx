@@ -832,7 +832,7 @@ export default function AppShell({
       aria-label={t('account.menu')}
       className={`absolute z-50 overflow-hidden rounded-xl border border-line bg-surface p-1.5 shadow-lg ${
         // Upwards it spans the sidebar (which clips anything wider); on the phone bar it hangs from the avatar.
-        placement === 'up' ? 'inset-x-0 bottom-full mb-2' : 'end-0 top-full mt-2 w-[248px]'
+        placement === 'up' ? 'v-pop-up inset-x-0 bottom-full mb-2' : 'v-pop end-0 top-full mt-2 w-[248px]'
       }`}
     >
       <div className="px-2.5 pb-2 pt-1.5">
@@ -915,6 +915,9 @@ export default function AppShell({
       className="min-h-screen bg-canvas text-ink antialiased [--v-dock:calc(64px+env(safe-area-inset-bottom))] md:flex md:h-screen md:overflow-hidden md:[--v-dock:0px]"
       style={embedded ? ({ '--v-dock': '0px', '--v-bar': '0px' } as React.CSSProperties) : undefined}
     >
+      <a href="#main" className="v-skip">
+        {t('skipToContent')}
+      </a>
       {/* Sidebar (desktop) */}
       <aside className="hidden w-[244px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 pb-3 pt-3.5 md:flex">
         <Link href="/dashboard" className="mb-2 flex items-center gap-2.5 px-2 py-1">
@@ -965,7 +968,7 @@ export default function AppShell({
           </button>
 
           {switcherOpen && (
-            <div className="absolute inset-x-0 top-full z-50 mt-1.5 space-y-1.5 rounded-xl border border-line bg-surface p-1.5 text-start shadow-lg">
+            <div className="v-pop absolute inset-x-0 top-full z-50 mt-1.5 space-y-1.5 rounded-xl border border-line bg-surface p-1.5 text-start shadow-lg">
               {totalWorkspacesCount <= 1 ? (
                 <p className="px-2.5 pb-1 pt-2 text-xs text-muted">{t('switcher.onlyOne')}</p>
               ) : (
@@ -1197,7 +1200,8 @@ export default function AppShell({
                 {cardLimit !== null && (
                   <span className="mt-2 block h-1 overflow-hidden rounded-full bg-line" aria-hidden>
                     <span
-                      className="block h-full rounded-full bg-accent"
+                      // Amber once the plan is full, as on the billing page.
+                      className={`block h-full rounded-full ${usage.usage.cards >= cardLimit ? 'bg-amber-500' : 'bg-accent'}`}
                       style={{ width: `${Math.min(100, (usage.usage.cards / Math.max(1, cardLimit)) * 100)}%` }}
                     />
                   </span>
@@ -1305,7 +1309,7 @@ export default function AppShell({
             </div>
           )}
 
-          <main className={bleed ? '' : `mx-auto px-5 py-6 md:px-8 md:py-7 ${fluid ? 'w-full max-w-[1560px]' : 'max-w-[1240px]'}`}>
+          <main id="main" tabIndex={-1} className={`outline-none ${bleed ? '' : `mx-auto px-5 py-6 md:px-8 md:py-7 ${fluid ? 'w-full max-w-[1560px]' : 'max-w-[1240px]'}`}`}>
             {me?.ssoRequired ? (
               // The workspace requires its single sign-on and this device came
               // in another way: the API refuses everything else here.

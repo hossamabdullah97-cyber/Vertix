@@ -333,7 +333,7 @@
     "uploading": "Uploading…",
     "remove": "Remove",
     "failed": "Upload failed.",
-    "hint": "JPG, PNG, WebP or GIF up to 5 MB, or drop a file here.",
+    "hint": "JPG, PNG, WebP or GIF · up to 5 MB · or drop it here",
     "notImage": "Please choose an image file.",
     "tooLarge": "Image is larger than 5 MB.",
     "urlPlaceholder": "…or paste an image URL",
@@ -529,7 +529,7 @@
   },
   "variants": {
     "title": "Profiles on one link",
-    "subtitle": "Your card keeps one public link. Each profile can change the details, look, links and sections, and shows to people with a private key or passcode, on a schedule, or when you switch it on. When none applies, the default profile shows.",
+    "subtitle": "One public link, several faces. A profile can change the details, look and links, and shows with a private key or passcode, on a schedule, or when you switch it on.",
     "add": "Add profile",
     "newName": "Profile {{n}}",
     "added": "Profile added as a copy of your default.",

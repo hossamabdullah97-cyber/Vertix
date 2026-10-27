@@ -290,7 +290,7 @@ export function CardProfiles({ cardId, slug }: { cardId: string; slug: string })
       />
 
       {toast && (
-        <div role="status" className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-ink px-3.5 py-2 text-sm text-surface shadow-lg">
+        <div role="status" className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[60] mx-auto flex w-fit items-center gap-2 rounded-lg bg-[#17171a] px-3.5 py-2.5 text-sm font-medium text-white shadow-lg ring-1 ring-white/10">
           <Icon name="check" size={14} /> {toast}
         </div>
       )}

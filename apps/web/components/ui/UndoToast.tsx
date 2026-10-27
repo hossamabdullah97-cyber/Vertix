@@ -49,7 +49,7 @@ export function UndoToast() {
           exit={{ opacity: 0, y: 12 }}
           role="status"
           aria-live="polite"
-          className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[70] mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-1 rounded-lg bg-[#17171a] py-1.5 pe-1.5 ps-3.5 text-sm font-medium text-white shadow-lg"
+          className="fixed inset-x-0 bottom-[calc(1.5rem+var(--v-dock,0px))] z-[70] mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-1 rounded-lg bg-[#17171a] ring-1 ring-white/10 py-1.5 pe-1.5 ps-3.5 text-sm font-medium text-white shadow-lg"
         >
           <span className="me-2 truncate">{text}</span>
           {!failed && (

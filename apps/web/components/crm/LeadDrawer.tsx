@@ -1,7 +1,7 @@
 'use client';
 
 import { can } from '@/lib/permissions';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { authFetch, type Me } from '@/lib/client';
@@ -9,6 +9,7 @@ import { Icon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatDate, formatRelativeTime } from '@/lib/format';
+import { useDialogFocus } from '@/lib/useDialogFocus';
 import type { CreateTaskInput } from '@vertex/shared';
 import {
   type Lead,
@@ -88,6 +89,11 @@ export function LeadDrawer({
   onManageFields?: () => void;
 }) {
   const { t } = useTranslation('crm');
+  const { dir } = useLocale();
+  // Slides in from the edge it sits on, which is the left in Arabic.
+  const dx = dir === 'rtl' ? -24 : 24;
+  const panelRef = useRef<HTMLElement>(null);
+  useDialogFocus(!!lead, panelRef);
 
   // Escape closes the panel, as it does every other overlay.
   useEffect(() => {
@@ -111,14 +117,16 @@ export function LeadDrawer({
             className="fixed inset-0 z-40 bg-canvas/60"
           />
           <motion.aside
-            initial={{ opacity: 0, x: 24 }}
+            ref={panelRef}
+            tabIndex={-1}
+            initial={{ opacity: 0, x: dx }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 24 }}
+            exit={{ opacity: 0, x: dx }}
             transition={{ type: 'spring', stiffness: 420, damping: 38 }}
             role="dialog"
             aria-modal="true"
             aria-label={t('drawer.ariaLabel')}
-            className="fixed inset-y-0 end-0 z-50 flex w-full max-w-[460px] flex-col bg-surface shadow-2xl sm:inset-y-2 sm:end-2 sm:rounded-[14px] sm:ring-1 sm:ring-line"
+            className="fixed inset-y-0 end-0 z-50 flex w-full max-w-[460px] flex-col bg-surface shadow-2xl outline-none sm:inset-y-2 sm:end-2 sm:rounded-[14px] sm:ring-1 sm:ring-line"
           >
             <DrawerBody
               key={lead.id}

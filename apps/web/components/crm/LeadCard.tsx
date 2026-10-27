@@ -92,9 +92,10 @@ export function LeadCard({
       </div>
       {awaitsReply(lead) && <WaitingBadge hours={waitingHours(lead)!} className="mt-2" />}
 
-      {/* Contact shortcuts appear on hover so the card stays quiet at rest. */}
+      {/* Contact shortcuts appear on hover (or keyboard focus) so the card stays
+          quiet at rest; they sit over the time, never over the name or heat. */}
       {links.length > 0 && (
-        <div className="pointer-events-none absolute end-2 top-2 flex gap-1 rounded-lg bg-surface p-0.5 opacity-0 shadow-sm ring-1 ring-line transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+        <div className="pointer-events-none absolute bottom-2 end-2 flex gap-1 rounded-lg bg-surface p-0.5 opacity-0 shadow-sm ring-1 ring-line transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
           {links.map((l) => (
             <a
               key={l.key}

@@ -19,6 +19,8 @@ const config: Config = {
         muted: 'hsl(var(--v-muted) / <alpha-value>)',
         faint: 'hsl(var(--v-faint) / <alpha-value>)',
         line: 'hsl(var(--v-border) / <alpha-value>)',
+        // The stronger edge, for outlines that must be found (a bordered menu button).
+        'line-strong': 'hsl(var(--v-border-strong) / <alpha-value>)',
         surface: 'hsl(var(--v-surface) / <alpha-value>)',
         elevated: 'hsl(var(--v-elevated) / <alpha-value>)',
         canvas: 'hsl(var(--v-bg) / <alpha-value>)',

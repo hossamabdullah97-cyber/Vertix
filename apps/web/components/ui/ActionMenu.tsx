@@ -27,6 +27,7 @@ export interface ActionItem {
 export function ActionMenu({ label, items, bordered = false }: { label: string; items: ActionItem[]; bordered?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<React.CSSProperties>({});
+  const [up, setUp] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -36,6 +37,7 @@ export function ActionMenu({ label, items, bordered = false }: { label: string; 
     if (r) {
       const rtl = document.documentElement.dir === 'rtl';
       const below = window.innerHeight - r.bottom > 44 * items.length + 24;
+      setUp(!below);
       setPos({
         ...(below ? { top: r.bottom + 4 } : { bottom: window.innerHeight - r.top + 4 }),
         ...(rtl ? { left: r.left } : { right: window.innerWidth - r.right }),
@@ -87,7 +89,16 @@ export function ActionMenu({ label, items, bordered = false }: { label: string; 
     }`;
 
   return (
-    <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+    <div
+      ref={ref}
+      className="relative"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      // Tabbing out of the menu closes it, as a click outside does.
+      onBlur={(e) => {
+        if (open && !ref.current?.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
       <button
         ref={buttonRef}
         onClick={toggle}
@@ -104,7 +115,7 @@ export function ActionMenu({ label, items, bordered = false }: { label: string; 
         <Icon name="dots" size={bordered ? 17 : 15} />
       </button>
       {open && (
-        <div role="menu" style={pos} className="fixed z-[70] w-56 rounded-xl border border-line bg-surface p-1 shadow-lg">
+        <div role="menu" style={pos} className={`fixed z-[70] w-56 rounded-xl border border-line bg-surface p-1 shadow-lg ${up ? 'v-pop-up' : 'v-pop'}`}>
           {items.map((it) => {
             const icon = <Icon name={it.icon} size={14} className={it.danger ? undefined : 'text-faint'} />;
             const body = (

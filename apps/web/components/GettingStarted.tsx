@@ -77,7 +77,7 @@ export function GettingStarted({ view, onHide }: { view: OnboardingView | null; 
       </button>
 
       {open && (
-        <div role="dialog" aria-label={t('guide.title')} className="absolute inset-x-0 bottom-full z-40 mb-2 rounded-xl bg-surface p-2 shadow-xl ring-1 ring-line">
+        <div role="dialog" aria-label={t('guide.title')} className="v-pop-up absolute inset-x-0 bottom-full z-40 mb-2 rounded-xl bg-surface p-2 shadow-xl ring-1 ring-line">
           <p className="px-2 pb-1.5 pt-1 text-sm font-semibold text-ink">{t('guide.title')}</p>
           <ol className="max-h-[50vh] overflow-auto">
             {view.steps.map((s, i) => (
