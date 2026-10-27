@@ -346,6 +346,11 @@ function OverviewView({
                   )}
                 </span>
                 <span className="mt-1.5 block truncate text-xs text-faint">{t('metrics.before', { value: fmt(before) })}</span>
+                {m === 'NFC_SCAN' && (data.ov?.repeatTaps ?? 0) > 0 && (
+                  <span className="mt-0.5 block truncate text-xs text-faint">
+                    {t('metrics.repeatTaps', { count: data.ov!.repeatTaps, value: fmt(data.ov!.repeatTaps!) })}
+                  </span>
+                )}
               </button>
             );
           })}

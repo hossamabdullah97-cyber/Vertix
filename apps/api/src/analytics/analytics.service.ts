@@ -43,7 +43,11 @@ export class AnalyticsService {
     if (!card) return { visitorId: anonymousId };
     // The card's own people are not its visitors: its owner opening it, or a
     // colleague in the same workspace checking it, counts as nothing.
-    if (ctx.viewerId && (await this.isInsider(card, ctx.viewerId))) return { visitorId: anonymousId };
+    if (ctx.viewerId && (await this.isInsider(card, ctx.viewerId))) {
+      // And this browser is theirs: a chip it taps later is not counted either.
+      if (visitorId) await this.claimVisitor(visitorId, ctx.viewerId);
+      return { visitorId: anonymousId };
+    }
 
     try {
       const visitor = await this.db.visitor.upsert({
@@ -139,6 +143,22 @@ export class AnalyticsService {
     }
   }
 
+  /**
+   * Records that a browser belongs to this account, so the gateway can leave
+   * out the chip taps of a workspace's own people (Visitor.userId). Never throws.
+   */
+  async claimVisitor(anonymousId: string, userId: string): Promise<void> {
+    try {
+      await this.db.visitor.upsert({
+        where: { anonymousId },
+        update: { userId },
+        create: { anonymousId, userId },
+      });
+    } catch (err) {
+      this.logger.warn(`visitor claim failed: ${(err as Error).message}`);
+    }
+  }
+
   private async isInsider(card: { orgId: string; ownerId: string | null }, userId: string): Promise<boolean> {
     if (card.ownerId === userId) return true;
     const member = await this.db.membership.findFirst({ where: { orgId: card.orgId, userId }, select: { id: true } });
@@ -162,11 +182,12 @@ export class AnalyticsService {
 
   async overview(orgId: string, from: Date, to: Date, mine?: string) {
     // Per-type counts via groupBy (orgId auto-injected by the tenant extension).
-    const grouped = await this.db.event.groupBy({
-      by: ['type'],
-      where: { createdAt: { gte: from, lte: to }, ...(mine ? { card: { ownerId: mine } } : {}) },
-      _count: { _all: true },
-    });
+    const range = { createdAt: { gte: from, lte: to }, ...(mine ? { card: { ownerId: mine } } : {}) };
+    // A chip's taps count the people who tapped it; their later taps are repeats.
+    const [grouped, repeatTaps] = await Promise.all([
+      this.db.event.groupBy({ by: ['type'], where: { ...range, repeat: false }, _count: { _all: true } }),
+      this.db.event.count({ where: { ...range, type: 'NFC_SCAN', repeat: true } }),
+    ]);
 
     const totals: Record<string, number> = {};
     for (const t of EVENT_TYPES) totals[t] = 0;
@@ -191,6 +212,7 @@ export class AnalyticsService {
 
     return {
       totals,
+      repeatTaps,
       uniqueVisitors: uv[0]?.count ?? 0,
       leads,
       from: from.toISOString(),
@@ -206,6 +228,7 @@ export class AnalyticsService {
       FROM events
       WHERE "orgId" = ${orgId}
         AND "createdAt" >= ${from} AND "createdAt" <= ${to}
+        AND NOT "repeat"
         ${this.ownCardsSql(mine)}
       GROUP BY day, type
       ORDER BY day ASC
@@ -232,7 +255,7 @@ export class AnalyticsService {
     }
     const grouped = await this.db.event.groupBy({
       by: ['type'],
-      where: { cardId },
+      where: { cardId, repeat: false },
       _count: { _all: true },
     });
     const counts: Record<string, number> = {
@@ -249,7 +272,7 @@ export class AnalyticsService {
   async topCards(from: Date, to: Date, limit = 5, mine?: string) {
     const grouped = await this.db.event.groupBy({
       by: ['cardId'],
-      where: { createdAt: { gte: from, lte: to }, cardId: { not: null }, ...(mine ? { card: { ownerId: mine } } : {}) },
+      where: { createdAt: { gte: from, lte: to }, cardId: { not: null }, repeat: false, ...(mine ? { card: { ownerId: mine } } : {}) },
       _count: { _all: true },
       orderBy: { _count: { cardId: 'desc' } },
       take: limit,
@@ -290,7 +313,7 @@ export class AnalyticsService {
     const tagIds = scans.map((g) => g.tagId!).filter(Boolean);
     if (tagIds.length === 0) return [];
 
-    const [tags, visitorRows, leadRows] = await Promise.all([
+    const [tags, visitorRows, leadRows, repeatRows] = await Promise.all([
       this.db.nfcTag.findMany({
         where: { id: { in: tagIds } },
         select: {
@@ -318,7 +341,13 @@ export class AnalyticsService {
         where: { tagId: { in: tagIds }, createdAt: { gte: from, lte: to } },
         _count: { _all: true },
       }),
+      this.db.event.groupBy({
+        by: ['tagId'],
+        where: { tagId: { in: tagIds }, type: 'NFC_SCAN', repeat: true, createdAt: { gte: from, lte: to } },
+        _count: { _all: true },
+      }),
     ]);
+    const repeatsByTag = new Map(repeatRows.map((r) => [r.tagId!, r._count._all]));
 
     const visitorsByTag = new Map<string, number>();
     for (const row of visitorRows) {
@@ -342,7 +371,9 @@ export class AnalyticsService {
             }
           : null,
         cardSlug: tag?.card?.slug ?? null,
-        scans: g._count._all,
+        // Taps by people new to the chip, and the repeat taps of people who had been.
+        scans: g._count._all - (repeatsByTag.get(g.tagId!) ?? 0),
+        repeats: repeatsByTag.get(g.tagId!) ?? 0,
         visitors: visitorsByTag.get(g.tagId!) ?? 0,
         leads: leadsByTag.get(g.tagId!) ?? 0,
         lastScanAt: tag?.lastScanAt?.toISOString() ?? null,
@@ -395,7 +426,7 @@ export class AnalyticsService {
       }),
       this.db.event.groupBy({
         by: ['tagId'],
-        where: { tagId: { in: tagIds }, type: 'NFC_SCAN', createdAt: { gte: from, lte: to } },
+        where: { tagId: { in: tagIds }, type: 'NFC_SCAN', repeat: false, createdAt: { gte: from, lte: to } },
         _count: { _all: true },
       }),
       this.db.event.findMany({

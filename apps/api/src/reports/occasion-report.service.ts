@@ -96,11 +96,11 @@ export class OccasionReportService {
         SELECT to_char(date_trunc('day', "createdAt"), 'YYYY-MM-DD') AS day,
                count(*) FILTER (WHERE type = 'NFC_SCAN')::int AS taps,
                count(*) FILTER (WHERE type = 'VIEW')::int AS views
-        FROM events WHERE "orgId" = ${orgId} AND "createdAt" >= ${window.from} AND "createdAt" < ${window.to}
+        FROM events WHERE "orgId" = ${orgId} AND NOT "repeat" AND "createdAt" >= ${window.from} AND "createdAt" < ${window.to}
         GROUP BY 1`,
       this.db.$queryRaw<{ hour: number; n: number }[]>`
         SELECT extract(hour FROM ("createdAt" AT TIME ZONE 'UTC') AT TIME ZONE ${zone})::int AS hour, count(*)::int AS n
-        FROM events WHERE "orgId" = ${orgId} AND type IN ('NFC_SCAN', 'VIEW') AND "createdAt" >= ${window.from} AND "createdAt" < ${window.to}
+        FROM events WHERE "orgId" = ${orgId} AND type IN ('NFC_SCAN', 'VIEW') AND NOT "repeat" AND "createdAt" >= ${window.from} AND "createdAt" < ${window.to}
         GROUP BY 1`,
       this.db.$queryRaw<{ n: number }[]>`
         SELECT count(*)::int AS n FROM lead_activities la JOIN leads l ON l.id = la."leadId"

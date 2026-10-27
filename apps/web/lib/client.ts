@@ -761,7 +761,10 @@ export interface NfcTag {
   /** The member this piece of hardware belongs to — what reporting counts by. */
   assignedUserId: string | null;
   assignedUser?: { id: string; name: string | null; email: string } | null;
+  /** Distinct people who tapped it. */
   activationCount: number;
+  /** Taps by someone who had tapped it before. */
+  repeatTaps?: number;
   lastScanAt: string | null;
   createdAt: string;
 }

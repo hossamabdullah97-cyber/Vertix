@@ -126,7 +126,7 @@ export class GatewayService {
     const counted = await this.recordScan(tag, card.id, visitorId, ctx);
 
     // Notify subscribed integrations of the physical tap (best-effort), once
-    // per visit like the count.
+    // per visit like the count, and never for the workspace's own taps.
     if (counted) void this.webhooks
       .emit(tag.orgId, 'nfc.tapped', {
         tagUid: uid,
@@ -134,6 +134,7 @@ export class GatewayService {
         cardSlug: card.slug,
         visitorId,
         redirectUrl,
+        repeat: counted === 'repeat',
       })
       .catch(() => undefined);
 
@@ -163,36 +164,52 @@ export class GatewayService {
   }
 
   /**
-   * Stage 6 helper — record the scan event and bump tag counters, unless the
-   * same phone tapped this chip moments ago. Returns whether it counted.
-   * Never throws.
+   * Stage 6 helper — record the scan event and bump tag counters. Never throws.
+   *
+   * Nothing is recorded when the tap is the workspace's own (a browser its
+   * owner or a colleague was signed in on, see Visitor.userId), or when the
+   * same phone tapped this chip moments ago. A tap by someone who had tapped
+   * it before is recorded as a repeat: counts of taps say how many people a
+   * chip reached, and the repeats are counted on their own.
    *
    * "The same phone" is the same visitor id (kept in a cookie by the web's
    * /t route), or, for a client that sends none, the same address and
    * browser: without the second, reloading the bare URL in a loop would
    * inflate a chip's count and the member's numbers with it.
+   *
+   * Returns 'new' or 'repeat' for a recorded tap, false otherwise.
    */
   private async recordScan(
     tag: { id: string; orgId: string },
     cardId: string | null,
     visitorId: string,
     ctx: ScanContext,
-  ): Promise<boolean> {
+  ): Promise<'new' | 'repeat' | false> {
     try {
       const visitor = await this.db.visitor.findFirst({
         where: { anonymousId: visitorId },
-        select: { id: true },
+        select: { id: true, userId: true },
       });
+      if (visitor?.userId) {
+        const insider = await this.db.membership.findFirst({
+          where: { orgId: tag.orgId, userId: visitor.userId, deletedAt: null },
+          select: { id: true },
+        });
+        if (insider) return false;
+      }
+      // Who tapped: the phone's own visitor id when it sent one. Address and
+      // browser stand in only when it did not, since two people on the same
+      // Wi-Fi with the same phone share both and would be taken for one.
       const same: Record<string, unknown>[] = [];
-      if (visitor) same.push({ visitorId: visitor.id });
-      if (ctx.ip) {
+      if (ctx.visitorId && visitor) same.push({ visitorId: visitor.id });
+      else if (ctx.ip) {
         const byIp = { device: { path: ['ip'], equals: ctx.ip } };
         same.push(
           ctx.userAgent
             ? { AND: [byIp, { device: { path: ['userAgent'], equals: ctx.userAgent } }] }
             : byIp,
         );
-      }
+      } else if (visitor) same.push({ visitorId: visitor.id });
       if (same.length) {
         const recent = await this.db.event.findFirst({
           where: {
@@ -205,6 +222,9 @@ export class GatewayService {
         });
         if (recent) return false;
       }
+      const repeat = same.length
+        ? !!(await this.db.event.findFirst({ where: { tagId: tag.id, type: 'NFC_SCAN', OR: same }, select: { id: true } }))
+        : false;
       await this.db.$transaction([
         this.db.event.create({
           data: {
@@ -217,14 +237,15 @@ export class GatewayService {
             type: 'NFC_SCAN',
             referrer: ctx.referrer,
             device: { userAgent: ctx.userAgent, ip: ctx.ip },
+            repeat,
           },
         }),
         this.db.nfcTag.update({
           where: { id: tag.id },
-          data: { activationCount: { increment: 1 }, lastScanAt: new Date() },
+          data: { ...(repeat ? { repeatTaps: { increment: 1 } } : { activationCount: { increment: 1 } }), lastScanAt: new Date() },
         }),
       ]);
-      return true;
+      return repeat ? 'repeat' : 'new';
     } catch (err) {
       // Analytics must never break the redirect.
       this.logger.warn(`Scan recording failed: ${(err as Error).message}`);

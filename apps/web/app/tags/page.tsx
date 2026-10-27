@@ -583,6 +583,9 @@ function ChipDetails({
             <div className="bg-surface px-3 py-2.5">
               <p className="text-xs text-faint">{t('table.taps')}</p>
               <p className="tabular mt-0.5 text-md font-medium text-ink">{formatNumber(tag.activationCount ?? 0, locale)}</p>
+              {(tag.repeatTaps ?? 0) > 0 && (
+                <p className="mt-0.5 text-xs text-faint">{t('details.repeatTaps', { count: tag.repeatTaps, value: formatNumber(tag.repeatTaps!, locale) })}</p>
+              )}
             </div>
             <div className="bg-surface px-3 py-2.5">
               <p className="text-xs text-faint">{t('table.lastTap')}</p>

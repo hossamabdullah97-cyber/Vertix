@@ -35,7 +35,9 @@
     "CLICK": "Link clicks",
     "SAVE": "Contact saves",
     "SHARE": "Shares",
-    "NFC_SCAN": "NFC taps",
+    "NFC_SCAN": "Unique taps",
+    "repeatTaps_one": "+{{value}} repeat tap by the same person",
+    "repeatTaps_other": "+{{value}} repeat taps by the same people",
     "LEADS": "New leads",
     "before": "Previous period: {{value}}",
     "previous": "Previous period",
@@ -76,7 +78,7 @@
     "create": "Create a card"
   },
   "chips": {
-    "summary": "Taps {{taps}} · Chips tapped {{chips}} · People reached {{people}} · Leads {{leads}}",
+    "summary": "Unique taps {{taps}} · Repeat taps {{repeats}} · Chips tapped {{chips}} · People reached {{people}} · Leads {{leads}}",
     "title": "Chips tapped in this period",
     "manage": "Manage chips",
     "empty": "No chip was tapped in this period.",
@@ -84,6 +86,7 @@
     "holder": "Carried by",
     "card": "Opens",
     "people": "People reached",
+    "repeats": "Repeat taps",
     "lastTap": "Last tap"
   },
   "team": {
