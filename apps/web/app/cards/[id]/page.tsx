@@ -983,7 +983,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                     />
                   </Field>
                 </div>
-                <details className="group mt-5 rounded-xl ring-1 ring-inset ring-line [&_summary::-webkit-details-marker]:hidden" open={!!(vcard.location || vcard.languages || vcard.responseTime) || undefined}>
+                <details className="group mt-5 rounded-xl ring-1 ring-inset ring-line [&_summary::-webkit-details-marker]:hidden" open={!!(vcard.location || vcard.languages || vcard.responseTime || vcard.greeting) || undefined}>
                   <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3">
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium text-ink">{t('profileTab.moreTitle')}</span>
@@ -992,6 +992,11 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                     <Icon name="chevron-down" size={15} className="shrink-0 text-faint transition-transform group-open:rotate-180" />
                   </summary>
                   <div className="grid gap-4 border-t border-line px-4 py-4 sm:grid-cols-3">
+                    <div className="sm:col-span-3">
+                      <Field label={t('profile.greeting')}>
+                        <input className="v-field" value={vcard.greeting ?? ''} onChange={(e) => setVcard({ ...vcard, greeting: e.target.value })} placeholder={t('profile.greetingPlaceholder')} maxLength={60} />
+                      </Field>
+                    </div>
                     <Field label={t('profile.location')}>
                       <input className="v-field" value={vcard.location ?? ''} onChange={(e) => setVcard({ ...vcard, location: e.target.value })} placeholder={t('profile.locationPlaceholder')} />
                     </Field>

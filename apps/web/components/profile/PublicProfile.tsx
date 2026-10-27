@@ -1,13 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { API_URL, type PublicCardAction } from '@/lib/api';
 import { resolveAction } from '@/lib/brandIcons';
 import { appLink, platformOf } from '@/lib/appLinks';
-import { paymentBrand } from '@/lib/paymentBrands';
-import { embedUrl, externalUrl, initials, pick, profileAttrs, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
+import { paymentAddress, paymentBrand } from '@/lib/paymentBrands';
+import { embedUrl, externalUrl, initials, inkStyle, pick, profileAttrs, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
 import { fill, profileStrings, type ProfileStrings } from '@/lib/profileI18n';
-import { readableOn, shade } from '@/lib/color';
+import { shade } from '@/lib/color';
 import { Icon } from '@/components/Icon';
 import { VerifiedBadge } from '@/components/Avatar';
 import { VMark } from '@/components/brand/VMark';
@@ -33,7 +33,7 @@ function track(slug: string, type: 'CLICK' | 'SAVE' | 'SHARE', metadata?: Record
   sendTrack({ slug, type, visitorId: visitorId(), metadata });
 }
 
-type MetaItem = { key: string; label: React.ReactNode; icon?: string; dot?: boolean };
+type MetaItem = { key: string; label: React.ReactNode; icon?: string; dot?: boolean; href?: string; onClick?: (e: React.MouseEvent) => void };
 
 type Resolved = { a: PublicCardAction; href: string; label: string; sub: string; icon: string; color: string; quick: boolean };
 
@@ -74,7 +74,9 @@ export function PublicProfile({
     [profile.actions, profile.slug, t],
   );
   const quick = links.filter((l) => l.quick).slice(0, 4);
-  const rest = links.filter((l) => !l.quick);
+  // A map link and a written location are one thing: the location opens the map.
+  const mapLink = profile.meta.location ? links.find((l) => !l.quick && (l.a.type === 'MAPS' || l.icon === 'map-pin')) : undefined;
+  const rest = links.filter((l) => !l.quick && l !== mapLink);
 
   const vq = new URLSearchParams();
   if (query.p) vq.set('p', query.p);
@@ -113,16 +115,39 @@ export function PublicProfile({
     window.location.href = target;
   };
 
+  // Under the name: whether they are free now, and where they are.
   const metaItems: MetaItem[] = [];
   if (profile.meta.available) metaItems.push({ key: 'available', label: profile.meta.available === 'now' ? t.available : profile.meta.available, dot: true });
-  if (profile.meta.location) metaItems.push({ key: 'location', label: profile.meta.location, icon: 'map-pin' });
-  if (profile.meta.languages) metaItems.push({ key: 'languages', label: profile.meta.languages, icon: 'globe' });
+  if (profile.meta.location) {
+    metaItems.push({ key: 'location', label: profile.meta.location, icon: 'map-pin', href: mapLink?.href, onClick: mapLink ? (e) => onLink(e, mapLink) : undefined });
+  }
+  // The rest of the details, with the About.
+  const details: MetaItem[] = [];
+  if (profile.meta.languages) details.push({ key: 'languages', label: profile.meta.languages, icon: 'globe' });
   if (profile.meta.responseTime) {
     // The owner may type the time in another language than the card's, so it
     // is isolated to keep the sentence in order.
     const [before, after = ''] = t.respondsIn.split('{{time}}');
-    metaItems.push({ key: 'response', label: <>{before}<bdi>{profile.meta.responseTime}</bdi>{after}</>, icon: 'clock' });
+    details.push({ key: 'response', label: <>{before}<bdi>{profile.meta.responseTime}</bdi>{after}</>, icon: 'clock' });
   }
+
+  // 8: once the main buttons scroll away, a bar with them stays at the foot of a phone's screen.
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [actionsGone, setActionsGone] = useState(false);
+  useEffect(() => {
+    const el = actionsRef.current;
+    if (preview || !el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setActionsGone(!e.isIntersecting && e.boundingClientRect.top < 0));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [preview]);
+
+  const onSave = (e: React.MouseEvent) => {
+    if (preview) e.preventDefault();
+    else track(profile.slug, 'SAVE');
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2200);
+  };
 
   const body = (
     <>
@@ -146,6 +171,7 @@ export function PublicProfile({
                 aria-label={l.label}
                 title={l.label}
                 className="flex h-12 w-12 items-center justify-center rounded-full ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+                style={l.icon === 'whatsapp' ? { color: '#25D366' } : undefined}
               >
                 <BrandGlyph icon={l.icon} size={20} />
               </a>
@@ -155,44 +181,24 @@ export function PublicProfile({
 
         {/* One main action, the exchange (so the visitor leaves their details
             too), and saving the contact beside it. */}
-        <div className="mt-4 flex gap-2.5">
-          <button
-            onClick={() => setSheet('exchange')}
-            className="flex h-[54px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--p-accent)] px-4 text-md font-semibold text-[var(--p-on-accent)] shadow-[0_10px_24px_-12px_var(--p-accent)] transition-opacity active:opacity-85"
-          >
-            <Icon name="swap" size={18} />
-            <span className="truncate">{t.exchangeCta}</span>
-          </button>
-          <a
-            href={vcardUrl}
-            onClick={(e) => {
-              if (preview) e.preventDefault();
-              else track(profile.slug, 'SAVE');
-              setSaved(true);
-              setTimeout(() => setSaved(false), 2200);
-            }}
-            aria-label={saved ? t.saved : t.save}
-            title={t.save}
-            className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full ring-1 ring-inset transition-colors active:bg-[var(--p-elevated)] ${saved ? 'text-[#22a06b] ring-[#22a06b]' : 'ring-[var(--p-line-strong)]'}`}
-          >
-            <Icon name={saved ? 'check' : 'user-plus'} size={20} />
-          </a>
+        <div ref={actionsRef} className="mt-4">
+          <MainActions t={t} saved={saved} vcardUrl={vcardUrl} onSave={onSave} onExchange={() => setSheet('exchange')} />
         </div>
 
         <WalletButtons profile={profile} t={t} query={vq.toString()} preview={preview} />
       </div>
 
       {/* Everything else on a panel that rises from the bottom, the links first. */}
-      <div className={`mt-7 min-h-[45vh] rounded-t-[28px] bg-[var(--p-elevated)] px-5 pb-8 pt-3 [&>section:first-of-type]:mt-5 ${preview ? '' : 'p-rise'}`}>
+      <div className={`mt-7 min-h-[45vh] rounded-t-[28px] bg-[var(--p-panel)] px-5 pb-8 pt-3 [&>section:first-of-type]:mt-5 ${preview ? '' : 'p-rise'}`}>
         <span aria-hidden className="mx-auto block h-1 w-10 rounded-full bg-[var(--p-line-strong)]" />
 
         {rest.length > 0 && (
           <Block title={t.links}>
             {profile.linkStyle === 'icons' ? (
               // Like a phone's home screen: each network as its own app icon, named under it.
-              <ul className="grid grid-cols-3 gap-x-3 gap-y-5">
+              <ul className="flex flex-wrap justify-center gap-y-5">
                 {rest.map((l) => (
-                  <li key={l.a.id} className="min-w-0">
+                  <li key={l.a.id} className="w-1/3 min-w-0 px-1.5">
                     <a
                       href={l.href}
                       target={/^https?:/.test(l.href) ? '_blank' : undefined}
@@ -244,9 +250,9 @@ export function PublicProfile({
           </Block>
         )}
 
-        {profile.about && (
+        {(profile.about || details.length > 0) && (
           <Block title={t.about}>
-            <About text={profile.about} t={t} />
+            <About text={profile.about} details={details} t={t} />
           </Block>
         )}
 
@@ -254,18 +260,14 @@ export function PublicProfile({
           <Block title={t.payments}>
             <List>
               {profile.paymentLinks.map((p) => (
-                <Row
+                <PaymentRow
                   key={p.id}
-                  href={p.url}
-                  rel="noopener noreferrer nofollow"
-                  onClick={(e) => {
+                  link={p}
+                  t={t}
+                  onOpen={(e) => {
                     if (preview) return e.preventDefault();
                     track(profile.slug, 'CLICK', { kind: 'payment', platform: p.platform, paymentLinkId: p.id, identity: profile.profileName });
                   }}
-                  icon={<PaymentBrandLogo platform={p.platform} size={36} />}
-                  label={p.displayName}
-                  sub={p.description || (paymentBrand(p.platform).label === p.displayName ? '' : paymentBrand(p.platform).label)}
-                  plainSub
                 />
               ))}
             </List>
@@ -313,12 +315,92 @@ export function PublicProfile({
         <ExchangeBody profile={profile} t={t} preview={preview} tagUid={query.t} vcardUrl={vcardUrl} />
       </BottomSheet>
 
+      {actionsGone && !sheet && (
+        <div
+          className="p-bar fixed inset-x-0 bottom-0 z-30 border-t border-[var(--p-line)] px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md sm:hidden"
+          style={{ background: 'color-mix(in srgb, var(--p-surface) 86%, transparent)' }}
+        >
+          <MainActions t={t} saved={saved} vcardUrl={vcardUrl} onSave={onSave} onExchange={() => setSheet('exchange')} compact />
+        </div>
+      )}
+
       {gallery && <Lightbox images={gallery.images} startIndex={gallery.index} onClose={() => setGallery(null)} />}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------------- */
+
+/** The exchange as the main button, and saving the contact as the circle beside it. */
+function MainActions({ t, saved, vcardUrl, onSave, onExchange, compact = false }: { t: ProfileStrings; saved: boolean; vcardUrl: string; onSave: (e: React.MouseEvent) => void; onExchange: () => void; compact?: boolean }) {
+  const h = compact ? 'h-12' : 'h-[54px]';
+  return (
+    <div className="flex gap-2.5">
+      <button
+        onClick={onExchange}
+        className={`flex ${h} min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--p-accent)] px-4 text-md font-semibold text-[var(--p-on-accent)] transition-opacity active:opacity-85 ${compact ? '' : 'shadow-[0_10px_24px_-12px_var(--p-accent)]'}`}
+      >
+        <Icon name="swap" size={18} />
+        <span className="truncate">{t.exchangeCta}</span>
+      </button>
+      <a
+        href={vcardUrl}
+        onClick={onSave}
+        aria-label={saved ? t.saved : t.save}
+        title={t.save}
+        className={`flex ${h} ${compact ? 'w-12' : 'w-[54px]'} shrink-0 items-center justify-center rounded-full ring-1 ring-inset transition-colors active:bg-[var(--p-elevated)] ${saved ? 'text-[#22a06b] ring-[#22a06b]' : 'bg-[var(--p-surface)] ring-[var(--p-line-strong)]'}`}
+      >
+        <Icon name={saved ? 'check' : 'user-plus'} size={20} />
+      </a>
+    </div>
+  );
+}
+
+/** A payment link: its brand, its address to copy when it has one, and a way to open it. */
+function PaymentRow({ link, t, onOpen }: { link: ProfileData['paymentLinks'][number]; t: ProfileStrings; onOpen: (e: React.MouseEvent) => void }) {
+  const [copied, setCopied] = useState(false);
+  const address = paymentAddress(link.platform, link.url);
+  const brand = paymentBrand(link.platform).label;
+  const sub = address || link.description || (brand === link.displayName ? '' : brand);
+  return (
+    <li className="flex min-h-[70px] items-center gap-3.5 px-3 py-3">
+      <PaymentBrandLogo platform={link.platform} size={44} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-md font-semibold">{link.displayName}</span>
+        {sub && (
+          <span dir={address ? 'ltr' : undefined} className={`block truncate text-sm text-[var(--p-faint)] ${address ? 'text-start rtl:text-right' : ''}`}>
+            {sub}
+          </span>
+        )}
+      </span>
+      {address && (
+        <button
+          onClick={() => {
+            void navigator.clipboard?.writeText(address).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            });
+          }}
+          aria-label={copied ? t.copied : `${t.copy} ${address}`}
+          title={copied ? t.copied : t.copy}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${copied ? 'bg-[#22a06b]/10 text-[#22a06b]' : 'bg-[var(--p-elevated)] text-[var(--p-muted)]'}`}
+        >
+          <Icon name={copied ? 'check' : 'copy'} size={15} />
+        </button>
+      )}
+      <a
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        onClick={onOpen}
+        aria-label={link.displayName}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--p-elevated)] text-[var(--p-muted)]"
+      >
+        <Icon name="external-link" size={14} className="rtl:-scale-x-100" />
+      </a>
+    </li>
+  );
+}
 
 /**
  * Add the card to the phone's wallet. Each phone gets its own wallet (Apple on
@@ -374,6 +456,7 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
           <div className="px-3.5 pt-3.5">
             <div className="relative h-[164px] overflow-hidden rounded-[22px]">
               <CoverArt profile={profile} />
+              <Greeting text={profile.greeting} className="bottom-[62px]" />
               <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
             </div>
           </div>
@@ -465,6 +548,7 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
         <>
           <div className="relative h-[132px] overflow-hidden">
             <CoverArt profile={profile} />
+            <Greeting text={profile.greeting} className="bottom-0" />
             <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
           </div>
           <div className="px-5">
@@ -543,7 +627,13 @@ function Meta({ items, center = false }: { items: MetaItem[]; center?: boolean }
         <li key={m.key} className="flex items-center gap-1.5">
           {m.dot ? <span className="h-2 w-2 rounded-full bg-[#22a06b]" aria-hidden /> : <Icon name={m.icon!} size={14} className="text-[var(--p-faint)]" />}
           {/* One item, so the flex gap does not split a sentence. */}
-          <span>{m.label}</span>
+          {m.href ? (
+            <a href={m.href} onClick={m.onClick} target="_blank" rel="noreferrer" className="underline decoration-[var(--p-line-strong)] decoration-1 underline-offset-4">
+              {m.label}
+            </a>
+          ) : (
+            <span>{m.label}</span>
+          )}
         </li>
       ))}
     </ul>
@@ -589,6 +679,19 @@ function CoverArt({ profile }: { profile: ProfileData }) {
     default:
       return <div className="absolute inset-0" style={{ background: `linear-gradient(160deg, ${shade(a, 18)}, ${a} 45%, ${shade(a, -40)})` }} />;
   }
+}
+
+/** The owner's line on the cover, centred in the space the photo leaves. */
+function Greeting({ text, className }: { text: string; className: string }) {
+  if (!text) return null;
+  return (
+    <p
+      dir="auto"
+      className={`absolute inset-x-0 top-14 flex items-center justify-center px-8 text-center text-xl font-semibold leading-snug text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.3)] ${className}`}
+    >
+      <span className="line-clamp-2">{text}</span>
+    </p>
+  );
 }
 
 /** The profile tag and the share button, over a cover. */
@@ -644,13 +747,15 @@ function Avatar({ profile, size, ring = true }: { profile: ProfileData; size: nu
   const text = initials(profile.name);
   return (
     <span
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden font-semibold tracking-[-0.02em] ${ring ? 'ring-4 ring-[var(--p-surface)]' : ''} ${shape}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden font-semibold tracking-[-0.02em] ${profile.avatar ? '' : 'p-ink'} ${ring ? 'ring-4 ring-[var(--p-surface)]' : ''} ${shape}`}
       style={{
         width: size,
         height: size,
         fontSize: Math.round(size * (text.length > 1 ? 0.34 : 0.4)),
-        background: profile.avatar ? 'var(--p-elevated)' : `linear-gradient(145deg, ${shade(profile.accent, 12)}, ${shade(profile.accent, -22)})`,
-        color: readableOn(profile.accent),
+        background: profile.avatar
+          ? 'var(--p-elevated)'
+          : 'linear-gradient(145deg, rgb(var(--p-accent-ch) / 0.08), rgb(var(--p-accent-ch) / 0.2)), var(--p-surface)',
+        ...(profile.avatar ? {} : inkStyle(profile.accent, profile.mode)),
       }}
     >
       {profile.avatar ? (
@@ -725,16 +830,27 @@ function Row({
   );
 }
 
-function About({ text, t }: { text: string; t: ProfileStrings }) {
+function About({ text, details = [], t }: { text: string; details?: MetaItem[]; t: ProfileStrings }) {
   const [open, setOpen] = useState(false);
   const long = text.length > 220 || text.split('\n').length > 4;
   return (
     <div className="rounded-[18px] bg-[var(--p-surface)] px-4 py-3.5 ring-1 ring-inset ring-[var(--p-line)]">
-      <p dir="auto" className={`whitespace-pre-line text-md leading-[1.6] ${!open && long ? 'line-clamp-4' : ''}`}>{text}</p>
+      {text && <p dir="auto" className={`whitespace-pre-line text-md leading-[1.6] ${!open && long ? 'line-clamp-4' : ''}`}>{text}</p>}
       {long && (
         <button onClick={() => setOpen((o) => !o)} className="mt-1.5 min-h-[44px] text-base font-medium text-[var(--p-accent)]">
           {open ? t.showLess : t.readMore}
         </button>
+      )}
+      {/* Languages and how fast they reply, under the words. */}
+      {details.length > 0 && (
+        <ul className={`space-y-2 text-sm text-[var(--p-muted)] ${text ? 'mt-3 border-t border-[var(--p-line)] pt-3' : ''}`}>
+          {details.map((d) => (
+            <li key={d.key} className="flex items-center gap-2">
+              <Icon name={d.icon!} size={15} className="shrink-0 text-[var(--p-faint)]" />
+              <span>{d.label}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

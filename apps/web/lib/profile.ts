@@ -71,6 +71,8 @@ export interface ProfileData {
   title: string;
   company: string;
   about: string;
+  /** A short line on the cover ("Welcome to my card"), when the owner wrote one. */
+  greeting: string;
   avatar: string;
   coverImage: string;
   coverStyle: CoverStyle;
@@ -152,6 +154,7 @@ export function buildProfile(input: {
     // Older cards kept the job title under `org`.
     title: pick(v, 'title', 'org') || pick(bio?.content, 'subtitle'),
     company: pick(v, 'company'),
+    greeting: pick(v, 'greeting'),
     about: (showAlt && alt!.fields.about) || pick(bio?.content, 'body', 'about'),
     avatar: pick(v, 'avatar'),
     coverImage: pick(v, 'coverImage') || pick(theme, 'coverImage'),
@@ -207,6 +210,7 @@ const PALETTE = {
     '--p-bg': '#f5f4f1',
     '--p-surface': '#ffffff',
     '--p-elevated': '#f5f4f1',
+    '--p-panel': '#f1f3f7',
     '--p-fg': '#17171a',
     '--p-muted': '#5e5d63',
     '--p-faint': '#6f6e75',
@@ -217,6 +221,7 @@ const PALETTE = {
     '--p-bg': '#0c0c0e',
     '--p-surface': '#141416',
     '--p-elevated': '#1c1c1f',
+    '--p-panel': '#191a1e',
     '--p-fg': '#ededee',
     '--p-muted': '#a1a1a8',
     '--p-faint': '#8b8b93',
@@ -271,7 +276,7 @@ export function initials(name: string): string {
 }
 
 /** The identity fields a card can carry in its second language. */
-export const ALT_FIELDS = ['fullName', 'title', 'company', 'location', 'languages', 'responseTime', 'about'] as const;
+export const ALT_FIELDS = ['fullName', 'title', 'company', 'location', 'languages', 'responseTime', 'about', 'greeting'] as const;
 
 /**
  * The card's second language (`vcardData.alt`): the other language from its

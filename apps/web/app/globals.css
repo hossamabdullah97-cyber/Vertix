@@ -663,6 +663,7 @@ textarea.v-field {
     --p-bg: #0c0c0e !important;
     --p-surface: #141416 !important;
     --p-elevated: #1c1c1f !important;
+    --p-panel: #191a1e !important;
     --p-fg: #ededee !important;
     --p-muted: #a1a1a8 !important;
     --p-faint: #8b8b93 !important;
@@ -693,6 +694,16 @@ textarea.v-field {
 .p-rise > *:nth-child(n + 7) { animation-delay: 300ms; }
 @media (prefers-reduced-motion: reduce) {
   .p-rise > * {
+    animation: none;
+  }
+}
+
+/* Public card: the bar with the main buttons rises in once they scroll away. */
+.p-bar {
+  animation: p-sheet-in 0.28s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .p-bar {
     animation: none;
   }
 }

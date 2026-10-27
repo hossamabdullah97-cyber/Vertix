@@ -31,6 +31,8 @@ const EN = {
   shareTitle: 'Share this card',
   shareHint: 'Scan with any phone camera, or send the link.',
   copyLink: 'Copy link',
+  copy: 'Copy',
+  copied: 'Copied',
   linkCopied: 'Link copied',
   shareVia: 'Share via…',
 
@@ -129,6 +131,8 @@ const AR: ProfileStrings = {
   shareTitle: 'شارك هذه البطاقة',
   shareHint: 'امسحها بكاميرا أي هاتف، أو أرسل الرابط.',
   copyLink: 'نسخ الرابط',
+  copy: 'نسخ',
+  copied: 'تم النسخ',
   linkCopied: 'نُسخ الرابط',
   shareVia: 'مشاركة عبر…',
 

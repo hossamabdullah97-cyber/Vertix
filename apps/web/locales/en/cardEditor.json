@@ -51,6 +51,8 @@
     "languagesPlaceholder": "Arabic, English",
     "responseTime": "Usually replies within",
     "responseTimePlaceholder": "a few hours",
+    "greeting": "Line on the cover",
+    "greetingPlaceholder": "Welcome to my digital card",
     "phone": "Phone",
     "phonePlaceholder": "+201001234567",
     "email": "Email",
