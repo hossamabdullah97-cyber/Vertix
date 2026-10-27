@@ -30,3 +30,28 @@ test('the menu is whole from the start, so a link does not move under a click', 
   await help.click();
   await expect(page).toHaveURL(/\/help(\?|$)/);
 });
+
+test('a menu page is fetched ahead, and a click on one still on its way shows it was taken', async ({ page, account }) => {
+  await signIn(page, account);
+  const nav = page.getByRole('navigation').first();
+
+  // Once the menu's pages are in, opening one does not wait on the server.
+  await page.goto('/dashboard');
+  await page.waitForLoadState('networkidle');
+  await page.route(/_rsc=/, async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.continue();
+  });
+  const started = Date.now();
+  await nav.getByRole('link', { name: 'Leads', exact: true }).click();
+  await page.waitForURL(/\/leads/);
+  expect(Date.now() - started).toBeLessThan(1000);
+
+  // A page still on its way: the link says so at once, and one click is enough.
+  await page.goto('/cards');
+  const link = nav.getByRole('link', { name: 'Help', exact: true });
+  await link.click();
+  await expect(link.locator('.v-nav-pending')).toBeVisible();
+  await page.waitForURL(/\/help/);
+  await expect(link.locator('.v-nav-pending')).toHaveCount(0);
+});

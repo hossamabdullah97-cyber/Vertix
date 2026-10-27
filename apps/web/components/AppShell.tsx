@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useState, useRef, useMemo } from 'react';
-import Link from 'next/link';
+import Link, { useLinkStatus } from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
@@ -88,6 +88,16 @@ function personalWorkspaceEarly(orgs: OrgRow[], id: string | null) {
 
 /** The phone's bottom bar: the four places people go most. Everything else is under More. */
 const DOCK = ['/dashboard', '/cards', '/leads', '/analytics'];
+
+/**
+ * Inside a menu link: a small spinner while its page is on its way, so a
+ * click that takes a moment shows it was taken (otherwise it reads as missed
+ * and gets clicked again).
+ */
+function NavPending({ className = '' }: { className?: string }) {
+  const { pending } = useLinkStatus();
+  return pending ? <span aria-hidden className={`v-nav-pending ${className}`} /> : null;
+}
 
 
 /** Fired when the command menu picks a lead; the leads page opens its panel. */
@@ -1125,11 +1135,12 @@ export default function AppShell({
               {group.items.map((item) => {
                 const active = isActive(item.href);
                 return (
-                  <Link key={item.href} href={item.href} className="v-nav-item" data-active={active}>
+                  <Link key={item.href} href={item.href} prefetch className="v-nav-item" data-active={active}>
                     <span className={active ? 'text-accent' : 'text-faint'}>
                       <Icon name={item.icon} size={16} />
                     </span>
                     {t(item.labelKey)}
+                    <NavPending className="ms-auto" />
                   </Link>
                 );
               })}
@@ -1139,21 +1150,23 @@ export default function AppShell({
           {menuWho?.isSuperAdmin && (
             <div className="flex flex-col gap-0.5">
               <p className="px-2 pb-1 pt-4 text-2xs font-medium text-faint">{t('groups.administration')}</p>
-              <Link href="/admin" className="v-nav-item" data-active={pathname.startsWith('/admin')}>
+              <Link href="/admin" prefetch className="v-nav-item" data-active={pathname.startsWith('/admin')}>
                 <span className={pathname.startsWith('/admin') ? 'text-accent' : 'text-faint'}>
                   <Icon name="shield" size={16} />
                 </span>
                 {t('items.adminConsole')}
+                <NavPending className="ms-auto" />
               </Link>
             </div>
           )}
 
           <div className="flex flex-col gap-0.5 pt-4">
-            <Link href="/help" className="v-nav-item" data-active={pathname.startsWith('/help')}>
+            <Link href="/help" prefetch className="v-nav-item" data-active={pathname.startsWith('/help')}>
               <span className={pathname.startsWith('/help') ? 'text-accent' : 'text-faint'}>
                 <Icon name="help" size={16} />
               </span>
               {t('items.help')}
+              <NavPending className="ms-auto" />
             </Link>
           </div>
         </nav>
@@ -1397,9 +1410,11 @@ export default function AppShell({
               <li key={href}>
                 <Link
                   href={href}
+                  prefetch
                   aria-current={active ? 'page' : undefined}
-                  className={`flex h-full flex-col items-center justify-center gap-1 text-2xs font-medium transition-colors ${active ? 'text-accent' : 'text-muted'}`}
+                  className={`relative flex h-full flex-col items-center justify-center gap-1 text-2xs font-medium transition-colors ${active ? 'text-accent' : 'text-muted'}`}
                 >
+                  <NavPending className="absolute end-3 top-2" />
                   <Icon name={item.icon} size={21} />
                   <span className="max-w-full truncate px-1">{t(`mobile.short.${item.labelKey.split('.').pop()}`, { defaultValue: t(item.labelKey) })}</span>
                 </Link>
@@ -1436,6 +1451,7 @@ export default function AppShell({
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      prefetch
                       onClick={() => setMoreOpen(false)}
                       aria-current={active ? 'page' : undefined}
                       className={`flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl text-center text-xs font-medium ring-1 ring-inset transition-colors ${
