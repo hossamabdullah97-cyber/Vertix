@@ -462,7 +462,7 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
           </div>
           <div className="flex flex-col items-center px-5 text-center">
             <div className="-mt-[62px]">
-              <Avatar profile={profile} size={120} />
+              <Avatar profile={profile} size={120} t={t} />
             </div>
             <Identity profile={profile} t={t} meta={meta} center />
           </div>
@@ -489,7 +489,8 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
             <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black/80 via-black/40 to-transparent" aria-hidden />
             <CoverChrome profile={profile} t={t} onShare={onShare} lang={lang} />
             <div className="absolute inset-x-0 bottom-0 px-5 pb-5 text-white">
-              <Name profile={profile} t={t} className="text-4xl" />
+              {/* The photo is the cover here, so the badge stays by the name. */}
+              <Name profile={profile} t={t} className="text-4xl" badge />
               {profile.title && <p className="mt-1 text-md leading-snug text-white/80">{profile.title}</p>}
               <Company profile={profile} className="mt-2 text-white/90" />
             </div>
@@ -530,7 +531,7 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
             </div>
           </div>
           <div className="mt-8 flex items-center gap-4">
-            <Avatar profile={profile} size={76} ring={false} />
+            <Avatar profile={profile} size={76} ring={false} t={t} />
             <div className="min-w-0 flex-1">
               <Name profile={profile} t={t} className="text-3xl" />
               {profile.title && <p className="mt-0.5 text-base leading-snug text-[var(--p-muted)]">{profile.title}</p>}
@@ -553,7 +554,7 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
           </div>
           <div className="px-5">
             <div className="-mt-11">
-              <Avatar profile={profile} size={88} />
+              <Avatar profile={profile} size={88} t={t} />
             </div>
             <Identity profile={profile} t={t} meta={meta} />
           </div>
@@ -574,12 +575,12 @@ function Identity({ profile, t, meta, center = false }: { profile: ProfileData; 
   );
 }
 
-function Name({ profile, t, className = '' }: { profile: ProfileData; t: ProfileStrings; className?: string }) {
+function Name({ profile, t, className = '', badge = false }: { profile: ProfileData; t: ProfileStrings; className?: string; badge?: boolean }) {
   return (
     <h1 className={`break-words font-semibold leading-tight tracking-[-0.02em] rtl:tracking-normal ${className}`}>
       {profile.name}
       {/* Inline, so a name that wraps keeps the badge beside its last word. */}
-      {profile.verified && (
+      {badge && profile.verified && (
         <span title={t.verified} className="ms-1.5 inline-flex align-[-0.12em]">
           <VerifiedBadge size={20} absolute={false} />
         </span>
@@ -742,27 +743,41 @@ function LangSwitch({ lang, className }: { lang: LangLink; className: string }) 
   );
 }
 
-function Avatar({ profile, size, ring = true }: { profile: ProfileData; size: number; ring?: boolean }) {
+function Avatar({ profile, size, ring = true, t }: { profile: ProfileData; size: number; ring?: boolean; t: ProfileStrings }) {
   const shape = profile.circle ? 'rounded-full' : size > 80 ? 'rounded-[24px]' : 'rounded-[20px]';
   const text = initials(profile.name);
+  // A round photo's corner is further in than a square one's.
+  const inset = profile.circle ? Math.round(size * 0.02) : -Math.round(size * 0.04);
   return (
-    <span
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden font-semibold tracking-[-0.02em] ${profile.avatar ? '' : 'p-ink'} ${ring ? 'ring-4 ring-[var(--p-surface)]' : ''} ${shape}`}
-      style={{
-        width: size,
-        height: size,
-        fontSize: Math.round(size * (text.length > 1 ? 0.34 : 0.4)),
-        background: profile.avatar
-          ? 'var(--p-elevated)'
-          : 'linear-gradient(145deg, rgb(var(--p-accent-ch) / 0.08), rgb(var(--p-accent-ch) / 0.2)), var(--p-surface)',
-        ...(profile.avatar ? {} : inkStyle(profile.accent, profile.mode)),
-      }}
-    >
-      {profile.avatar ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
-      ) : (
-        text
+    <span className="relative inline-flex shrink-0">
+      <span
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden font-semibold tracking-[-0.02em] ${profile.avatar ? '' : 'p-ink'} ${ring ? 'ring-4 ring-[var(--p-surface)]' : ''} ${shape}`}
+        style={{
+          width: size,
+          height: size,
+          fontSize: Math.round(size * (text.length > 1 ? 0.34 : 0.4)),
+          background: profile.avatar
+            ? 'var(--p-elevated)'
+            : 'linear-gradient(145deg, rgb(var(--p-accent-ch) / 0.08), rgb(var(--p-accent-ch) / 0.2)), var(--p-surface)',
+          ...(profile.avatar ? {} : inkStyle(profile.accent, profile.mode)),
+        }}
+      >
+        {profile.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
+        ) : (
+          text
+        )}
+      </span>
+      {/* Verified: on the photo's bottom corner, as social profiles show it, ringed so it reads on any picture. */}
+      {profile.verified && (
+        <span
+          title={t.verified}
+          className="absolute flex items-center justify-center rounded-full bg-[var(--p-surface)]"
+          style={{ padding: Math.max(2, Math.round(size * 0.025)), bottom: inset, insetInlineEnd: inset }}
+        >
+          <VerifiedBadge size={Math.max(20, Math.round(size * 0.22))} absolute={false} />
+        </span>
       )}
     </span>
   );
