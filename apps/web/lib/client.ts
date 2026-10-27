@@ -31,6 +31,18 @@ export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+/** Whose session this browser holds, read from the access token without asking the API. */
+export function tokenSubject(): string | null {
+  try {
+    const payload = getToken()?.split('.')[1];
+    if (!payload) return null;
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return (JSON.parse(json) as { sub?: string }).sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const ACTIVE_ORG_KEY = 'vertex_org_id';
 
 export function logout() {

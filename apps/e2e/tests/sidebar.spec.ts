@@ -1,0 +1,30 @@
+import { expect, signIn, test } from './support';
+
+test('the menu is whole from the start, so a link does not move under a click', async ({ page, account }) => {
+  await signIn(page, account);
+  // The account arrives late, as on a slow connection.
+  let arrived = false;
+  await page.route(/\/api\/auth\/me$/, async (route) => {
+    await new Promise((r) => setTimeout(r, 2000));
+    await route.continue();
+    arrived = true;
+  });
+  // The shell asks for the account once the page is live.
+  const asked = page.waitForRequest(/\/api\/auth\/me$/);
+  await page.goto('/leads');
+  await asked;
+
+  const nav = page.getByRole('navigation').first();
+  const help = nav.getByRole('link', { name: 'Help', exact: true });
+  // The owner's own pages are there already, before the account is.
+  expect(await nav.getByRole('link', { name: 'Team', exact: true }).count()).toBe(1);
+  const before = await help.boundingBox();
+  expect(arrived).toBe(false);
+
+  await expect.poll(() => arrived, { timeout: 10_000 }).toBe(true);
+  await page.waitForTimeout(300);
+  expect(await help.boundingBox()).toEqual(before);
+
+  await help.click();
+  await expect(page).toHaveURL(/\/help(\?|$)/);
+});
