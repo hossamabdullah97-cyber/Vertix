@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { SkipThrottle } from '@nestjs/throttler';
 import type { Request } from 'express';
-import { trackEventSchema, type TrackEventInput } from '@vertex/shared';
+import { trackEventSchema, visitorClaimSchema, type TrackEventInput, type VisitorClaimInput } from '@vertex/shared';
 import { AnalyticsService } from './analytics.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
@@ -31,6 +31,19 @@ export class TrackingController {
     } catch {
       return undefined;
     }
+  }
+
+  /**
+   * A signed-in browser saying whose it is (the web app does this as it
+   * opens), so its chip taps are left out of the workspace's numbers. Only a
+   * valid session is taken; it marks the browser and opens nothing.
+   */
+  @Public()
+  @Post('track/device')
+  @HttpCode(204)
+  async device(@Body(new ZodValidationPipe(visitorClaimSchema)) body: VisitorClaimInput) {
+    const userId = await this.viewer(body.viewer);
+    if (userId) await this.analytics.claimVisitor(body.visitorId, userId);
   }
 
   @Public()

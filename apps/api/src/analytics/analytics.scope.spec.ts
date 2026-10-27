@@ -7,7 +7,7 @@ const as = (role: string) => ({ orgId: 'o1', userId: 'u1', role }) as TenantCont
 
 function setup() {
   const db = {
-    event: { groupBy: jest.fn(async () => []) },
+    event: { groupBy: jest.fn(async () => []), count: jest.fn(async () => 0) },
     lead: { count: jest.fn(async () => 0) },
     card: { findFirst: jest.fn(async () => null) },
     nfcTag: { findMany: jest.fn(async () => []) },
@@ -27,6 +27,8 @@ describe('analytics scope', () => {
     const { service, db } = setup();
     await service.overview('o1', new Date(0), new Date(), 'u1');
     expect(db.event.groupBy).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ card: { ownerId: 'u1' } }) }));
+    // Repeat taps are counted on their own, for the same cards.
+    expect(db.event.count).toHaveBeenCalledWith({ where: expect.objectContaining({ type: 'NFC_SCAN', repeat: true, card: { ownerId: 'u1' } }) });
     expect(db.lead.count).toHaveBeenCalledWith({ where: expect.objectContaining({ OR: [{ assignedTo: 'u1' }, { card: { ownerId: 'u1' } }] }) });
     const sql = (db.$queryRaw.mock.calls[0] as unknown[])[0] as { sql: string; values: unknown[] };
     expect(sql.sql).toContain('"ownerId"');

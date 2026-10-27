@@ -9,7 +9,10 @@ export const DAY = 86_400_000;
 export type EventType = 'VIEW' | 'CLICK' | 'SAVE' | 'SHARE' | 'NFC_SCAN';
 
 export interface Overview {
+  /** By event type. NFC_SCAN counts each person's first tap of a chip, not their repeats. */
   totals: Record<string, number>;
+  /** Taps by someone who had tapped the same chip before. */
+  repeatTaps?: number;
   uniqueVisitors: number;
   leads: number;
 }

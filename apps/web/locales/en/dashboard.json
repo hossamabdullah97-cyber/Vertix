@@ -25,7 +25,7 @@
   },
   "metrics": {
     "views": "Card views",
-    "taps": "NFC taps",
+    "taps": "Unique taps",
     "saves": "Contacts saved",
     "leads": "New leads",
     "viewsSub": "vs {{value}} before",
@@ -103,7 +103,7 @@
       "leadsSub": "in your CRM",
       "chips": "NFC chips",
       "chipsSub": "registered",
-      "taps": "NFC taps",
+      "taps": "Unique taps",
       "tapsSub": "all time"
     },
     "cards": "Your cards",

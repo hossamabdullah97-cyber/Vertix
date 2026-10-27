@@ -870,8 +870,17 @@ export const trackEventSchema = z.object({
 });
 export type TrackEventInput = z.infer<typeof trackEventSchema>;
 
+/** A signed-in browser saying whose it is, so its own chip taps are left out. */
+export const visitorClaimSchema = z.object({
+  visitorId: z.string().regex(/^[\w-]{8,64}$/),
+  viewer: z.string().min(1).max(4000),
+});
+export type VisitorClaimInput = z.infer<typeof visitorClaimSchema>;
+
 export interface AnalyticsOverview {
-  totals: Record<string, number>; // by event type
+  totals: Record<string, number>; // by event type; NFC_SCAN counts people, not repeat taps
+  /** Taps by someone who had tapped the same chip before. */
+  repeatTaps: number;
   uniqueVisitors: number;
   leads: number;
   from: string;

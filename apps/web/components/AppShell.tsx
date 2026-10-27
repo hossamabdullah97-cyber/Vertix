@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
 import { authFetch, logout, getActiveOrgId, setActiveOrgId, ssoStart, tokenSubject, type Me } from '@/lib/client';
 import { Icon } from '@/components/Icon';
+import { claimThisBrowser } from '@/lib/track';
 import { useTheme } from '@/lib/useStoredTheme';
 import { Avatar } from '@/components/Avatar';
 import { PROFILE_UPDATED } from '@/components/ProfilePhotoCard';
@@ -288,6 +289,8 @@ export default function AppShell({
     authFetch<Me>('/auth/me')
       .then(setMe)
       .catch(() => {});
+    // This browser is one of the workspace's own: its chip taps are not counted.
+    claimThisBrowser();
 
     // The installable app's service worker: its offline page and notifications.
     void registerServiceWorker();

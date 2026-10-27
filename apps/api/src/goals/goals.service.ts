@@ -225,7 +225,7 @@ export class GoalsService implements OnModuleInit, OnModuleDestroy {
         this.analytics.memberPerformance(orgId, from, to),
         metric === 'LEADS'
           ? this.db.lead.count({ where: { createdAt: { gte: from, lt: to } } })
-          : this.db.event.count({ where: { type: 'NFC_SCAN', createdAt: { gte: from, lt: to } } }),
+          : this.db.event.count({ where: { type: 'NFC_SCAN', repeat: false, createdAt: { gte: from, lt: to } } }),
       ]);
       return { total, byMember: new Map(rows.map((r) => [r.user.id, metric === 'LEADS' ? r.leads : r.scans])) };
     }

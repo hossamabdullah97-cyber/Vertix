@@ -75,6 +75,8 @@ model User {
   createdWebhooks    WebhookEndpoint[]     @relation("WebhookCreator")
   userIntegrations   IntegrationConnection[] @relation("IntegrationConnector")
   heldTags           NfcTag[]                @relation("TagHolder")
+  /// Browsers this person was seen signed in on, so their own taps are not counted.
+  visitors           Visitor[]
   pushSubscriptions  PushSubscription[]      @relation("PushSubscriptions")
   appPushTokens      AppPushToken[]
   appSignInCodes     AppSignInCode[]
@@ -352,7 +354,10 @@ model NfcTag {
   status          TagStatus    @default(UNASSIGNED)
   hardwareType    HardwareType @default(CARD) // physical hardware type
   batchId         String?      // manufacturing batch from the factory
+  /// Distinct people who tapped it: a second tap by the same person is a repeat.
   activationCount Int          @default(0)
+  /// Taps by someone who had tapped it before.
+  repeatTaps      Int          @default(0)
   lastScanAt      DateTime?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -717,13 +722,19 @@ model ScoringRule {
 model Visitor {
   id          String   @id @default(cuid())
   anonymousId String   @unique
+  /// The account last seen signed in on this browser. A tap from it by
+  /// someone in the chip's workspace is their own, and is not counted.
+  userId      String?
   geo         Json?
   device      Json?
   firstSeen   DateTime @default(now())
   lastSeen    DateTime @updatedAt
 
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   events Event[]
   leads  Lead[]
+
+  @@index([userId])
 
   @@map("visitors")
 }
@@ -744,6 +755,9 @@ model Event {
   device    Json?
   referrer  String?
   metadata  Json?     // extra click context (e.g. payment platform, variantId) — never financial data
+  /// A tap by someone who had tapped the same chip before. Counts of taps
+  /// leave these out, so they say how many people were reached.
+  repeat    Boolean   @default(false)
   createdAt DateTime  @default(now())
 
   org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)

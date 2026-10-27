@@ -6,8 +6,8 @@
     "chips_other": "{{value}} chips",
     "linked_one": "1 linked to a card",
     "linked_other": "{{value}} linked to cards",
-    "taps_one": "1 tap all time",
-    "taps_other": "{{value}} taps all time"
+    "taps_one": "1 unique tap all time",
+    "taps_other": "{{value}} unique taps all time"
   },
   "filters": {
     "status": "Filter by status",
@@ -30,7 +30,7 @@
     "status": "Status",
     "opens": "Opens",
     "holder": "Carried by",
-    "taps": "Taps",
+    "taps": "Unique taps",
     "lastTap": "Last tap",
     "actions": "Actions",
     "notLinked": "Not linked",
@@ -88,6 +88,8 @@
   },
   "details": {
     "added": "Added {{date}}",
+    "repeatTaps_one": "+{{value}} repeat tap by the same person",
+    "repeatTaps_other": "+{{value}} repeat taps by the same people",
     "status": "Status",
     "disabledNote": "A disabled chip opens nothing when tapped. Enable it to bring it back.",
     "opens": "Opens",

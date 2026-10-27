@@ -16,7 +16,10 @@ interface ChipRow {
   hardwareType: string | null;
   holder: { id: string; name: string | null; email: string } | null;
   cardSlug: string | null;
+  /** Taps by people new to the chip. */
   scans: number;
+  /** Taps by people who had tapped it before. */
+  repeats: number;
   visitors: number;
   leads: number;
   lastScanAt: string | null;
@@ -47,7 +50,7 @@ export function ChipsView({ from }: { from: Date }) {
 
   if (rows === null) return <div className="v-skeleton h-64 w-full rounded-xl" />;
 
-  const sum = (k: 'scans' | 'visitors' | 'leads') => rows.reduce((s, r) => s + r[k], 0);
+  const sum = (k: 'scans' | 'repeats' | 'visitors' | 'leads') => rows.reduce((s, r) => s + (r[k] ?? 0), 0);
 
   return (
     <div className="space-y-4">
@@ -55,6 +58,7 @@ export function ChipsView({ from }: { from: Date }) {
         <p className="text-base text-muted">
           {t('chips.summary', {
             taps: fmt(sum('scans')),
+            repeats: fmt(sum('repeats')),
             chips: fmt(rows.length),
             people: fmt(sum('visitors')),
             leads: fmt(sum('leads')),
@@ -83,7 +87,7 @@ export function ChipsView({ from }: { from: Date }) {
                   <th className="hidden md:table-cell">{t('chips.holder')}</th>
                   <th className="hidden lg:table-cell">{t('chips.card')}</th>
                   <th className="!text-end">{t('metrics.NFC_SCAN')}</th>
-                  <th className="!text-end">{t('chips.people')}</th>
+                  <th className="!text-end">{t('chips.repeats')}</th>
                   <th className="!text-end">{t('metrics.LEADS')}</th>
                   <th className="hidden sm:table-cell">{t('chips.lastTap')}</th>
                 </tr>
@@ -112,7 +116,7 @@ export function ChipsView({ from }: { from: Date }) {
                       )}
                     </td>
                     <td className="text-end">{fmt(r.scans)}</td>
-                    <td className="text-end">{fmt(r.visitors)}</td>
+                    <td className="text-end text-muted">{fmt(r.repeats ?? 0)}</td>
                     <td className="text-end">{fmt(r.leads)}</td>
                     <td className="hidden whitespace-nowrap text-muted sm:table-cell">{r.lastScanAt ? formatRelativeTime(r.lastScanAt, locale, 'short') : '—'}</td>
                   </tr>
