@@ -1175,8 +1175,9 @@ export default function AppShell({
         </nav>
 
         <div className="mt-auto flex flex-col gap-2 pt-4">
-          {/* The guide and the plan as one quiet block: two rows, not two cards. */}
-          <div className="overflow-hidden rounded-xl bg-surface shadow-sm ring-1 ring-line empty:hidden [&>*+*]:border-t [&>*+*]:border-line">
+          {/* The guide and the plan as one quiet block: two rows, not two cards. Not clipped:
+              the guide's list opens above it. */}
+          <div className="rounded-xl bg-surface shadow-sm ring-1 ring-line empty:hidden [&>*+*]:border-t [&>*+*]:border-line [&>:first-child>button]:rounded-t-xl [&>:first-child]:rounded-t-xl [&>:last-child>button]:rounded-b-xl [&>:last-child]:rounded-b-xl">
             <GettingStarted view={onboarding.view} onHide={() => void onboarding.update({ dismissed: true })} />
             {usage && (
               // The plan for everyone to see; a link to billing for those who handle it.

@@ -60,7 +60,6 @@ export function GettingStarted({ view, onHide }: { view: OnboardingView | null; 
         aria-expanded={open}
         aria-haspopup="dialog"
         data-testid="getting-started"
-        title={left[0] ? `${t('guide.next')} ${t(`onboarding.steps.${left[0].id}.label`)}` : undefined}
         className="block w-full px-3 py-2.5 text-start transition-colors hover:bg-elevated"
       >
         <span className="flex items-center justify-between gap-2 text-xs">
@@ -70,6 +69,11 @@ export function GettingStarted({ view, onHide }: { view: OnboardingView | null; 
         <span className="mt-2 block h-1 overflow-hidden rounded-full bg-line" aria-hidden>
           <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${pct}%` }} />
         </span>
+        {left[0] && (
+          <span className="mt-1.5 block truncate text-xs text-muted">
+            {t('guide.next')} <span className="font-medium text-ink">{t(`onboarding.steps.${left[0].id}.label`)}</span>
+          </span>
+        )}
       </button>
 
       {open && (
