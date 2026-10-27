@@ -77,6 +77,7 @@ test('in a team only the owner removes a chip, and it stays with the team to giv
     // A manager is told who can, and the API says the same.
     const page = await browser.newPage();
     await signIn(page, manager);
+    await page.evaluate((id) => localStorage.setItem('vertex_org_id', id), account.orgId);
     await page.goto('/tags');
     await page.getByRole('row').nth(1).click();
     await expect(page.getByText('Only the workspace owner can remove a chip.')).toBeVisible();
