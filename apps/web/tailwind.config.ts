@@ -34,23 +34,24 @@ const config: Config = {
           fg: 'var(--v-accent-contrast)',
         },
       },
-      // One type scale for the whole app, in whole pixels. Each is a font size
+      // One type scale for the whole app, in whole pixels (a step larger on
+      // Arabic pages, through --v-script-scale in globals.css). Each is a font size
       // only (no line height), so a size never moves the lines around it.
       // Smaller sizes (badges inside fixed circles) and display headings above
       // 32px stay as literal values where they are used.
       fontSize: {
-        '3xs': '10px',
-        '2xs': '11px',
-        xs: '12px',
-        sm: '13px',
-        base: '14px',
-        md: '15px',
-        lg: '16px',
-        xl: '18px',
-        '2xl': '20px',
-        '3xl': '24px',
-        '4xl': '28px',
-        '5xl': '32px',
+        '3xs': 'calc(10px * var(--v-script-scale, 1))',
+        '2xs': 'calc(11px * var(--v-script-scale, 1))',
+        xs: 'calc(12px * var(--v-script-scale, 1))',
+        sm: 'calc(13px * var(--v-script-scale, 1))',
+        base: 'calc(14px * var(--v-script-scale, 1))',
+        md: 'calc(15px * var(--v-script-scale, 1))',
+        lg: 'calc(16px * var(--v-script-scale, 1))',
+        xl: 'calc(18px * var(--v-script-scale, 1))',
+        '2xl': 'calc(20px * var(--v-script-scale, 1))',
+        '3xl': 'calc(24px * var(--v-script-scale, 1))',
+        '4xl': 'calc(28px * var(--v-script-scale, 1))',
+        '5xl': 'calc(32px * var(--v-script-scale, 1))',
       },
       fontFamily: {
         sans: ['Geist', '"IBM Plex Sans Arabic"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],

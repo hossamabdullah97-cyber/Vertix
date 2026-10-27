@@ -7,7 +7,9 @@
 
 /* ============================================================================
    Vertex Connect — interface foundation
-   Warm neutrals, one flat accent, hairline structure. The accent marks what
+   Neutrals tinted toward the brand blue, one flat accent, hairline structure.
+   The neutrals carry a trace of the accent's hue, so canvas, lines and ink
+   read as one family with it rather than as a stock grey. The accent marks what
    can be acted on (primary buttons, the active item, the current data series)
    and nothing else, so there are no gradients, glows or coloured icon tiles.
    Geist and IBM Plex Sans Arabic carry Latin and Arabic text; Geist Mono is
@@ -15,29 +17,29 @@
    ============================================================================ */
 :root {
   /* Neutrals (HSL triplets, consumed as hsl(var(--v-*)) and by Tailwind) */
-  --v-bg: 45 13% 94%; /* app canvas, behind the sidebar and the content sheet */
+  --v-bg: 225 20% 96%; /* app canvas, behind the sidebar and the content sheet */
   --v-surface: 0 0% 100%; /* sheets, panels, inputs */
-  --v-elevated: 45 14% 97%; /* quiet fills: table headers, inactive tabs, hover */
-  --v-fg: 240 6% 10%;
-  --v-muted: 250 3% 34%;
-  /* Tertiary text still has to read: 4.5:1 on the canvas, the darkest ground it sits on. */
-  --v-faint: 249 3% 44%;
-  --v-border: 43 14% 90%;
-  --v-border-strong: 42 12% 84%;
+  --v-elevated: 225 25% 98%; /* quiet fills: table headers, inactive tabs, hover */
+  --v-fg: 226 30% 11%;
+  --v-muted: 225 10% 36%;
+  /* Tertiary text still has to read: 4.8:1 on the canvas, the darkest ground it sits on. */
+  --v-faint: 225 9% 44%;
+  --v-border: 225 18% 91%;
+  --v-border-strong: 225 14% 85%;
   /* Aliases a few components read directly. */
   --v-canvas: var(--v-bg);
   --v-ink: var(--v-fg);
 
-  /* Accent — the brand blue, always flat */
-  --v-accent: #2563eb;
-  --v-accent-hover: #1e54d6;
-  --v-accent-rgb: 37, 99, 235;
-  --v-accent-ch: 37 99 235; /* same colour as channels, for Tailwind opacity */
-  --v-accent-soft: rgba(37, 99, 235, 0.08);
+  /* Accent — Vertex blue, a deeper cobalt than the stock web blue, always flat */
+  --v-accent: #2456e6;
+  --v-accent-hover: #1d47c9;
+  --v-accent-rgb: 36, 86, 230;
+  --v-accent-ch: 36 86 230; /* same colour as channels, for Tailwind opacity */
+  --v-accent-soft: rgba(36, 86, 230, 0.09);
   --v-accent-contrast: #ffffff;
   /* The accent as text (links, active labels). Same blue in light; lifted in
      dark, where the fill blue is too deep to read as small text. */
-  --v-accent-text-ch: 37 99 235;
+  --v-accent-text-ch: 36 86 230;
   --v-accent-text: rgb(var(--v-accent-text-ch));
   /* Kept for callers that still paint with these names; both are the flat accent. */
   --v-gradient-brand: var(--v-accent);
@@ -54,42 +56,45 @@
   --v-radius-xl: 14px;
 
   /* Elevation — a hairline ring does the work; shadow only separates layers */
-  --v-shadow-sm: 0 0 0 1px rgba(23, 23, 26, 0.04), 0 1px 2px rgba(23, 23, 26, 0.04);
-  --v-shadow-md: 0 0 0 1px rgba(23, 23, 26, 0.05), 0 4px 16px -8px rgba(23, 23, 26, 0.1);
-  --v-shadow-lg: 0 0 0 1px rgba(23, 23, 26, 0.06), 0 12px 32px -8px rgba(23, 23, 26, 0.16),
-    0 4px 8px -4px rgba(23, 23, 26, 0.06);
-  --v-shadow-xl: 0 0 0 1px rgba(23, 23, 26, 0.06), 0 24px 48px -12px rgba(23, 23, 26, 0.22);
-  --v-shadow-accent: 0 1px 2px rgba(30, 84, 214, 0.3);
-  --v-ring: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  --v-shadow-sm: 0 0 0 1px rgba(16, 24, 48, 0.04), 0 1px 2px rgba(16, 24, 48, 0.04);
+  --v-shadow-md: 0 0 0 1px rgba(16, 24, 48, 0.05), 0 4px 16px -8px rgba(16, 24, 48, 0.1);
+  --v-shadow-lg: 0 0 0 1px rgba(16, 24, 48, 0.06), 0 12px 32px -8px rgba(16, 24, 48, 0.16),
+    0 4px 8px -4px rgba(16, 24, 48, 0.06);
+  --v-shadow-xl: 0 0 0 1px rgba(16, 24, 48, 0.06), 0 24px 48px -12px rgba(16, 24, 48, 0.22);
+  --v-shadow-accent: 0 1px 2px rgba(29, 71, 201, 0.3);
+  --v-ring: 0 0 0 3px rgba(36, 86, 230, 0.2);
+  /* Arabic glyphs sit smaller than Latin at the same size, so Arabic pages
+     set text a step larger (see [dir='rtl']); English stays at 1. */
+  --v-script-scale: 1;
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --v-bg: 240 7% 6%;
-  --v-surface: 240 5% 9%;
-  --v-elevated: 240 5% 11%;
-  --v-fg: 240 5% 93%;
-  --v-muted: 240 4% 64%;
-  /* Tertiary text still has to read: 4.5:1 on the surface. */
-  --v-faint: 240 4% 54%;
-  --v-border: 240 5% 16%;
-  --v-border-strong: 240 6% 21%;
+  --v-bg: 228 14% 6%;
+  --v-surface: 228 12% 9%;
+  --v-elevated: 228 11% 12%;
+  --v-fg: 225 20% 94%;
+  --v-muted: 225 8% 66%;
+  /* Tertiary text still has to read: 4.9:1 on the raised fill. */
+  --v-faint: 225 7% 56%;
+  --v-border: 228 10% 17%;
+  --v-border-strong: 228 9% 22%;
 
-  /* The fill keeps the light theme's blue so white text on a button stays at
-     5:1; text in the accent uses the lighter blue below. */
-  --v-accent: #2563eb;
-  --v-accent-hover: #2d6aee; /* a touch lighter, still 4.5:1 under white */
-  --v-accent-rgb: 37, 99, 235;
-  --v-accent-ch: 37 99 235;
-  --v-accent-soft: rgba(53, 114, 240, 0.18);
-  --v-accent-text-ch: 108 155 247;
+  /* A touch lighter than the light theme's fill so it holds against the dark,
+     still 5:1 under white text; text in the accent uses the lighter blue below. */
+  --v-accent: #2f63f0;
+  --v-accent-hover: #3a6cf2; /* still 4.5:1 under white */
+  --v-accent-rgb: 47, 99, 240;
+  --v-accent-ch: 47 99 240;
+  --v-accent-soft: rgba(58, 108, 242, 0.18);
+  --v-accent-text-ch: 122 160 250;
 
   --v-shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.05);
   --v-shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
   --v-shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 16px 40px -12px rgba(0, 0, 0, 0.6);
   --v-shadow-xl: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 24px 48px -12px rgba(0, 0, 0, 0.7);
   --v-shadow-accent: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --v-ring: 0 0 0 3px rgba(53, 114, 240, 0.35);
+  --v-ring: 0 0 0 3px rgba(58, 108, 242, 0.38);
   color-scheme: dark;
 }
 
@@ -117,6 +122,16 @@ body {
 [dir='rtl'] body {
   font-family: 'IBM Plex Sans Arabic', 'Geist', -apple-system, sans-serif;
   letter-spacing: 0;
+}
+
+/* Arabic reads a step larger and with more room between lines: its letters
+   are smaller than Latin ones at the same size, and its marks sit above and
+   below the line. Every size on the type scale follows (tailwind.config). */
+[dir='rtl'] {
+  --v-script-scale: 1.07;
+}
+[dir='rtl'] body {
+  line-height: 1.6;
 }
 
 ::selection {
@@ -160,7 +175,7 @@ body {
      back to the tighter desktop rhythm from `sm` up. */
   height: 2.75rem;
   padding-inline: 0.75rem;
-  font-size: 0.875rem;
+  font-size: calc(0.875rem * var(--v-script-scale));
   color: hsl(var(--v-fg));
   background: hsl(var(--v-surface));
   border: 1px solid hsl(var(--v-border-strong));
@@ -213,15 +228,14 @@ textarea.v-field {
   height: 2.75rem;
   min-width: 2.75rem;
   padding-inline: 0.85rem;
-  font-size: 0.8125rem;
+  font-size: calc(0.8125rem * var(--v-script-scale));
   font-weight: 500;
   white-space: nowrap;
   border-radius: var(--v-radius);
   background: var(--v-accent);
   color: var(--v-accent-contrast);
   border: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px var(--v-accent-hover),
-    0 1px 2px rgba(30, 84, 214, 0.25);
+  box-shadow: 0 0 0 1px var(--v-accent-hover), var(--v-shadow-accent);
   transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
   cursor: pointer;
 }
@@ -254,7 +268,7 @@ textarea.v-field {
 .v-btn-ghost {
   background: hsl(var(--v-surface));
   color: hsl(var(--v-fg));
-  box-shadow: inset 0 0 0 1px hsl(var(--v-border-strong)), 0 1px 1px rgba(23, 23, 26, 0.04);
+  box-shadow: inset 0 0 0 1px hsl(var(--v-border-strong)), 0 1px 1px rgba(16, 24, 48, 0.04);
 }
 
 .v-btn-ghost:hover {
@@ -268,7 +282,7 @@ textarea.v-field {
 
 .v-btn-danger {
   background: #c8322a;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px #b42318;
+  box-shadow: 0 0 0 1px #b42318, 0 1px 2px rgba(180, 35, 24, 0.3);
 }
 .v-btn-danger:hover {
   background: #b42318;
@@ -279,7 +293,7 @@ textarea.v-field {
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.6rem;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--v-script-scale));
   font-weight: 500;
   border-radius: var(--v-radius-sm);
   border: 1px solid hsl(var(--v-border-strong));
@@ -297,7 +311,7 @@ textarea.v-field {
   height: 2rem;
   padding-inline: 0.5rem;
   border-radius: var(--v-radius);
-  font-size: 0.8125rem; /* 13px, on the type scale */
+  font-size: calc(0.8125rem * var(--v-script-scale)); /* 13px, on the type scale */
   font-weight: 500;
   color: hsl(var(--v-muted));
   transition: background 0.12s ease, color 0.12s ease;
@@ -309,9 +323,24 @@ textarea.v-field {
 }
 
 .v-nav-item[data-active='true'] {
-  background: hsl(var(--v-surface));
-  color: hsl(var(--v-fg));
-  box-shadow: var(--v-shadow-sm);
+  background: var(--v-accent-soft);
+  color: var(--v-accent-text);
+  font-weight: 600;
+}
+/* The page you are on is marked by a short bar at the leading edge too, so it
+   reads without colour as well. */
+.v-nav-item[data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--v-accent);
+}
+[dir='rtl'] .v-nav-item[data-active='true']::before {
+  border-radius: 3px 0 0 3px;
 }
 
 /* A menu link whose page is on its way: shown only when it takes a moment, so
@@ -432,13 +461,13 @@ textarea.v-field {
   border-radius: var(--v-radius-lg);
 }
 .v-stat-label {
-  font-size: 0.8125rem;
+  font-size: calc(0.8125rem * var(--v-script-scale));
   font-weight: 500;
   color: hsl(var(--v-muted));
 }
 .v-stat-value {
   margin-top: 0.4rem;
-  font-size: 1.75rem; /* 28px */
+  font-size: calc(1.75rem * var(--v-script-scale)); /* 28px */
   line-height: 1.1;
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -462,7 +491,7 @@ textarea.v-field {
 
 /* Section label */
 .v-section-label {
-  font-size: 0.8125rem;
+  font-size: calc(0.8125rem * var(--v-script-scale));
   font-weight: 500;
   color: hsl(var(--v-faint));
 }
@@ -473,7 +502,7 @@ textarea.v-field {
   align-items: center;
   gap: 0.3rem;
   padding: 0.0625rem 0.4rem;
-  font-size: 0.6875rem; /* 11px */
+  font-size: calc(0.6875rem * var(--v-script-scale)); /* 11px */
   font-weight: 500;
   line-height: 1.5;
   border-radius: 5px;
@@ -512,7 +541,7 @@ textarea.v-field {
   height: 1.25rem;
   padding-inline: 0.3rem;
   font-family: 'Geist Mono', ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: calc(0.6875rem * var(--v-script-scale));
   font-weight: 500;
   color: hsl(var(--v-faint));
   background: hsl(var(--v-surface));
@@ -525,12 +554,12 @@ textarea.v-field {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.8125rem;
+  font-size: calc(0.8125rem * var(--v-script-scale));
 }
 .v-table thead th {
   padding: 0.6rem 1rem;
   text-align: start;
-  font-size: 0.75rem;
+  font-size: calc(0.75rem * var(--v-script-scale));
   font-weight: 500;
   color: hsl(var(--v-faint));
   background: hsl(var(--v-surface));
