@@ -58,6 +58,7 @@ const PATHS: Record<string, string> = {
   github: 'M9 19c-4.5 1.5-4.5-2.2-6-2.5m12 5v-3.5c0-1 .1-1.6-.5-2.3 2.6-.3 5.3-1.3 5.3-5.8a4.5 4.5 0 0 0-1.2-3.1 4.2 4.2 0 0 0-.1-3.1s-1-.3-3.3 1.3a11.5 11.5 0 0 0-6 0C6.9 3.2 5.9 3.5 5.9 3.5a4.2 4.2 0 0 0-.1 3.1A4.5 4.5 0 0 0 4.6 9.7c0 4.5 2.7 5.5 5.3 5.8-.6.7-.6 1.3-.5 2.3V21',
   briefcase: 'M4 7h16v13H4zM9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 12h16',
   message: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  tiktok: 'M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-1.8-2.5V9.7a5.7 5.7 0 1 0 4.9 5.6V9.1a7.3 7.3 0 0 0 4.3 1.4V7.4a4.3 4.3 0 0 1-3.2-1.6z',
   image: 'M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M8.5 9.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z',
   upload: 'M12 15V3M7 8l5-5 5 5M5 21h14',
   loader: 'M12 3a9 9 0 1 0 9 9',
@@ -101,6 +102,11 @@ const ACTION_ICON: Record<string, string> = {
   GITHUB: 'github',
   SNAPCHAT: 'snapchat',
 };
+
+/** An icon's drawing, for marks that are filled rather than stroked (BrandGlyph). */
+export function iconPath(name: string): string {
+  return PATHS[name] ?? PATHS.link;
+}
 
 export function actionIcon(type: string): string {
   return ACTION_ICON[type] ?? 'link';

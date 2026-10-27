@@ -2142,21 +2142,28 @@ function ScoreRing({ value }: { value: number }) {
 }
 
 /** A small drawing of each link layout, so the choice reads before its name. */
+/** The networks' own colours, as the card now draws its links. */
+const SKETCH_COLORS = ['#1877F2', '#E1306C', '#0A66C2', '#25D366'];
+
 function LinkStyleSketch({ style }: { style: LinkStyle }) {
   return (
     <span aria-hidden className="flex h-12 flex-col justify-center gap-1.5 rounded-lg bg-elevated px-2.5 ring-1 ring-inset ring-line">
       {style === 'icons' ? (
         <span className="flex gap-1.5">
-          {[0, 1, 2, 3].map((i) => (
-            <span key={i} className="h-4 w-4 rounded-[4px] bg-ink/15" />
+          {SKETCH_COLORS.map((c) => (
+            <span key={c} className="h-4 w-4 rounded-[5px]" style={{ background: c }} />
           ))}
         </span>
       ) : style === 'buttons' ? (
-        [0, 1].map((i) => <span key={i} className="block h-3.5 w-full rounded-[4px] ring-1 ring-inset ring-ink/20" />)
+        SKETCH_COLORS.slice(0, 2).map((c) => (
+          <span key={c} className="flex h-3.5 w-full items-center rounded-[4px] bg-ink/[0.07] px-0.5">
+            <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: c }} />
+          </span>
+        ))
       ) : (
-        [0, 1].map((i) => (
-          <span key={i} className="flex items-center gap-1.5">
-            <span className="h-3 w-3 shrink-0 rounded-[3px] bg-ink/15" />
+        SKETCH_COLORS.slice(0, 2).map((c) => (
+          <span key={c} className="flex items-center gap-1.5">
+            <span className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: c }} />
             <span className="h-1.5 w-2/3 rounded-full bg-ink/15" />
           </span>
         ))

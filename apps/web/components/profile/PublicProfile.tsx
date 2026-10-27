@@ -5,13 +5,14 @@ import { API_URL, type PublicCardAction } from '@/lib/api';
 import { resolveAction } from '@/lib/brandIcons';
 import { appLink, platformOf } from '@/lib/appLinks';
 import { paymentBrand } from '@/lib/paymentBrands';
-import { embedUrl, externalUrl, initials, inkStyle, pick, profileAttrs, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
+import { embedUrl, externalUrl, initials, pick, profileAttrs, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
 import { fill, profileStrings, type ProfileStrings } from '@/lib/profileI18n';
 import { readableOn, shade } from '@/lib/color';
 import { Icon } from '@/components/Icon';
 import { VerifiedBadge } from '@/components/Avatar';
 import { VMark } from '@/components/brand/VMark';
 import { PaymentBrandLogo } from '@/components/brand/PaymentBrandLogo';
+import { BrandGlyph, BrandTile } from '@/components/brand/BrandTile';
 import { QRCode } from '@/components/QRCode';
 import { Lightbox } from '@/components/Lightbox';
 import { Constellation } from '@/components/profile/Constellation';
@@ -140,22 +141,24 @@ export function PublicProfile({
               setSaved(true);
               setTimeout(() => setSaved(false), 2200);
             }}
-            className="flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[var(--p-accent)] px-3 text-md font-medium text-[var(--p-on-accent)] transition-opacity active:opacity-85"
+            className="flex h-[52px] items-center justify-center gap-2 rounded-[14px] bg-[var(--p-accent)] px-3 text-md font-semibold text-[var(--p-on-accent)] shadow-[0_8px_20px_-10px_var(--p-accent)] transition-opacity active:opacity-85"
           >
             <Icon name={saved ? 'check' : 'user-plus'} size={17} />
             <span className="truncate">{saved ? t.saved : t.save}</span>
           </a>
           <button
             onClick={() => setSheet('exchange')}
-            className="flex h-12 items-center justify-center gap-2 rounded-[12px] px-3 text-md font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+            className="flex h-[52px] items-center justify-center gap-2 rounded-[14px] px-3 text-md font-semibold ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
           >
             <Icon name="swap" size={17} className="text-[var(--p-muted)]" />
             <span className="truncate">{t.exchange}</span>
           </button>
         </div>
 
+        {/* The ways to reach the person, as round buttons the way a phone's own
+            contact card shows them: WhatsApp in its green, the rest in the card's colour. */}
         {quick.length > 0 && (
-          <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${quick.length}, minmax(0, 1fr))` }}>
+          <div className="mt-5 grid gap-2" style={{ gridTemplateColumns: `repeat(${quick.length}, minmax(0, 1fr))` }}>
             {quick.map((l) => (
               <a
                 key={l.a.id}
@@ -163,10 +166,15 @@ export function PublicProfile({
                 target={l.href.startsWith('http') ? '_blank' : undefined}
                 rel="noreferrer"
                 onClick={(e) => onLink(e, l)}
-                className="flex h-[62px] flex-col items-center justify-center gap-1 rounded-[12px] bg-[var(--p-elevated)] transition-opacity active:opacity-80"
+                className="group flex min-w-0 flex-col items-center gap-1.5 py-1"
               >
-                <Icon name={l.icon} size={19} className="text-[var(--p-accent)]" />
-                <span className="max-w-full truncate px-1 text-xs font-medium text-[var(--p-muted)]">{l.label}</span>
+                <span
+                  className="flex h-[52px] w-[52px] items-center justify-center rounded-full shadow-[0_6px_16px_-8px_rgba(16,24,40,0.45)] transition-transform group-active:scale-95"
+                  style={l.icon === 'whatsapp' ? { background: '#25D366', color: '#fff' } : { background: 'var(--p-accent)', color: 'var(--p-on-accent)' }}
+                >
+                  <BrandGlyph icon={l.icon} size={22} />
+                </span>
+                <span className="max-w-full truncate px-1 text-sm font-medium">{l.label}</span>
               </a>
             ))}
           </div>
@@ -183,27 +191,28 @@ export function PublicProfile({
         {rest.length > 0 && (
           <Block title={t.links}>
             {profile.linkStyle === 'icons' ? (
-              <ul className="flex flex-wrap gap-2.5">
+              // Like a phone's home screen: each network as its own app icon, named under it.
+              <ul className="grid grid-cols-4 gap-x-2 gap-y-4">
                 {rest.map((l) => (
-                  <li key={l.a.id}>
+                  <li key={l.a.id} className="min-w-0">
                     <a
                       href={l.href}
                       target={/^https?:/.test(l.href) ? '_blank' : undefined}
                       rel="noreferrer"
                       onClick={(e) => onLink(e, l)}
-                      aria-label={l.label}
-                      title={l.label}
-                      className="flex h-12 w-12 items-center justify-center rounded-[12px] bg-[var(--p-elevated)] ring-1 ring-inset ring-[var(--p-line)] transition-opacity active:opacity-80"
+                      title={l.sub || l.label}
+                      className="group flex flex-col items-center gap-1.5"
                     >
-                      <span style={inkStyle(l.color, profile.mode)} className="p-ink flex">
-                        <Icon name={l.icon} size={20} />
+                      <span className="transition-transform group-active:scale-95">
+                        <BrandTile icon={l.icon} color={l.color} size={58} radius={17} />
                       </span>
+                      <span className="max-w-full truncate px-0.5 text-xs font-medium text-[var(--p-muted)]">{l.label}</span>
                     </a>
                   </li>
                 ))}
               </ul>
             ) : profile.linkStyle === 'buttons' ? (
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {rest.map((l) => (
                   <li key={l.a.id}>
                     <a
@@ -211,12 +220,11 @@ export function PublicProfile({
                       target={/^https?:/.test(l.href) ? '_blank' : undefined}
                       rel="noreferrer"
                       onClick={(e) => onLink(e, l)}
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] px-4 text-md font-medium ring-1 ring-inset ring-[var(--p-line-strong)] transition-colors active:bg-[var(--p-elevated)]"
+                      className="flex h-[60px] w-full items-center gap-3 rounded-[16px] bg-[var(--p-elevated)] px-2.5 ring-1 ring-inset ring-[var(--p-line)] transition-transform active:scale-[0.99]"
                     >
-                      <span style={inkStyle(l.color, profile.mode)} className="p-ink flex shrink-0">
-                        <Icon name={l.icon} size={18} />
-                      </span>
-                      <span className="truncate">{l.label}</span>
+                      <BrandTile icon={l.icon} color={l.color} size={40} radius={12} />
+                      {/* Centred on the whole button: the end padding matches the tile. */}
+                      <span className="min-w-0 flex-1 truncate pe-[52px] text-center text-md font-semibold">{l.label}</span>
                     </a>
                   </li>
                 ))}
@@ -228,13 +236,7 @@ export function PublicProfile({
                     key={l.a.id}
                     href={l.href}
                     onClick={(e) => onLink(e, l)}
-                    icon={
-                      <Tile>
-                        <span style={inkStyle(l.color, profile.mode)} className="p-ink flex">
-                          <Icon name={l.icon} size={18} />
-                        </span>
-                      </Tile>
-                    }
+                    icon={<BrandTile icon={l.icon} color={l.color} size={42} radius={12} />}
                     label={l.label}
                     sub={l.sub}
                   />
@@ -258,7 +260,7 @@ export function PublicProfile({
                   }}
                   icon={<PaymentBrandLogo platform={p.platform} size={36} />}
                   label={p.displayName}
-                  sub={p.description || paymentBrand(p.platform).label}
+                  sub={p.description || (paymentBrand(p.platform).label === p.displayName ? '' : paymentBrand(p.platform).label)}
                   plainSub
                 />
               ))}
@@ -483,10 +485,11 @@ function Identity({ profile, t, meta, center = false }: { profile: ProfileData; 
 
 function Name({ profile, t, className = '' }: { profile: ProfileData; t: ProfileStrings; className?: string }) {
   return (
-    <h1 className={`flex items-center gap-1.5 font-semibold leading-tight tracking-[-0.02em] rtl:tracking-normal ${className}`}>
-      <span className="min-w-0 break-words">{profile.name}</span>
+    <h1 className={`break-words font-semibold leading-tight tracking-[-0.02em] rtl:tracking-normal ${className}`}>
+      {profile.name}
+      {/* Inline, so a name that wraps keeps the badge beside its last word. */}
       {profile.verified && (
-        <span title={t.verified} className="shrink-0">
+        <span title={t.verified} className="ms-1.5 inline-flex align-[-0.12em]">
           <VerifiedBadge size={20} absolute={false} />
         </span>
       )}
@@ -528,9 +531,9 @@ function BrandMark({ brand, size }: { brand: { name: string; logo: string | null
 function Meta({ items, center = false }: { items: MetaItem[]; center?: boolean }) {
   if (!items.length) return null;
   return (
-    <ul className={`mt-3 flex flex-wrap gap-x-3.5 gap-y-1.5 text-sm text-[var(--p-muted)] ${center ? 'justify-center' : ''}`}>
+    <ul className={`mt-3.5 flex flex-wrap gap-1.5 text-sm text-[var(--p-muted)] ${center ? 'justify-center' : ''}`}>
       {items.map((m) => (
-        <li key={m.key} className="flex items-center gap-1.5">
+        <li key={m.key} className="flex items-center gap-1.5 rounded-full bg-[var(--p-elevated)] px-2.5 py-1 ring-1 ring-inset ring-[var(--p-line)]">
           {m.dot ? <span className="h-2 w-2 rounded-full bg-[#22a06b]" aria-hidden /> : <Icon name={m.icon!} size={14} className="text-[var(--p-faint)]" />}
           {/* One item, so the flex gap does not split a sentence. */}
           <span>{m.label}</span>
@@ -656,14 +659,14 @@ function Avatar({ profile, size, ring = true }: { profile: ProfileData; size: nu
 function Block({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      {title && <h2 className="mb-2.5 text-sm font-medium text-[var(--p-faint)]">{title}</h2>}
+      {title && <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--p-faint)] rtl:text-sm rtl:normal-case rtl:tracking-normal">{title}</h2>}
       {children}
     </section>
   );
 }
 
 function List({ children }: { children: React.ReactNode }) {
-  return <ul className="divide-y divide-[var(--p-line)] overflow-hidden rounded-[14px] ring-1 ring-inset ring-[var(--p-line)]">{children}</ul>;
+  return <ul className="divide-y divide-[var(--p-line)] overflow-hidden rounded-[16px] ring-1 ring-inset ring-[var(--p-line)]">{children}</ul>;
 }
 
 function Tile({ children }: { children: React.ReactNode }) {
@@ -696,18 +699,20 @@ function Row({
         target={external ? '_blank' : undefined}
         rel={rel}
         onClick={onClick}
-        className="flex min-h-[60px] items-center gap-3 px-3.5 py-2.5 transition-colors active:bg-[var(--p-elevated)]"
+        className="flex min-h-[66px] items-center gap-3.5 px-3 py-3 transition-colors active:bg-[var(--p-elevated)]"
       >
         {icon}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-md font-medium">{label}</span>
+          <span className="block truncate text-md font-semibold">{label}</span>
           {sub && (
             <span dir={plainSub ? undefined : 'ltr'} className={`block truncate text-sm text-[var(--p-faint)] ${plainSub ? '' : 'text-start rtl:text-right'}`}>
               {sub}
             </span>
           )}
         </span>
-        <Icon name={external ? 'external-link' : 'arrow'} size={15} className="shrink-0 text-[var(--p-faint)] rtl:-scale-x-100" />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--p-elevated)] text-[var(--p-muted)]">
+          <Icon name={external ? 'external-link' : 'arrow'} size={14} className="rtl:-scale-x-100" />
+        </span>
       </a>
     </li>
   );

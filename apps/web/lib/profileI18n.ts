@@ -168,12 +168,12 @@ const AR: ProfileStrings = {
 
   labels: {
     Call: 'اتصال',
-    Email: 'البريد الإلكتروني',
-    Website: 'الموقع الإلكتروني',
+    Email: 'البريد',
+    Website: 'الموقع',
     'Book a meeting': 'احجز موعداً',
     'Request a quote': 'اطلب عرض سعر',
     Directions: 'الاتجاهات',
-    Location: 'الموقع',
+    Location: 'الخريطة',
     Download: 'تحميل',
     'Save contact': 'حفظ جهة الاتصال',
     WhatsApp: 'واتساب',
