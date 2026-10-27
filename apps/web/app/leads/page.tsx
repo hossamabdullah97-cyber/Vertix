@@ -9,6 +9,7 @@ import { authFetch, getToken, peek } from '@/lib/client';
 import { BOARD_PAGE, ShowMore, useShowMore } from '@/components/crm/ShowMore';
 import { Icon } from '@/components/Icon';
 import AppShell, { OPEN_LEAD_EVENT } from '@/components/AppShell';
+import { ActionMenu } from '@/components/ui/ActionMenu';
 import { useLocale } from '@/components/i18n/LanguageProvider';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
 import { LeadCard, Heat } from '@/components/crm/LeadCard';
@@ -283,14 +284,17 @@ export default function LeadsPage() {
       fluid
       action={
         <div className="flex gap-2">
-          {leads.length > 0 && (
-            <button type="button" onClick={exportLeads} className="v-btn v-btn-ghost" title={filtersActive ? t('export.filtered', { count: filtered.length }) : t('export.all')}>
-              <Icon name="download" size={14} /> <span className="hidden sm:inline">{t('export.button')}</span>
-            </button>
-          )}
-          <button type="button" onClick={() => setImporting(true)} className="v-btn v-btn-ghost" title={t('import.buttonHint')}>
-            <Icon name="upload" size={14} /> <span className="hidden sm:inline">{t('import.button')}</span>
-          </button>
+          {/* One main action in sight; moving leads in and out waits under More. */}
+          <ActionMenu
+            bordered
+            label={t('drawer.more')}
+            items={[
+              { key: 'import', label: t('import.button'), icon: 'upload', onSelect: () => setImporting(true) },
+              ...(leads.length > 0
+                ? [{ key: 'export', label: filtersActive ? t('export.filtered', { count: filtered.length }) : t('export.button'), icon: 'download', onSelect: exportLeads }]
+                : []),
+            ]}
+          />
           <Link href="/meet" className="v-btn v-btn-ghost" title={t('meet.title')}>
             <Icon name="users" size={14} /> <span className="hidden sm:inline">{t('meet.title')}</span>
           </Link>

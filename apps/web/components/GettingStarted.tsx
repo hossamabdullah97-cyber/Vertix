@@ -36,7 +36,7 @@ export function GettingStarted({ view, onHide }: { view: OnboardingView | null; 
 
   if (celebrate) {
     return (
-      <div role="status" className="rounded-xl bg-emerald-500/[0.08] p-3 ring-1 ring-inset ring-emerald-500/25">
+      <div role="status" className="bg-emerald-500/[0.08] p-3">
         <p className="flex items-center gap-2 text-sm font-semibold text-ink">
           <span aria-hidden>🎉</span> {t('guide.doneTitle')}
         </p>
@@ -60,17 +60,17 @@ export function GettingStarted({ view, onHide }: { view: OnboardingView | null; 
         aria-expanded={open}
         aria-haspopup="dialog"
         data-testid="getting-started"
-        className="block w-full rounded-xl bg-surface p-3 text-start shadow-sm ring-1 ring-line transition-colors hover:bg-elevated"
+        className="block w-full px-3 py-2.5 text-start transition-colors hover:bg-elevated"
       >
         <span className="flex items-center justify-between gap-2 text-xs">
           <span className="font-medium text-ink">{t('guide.title')}</span>
           <span className="tabular text-faint">{t('onboarding.progress', { done: view.done, total: view.total })}</span>
         </span>
-        <span className="mt-2.5 block h-1 overflow-hidden rounded-full bg-line" aria-hidden>
+        <span className="mt-2 block h-1 overflow-hidden rounded-full bg-line" aria-hidden>
           <span className="block h-full rounded-full bg-accent transition-[width]" style={{ width: `${pct}%` }} />
         </span>
         {left[0] && (
-          <span className="mt-2 block truncate text-xs text-muted">
+          <span className="mt-1.5 block truncate text-xs text-muted">
             {t('guide.next')} <span className="font-medium text-ink">{t(`onboarding.steps.${left[0].id}.label`)}</span>
           </span>
         )}

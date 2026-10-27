@@ -15,7 +15,8 @@ test('leads come in from a spreadsheet, each row checked first, and those alread
 
   await signIn(page, account);
   await page.goto('/leads');
-  await page.getByRole('button', { name: 'Import' }).click();
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Import' }).click();
   await page.getByTestId('import-file').setInputFiles({ name: 'expo-leads.csv', mimeType: 'text/csv', buffer: Buffer.from('﻿' + csv) });
 
   const rows = page.getByTestId('import-row');
