@@ -21,7 +21,7 @@ import { DirectionalIcon } from '@/components/i18n/DirectionalIcon';
 import { LOCALE_LABELS } from '@/lib/i18n/config';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { ConnectionBanner } from '@/components/ui/ConnectionBanner';
-import { VerifyEmailBanner } from '@/components/ui/VerifyEmailBanner';
+import { VerifyEmailBanner, VerifyEmailMenuItem } from '@/components/ui/VerifyEmailBanner';
 import { StatusBanner } from '@/components/ui/StatusBanner';
 import { TwoStepPanel } from '@/components/account/TwoStepPanel';
 import { registerServiceWorker, syncPush } from '@/lib/pwa';
@@ -875,6 +875,7 @@ export default function AppShell({
         </div>
       </div>
       <div className="border-t border-line pt-1">
+        <VerifyEmailMenuItem me={me} />
         <Link
           role="menuitem"
           href="/account"
@@ -1174,43 +1175,36 @@ export default function AppShell({
         </nav>
 
         <div className="mt-auto flex flex-col gap-2 pt-4">
-          <GettingStarted view={onboarding.view} onHide={() => void onboarding.update({ dismissed: true })} />
-          {usage && (
-            // The plan for everyone to see; a link to billing for those who handle it.
-            <Link
-              href={canOpen(me, '/billing') ? '/billing' : '/help/plans'}
-              className="block rounded-xl bg-surface p-3 shadow-sm ring-1 ring-line transition-colors hover:bg-elevated"
-            >
-              <span className="flex items-baseline justify-between gap-2 text-xs">
-                <span className="font-medium text-ink">{t(`billing:plans.${usage.plan}`)}</span>
-                <span className="tabular text-faint">
-                  {cardLimit === null
-                    ? t('plan.cardsUnlimited', { used: usage.usage.cards })
-                    : t('plan.cards', { used: usage.usage.cards, limit: cardLimit })}
+          {/* The guide and the plan as one quiet block: two rows, not two cards. */}
+          <div className="overflow-hidden rounded-xl bg-surface shadow-sm ring-1 ring-line empty:hidden [&>*+*]:border-t [&>*+*]:border-line">
+            <GettingStarted view={onboarding.view} onHide={() => void onboarding.update({ dismissed: true })} />
+            {usage && (
+              // The plan for everyone to see; a link to billing for those who handle it.
+              <Link
+                href={canOpen(me, '/billing') ? '/billing' : '/help/plans'}
+                title={t('plan.compare')}
+                className="block px-3 py-2.5 transition-colors hover:bg-elevated"
+              >
+                <span className="flex items-baseline justify-between gap-2 text-xs">
+                  <span className="font-medium text-ink">{t(`billing:plans.${usage.plan}`)}</span>
+                  <span className="tabular text-faint">
+                    {cardLimit === null
+                      ? t('plan.cardsUnlimited', { used: usage.usage.cards })
+                      : t('plan.cards', { used: usage.usage.cards, limit: cardLimit })}
+                  </span>
                 </span>
-              </span>
-              {cardLimit !== null && (
-                <span className="mt-2.5 flex gap-[3px]" aria-hidden>
-                  {cardLimit <= 12 ? (
-                    Array.from({ length: cardLimit }, (_, i) => (
-                      <span
-                        key={i}
-                        className={`h-1 flex-1 rounded-full ${i < usage.usage.cards ? 'bg-accent' : 'bg-line'}`}
-                      />
-                    ))
-                  ) : (
-                    <span className="h-1 flex-1 overflow-hidden rounded-full bg-line">
-                      <span
-                        className="block h-full rounded-full bg-accent"
-                        style={{ width: `${Math.min(100, (usage.usage.cards / cardLimit) * 100)}%` }}
-                      />
-                    </span>
-                  )}
-                </span>
-              )}
-              <span className="mt-2.5 block text-xs font-medium text-accent">{t('plan.compare')}</span>
-            </Link>
-          )}
+                {cardLimit !== null && (
+                  <span className="mt-2 block h-1 overflow-hidden rounded-full bg-line" aria-hidden>
+                    <span
+                      className="block h-full rounded-full bg-accent"
+                      style={{ width: `${Math.min(100, (usage.usage.cards / Math.max(1, cardLimit)) * 100)}%` }}
+                    />
+                  </span>
+                )}
+                <span className="mt-1.5 block text-xs font-medium text-accent">{t('plan.compare')}</span>
+              </Link>
+            )}
+          </div>
 
           <div ref={menuRef} className="relative">
             <button

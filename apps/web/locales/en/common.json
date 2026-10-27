@@ -103,12 +103,15 @@
     }
   },
   "verifyEmail": {
-    "title": "Confirm your email.",
-    "body": "We sent a link to {{email}}. You'll need it to invite your team or choose a plan.",
+    "title": "Confirm your email",
+    "body": "to invite your team and choose a plan.",
     "sent": "A new link is on its way to {{email}}. Check your spam folder too.",
     "notSent": "The email couldn't be sent. Try again in a moment.",
-    "resend": "Send it again",
+    "resend": "Resend link",
     "sending": "Sending…",
-    "bodyPersonal": "We sent a link to {{email}}. You will need it to choose a plan."
+    "bodyPersonal": "to choose a plan.",
+    "close": "Remind me later",
+    "menu": "Confirm your email",
+    "menuSent": "Link sent. Check your inbox."
   }
 }
