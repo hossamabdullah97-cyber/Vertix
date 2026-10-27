@@ -152,7 +152,7 @@ export function vcardFileName(fullName: string): string {
 }
 
 /** The identity fields a card can carry in its second language (see the web's altOf). */
-const ALT_FIELDS = ['fullName', 'title', 'company', 'location', 'languages', 'responseTime', 'about'] as const;
+const ALT_FIELDS = ['fullName', 'title', 'company', 'location', 'languages', 'responseTime', 'about', 'greeting'] as const;
 
 /**
  * The card's data in the language asked for: its own, or its second language

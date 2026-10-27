@@ -51,6 +51,8 @@
     "languagesPlaceholder": "العربية، الإنجليزية",
     "responseTime": "يرد عادةً خلال",
     "responseTimePlaceholder": "ساعات قليلة",
+    "greeting": "سطر على الغلاف",
+    "greetingPlaceholder": "أهلاً بك في بطاقتي الرقمية",
     "phone": "الهاتف",
     "phonePlaceholder": "+201001234567",
     "email": "البريد الإلكتروني",

@@ -17,9 +17,9 @@ const DOMAIN_BRANDS: { match: RegExp; brand: Brand }[] = [
   { match: /linkedin\.com/i, brand: { label: 'LinkedIn', color: '#0A66C2', icon: 'linkedin' } },
   { match: /youtube\.com|youtu\.be/i, brand: { label: 'YouTube', color: '#FF0000', icon: 'youtube' } },
   { match: /t\.me|telegram\.(me|org)/i, brand: { label: 'Telegram', color: '#26A5E4', icon: 'telegram' } },
-  { match: /tiktok\.com/i, brand: { label: 'TikTok', color: '#010101', icon: 'message' } },
+  { match: /tiktok\.com/i, brand: { label: 'TikTok', color: '#010101', icon: 'tiktok' } },
   { match: /github\.com/i, brand: { label: 'GitHub', color: '#181717', icon: 'github' } },
-  { match: /snapchat\.com/i, brand: { label: 'Snapchat', color: '#0b0b0e', icon: 'snapchat' } },
+  { match: /snapchat\.com/i, brand: { label: 'Snapchat', color: '#FFFC00', icon: 'snapchat' } },
   { match: /maps\.(google|app)\.|goo\.gl\/maps/i, brand: { label: 'Location', color: '#EA4335', icon: 'map-pin' } },
   { match: /cal\.com|calendly\.com/i, brand: { label: 'Book a meeting', color: '#7C3AED', icon: 'calendar' } },
 ];
@@ -48,9 +48,52 @@ export interface ResolvedAction {
 /** Contact methods shown as round quick-action buttons at the top. */
 const QUICK_TYPES = new Set(['CALL', 'EMAIL', 'WHATSAPP']);
 
+/** Networks whose address ends in the person's handle, and where it sits in the path. */
+const HANDLE_SITES: { match: RegExp; skip?: RegExp }[] = [
+  { match: /(^|\.)instagram\.com$/i },
+  { match: /(^|\.)(twitter|x)\.com$/i },
+  { match: /(^|\.)tiktok\.com$/i },
+  { match: /(^|\.)github\.com$/i },
+  { match: /(^|\.)(t\.me|telegram\.me)$/i },
+  { match: /(^|\.)snapchat\.com$/i, skip: /^add$/i },
+  { match: /(^|\.)(facebook\.com|fb\.com|fb\.me)$/i },
+  { match: /(^|\.)youtube\.com$/i, skip: /^(c|channel|user)$/i },
+  // linkedin.com/in/<name>, linkedin.com/company/<name>
+  { match: /(^|\.)linkedin\.com$/i, skip: /^(in|company|school)$/i },
+];
+
+/**
+ * What a visitor reads under a link's name: "@mona.hassan" for a social
+ * profile rather than its whole address, the bare domain for a website, and
+ * nothing for a map (its name already says it). A phone, email or anything
+ * that is not a web address is shown as it is.
+ */
+export function handleOf(raw: string): string {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(raw) && !/^https?:/i.test(raw)) return raw;
+  let u: URL;
+  try {
+    u = new URL(/^[a-z]+:\/\//i.test(raw) ? raw : `https://${raw}`);
+  } catch {
+    return raw;
+  }
+  if (!/^https?:$/.test(u.protocol) || !u.hostname.includes('.')) return raw;
+  const host = u.hostname.replace(/^(www|m|mobile)\./i, '');
+  if (/^(maps\.(google|app)\.|goo\.gl$)/i.test(host) || (/^google\.[a-z.]+$/i.test(host) && u.pathname.startsWith('/maps'))) return '';
+  const site = HANDLE_SITES.find((s) => s.match.test(host));
+  if (site) {
+    const parts = u.pathname.split('/').filter(Boolean);
+    const at = parts.findIndex((p) => !(site.skip?.test(p)) && !/^(profile\.php|pages|people)$/i.test(p));
+    const name = at >= 0 ? decodeURIComponent(parts[at]).replace(/^@/, '') : '';
+    if (name && !/^(share|sharer|p|reel|watch|status)$/i.test(name)) return `@${name}`;
+  }
+  const path = u.pathname.replace(/\/$/, '');
+  return host + (path && path.length <= 24 ? path : '');
+}
+
 function subtitleOf(action: PublicCardAction): string {
   const c = action.config ?? {};
-  const raw = (c.url as string) || (c.phone as string) || (c.email as string) || (c.query as string) || '';
+  if (typeof c.url === 'string' && c.url) return handleOf(c.url);
+  const raw = (c.phone as string) || (c.email as string) || (c.query as string) || '';
   return raw.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 }
 
@@ -72,7 +115,7 @@ export function resolveAction(action: PublicCardAction, slug: string): ResolvedA
   return {
     href,
     brand,
-    subtitle: subtitleOf(action) || brand.label,
+    subtitle: subtitleOf(action),
     isQuickContact,
   };
 }

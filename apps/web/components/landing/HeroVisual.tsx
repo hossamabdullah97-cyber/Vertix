@@ -40,6 +40,7 @@ export function HeroVisual() {
       title: t('sample.title'),
       company: '',
       about: t('sample.about'),
+      greeting: '',
       avatar: '',
       coverImage: '',
       coverStyle: 'gradient',

@@ -34,6 +34,19 @@ export const PAYMENT_BRANDS: Record<string, PaymentBrand> = {
   custom: { key: 'custom', label: 'Custom Payment Link (رابط دفع آخر)', color: '#334155', logo: '/brands/custom.svg', icon: 'link' },
 };
 
+/**
+ * The address to send money to, when the link carries one: an InstaPay link
+ * (ipn.eg/S/<name>/instapay/…) is the payment address <name>@instapay. Shown
+ * on the card with a copy button, since many pay by typing it into their app.
+ */
+export function paymentAddress(platform: string, url: string): string {
+  if (platform === 'instapay') {
+    const m = /ipn\.eg\/S\/([^/?#]+)\/instapay/i.exec(url);
+    if (m) return `${decodeURIComponent(m[1])}@instapay`;
+  }
+  return '';
+}
+
 export function paymentBrand(platform: string): PaymentBrand {
   return PAYMENT_BRANDS[platform] ?? PAYMENT_BRANDS.custom;
 }

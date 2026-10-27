@@ -12,6 +12,7 @@ export interface AltIdentity {
   title?: string;
   company?: string;
   location?: string;
+  greeting?: string;
   about?: string;
 }
 
@@ -50,6 +51,7 @@ export function SecondLanguage({ primary, value, onChange }: { primary: Lang; va
           {field('title', t('profile.jobTitle'), other === 'ar' ? 'مديرة المبيعات' : 'Sales Director')}
           {field('company', t('profile.company'), other === 'ar' ? 'فيرتكس للمقاولات' : 'Vertex Build')}
           {field('location', t('profile.location'), other === 'ar' ? 'القاهرة، مصر' : 'Cairo, Egypt')}
+          <div className="sm:col-span-2">{field('greeting', t('profile.greeting'), other === 'ar' ? 'أهلاً بك في بطاقتي الرقمية' : 'Welcome to my digital card')}</div>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-ink">{t('second.about')}</span>
             <textarea dir={dir} lang={other} className="v-field min-h-20" value={current?.about ?? ''} onChange={(e) => set('about', e.target.value)} />
