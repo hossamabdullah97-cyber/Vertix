@@ -5,7 +5,7 @@ import Link, { useLinkStatus } from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import type { UsageSummary } from '@vertex/shared';
-import { authFetch, logout, getActiveOrgId, setActiveOrgId, ssoStart, tokenSubject, type Me } from '@/lib/client';
+import { authFetch, logout, getActiveOrgId, recentFetch, setActiveOrgId, ssoStart, tokenSubject, type Me } from '@/lib/client';
 import { Icon } from '@/components/Icon';
 import { claimThisBrowser } from '@/lib/track';
 import { useTheme } from '@/lib/useStoredTheme';
@@ -296,7 +296,9 @@ export default function AppShell({
     setSelectedOrgId(activeId);
     setReady(true);
 
-    authFetch<Me>('/auth/me')
+    // Asked again only when the last answer is over a minute old: this runs
+    // on every page, and the account rarely changes between two of them.
+    recentFetch<Me>('/auth/me')
       .then(setMe)
       .catch(() => {});
     // This browser is one of the workspace's own: its chip taps are not counted.
@@ -305,7 +307,7 @@ export default function AppShell({
     // The installable app's service worker: its offline page and notifications.
     void registerServiceWorker();
 
-    authFetch<any[]>('/orgs')
+    recentFetch<any[]>('/orgs')
       .then((list: OrgRow[]) => {
         // A link names its workspace: open it there, or say this person has no
         // access to it (a workspace this browser had not seen before is only
@@ -341,7 +343,7 @@ export default function AppShell({
       .catch(() => {});
 
     if (activeId) {
-      authFetch<UsageSummary>('/billing/subscription')
+      recentFetch<UsageSummary>('/billing/subscription')
         .then(setUsage)
         .catch(() => {});
     }

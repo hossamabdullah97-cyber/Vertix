@@ -242,6 +242,8 @@ const inflight = new Map<string, Promise<unknown>>();
  * which clears it; answers are kept per workspace besides.
  */
 const lastSeen = new Map<string, unknown>();
+/** When each kept answer arrived, for reads that may take a recent one as it is (`recentFetch`). */
+const seenAt = new Map<string, number>();
 // Writes that change nothing a page reads back: a card studio's "I am here" beat.
 const KEEPS_READS = [/^\/cards\/[^/]+\/presence$/];
 const seenKey = (path: string) => `${getActiveOrgId() ?? ''} ${path}`;
@@ -255,6 +257,7 @@ export function peek<T>(path: string): T | undefined {
 /** Records what a page knows `path` now reads, after changes it made itself; the next read replaces it. */
 export function remember(path: string, data: unknown) {
   lastSeen.set(seenKey(path), data);
+  seenAt.set(seenKey(path), Date.now());
 }
 
 function forget(path: string) {
@@ -300,12 +303,29 @@ export function authFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (shared) return shared as Promise<T>;
   const p = request<T>(path, init)
     .then((data) => {
-      if (!init.headers) lastSeen.set(seenKey(path), data);
+      if (!init.headers) {
+        lastSeen.set(seenKey(path), data);
+        seenAt.set(seenKey(path), Date.now());
+      }
       return data;
     })
     .finally(() => inflight.delete(key));
   inflight.set(key, p);
   return p;
+}
+
+/**
+ * A read the shell makes again on every page (the account, the workspaces,
+ * the plan, what is waiting): an answer in this workspace under `maxAgeMs`
+ * old is taken as it is instead of asking again. A change under the same
+ * first path segment forgets it (see `forget`), and a reload starts afresh,
+ * so this only spares asking about what nothing here has changed.
+ */
+export function recentFetch<T>(path: string, maxAgeMs = 60_000): Promise<T> {
+  const key = seenKey(path);
+  const at = seenAt.get(key);
+  if (at !== undefined && Date.now() - at < maxAgeMs && lastSeen.has(key)) return Promise.resolve(lastSeen.get(key) as T);
+  return authFetch<T>(path);
 }
 
 async function request<T>(

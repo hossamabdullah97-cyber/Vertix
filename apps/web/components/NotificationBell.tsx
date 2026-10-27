@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getActiveOrgId } from '@/lib/client';
+import { authFetch, getActiveOrgId, recentFetch } from '@/lib/client';
 import { workspaceNames } from '@/lib/workspaces';
 import { Icon } from '@/components/Icon';
 import { NotificationRow } from '@/components/notifications/NotificationRow';
 import { NOTIFS_CHANGED, announceChange, announceUnreadByWorkspace, openNotification, type Notif } from '@/components/notifications/model';
+
+type UnreadCount = { count: number; byWorkspace?: Record<string, number> };
 
 /**
  * The bell in the top bar: how many are unread, and the latest few. Opening
@@ -25,8 +27,11 @@ export function NotificationBell() {
   const [unreadOnly, setUnreadOnly] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const fetchCount = useCallback(() => {
-    authFetch<{ count: number; byWorkspace?: Record<string, number> }>('/notifications/unread-count')
+  // On a page opening, a count under 15 s old is shown as it is; the poll
+  // and any change (an event, as the listener's argument) ask again.
+  const fetchCount = useCallback((fresh: unknown = true) => {
+    const path = '/notifications/unread-count';
+    (fresh === false ? recentFetch<UnreadCount>(path, 15_000) : authFetch<UnreadCount>(path))
       .then((r) => {
         setCount(r.count);
         announceUnreadByWorkspace(r.byWorkspace);
@@ -36,7 +41,7 @@ export function NotificationBell() {
 
   // No socket layer yet: poll the counter, and recount after any change.
   useEffect(() => {
-    fetchCount();
+    fetchCount(false);
     const iv = setInterval(fetchCount, 20000);
     window.addEventListener(NOTIFS_CHANGED, fetchCount);
     return () => {
