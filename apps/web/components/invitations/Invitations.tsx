@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authFetch, getToken } from '@/lib/client';
+import { authFetch, getToken, recentFetch } from '@/lib/client';
 import { openWorkspace } from '@/lib/switch';
 import { formatRelativeTime } from '@/lib/format';
 import { useLocale } from '@/components/i18n/LanguageProvider';
@@ -21,15 +21,16 @@ export const INVITES_CHANGED = 'vertex:invites-changed';
 export function useInvitations() {
   const [invites, setInvites] = useState<Invitation[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const load = useCallback(() => {
+  // Opening a page takes a list under a minute old as it is; an answer to one asks again.
+  const load = useCallback((fresh: unknown = true) => {
     if (!getToken()) return;
-    authFetch<Invitation[]>('/invitations')
+    (fresh === false ? recentFetch<Invitation[]>('/invitations') : authFetch<Invitation[]>('/invitations'))
       .then((list) => setInvites(Array.isArray(list) ? list : []))
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, []);
   useEffect(() => {
-    load();
+    load(false);
     window.addEventListener(INVITES_CHANGED, load);
     return () => window.removeEventListener(INVITES_CHANGED, load);
   }, [load]);

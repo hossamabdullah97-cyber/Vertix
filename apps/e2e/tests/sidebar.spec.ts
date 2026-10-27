@@ -55,3 +55,26 @@ test('a menu page is fetched ahead, and a click on one still on its way shows it
   await page.waitForURL(/\/help/);
   await expect(link.locator('.v-nav-pending')).toHaveCount(0);
 });
+
+test("moving between pages does not ask again for the shell's account, workspaces and plan", async ({ page, account }) => {
+  await signIn(page, account);
+  await page.goto('/dashboard');
+  await page.waitForLoadState('networkidle');
+
+  const SHELL = ['/api/auth/me', '/api/orgs', '/api/billing/subscription', '/api/invitations', '/api/notifications/unread-count'];
+  const asked: string[] = [];
+  page.on('request', (r) => {
+    const path = new URL(r.url()).pathname;
+    if (SHELL.includes(path)) asked.push(path);
+  });
+  const nav = page.getByRole('navigation').first();
+  for (const [name, path] of [['Leads', '/leads'], ['Cards', '/cards'], ['Analytics', '/analytics']] as const) {
+    await nav.getByRole('link', { name, exact: true }).click();
+    await page.waitForURL((u) => u.pathname === path);
+    await page.waitForLoadState('networkidle');
+  }
+  // The page's own reads still go out (a page may well ask for the account itself);
+  // the shell's do not, three pages in a row within the minute.
+  const shellAsked = asked.filter((p) => p !== '/api/auth/me');
+  expect(shellAsked).toEqual([]);
+});

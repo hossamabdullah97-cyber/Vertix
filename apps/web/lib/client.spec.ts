@@ -541,3 +541,32 @@ describe('the menus remember the role held in a workspace', () => {
     expect(recalledRole('org1', 'u1')).toBeNull();
   });
 });
+
+describe("the shell's reads on every page", () => {
+  it('take an answer under a minute old as it is, and ask again once it is older or the resource changed', async () => {
+    const { authFetch, recentFetch, setActiveOrgId } = await import('./client');
+    const fetchMock = vi.fn().mockImplementation(async () => ({ ok: true, text: async () => '[{"id":"o1"}]' }) as Response);
+    vi.stubGlobal('fetch', fetchMock);
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+    const asked = () => fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/orgs')).length;
+
+    await recentFetch('/orgs');
+    await recentFetch('/orgs');
+    expect(asked()).toBe(1);
+
+    // Another workspace has its own answers.
+    setActiveOrgId('org_b');
+    await recentFetch('/orgs');
+    expect(asked()).toBe(2);
+    setActiveOrgId(null);
+
+    now.mockReturnValue(1_000_000 + 61_000);
+    await recentFetch('/orgs');
+    expect(asked()).toBe(3);
+
+    await authFetch('/orgs/personal', { method: 'POST', body: '{}' });
+    await recentFetch('/orgs');
+    expect(asked()).toBe(4);
+    now.mockRestore();
+  });
+});
