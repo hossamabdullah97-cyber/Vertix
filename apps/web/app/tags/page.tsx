@@ -51,6 +51,11 @@ export default function TagsPage() {
 
   // An employee handles only their own chip: no holders, no stock decisions.
   const isEmployee = me?.role === 'EMPLOYEE' || (!!me && !can(me, 'people'));
+  // Only the owner gives a chip back. A personal account frees it for any
+  // account; a team keeps it to hand to a member again.
+  const canRemove = me?.role === 'OWNER';
+  const personal = me?.workspaceKind === 'PERSONAL';
+  const removeText = personal ? 'remove.personal' : 'remove.team';
 
   function flash(msg: string) {
     setToast(msg);
@@ -174,7 +179,7 @@ export default function TagsPage() {
           tg.status === 'DISABLED'
             ? { key: 'enable', label: t('actions.enable'), icon: 'check', onSelect: () => setEnabled(tg, true), separated: true }
             : { key: 'disable', label: t('actions.disable'), icon: 'eye-off', onSelect: () => setEnabled(tg, false), separated: true },
-          { key: 'delete', label: t('actions.delete'), icon: 'trash', danger: true, onSelect: () => setDeleting(tg) },
+          ...(canRemove ? [{ key: 'remove', label: t('actions.remove'), icon: 'trash' as const, danger: true, onSelect: () => setDeleting(tg) }] : []),
         ]),
   ];
 
@@ -371,6 +376,7 @@ export default function TagsPage() {
         cards={cards}
         members={members}
         isEmployee={isEmployee}
+        canRemove={canRemove}
         error={selected ? error : ''}
         onClose={closeDetails}
         onLink={(cardId) =>
@@ -397,17 +403,18 @@ export default function TagsPage() {
 
       <ConfirmDialog
         open={deleting !== null}
-        title={t('delete.title')}
+        title={t(`${removeText}.title`)}
         body={
           <>
             <span dir="ltr" className="font-mono text-ink">
               {deleting?.uid}
             </span>
-            <p className="mt-1.5">{t('delete.body')}</p>
+            <p className="mt-1.5">{t(`${removeText}.body`)}</p>
+            <p className="mt-1.5">{t(`${removeText}.after`)}</p>
           </>
         }
-        confirmLabel={t('actions.delete')}
-        busyLabel={t('actions.deleting')}
+        confirmLabel={t('actions.remove')}
+        busyLabel={t('actions.removing')}
         cancelLabel={t('actions.cancel')}
         danger
         onConfirm={async () => {
@@ -416,7 +423,7 @@ export default function TagsPage() {
           if (selectedId === deleting.id) setSelectedId(null);
           setDeleting(null);
           await load();
-          flash(t('toasts.deleted'));
+          flash(t(personal ? 'toasts.removedPersonal' : 'toasts.removedTeam'));
         }}
         onCancel={closeDelete}
       />
@@ -486,6 +493,7 @@ function ChipDetails({
   cards,
   members,
   isEmployee,
+  canRemove,
   error,
   onClose,
   onLink,
@@ -499,6 +507,7 @@ function ChipDetails({
   cards: Card[];
   members: Member[];
   isEmployee: boolean;
+  canRemove: boolean;
   error: string;
   onClose: () => void;
   onLink: (cardId: string) => void;
@@ -537,16 +546,21 @@ function ChipDetails({
         )
       }
       footer={
-        tag &&
-        !isEmployee && (
+        tag && (
           <div className="flex items-center gap-2">
-            <button onClick={() => onEnable(tag.status === 'DISABLED')} className="v-btn v-btn-ghost">
-              <Icon name={tag.status === 'DISABLED' ? 'check' : 'eye-off'} size={14} />
-              {tag.status === 'DISABLED' ? t('actions.enable') : t('actions.disable')}
-            </button>
-            <button onClick={onDelete} className="v-btn v-btn-ghost ms-auto !text-red-600 dark:!text-red-400">
-              <Icon name="trash" size={14} /> {t('actions.delete')}
-            </button>
+            {!isEmployee && (
+              <button onClick={() => onEnable(tag.status === 'DISABLED')} className="v-btn v-btn-ghost">
+                <Icon name={tag.status === 'DISABLED' ? 'check' : 'eye-off'} size={14} />
+                {tag.status === 'DISABLED' ? t('actions.enable') : t('actions.disable')}
+              </button>
+            )}
+            {canRemove ? (
+              <button onClick={onDelete} className="v-btn v-btn-ghost ms-auto !text-red-600 dark:!text-red-400">
+                <Icon name="trash" size={14} /> {t('actions.remove')}
+              </button>
+            ) : (
+              <p className="ms-auto text-xs text-muted">{t('remove.ownerOnly')}</p>
+            )}
           </div>
         )
       }

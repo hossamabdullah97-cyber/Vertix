@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -284,24 +285,42 @@ export class TagsService {
    * delete would silently destroy, and is refused instead; related data is
    * never removed on the caller's behalf.
    */
+  /**
+   * Takes a chip off this workspace. Only the platform admin deletes a chip
+   * from the platform registry; a workspace only gives it back, so the
+   * registry row stays and the chip can be added again.
+   *
+   * What the workspace kept about it goes: its card link, holder and tap
+   * count. Its taps stay counted on the card and the leads it brought in stay,
+   * no longer tied to a chip (both relations set null).
+   *
+   * Who may take it back afterwards depends on the workspace. A personal one
+   * belongs to one person, so the chip is freed outright — the same person can
+   * add it again, or to a new account. A team keeps it: the chip stays
+   * allocated to the team, so its owner can add it again for any member, and
+   * it does not leak to another workspace.
+   */
   async remove(tenant: TenantContext, id: string) {
-    const tag = await this.findOne(tenant, id);
-    if (tag.activationCount > 0) {
-      throw new ConflictException(
-        `Cannot delete this tag: it has ${tag.activationCount} recorded scan(s). ` +
-          'Disable it instead — that stops it resolving while keeping its history.',
-      );
+    if (tenant.role !== 'OWNER') {
+      throw new ForbiddenException('Only the workspace owner can remove a chip. Ask them to remove it.');
     }
+    const tag = await this.findOne(tenant, id);
+    const org = await this.db.organization.findUnique({ where: { id: tenant.orgId }, select: { kind: true } });
+    const personal = org?.kind === 'PERSONAL';
+
     await this.db.nfcTag.delete({ where: { id } });
-    // The workspace has given the hardware back, so the platform registry must
-    // stop showing it as taken — otherwise the chip could never be re-issued.
-    // Deliberately not done on unassign: unbinding a card leaves the chip with
-    // the same workspace. A BLOCKED chip stays blocked.
+    // A BLOCKED chip stays blocked. Deliberately not done on unassign:
+    // unbinding a card leaves the chip with the same workspace.
     await this.db.nfcChip.updateMany({
       where: { uid: tag.uid, status: 'CLAIMED' },
-      data: { status: 'AVAILABLE', claimedByOrgId: null, claimedAt: null },
+      data: {
+        status: 'AVAILABLE',
+        claimedByOrgId: null,
+        claimedAt: null,
+        allocatedToOrgId: personal ? null : tenant.orgId,
+      },
     });
-    return { id, deleted: true };
+    return { id, deleted: true, freed: personal };
   }
 
   private mapUidConflict(err: unknown): unknown {

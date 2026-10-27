@@ -4,6 +4,9 @@ import { PASSWORD, call, closeAccount, expect, newAccount, signIn, test } from '
 test('the help center finds an answer, takes a rating, and puts a person in reach', async ({ page, account }) => {
   await signIn(page, account);
   await page.goto('/leads');
+  // The shell writes the workspace into the address once it loads; a click
+  // racing that write is sent back to this page.
+  await expect(page).toHaveURL(/[?&]w=/);
 
   // From the sidebar, on any page.
   await page.getByRole('link', { name: 'Help', exact: true }).click();

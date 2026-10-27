@@ -118,6 +118,8 @@ export class TagsController {
     return this.tags.unassign(tenant, id);
   }
 
+  /** Open to every role so the service can say who may: only the workspace owner. */
+  @Roles('OWNER', 'ADMIN', 'MANAGER', 'EMPLOYEE')
   @Delete(':id')
   remove(@Tenant() tenant: TenantContext, @Param('id') id: string) {
     return this.tags.remove(tenant, id);
