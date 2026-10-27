@@ -23,7 +23,8 @@ export interface ActionItem {
  * viewport so a scrolling table cannot clip it, opens upwards when there is no
  * room below, and is keyboard-navigable (arrows, Escape).
  */
-export function ActionMenu({ label, items }: { label: string; items: ActionItem[] }) {
+/** `bordered` gives the button its own outline, where it must be easy to find (a card's own menu). */
+export function ActionMenu({ label, items, bordered = false }: { label: string; items: ActionItem[]; bordered?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<React.CSSProperties>({});
   const ref = useRef<HTMLDivElement>(null);
@@ -93,9 +94,14 @@ export function ActionMenu({ label, items }: { label: string; items: ActionItem[
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={label}
-        className="flex h-11 w-11 items-center justify-center rounded-md text-faint transition-colors hover:bg-elevated hover:text-ink sm:h-7 sm:w-7"
+        title={label}
+        className={
+          bordered
+            ? 'flex h-11 w-11 items-center justify-center rounded-lg text-muted ring-1 ring-inset ring-line-strong transition-colors hover:bg-elevated hover:text-ink sm:h-9 sm:w-9'
+            : 'flex h-11 w-11 items-center justify-center rounded-md text-faint transition-colors hover:bg-elevated hover:text-ink sm:h-7 sm:w-7'
+        }
       >
-        <Icon name="dots" size={15} />
+        <Icon name="dots" size={bordered ? 17 : 15} />
       </button>
       {open && (
         <div role="menu" style={pos} className="fixed z-[70] w-56 rounded-xl border border-line bg-surface p-1 shadow-lg">

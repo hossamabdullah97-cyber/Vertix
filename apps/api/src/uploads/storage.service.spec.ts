@@ -80,3 +80,54 @@ const endpoint = process.env.S3_TEST_ENDPOINT;
     expect(await s.readImage('https://media.test/uploads/missing.jpg', 1024)).toBeNull();
   });
 });
+
+describe('StorageService in the database (production without a bucket)', () => {
+  function db() {
+    const rows = new Map<string, { bytes: Uint8Array; type: string }>();
+    const storedUpload = {
+      create: jest.fn(async ({ data }) => rows.set(data.name, { bytes: data.bytes, type: data.type })),
+      findUnique: jest.fn(async ({ where }) => rows.get(where.name) ?? null),
+      deleteMany: jest.fn(async ({ where }) => ({ count: rows.delete(where.name) ? 1 : 0 })),
+    };
+    return { prisma: { client: { storedUpload } } as never, storedUpload, rows };
+  }
+  const prod = { NODE_ENV: 'production', API_PUBLIC_URL: 'https://api.example.com/' };
+  // ConfigService reads the process's own NODE_ENV first, so production is set there.
+  const env = process.env.NODE_ENV;
+  beforeEach(() => (process.env.NODE_ENV = 'production'));
+  afterEach(() => (process.env.NODE_ENV = env));
+
+  it('keeps an upload in the database and gives it the API’s public address', async () => {
+    const { prisma, storedUpload } = db();
+    const s = new StorageService(new ConfigService(prod), prisma);
+    expect(s.durable).toBe(true);
+    const url = await s.saveImage(PNG, 'abc-1.png', 'image/png', 'http://internal:4000');
+    expect(url).toBe('https://api.example.com/uploads/abc-1.png');
+    expect(storedUpload.create.mock.calls[0][0].data).toMatchObject({ name: 'abc-1.png', type: 'image/png', size: PNG.length });
+  });
+
+  it('reads it back by its address, and removes it', async () => {
+    const { prisma } = db();
+    const s = new StorageService(new ConfigService(prod), prisma);
+    await s.saveImage(PNG, 'abc-2.png', 'image/png', 'http://internal:4000');
+    expect((await s.readImage('https://api.example.com/uploads/abc-2.png', 1024))?.type).toBe('image/png');
+    expect(await s.readImage('https://api.example.com/uploads/abc-2.png', 4)).toBeNull();
+    await s.deleteUpload('abc-2.png');
+    expect(await s.fromDb('abc-2.png')).toBeNull();
+  });
+
+  it('never looks up a name that is not an upload’s', async () => {
+    const { prisma, storedUpload } = db();
+    const s = new StorageService(new ConfigService(prod), prisma);
+    expect(await s.fromDb('../etc/passwd')).toBeNull();
+    expect(storedUpload.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('stays on the disk in development, or when told to', () => {
+    process.env.NODE_ENV = 'development';
+    expect(new StorageService(new ConfigService({}), db().prisma).durable).toBe(false);
+    process.env.NODE_ENV = 'production';
+    expect(new StorageService(new ConfigService({ ...prod, UPLOADS_STORE: 'disk' }), db().prisma).durable).toBe(false);
+    expect(new StorageService(new ConfigService({ UPLOADS_STORE: 'db' }), db().prisma).durable).toBe(true);
+  });
+});

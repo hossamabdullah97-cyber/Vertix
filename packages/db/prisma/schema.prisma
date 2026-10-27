@@ -1731,3 +1731,16 @@ model SsoIdentity {
   @@index([userId])
   @@map("sso_identities")
 }
+
+/// An uploaded image kept in the database, when no bucket (S3/R2) is set up:
+/// a host whose disk is replaced on each release (Hostinger's web apps) keeps
+/// it this way. Served at /uploads/<name>.
+model StoredUpload {
+  name      String   @id
+  type      String
+  bytes     Bytes
+  size      Int
+  createdAt DateTime @default(now())
+
+  @@map("stored_uploads")
+}

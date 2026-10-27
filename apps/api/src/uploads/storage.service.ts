@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { PrismaService } from '../prisma/prisma.service';
 
 /** Where uploads live when no bucket is set up (development). Served at /uploads. */
 export const UPLOAD_DIR = join(process.cwd(), 'uploads');
@@ -39,17 +40,29 @@ interface BucketConfig {
   publicUrl: string;
 }
 
+/** A stored file's name, as uploads are named ("<random>.<ext>"). */
+const NAME = /^[A-Za-z0-9-]+\.[a-z]+$/i;
+
 /**
- * Where uploaded images are kept. With a bucket set up (S3, Cloudflare R2 or
- * anything that speaks S3), files go there and survive redeploys; without
- * one, they go to the local `uploads` folder, which suits development only.
+ * Where uploaded images are kept:
+ * - a bucket (S3, Cloudflare R2 or anything that speaks S3), when one is set up;
+ * - else in production, the database (`stored_uploads`), so a host whose disk
+ *   is replaced on each release (Hostinger's web apps) does not lose them;
+ * - else (development) the local `uploads` folder.
+ * UPLOADS_STORE=db or =disk picks one of the last two explicitly.
  */
 @Injectable()
 export class StorageService {
   private readonly log = new Logger(StorageService.name);
   private readonly bucket: BucketConfig | null;
+  private readonly inDb: boolean;
+  /** This API's public address, for files it serves itself. */
+  private readonly publicBase: string | undefined;
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    @Optional() private readonly prisma?: PrismaService,
+  ) {
     const get = (k: string) => config.get<string>(k)?.trim() || undefined;
     const endpoint = get('S3_ENDPOINT');
     const accessKeyId = get('S3_ACCESS_KEY');
@@ -68,15 +81,18 @@ export class StorageService {
       };
     } else {
       this.bucket = null;
-      if (config.get<string>('NODE_ENV') === 'production') {
-        this.log.warn('No S3 bucket is set up: uploads go to the local disk and are lost when the container is replaced.');
-      }
+    }
+    const store = get('UPLOADS_STORE');
+    this.inDb = !this.bucket && !!prisma && (store === 'db' || (store !== 'disk' && config.get<string>('NODE_ENV') === 'production'));
+    this.publicBase = get('API_PUBLIC_URL')?.replace(/\/$/, '');
+    if (!this.bucket && !this.inDb && config.get<string>('NODE_ENV') === 'production') {
+      this.log.warn('Uploads go to the local disk and are lost when the container is replaced.');
     }
   }
 
-  /** True when files go to a bucket. */
+  /** True when files survive a release: in a bucket or in the database. */
   get durable(): boolean {
-    return this.bucket !== null;
+    return this.bucket !== null || this.inDb;
   }
 
   /**
@@ -98,9 +114,20 @@ export class StorageService {
       );
       return `${this.bucket.publicUrl}/${key}`;
     }
+    if (this.inDb && this.prisma) {
+      await this.prisma.client.storedUpload.create({ data: { name, type, bytes: new Uint8Array(bytes), size: bytes.length } });
+      return `${this.publicBase ?? requestBase}/uploads/${name}`;
+    }
     mkdirSync(UPLOAD_DIR, { recursive: true });
     writeFileSync(join(UPLOAD_DIR, name), bytes);
     return `${requestBase}/uploads/${name}`;
+  }
+
+  /** An image kept in the database, by its name; null when there is none (or files are not kept there). */
+  async fromDb(name: string): Promise<StoredFile | null> {
+    if (!this.prisma || !NAME.test(name)) return null;
+    const row = await this.prisma.client.storedUpload.findUnique({ where: { name }, select: { bytes: true, type: true } });
+    return row ? { bytes: Buffer.from(row.bytes), type: row.type } : null;
   }
 
   /**
@@ -123,6 +150,10 @@ export class StorageService {
       const path = new URL(url, 'http://local').pathname;
       const m = path.match(/^\/uploads\/([A-Za-z0-9-]+\.[a-z]+)$/i);
       if (!m) return null;
+      if (this.inDb) {
+        const kept = await this.fromDb(m[1]!);
+        if (kept) return kept.bytes.length <= maxBytes ? kept : null;
+      }
       const file = join(UPLOAD_DIR, basename(m[1]!));
       if (statSync(file).size > maxBytes) return null;
       const bytes = readFileSync(file);
@@ -139,7 +170,8 @@ export class StorageService {
    * A file already gone counts as removed.
    */
   async deleteUpload(name: string): Promise<void> {
-    if (!/^[A-Za-z0-9-]+\.[a-z]+$/i.test(name)) return;
+    if (!NAME.test(name)) return;
+    if (this.prisma) await this.prisma.client.storedUpload.deleteMany({ where: { name } });
     if (this.bucket) {
       await this.bucket.client.send(new DeleteObjectCommand({ Bucket: this.bucket.bucket, Key: `uploads/${name}` }));
     }

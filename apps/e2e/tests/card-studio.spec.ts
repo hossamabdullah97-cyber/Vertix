@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { expect, signIn, test } from './support';
 
 type Action = { type: string; isActive: boolean; config: Record<string, unknown> };
@@ -78,4 +79,44 @@ test('a button is added in one step, with its value asked for first', async ({ p
   await expect.poll(async () => (await account.api<{ templateId: string }>(`/cards/${id}`)).data.templateId).toBe('noir-teal');
   await page.getByTestId('font-cairo').click();
   await expect.poll(async () => (await account.api<{ theme: { font?: string } }>(`/cards/${id}`)).data.theme.font).toBe('cairo');
+});
+
+test('a card is deleted from the studio or from its menu in the list, and a photo outlives the disk', async ({ page, account }) => {
+  // The free plan holds one card at a time, so each is made when it is needed.
+  const make = async (fullName: string) => {
+    const created = await account.api<{ id: string }>('/cards', { body: { templateId: 'swiss-blue' } });
+    expect(created.status, JSON.stringify(created.data)).toBe(201);
+    await account.api(`/cards/${created.data.id}`, { method: 'PATCH', body: { vcardData: { fullName } } });
+    return created.data.id;
+  };
+  const gone = async (id: string) => (await account.api(`/cards/${id}`)).status;
+
+  await signIn(page, account);
+  const first = await make('First To Go');
+
+  // A photo is uploaded and served from where it is kept (the database here, as in production).
+  await page.goto(`/cards/${first}`);
+  await page.locator('input[type=file]').first().setInputFiles(join(__dirname, '../fixtures/paper-card-qr.png'));
+  await page.getByTestId('crop-done').click();
+  await expect.poll(async () => (await account.api<{ vcardData: { avatar?: string } }>(`/cards/${first}`)).data.vcardData.avatar ?? '').toMatch(/\/uploads\/[\w-]+\.png$/);
+  const avatar = (await account.api<{ vcardData: { avatar: string } }>(`/cards/${first}`)).data.vcardData.avatar;
+  const served = await page.request.get(avatar);
+  expect(served.status()).toBe(200);
+  expect(served.headers()['content-type']).toBe('image/png');
+
+  // In the studio: its menu, then a confirmation.
+  await page.getByRole('button', { name: 'More', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Delete card' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete permanently' }).click();
+  await page.waitForURL(/\/cards(\?|$)/);
+  await expect.poll(() => gone(first)).toBe(404);
+
+  // In the list: the card's own menu, then Delete (with Undo).
+  const second = await make('Second To Go');
+  await page.goto('/cards');
+  const tile = page.locator('article').filter({ hasText: 'Second To Go' });
+  await tile.getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Delete' }).click();
+  await expect(tile).toHaveCount(0);
+  await expect.poll(() => gone(second)).toBe(404);
 });

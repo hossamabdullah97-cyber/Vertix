@@ -48,6 +48,8 @@ export default defineConfig({
         ZAPIER_TEST_HOOK_ORIGINS: 'http://localhost:4107/',
         // Expo's push service, played by tests/app-push.spec.ts.
         EXPO_PUSH_URL: 'http://localhost:4108/push/send',
+        // Uploads kept in the database, as in production without a bucket.
+        UPLOADS_STORE: 'db',
         ...(process.env as Record<string, string>),
         NODE_ENV: 'test',
         AUTH_RATE_LIMIT: '500',
