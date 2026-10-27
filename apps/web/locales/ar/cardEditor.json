@@ -11,7 +11,8 @@
     "redo": "إعادة",
     "viewProfile": "عرض البطاقة",
     "publish": "نشر",
-    "unpublish": "إلغاء النشر"
+    "unpublish": "إلغاء النشر",
+    "more": "المزيد"
   },
   "status": {
     "live": "منشورة",
@@ -316,7 +317,9 @@
     "draft": "مسودة",
     "draftHint": "تظهر لك ولفريقك فقط.",
     "danger": "حذف البطاقة",
-    "confirmPrompt": "للتأكيد، اكتب عنوان البطاقة:"
+    "confirmPrompt": "للتأكيد، اكتب عنوان البطاقة:",
+    "deleteTitle": "حذف «{{name}}»؟",
+    "deleting": "جارٍ الحذف…"
   },
   "share": {
     "title": "المشاركة ورمز QR",

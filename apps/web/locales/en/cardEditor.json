@@ -11,7 +11,8 @@
     "redo": "Redo",
     "viewProfile": "View card",
     "publish": "Publish",
-    "unpublish": "Unpublish"
+    "unpublish": "Unpublish",
+    "more": "More"
   },
   "status": {
     "live": "Live",
@@ -316,7 +317,9 @@
     "draft": "Draft",
     "draftHint": "Only you and your team can see it.",
     "danger": "Delete card",
-    "confirmPrompt": "To confirm, type the card address:"
+    "confirmPrompt": "To confirm, type the card address:",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleting": "Deleting…"
   },
   "share": {
     "title": "Share & QR",

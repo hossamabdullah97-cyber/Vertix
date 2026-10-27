@@ -31,6 +31,8 @@ import ShareCard from '@/components/ShareCard';
 import { PublishedSheet } from '@/components/cards/PublishedSheet';
 import { CARD_FONTS, COVER_STYLES, FONT_STACKS, LAYOUTS, LINK_STYLES, fontOf, layoutOf, linkStyleOf, modeOf, type CardFont, type CoverStyle, type Layout, type LinkStyle, type ThemeMode } from '@/lib/profile';
 import { Toggle } from '@/components/ui/Toggle';
+import { ActionMenu } from '@/components/ui/ActionMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { MeetingHours } from '@/components/cards/MeetingHours';
 import { SecondLanguage, type AltIdentity } from '@/components/cards/SecondLanguage';
 import { shade } from '@/lib/color';
@@ -164,8 +166,8 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
   const [guided, setGuided] = useState<boolean | null>(null);
 
   // Deletion confirm states
+  // Deleting asks once, in a dialog (the list's Undo cannot follow the owner out of the studio).
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteSlugConfirm, setDeleteSlugConfirm] = useState('');
 
   // Undo / Redo of what was typed and chosen (identity and theme), one step
   // per saved change. Each step is the saved body, and stepping back saves
@@ -559,19 +561,10 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
   }, [vcard, sections, actions, hasPhone, hasEmail]);
 
   const handleDeleteCard = async () => {
-    if (!card || deleteSlugConfirm !== card.slug) {
-      setError(t('errors.slugMismatch'));
-      return;
-    }
-    setError('');
-    setAutoSaveStatus('Saving...');
-    try {
-      await authFetch(`/cards/${id}`, { method: 'DELETE' });
-      router.replace('/cards');
-    } catch (e) {
-      setError((e as Error).message);
-      setAutoSaveStatus('Offline');
-    }
+    // A failure is shown in the dialog, which stays open to try again.
+    await authFetch(`/cards/${id}`, { method: 'DELETE' });
+    setShowDeleteConfirm(false);
+    router.replace('/cards');
   };
 
   // Links and sections go at once, with Undo in the toast: the API keeps a
@@ -802,6 +795,13 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
       <button onClick={togglePublish} className={card.isPublished ? 'v-btn v-btn-ghost' : 'v-btn'}>
         {card.isPublished ? t('commandBar.unpublish') : t('commandBar.publish')}
       </button>
+      <ActionMenu
+        label={t('commandBar.more')}
+        items={[
+          { key: 'settings', label: t('tabs.settings'), icon: 'settings', onSelect: () => switchTab('settings') },
+          { key: 'delete', label: t('settings.deleteCard'), icon: 'trash', onSelect: () => setShowDeleteConfirm(true), danger: true, separated: true },
+        ]}
+      />
     </div>
   );
 
@@ -1723,43 +1723,9 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                     <p className="mt-1 text-sm leading-relaxed text-muted">{t('settings.dangerZone')}</p>
                   </div>
                   <div className="border-t border-red-500/20 px-4 py-3">
-                    {!showDeleteConfirm ? (
-                      <button onClick={() => setShowDeleteConfirm(true)} className="v-btn v-btn-danger">
-                        {t('settings.deleteCard')}
-                      </button>
-                    ) : (
-                      <div className="space-y-3">
-                        <p className="text-sm text-ink">
-                          {t('settings.confirmPrompt')}
-                          <code dir="ltr" className="ms-1 rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-xs text-red-700 dark:text-red-300">
-                            {card.slug}
-                          </code>
-                        </p>
-                        <div className="flex flex-col gap-2 sm:flex-row">
-                          <input
-                            dir="ltr"
-                            value={deleteSlugConfirm}
-                            onChange={(e) => setDeleteSlugConfirm(e.target.value)}
-                            placeholder={card.slug}
-                            className="v-field font-mono sm:max-w-xs"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setShowDeleteConfirm(false);
-                                setDeleteSlugConfirm('');
-                              }}
-                              className="v-btn v-btn-ghost"
-                            >
-                              {t('settings.cancel')}
-                            </button>
-                            <button onClick={handleDeleteCard} disabled={deleteSlugConfirm !== card.slug} className="v-btn v-btn-danger">
-                              {t('settings.confirmDelete')}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <button onClick={() => setShowDeleteConfirm(true)} className="v-btn v-btn-danger" data-testid="studio-delete">
+                      <Icon name="trash" size={14} /> {t('settings.deleteCard')}
+                    </button>
                   </div>
                 </section>
               </div>
@@ -1815,6 +1781,18 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
               }
             : undefined
         }
+      />
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title={t('settings.deleteTitle', { name: cardName })}
+        body={t('settings.dangerZone')}
+        confirmLabel={t('settings.confirmDelete')}
+        busyLabel={t('settings.deleting')}
+        cancelLabel={t('settings.cancel')}
+        danger
+        onConfirm={handleDeleteCard}
+        onCancel={() => setShowDeleteConfirm(false)}
       />
 
       <PublishedSheet open={justPublished} onClose={() => setJustPublished(false)} slug={card.slug} name={cardName} />

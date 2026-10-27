@@ -1,7 +1,7 @@
 import './instrument';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -61,7 +61,8 @@ async function bootstrap() {
   // A spreadsheet import sends up to 500 rows at a time; the default 100 KB is too little for that.
   app.useBodyParser('json', { limit: '1mb' });
 
-  app.setGlobalPrefix('api');
+  // Uploaded images kept in the database are served at /uploads/<name>, like those on disk.
+  app.setGlobalPrefix('api', { exclude: [{ path: 'uploads/:name', method: RequestMethod.GET }] });
   // Input validation is handled per-route by ZodValidationPipe (schemas from @vertex/shared).
 
   const origins = config

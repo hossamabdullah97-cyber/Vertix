@@ -684,7 +684,7 @@ function RowMenu({
     },
     { key: 'delete', label: t('actions.delete'), icon: 'trash', onSelect: onDelete, danger: true, separated: true },
   ];
-  return <ActionMenu label={t('actions.more')} items={items} />;
+  return <ActionMenu label={t('actions.more')} items={items} bordered />;
 }
 
 function GridSkeleton() {
