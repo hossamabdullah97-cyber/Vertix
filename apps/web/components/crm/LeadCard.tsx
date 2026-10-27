@@ -65,7 +65,13 @@ export function LeadCard({
     <>
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 truncate text-sm font-medium text-ink">{lead.name || t('table.unknownLead')}</p>
-        <span className="mt-1 shrink-0">
+        {/* Warm and hot say so in words beside the bars; cold stays quiet. */}
+        <span className="mt-0.5 inline-flex shrink-0 items-center gap-1.5">
+          {lead.temperature !== 'COLD' && (
+            <span className={`text-2xs font-medium ${lead.temperature === 'HOT' ? 'text-red-600 dark:text-red-400' : 'text-amber-700 dark:text-amber-300'}`}>
+              {t(`temperature.${lead.temperature.toLowerCase()}`)}
+            </span>
+          )}
           <Heat temp={lead.temperature} label={t(`temperature.${lead.temperature.toLowerCase()}`)} />
         </span>
       </div>

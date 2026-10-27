@@ -21,6 +21,7 @@ import { DAY, change, countByDay, eventSeries, formatChange, periodWindows, rang
 import { useShortcut } from '@/lib/shortcuts';
 import { PushPrompt } from '@/components/notifications/PushPrompt';
 import { can } from '@/lib/permissions';
+import { EmptyChart } from '@/components/analytics/EmptyChart';
 
 
 interface Lead {
@@ -449,7 +450,6 @@ export default function HomePage() {
         <p className="mt-1 text-base text-muted">{t('personal.subtitle')}</p>
         {errorBanner}
         <PushPrompt />
-        {onboarding}
 
         <div className="v-card mt-5 grid grid-cols-2 overflow-hidden lg:grid-cols-4">
           {stats.map((s, i) => (
@@ -460,6 +460,7 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+        {onboarding}
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <section className="v-card">
@@ -692,7 +693,8 @@ export default function HomePage() {
             </Link>
           );
         })()}
-      {onboarding}
+      {/* A new workspace starts from the setup steps; one with numbers leads with them. */}
+      {fresh && onboarding}
 
       {!fresh && (
       <>
@@ -740,9 +742,13 @@ export default function HomePage() {
                 markers={markers}
               />
             ) : (
-              <div className="flex h-[232px] items-center justify-center px-6 text-center text-sm leading-relaxed text-muted">
-                <p className="max-w-sm">{t('metrics.noActivity')}</p>
-              </div>
+              <EmptyChart
+                message={t('metrics.noActivity')}
+                actions={[
+                  { href: '/cards', label: t('metrics.emptyShare'), icon: 'share' },
+                  { href: '/tags', label: t('metrics.emptyChip'), icon: 'tag' },
+                ]}
+              />
             )}
           </div>
 
@@ -929,6 +935,7 @@ export default function HomePage() {
         </section>
       </div>
 
+      {onboarding}
       </>
       )}
 
@@ -1085,6 +1092,7 @@ function Onboarding({
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const [showDone, setShowDone] = useState(false);
+  const [showRest, setShowRest] = useState(false);
   const done = steps.filter((s) => s.completed);
   const left = steps.filter((s) => !s.completed);
   if (left.length === 0) return null;
@@ -1097,8 +1105,9 @@ function Onboarding({
     );
   }
 
-  // What is left comes first; what is done folds into one line.
-  const shown = showDone ? steps : left;
+  // The next step leads, with what it is for and the way to it; the others
+  // wait as one line each, folded until asked for.
+  const [next, ...rest] = left;
   return (
     <section className="v-card mt-5 overflow-hidden">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
@@ -1113,38 +1122,47 @@ function Onboarding({
           {t('onboarding.hide')}
         </button>
       </div>
-      <ol className={`grid gap-px bg-line ${shown.length > 1 ? 'sm:grid-cols-2' : ''} ${shown.length >= 3 ? 'xl:grid-cols-3' : ''}`}>
-        {shown.map((s, i) => {
-          const n = steps.indexOf(s) + 1;
-          // The last step widens to end its row, so no empty grey cell is left beside it.
-          const last = i === shown.length - 1;
-          const three = shown.length >= 3;
-          const span = last
-            ? `${shown.length % 2 === 1 && shown.length > 1 ? 'sm:col-span-2' : ''} ${three ? (shown.length % 3 === 1 ? 'xl:col-span-3' : shown.length % 3 === 2 ? 'xl:col-span-2' : 'xl:col-span-1') : ''}`
-            : '';
-          return (
-            <li key={s.id} className={`flex gap-3 bg-surface p-4 ${span}`}>
-              <span
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-2xs font-semibold ${
-                  s.completed ? 'bg-accent text-white' : 'text-faint ring-1 ring-inset ring-faint/40'
-                }`}
-              >
-                {s.completed ? <Icon name="check" size={12} /> : n}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium ${s.completed ? 'text-faint line-through' : 'text-ink'}`}>{s.label}</p>
-                {!s.completed && <p className="mt-0.5 text-xs leading-relaxed text-muted">{s.desc}</p>}
-                {!s.completed && (
-                  <Link href={s.link} className="mt-2 inline-flex min-h-11 items-center gap-1 text-xs font-medium text-accent hover:underline sm:min-h-0">
-                    {s.linkText}
-                    <DirectionalIcon name="arrow" size={13} />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">
+          {steps.indexOf(next) + 1}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-ink">{next.label}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted">{next.desc}</p>
+        </div>
+        <Link href={next.link} className="v-btn shrink-0">
+          {next.linkText}
+          <DirectionalIcon name="arrow" size={13} />
+        </Link>
+      </div>
+      {rest.length > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowRest((v) => !v)}
+            aria-expanded={showRest}
+            className="flex min-h-11 w-full items-center gap-2 border-t border-line px-4 text-start text-xs text-muted hover:bg-elevated"
+          >
+            <span className="min-w-0 flex-1 truncate">{t('onboarding.more', { count: rest.length, value: rest.length })}</span>
+            <Icon name={showRest ? 'chevron-up' : 'chevron-down'} size={14} />
+          </button>
+          {showRest && (
+            <ol className="border-t border-line">
+              {rest.map((s) => (
+                <li key={s.id}>
+                  <Link href={s.link} className="flex min-h-11 items-center gap-3 px-4 text-sm text-ink hover:bg-elevated">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-2xs font-semibold text-faint ring-1 ring-inset ring-faint/40">
+                      {steps.indexOf(s) + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{s.label}</span>
+                    <span className="shrink-0 text-xs font-medium text-accent">{s.linkText}</span>
                   </Link>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+                </li>
+              ))}
+            </ol>
+          )}
+        </>
+      )}
       {done.length > 0 && (
         <button
           type="button"
@@ -1160,6 +1178,18 @@ function Onboarding({
           </span>
           <Icon name={showDone ? 'chevron-up' : 'chevron-down'} size={14} />
         </button>
+      )}
+      {showDone && (
+        <ol className="border-t border-line">
+          {done.map((s) => (
+            <li key={s.id} className="flex min-h-10 items-center gap-3 px-4 text-sm text-faint">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                <Icon name="check" size={11} />
+              </span>
+              <span className="min-w-0 flex-1 truncate line-through">{s.label}</span>
+            </li>
+          ))}
+        </ol>
       )}
     </section>
   );

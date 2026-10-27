@@ -34,6 +34,8 @@
     "leadsSub": "Conversion {{pct}}",
     "previous": "Previous period",
     "noActivity": "Nothing recorded in this period yet. Views, taps and saves appear here as people open your cards.",
+    "emptyShare": "Share your card",
+    "emptyChip": "Link a chip",
     "busiest": "Busiest day: <b>{{date}}</b>, with {{count}} {{metric}}.",
     "insight": "Insight",
     "openAnalytics": "Open analytics",
@@ -120,6 +122,8 @@
   "onboarding": {
     "title": "Get set up",
     "progress": "{{done}} of {{total}} done",
+    "more_one": "One more step",
+    "more_other": "{{value}} more steps",
     "hide": "Hide",
     "show": "Show setup checklist ({{done}} of {{total}} done)",
     "steps": {
