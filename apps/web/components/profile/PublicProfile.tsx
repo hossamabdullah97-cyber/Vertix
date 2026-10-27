@@ -481,7 +481,7 @@ function Header({ profile, t, meta, onShare, lang }: { profile: ProfileData; t: 
 function Identity({ profile, t, meta, center = false }: { profile: ProfileData; t: ProfileStrings; meta: MetaItem[]; center?: boolean }) {
   return (
     <div className={center ? 'flex flex-col items-center' : ''}>
-      <Name profile={profile} t={t} className={`mt-3 ${center ? 'text-[26px]' : 'text-3xl'}`} />
+      <Name profile={profile} t={t} className="mt-3 text-3xl" />
       {profile.title && <p className="mt-1 text-md leading-snug text-[var(--p-muted)]">{profile.title}</p>}
       <Company profile={profile} className="mt-2.5" />
       <Meta items={meta} center={center} />
