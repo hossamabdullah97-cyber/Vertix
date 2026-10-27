@@ -796,6 +796,7 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
         {card.isPublished ? t('commandBar.unpublish') : t('commandBar.publish')}
       </button>
       <ActionMenu
+        bordered
         label={t('commandBar.more')}
         items={[
           { key: 'settings', label: t('tabs.settings'), icon: 'settings', onSelect: () => switchTab('settings') },
