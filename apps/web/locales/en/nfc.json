@@ -56,8 +56,8 @@
     "testTap": "Test a tap",
     "enable": "Enable",
     "disable": "Disable",
-    "delete": "Delete",
-    "deleting": "Deleting…",
+    "remove": "Remove chip",
+    "removing": "Removing…",
     "cancel": "Cancel",
     "dismiss": "Dismiss",
     "close": "Close"
@@ -70,11 +70,21 @@
     "linked": "Chip linked.",
     "unlinked": "Chip unlinked.",
     "holderSet": "Holder updated.",
-    "deleted": "Chip deleted."
+    "removedPersonal": "Chip removed. You can add it again whenever you like.",
+    "removedTeam": "Chip removed. Add it again to give it to any member."
   },
-  "delete": {
-    "title": "Delete this chip?",
-    "body": "It leaves your inventory and a tap on it stops opening anything. Its past taps stay in Analytics."
+  "remove": {
+    "personal": {
+      "title": "Remove this chip from your account?",
+      "body": "Its link to your card and its tap count are deleted, and this can’t be undone. Its taps still count on your card, and the leads it brought in stay.",
+      "after": "The chip stays registered on Vertex Connect, so you can add it again later — to this account or to a new one."
+    },
+    "team": {
+      "title": "Remove this chip from the workspace?",
+      "body": "Its card link, its holder and its tap count are deleted, and this can’t be undone. Its taps still count on the card, and the leads it brought in stay.",
+      "after": "The chip stays with this workspace, so you can add it again and give it to the same member or another one."
+    },
+    "ownerOnly": "Only the workspace owner can remove a chip."
   },
   "details": {
     "added": "Added {{date}}",
