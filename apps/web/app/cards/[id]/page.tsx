@@ -247,11 +247,14 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
 
   const load = useCallback(async () => {
     try {
-      const [c, tg] = await Promise.all([
+      const [c, tg, pay] = await Promise.all([
         authFetch<CardType>(`/cards/${id}`),
         authFetch<NfcTag[]>('/nfc/tags'),
+        // Here rather than only in the Extras tab, so the preview shows them on every tab.
+        authFetch<PaymentLinkRow[]>(`/cards/${id}/payment-links`).catch(() => null),
       ]);
       setTags(tg);
+      if (pay) setPaymentLinks(pay);
       const shown = shownRef.current;
       shownRef.current = null;
       if (shown !== null && (touchedRef.current || shown === JSON.stringify(c))) {

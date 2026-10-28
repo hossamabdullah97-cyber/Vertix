@@ -7,6 +7,7 @@ import { authFetch, getActiveOrgId, type Card, type Section, type CardAction } f
 import { PublicProfile } from '@/components/profile/PublicProfile';
 import { buildProfile, profileStyle, type CardBrand, type ProfileData } from '@/lib/profile';
 import { profileStrings } from '@/lib/profileI18n';
+import { isPaidPlan, type Plan } from '@vertex/shared';
 import { Icon } from '@/components/Icon';
 import { IPhoneFrame, AndroidFrame, TabletFrame, DesktopFrame, WatchFrame } from './frames';
 import { NfcProduct, type NfcVariant } from './NfcProduct';
@@ -210,12 +211,16 @@ export default function LivePreview({
   const canRotate = HANDHELD.has(device);
   const canZoom = device !== 'qr' && !IS_NFC(device);
 
-  // The workspace's name and logo, as the published card shows them.
+  // The workspace's name and logo, and the verified badge its plan earns, as the published card shows them.
   const [brand, setBrand] = useState<CardBrand | null>(null);
+  const [verified, setVerified] = useState(false);
   useEffect(() => {
     if (!getActiveOrgId()) return;
-    authFetch<{ name: string; branding: Record<string, unknown> | null }>('/orgs/current')
-      .then((o) => setBrand({ name: o.name, logo: typeof o.branding?.logo === 'string' && o.branding.logo ? o.branding.logo : null }))
+    authFetch<{ name: string; plan: Plan; branding: Record<string, unknown> | null }>('/orgs/current')
+      .then((o) => {
+        setBrand({ name: o.name, logo: typeof o.branding?.logo === 'string' && o.branding.logo ? o.branding.logo : null });
+        setVerified(isPaidPlan(o.plan));
+      })
       .catch(() => {});
   }, []);
 
@@ -224,6 +229,7 @@ export default function LivePreview({
       buildProfile({
         slug,
         brand,
+        verified,
         theme: previewCard.theme,
         vcardData: card.vcardData,
         sections,
@@ -234,7 +240,7 @@ export default function LivePreview({
         fallbackName: profileStrings(previewCard.theme?.lang === 'ar' ? 'ar' : 'en').yourName,
         viewLang,
       }),
-    [slug, brand, previewCard.theme, card.vcardData, sections, actions, paymentLinks, viewLang],
+    [slug, brand, verified, previewCard.theme, card.vcardData, sections, actions, paymentLinks, viewLang],
   );
 
   const screen = <ScaledProfile profile={profile} onLang={setViewLang} />;
