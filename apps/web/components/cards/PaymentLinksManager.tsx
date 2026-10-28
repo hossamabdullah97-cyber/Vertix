@@ -7,6 +7,7 @@ import { offerUndo } from '@/lib/undo';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/Icon';
 import { PaymentBrandLogo } from '@/components/brand/PaymentBrandLogo';
+import { paymentAddress, paymentBrandLine } from '@/lib/paymentBrands';
 
 /**
  * Card Builder manager for external payment links (link-sharing only).
@@ -226,7 +227,6 @@ export default function PaymentLinksManager({
           {links.length > 0 && (
             <div className="divide-y divide-line overflow-hidden rounded-xl bg-surface ring-1 ring-inset ring-line">
               {links.map((link) => {
-                const meta = PLATFORM_META[link.platform] ?? PLATFORM_META.custom;
                 const open = expanded === link.id;
                 return (
                   <div
@@ -248,7 +248,9 @@ export default function PaymentLinksManager({
                         aria-expanded={open}
                       >
                         <span className={`block truncate text-sm font-medium ${link.isActive ? 'text-ink' : 'text-faint'}`}>{link.displayName}</span>
-                        <span className="block truncate text-xs text-faint">{meta.label}</span>
+                        {(paymentAddress(link.platform, link.url) || paymentBrandLine(link.platform, link.displayName)) && (
+                          <span className="block truncate text-xs text-faint">{paymentAddress(link.platform, link.url) || paymentBrandLine(link.platform, link.displayName)}</span>
+                        )}
                       </button>
 
                       <button

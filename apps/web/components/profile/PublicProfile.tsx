@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { API_URL, type PublicCardAction } from '@/lib/api';
 import { resolveAction } from '@/lib/brandIcons';
 import { appLink, platformOf } from '@/lib/appLinks';
-import { paymentAddress, paymentBrand } from '@/lib/paymentBrands';
+import { paymentAddress, paymentBrandLine } from '@/lib/paymentBrands';
 import { embedUrl, externalUrl, initials, inkStyle, pick, profileAttrs, profileStyle, type ProfileData, type ProfileSection } from '@/lib/profile';
 import { fill, profileStrings, type ProfileStrings } from '@/lib/profileI18n';
 import { shade } from '@/lib/color';
@@ -360,8 +360,7 @@ function MainActions({ t, saved, vcardUrl, onSave, onExchange, compact = false }
 function PaymentRow({ link, t, onOpen }: { link: ProfileData['paymentLinks'][number]; t: ProfileStrings; onOpen: (e: React.MouseEvent) => void }) {
   const [copied, setCopied] = useState(false);
   const address = paymentAddress(link.platform, link.url);
-  const brand = paymentBrand(link.platform).label;
-  const sub = address || link.description || (brand === link.displayName ? '' : brand);
+  const sub = address || link.description || paymentBrandLine(link.platform, link.displayName);
   return (
     <li className="flex min-h-[70px] items-center gap-3.5 px-3 py-3">
       <PaymentBrandLogo platform={link.platform} size={44} />
