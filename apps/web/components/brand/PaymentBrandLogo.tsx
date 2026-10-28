@@ -47,7 +47,8 @@ export function PaymentBrandLogo({
           onLoad={(e) => {
             if (e.currentTarget.naturalWidth === 0) setFailed(true);
           }}
-          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: Math.round(size * 0.16) }}
+          // The marks are square app icons, so each fills its tile edge to edge.
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       </span>
     );
