@@ -26,6 +26,13 @@ describe('appLink', () => {
     expect(appLink('https://eg.linkedin.com/company/nile-studio', 'android')).toContain('package=com.linkedin.android');
   });
 
+  it('hands an InstaPay payment link to its app on Android', () => {
+    expect(appLink('https://ipn.eg/S/hossam/instapay/4Fh2a', 'android')).toBe(
+      'intent://ipn.eg/S/hossam/instapay/4Fh2a#Intent;scheme=https;package=com.egyptianbanks.instapay;S.browser_fallback_url=https%3A%2F%2Fipn.eg%2FS%2Fhossam%2Finstapay%2F4Fh2a;end',
+    );
+    expect(appLink('https://ipn.eg/S/hossam/instapay/4Fh2a', 'ios')).toBe('https://ipn.eg/S/hossam/instapay/4Fh2a');
+  });
+
   it('keeps the ordinary link on iOS, so a missing app never shows an error', () => {
     expect(appLink('https://wa.me/201001234567', 'ios')).toBe('https://wa.me/201001234567');
     expect(appLink('http://linkedin.com/in/mariam', 'ios')).toBe('https://linkedin.com/in/mariam');

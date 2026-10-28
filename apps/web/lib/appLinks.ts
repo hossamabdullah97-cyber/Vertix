@@ -1,6 +1,7 @@
 /**
  * "Open in the visitor's app": WhatsApp and LinkedIn links handed to their
- * apps on a phone instead of a browser tab.
+ * apps on a phone instead of a browser tab, and InstaPay payment links
+ * (ipn.eg), which only its app can open.
  *
  * Android gets an intent link, which opens the app and falls back to the web
  * page by itself when the app is not installed. iOS has no such fallback: a
@@ -24,6 +25,8 @@ type App = { host: RegExp; pkg: string };
 const APPS: App[] = [
   { host: /^(wa\.me|(api|www)\.whatsapp\.com)$/i, pkg: 'com.whatsapp' },
   { host: /^([a-z]{2,3}\.|www\.)?linkedin\.com$/i, pkg: 'com.linkedin.android' },
+  // InstaPay's payment links; its page only says to open them in the app.
+  { host: /^(www\.)?ipn\.eg$/i, pkg: 'com.egyptianbanks.instapay' },
 ];
 
 /** The link to navigate to on this platform, or null to leave the link as it is. */

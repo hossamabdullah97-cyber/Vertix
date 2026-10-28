@@ -108,7 +108,8 @@ export function PublicProfile({
   const onLink = (e: React.MouseEvent, l: Resolved) => {
     if (preview) return e.preventDefault();
     track(profile.slug, 'CLICK', { kind: 'link', type: l.a.type, actionId: l.a.id });
-    if (!profile.openInApp) return;
+    // InstaPay's links open only in its app, so they go there whatever the setting.
+    if (!profile.openInApp && !/^https?:\/\/(www\.)?ipn\.eg\//i.test(l.href)) return;
     const target = appLink(l.href, platformOf(navigator.userAgent, navigator.maxTouchPoints));
     if (!target) return;
     e.preventDefault();
@@ -267,6 +268,13 @@ export function PublicProfile({
                   onOpen={(e) => {
                     if (preview) return e.preventDefault();
                     track(profile.slug, 'CLICK', { kind: 'payment', platform: p.platform, paymentLinkId: p.id, identity: profile.profileName });
+                    // A payment app's link (InstaPay) goes straight to the app on a
+                    // phone, whatever the card's open-in-app setting: its web page
+                    // only says to open it there.
+                    const target = appLink(p.url, platformOf(navigator.userAgent, navigator.maxTouchPoints));
+                    if (!target) return;
+                    e.preventDefault();
+                    window.location.href = target;
                   }}
                 />
               ))}
