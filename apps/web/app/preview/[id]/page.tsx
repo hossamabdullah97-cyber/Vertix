@@ -6,6 +6,7 @@ import { PublicProfile } from '@/components/profile/PublicProfile';
 import type { PaymentLinkRow } from '@/components/cards/PaymentLinksManager';
 import { buildProfile, type CardBrand } from '@/lib/profile';
 import { profileStrings } from '@/lib/profileI18n';
+import { isPaidPlan, type Plan } from '@vertex/shared';
 
 /** What the phone app's editor sends while someone edits: the card as it stands, saved or not. */
 interface LiveCard {
@@ -38,6 +39,7 @@ export default function CardPreview(props: { params: Promise<{ id: string }> }) 
   const [sent, setSent] = useState<LiveCard | null>(null);
   const [paymentLinks, setPaymentLinks] = useState<PaymentLinkRow[]>([]);
   const [brand, setBrand] = useState<CardBrand | null>(null);
+  const [verified, setVerified] = useState(false);
   const [error, setError] = useState('');
   // The card's language on screen, when it has two; the switch on the card sets it.
   const [viewLang, setViewLang] = useState<'en' | 'ar' | null>(null);
@@ -64,14 +66,16 @@ export default function CardPreview(props: { params: Promise<{ id: string }> }) 
         .then(setPaymentLinks)
         .catch(() => {});
       if (getActiveOrgId()) {
-        authFetch<{ name: string; branding: Record<string, unknown> | null }>('/orgs/current')
-          .then((o) =>
+        authFetch<{ name: string; plan: Plan; branding: Record<string, unknown> | null }>('/orgs/current')
+          .then((o) => {
             setBrand({
               name: o.name,
               logo:
                 typeof o.branding?.logo === 'string' && o.branding.logo ? o.branding.logo : null,
-            }),
-          )
+            });
+            // The verified badge, as the plan earns it on the published card.
+            setVerified(isPaidPlan(o.plan));
+          })
           .catch(() => {});
       }
     } else if (!isLive) {
@@ -90,6 +94,7 @@ export default function CardPreview(props: { params: Promise<{ id: string }> }) 
       buildProfile({
         slug: card.slug,
         brand: sent?.brand !== undefined ? sent.brand : brand,
+        verified,
         theme: card.theme,
         vcardData: card.vcardData,
         sections: card.sections ?? [],
@@ -107,7 +112,7 @@ export default function CardPreview(props: { params: Promise<{ id: string }> }) 
         fallbackName: profileStrings(card.theme?.lang === 'ar' ? 'ar' : 'en').yourName,
         viewLang,
       }),
-    [card, sent, brand, paymentLinks, viewLang],
+    [card, sent, brand, verified, paymentLinks, viewLang],
   );
 
   if (error) return <p className="px-6 py-16 text-center text-sm text-muted">{error}</p>;
