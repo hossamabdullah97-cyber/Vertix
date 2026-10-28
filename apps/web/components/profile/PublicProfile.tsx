@@ -28,6 +28,17 @@ function visitorId(): string | undefined {
   }
 }
 
+/**
+ * On a phone, a link that belongs to an app (a social network, maps, a meeting,
+ * a payment app) opens that app rather than a browser tab; see lib/appLinks.
+ */
+function openInItsApp(e: React.MouseEvent, href: string) {
+  const target = appLink(href, platformOf(navigator.userAgent, navigator.maxTouchPoints));
+  if (!target) return;
+  e.preventDefault();
+  window.location.href = target;
+}
+
 /** Best-effort analytics; it must never block what the visitor asked for. */
 function track(slug: string, type: 'CLICK' | 'SAVE' | 'SHARE', metadata?: Record<string, unknown>) {
   sendTrack({ slug, type, visitorId: visitorId(), metadata });
@@ -108,12 +119,7 @@ export function PublicProfile({
   const onLink = (e: React.MouseEvent, l: Resolved) => {
     if (preview) return e.preventDefault();
     track(profile.slug, 'CLICK', { kind: 'link', type: l.a.type, actionId: l.a.id });
-    // InstaPay's links open only in its app, so they go there whatever the setting.
-    if (!profile.openInApp && !/^https?:\/\/(www\.)?ipn\.eg\//i.test(l.href)) return;
-    const target = appLink(l.href, platformOf(navigator.userAgent, navigator.maxTouchPoints));
-    if (!target) return;
-    e.preventDefault();
-    window.location.href = target;
+    openInItsApp(e, l.href);
   };
 
   // Under the name: whether they are free now, and where they are.
@@ -268,13 +274,8 @@ export function PublicProfile({
                   onOpen={(e) => {
                     if (preview) return e.preventDefault();
                     track(profile.slug, 'CLICK', { kind: 'payment', platform: p.platform, paymentLinkId: p.id, identity: profile.profileName });
-                    // A payment app's link (InstaPay) goes straight to the app on a
-                    // phone, whatever the card's open-in-app setting: its web page
-                    // only says to open it there.
-                    const target = appLink(p.url, platformOf(navigator.userAgent, navigator.maxTouchPoints));
-                    if (!target) return;
-                    e.preventDefault();
-                    window.location.href = target;
+                    // A payment app's link (InstaPay, PayPal) goes straight to its app on a phone.
+                    openInItsApp(e, p.url);
                   }}
                 />
               ))}
@@ -978,7 +979,11 @@ function SectionBlock({
         <List>
           <Row
             href={href}
-            onClick={guard}
+            onClick={(e) => {
+              guard(e);
+              // A Zoom, Teams or Meet link opens its app on a phone.
+              if (!e.defaultPrevented) openInItsApp(e, href);
+            }}
             icon={
               <Tile>
                 <Icon name="calendar" size={18} className="text-[var(--p-accent)]" />

@@ -1298,13 +1298,6 @@ export default function CardBuilderStudio(props: { params: Promise<{ id: string 
                       </div>
                       <div className="flex items-center justify-between gap-4 px-4 py-3.5">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-ink">{t('links.openInApp.title')}</p>
-                          <p className="mt-0.5 text-xs leading-snug text-faint">{t('links.openInApp.hint')}</p>
-                        </div>
-                        <Toggle on={openInApp} onChange={() => setOpenInApp((v) => !v)} label={t('links.openInApp.title')} />
-                      </div>
-                      <div className="flex items-center justify-between gap-4 px-4 py-3.5">
-                        <div className="min-w-0">
                           <p className="text-sm font-medium text-ink">{t('design.brand.title')}</p>
                           <p className="mt-0.5 text-xs leading-snug text-faint">{t('design.brand.hint')}</p>
                         </div>
