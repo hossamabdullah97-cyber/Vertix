@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { goalWindow } from './goal-window';
+import { SWEEP_EVERY_MS } from '../common/background';
 
 /** Who may set goals: the people who run the team. */
 export const GOAL_SETTERS = ['OWNER', 'ADMIN', 'MANAGER'] as const;
@@ -42,7 +43,8 @@ const METRIC_TEXT: Record<GoalMetric, string> = {
   WON_DEALS: 'Deals won',
   WON_VALUE: 'Won value',
 };
-const SWEEP_MS = 15 * 60_000;
+/** One shared hourly beat, so the database can sleep in between (see common/background). */
+const SWEEP_MS = SWEEP_EVERY_MS;
 /** Looking at the dashboard checks for reached goals at most this often per workspace. */
 const CHECK_EVERY_MS = 60_000;
 

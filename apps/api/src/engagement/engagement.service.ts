@@ -6,10 +6,12 @@ import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { hourIn } from '../leads/follow-up.service';
 import { engagementHtml, engagementSubject, type EmailLang, type EngagementData, type EngagementKind } from './engagement-emails';
+import { SWEEP_EVERY_MS } from '../common/background';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
-const SWEEP_MS = 30 * 60_000;
+/** One shared hourly beat, so the database can sleep in between (see common/background). */
+const SWEEP_MS = SWEEP_EVERY_MS;
 /** Sent only in the working day, Cairo time. */
 const FROM_HOUR = 10;
 const UNTIL_HOUR = 19;

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LIVE_ORG } from '../common/live-org';
+import { SWEEP_EVERY_MS } from '../common/background';
 
 const HOUR = 3_600_000;
 /** The first reminder, this long after a lead arrives with nobody reaching out. */
@@ -14,7 +15,8 @@ const OLDEST = 14 * 24 * HOUR;
 /** Reminders go out between these hours, in DEFAULT_TIMEZONE. */
 const DAY_STARTS = 9;
 const DAY_ENDS = 21;
-const SWEEP_MS = 15 * 60_000;
+/** One shared hourly beat, so the database can sleep in between (see common/background). */
+const SWEEP_MS = SWEEP_EVERY_MS;
 
 /** The hour of the day at `now` in `zone` (0–23). */
 export function hourIn(zone: string, now: Date): number {

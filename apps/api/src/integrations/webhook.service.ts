@@ -15,6 +15,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { signWebhook, SIGNATURE_HEADER } from './webhook-signature';
 import { ChannelsService } from './channels/channels.service';
 import { AudienceService } from './audience/audience.service';
+import { webhookQueued } from './webhook-queue';
 
 /** Every event an endpoint may subscribe to (section 10). '*' means all. */
 export const WEBHOOK_EVENTS = [
@@ -275,6 +276,7 @@ export class WebhookService {
         nextAttemptAt: new Date(),
       })),
     });
+    webhookQueued();
     return endpoints.length;
   }
 
@@ -420,6 +422,16 @@ export class WebhookService {
     }
   }
 
+  /** When the next waiting delivery falls due, or null when nothing is waiting. */
+  async nextDueAt(): Promise<Date | null> {
+    const next = await this.db.webhookDelivery.findFirst({
+      where: { status: { in: ['PENDING', 'FAILED'] }, nextAttemptAt: { not: null } },
+      orderBy: { nextAttemptAt: 'asc' },
+      select: { nextAttemptAt: true },
+    });
+    return next?.nextAttemptAt ?? null;
+  }
+
   // ---- Delivery log & replay ----
 
   async deliveries(
@@ -450,6 +462,7 @@ export class WebhookService {
       where: { id: deliveryId },
       data: { status: 'PENDING', nextAttemptAt: new Date(), error: null },
     });
+    webhookQueued();
     return { ok: true as const };
   }
 }

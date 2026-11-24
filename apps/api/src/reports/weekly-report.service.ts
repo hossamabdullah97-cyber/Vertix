@@ -6,13 +6,15 @@ import { MailService } from '../mail/mail.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { hourIn } from '../leads/follow-up.service';
 import { isQuietWeek, weeklyReportHtml, weeklyReportSubject, type ReportLang, type WeeklyReport } from './weekly-report';
+import { SWEEP_EVERY_MS } from '../common/background';
 
 const HOUR = 3_600_000;
 const WEEK = 7 * 24 * HOUR;
 /** Sunday, the first day of the working week in Egypt, from this hour. */
 const SEND_DAY = 0;
 const SEND_HOUR = 9;
-const SWEEP_MS = 30 * 60_000;
+/** One shared hourly beat, so the database can sleep in between (see common/background). */
+const SWEEP_MS = SWEEP_EVERY_MS;
 
 /** The weekday (0 = Sunday) and date of `now` in `zone`. */
 export function localDay(zone: string, now: Date): { weekday: number; date: string } {
