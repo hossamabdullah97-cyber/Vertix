@@ -6,6 +6,7 @@ import { planPrices } from '../billing/prices';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { PLAN_LIMITS, defaultStageRows, normalizeUid, type Plan, type Role } from '@vertex/shared';
+import { webhookQueued } from '../integrations/webhook-queue';
 
 /**
  * Runs tenant-scoped writes under the 'admin' bypass context so the Prisma
@@ -722,6 +723,7 @@ export class AdminService {
       where: { id },
       data: { status: 'PENDING', nextAttemptAt: new Date(), error: null },
     });
+    webhookQueued();
 
     await this.logAdminAction(actorId, `WEBHOOK_DELIVERY_RETRY`, 'WebhookDelivery', id, {
       event: updated.event,

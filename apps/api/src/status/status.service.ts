@@ -10,8 +10,10 @@ import type {
 import { STATUS_COMPONENTS } from '@vertex/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { SWEEP_EVERY_MS } from '../common/background';
 
-const CHECK_MS = 60_000;
+/** One shared hourly beat, so the database can sleep in between (see common/background). */
+const CHECK_MS = SWEEP_EVERY_MS;
 const DAYS = 90;
 const CACHE_MS = 30_000;
 /** A query slower than this counts as degraded. */
@@ -65,7 +67,7 @@ const present = (i: IncidentRow): StatusIncidentView => ({
 });
 
 /**
- * The public status page: every minute the platform checks its own parts
+ * The public status page: every hour the platform checks its own parts
  * (the app and its database, public cards, email delivery, webhook
  * delivery), keeps the result per part and day for 90 days, and lays over
  * it what the people who run the platform post about outages and planned

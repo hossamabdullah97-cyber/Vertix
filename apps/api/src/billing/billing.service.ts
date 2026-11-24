@@ -19,6 +19,7 @@ import { plansFor } from '@vertex/shared';
 export const PERSONAL_PLAN_ONLY = 'The personal plan is for your own workspace. Choose a team plan for a company or team.';
 export const TEAM_PLANS_ONLY = 'A personal workspace has the personal plan. Make it a team workspace in Settings for the team plans.';
 import { workspaceLink } from '../common/workspace-link';
+import { SWEEP_EVERY_MS } from '../common/background';
 
 type SubStatus = 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELED';
 
@@ -63,7 +64,8 @@ export function callbackIds(body: unknown): { transactionId: number | null; subs
 }
 
 /** How often lapsed paid periods are closed. */
-const SWEEP_MS = 60 * 60_000;
+/** One shared hourly beat, so the database can sleep in between (see common/background). */
+const SWEEP_MS = SWEEP_EVERY_MS;
 
 @Injectable()
 export class BillingService implements OnModuleInit, OnModuleDestroy {

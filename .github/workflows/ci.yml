@@ -76,7 +76,8 @@ jobs:
   # from their production builds, driven by Playwright (apps/e2e). A failing
   # run keeps its report, screenshots and traces as an artifact.
   e2e:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, where this Playwright cannot install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
       postgres:
